@@ -14,6 +14,8 @@ TEST(AdvantageScopeTelemetry, NativeStructSchemasUnitsOrderingAndClearsSurviveNT
   std::string bytes;
   {
     wpi::log::DataLogWriter writer(std::make_unique<wpi::raw_string_ostream>(bytes));
+    // Local publication and its entry-log append are synchronous. No asynchronous
+    // listener is installed, so WaitForListenerQueue() has no thread to drain.
     auto logger=nt.StartEntryDataLog(writer,"","");
     {
       base::DriveTelemetry telemetry(nt);
@@ -27,7 +29,6 @@ TEST(AdvantageScopeTelemetry, NativeStructSchemasUnitsOrderingAndClearsSurviveNT
       std::array<frc::SwerveModuleState,4> states;
       for(int i=0;i<4;++i) states[i]={units::meters_per_second_t{i+.5},frc::Rotation2d{units::radian_t{.2*i}}};
       telemetry.Publish(expectedPose,expectedSpeeds,states,states,10000);
-      ASSERT_TRUE(nt.WaitForListenerQueue(1));
       EXPECT_EQ(pose.GetTopic().GetTypeString(),"struct:Pose2d");
       EXPECT_EQ(robot.GetTopic().GetTypeString(),"struct:Pose3d");
       EXPECT_EQ(speeds.GetTopic().GetTypeString(),"struct:ChassisSpeeds");
@@ -43,13 +44,11 @@ TEST(AdvantageScopeTelemetry, NativeStructSchemasUnitsOrderingAndClearsSurviveNT
         EXPECT_NEAR(received[i].angle.Radians().value(),.2*i,1e-12);
       }
       telemetry.Publish({}, {}, {}, {},20000);
-      ASSERT_TRUE(nt.WaitForListenerQueue(1));
       EXPECT_EQ(pose.Get(),frc::Pose2d{});
       EXPECT_EQ(speeds.Get().vx.value(),0);
       EXPECT_TRUE(measured.Get().empty());
       EXPECT_TRUE(targets.Get().empty());
     }
-    ASSERT_TRUE(nt.WaitForListenerQueue(1));
     nt::NetworkTableInstance::StopEntryDataLog(logger);
     writer.Flush();
   }
