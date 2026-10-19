@@ -5,6 +5,7 @@
 - Reusable base drive, motor mechanisms, calibration, software profiles/PID/feedforward, physical soft limits, digital input, command cleanup and SysId.
 - Native CTRE four-module swerve with season hardware mapping, fused CANcoder configuration, independent native odometry and PathPlanner GUI robot configuration.
 - Season intake/shooter wiring, presets, bounded calibration, shooting/ferry/target/readiness algorithms, volley feed latch, native Choreo and autonomous assets.
+- Standard AdvantageScope NT4/WPILOG struct telemetry for robot pose, chassis speeds, measured/target swerve states and simulated fuel, with portable layout generation and installed-parser validation. See `docs/advantagescope.md`.
 - Limelight, reusable Photon and read-only pinned QuestNav protobuf adapters with freshness/readiness gating, alignment and absolute fallback; WPILib DataLog/NetworkTables logging.
 - Native-rate field transforms and heading feedback with bounded target handoff, stale moving-target expiry, disable invalidation and sole actuator ownership; explicit 250 Hz season CANivore configuration.
 - All seven mechanisms expose validated disabled-only gain tuning and versioned MotorIO input logging. Offline native replay, deterministic multirate/latency harness and opt-in model feedforward helpers are available.
@@ -25,7 +26,7 @@ The native diagnostic runner is a bounded replacement, not the Java seventeen-cl
 
 ## Current finalization evidence
 
-See `docs/cpp-finalization.md` for architecture, numerical estimates and remaining gaps, and `artifacts/finalization-validation.json` for current build/test/simulator evidence. Invalid/nonfinite feedback cannot authorize feeding; finite manual volley sag behavior remains intact. Diagnostic Abort consumes a queued Start in the same tick. CAN health is sampled on the robot thread rather than the native control callback. Full browser/device-topology diagnostic parity remains open.
+See `docs/advantagescope.md` and `artifacts/advantagescope-validation.json` for the structured visualization follow-up; earlier artifacts remain historical. See `docs/cpp-finalization.md` for architecture, numerical estimates and remaining gaps, and `artifacts/finalization-validation.json` for current build/test/simulator evidence. Invalid/nonfinite feedback cannot authorize feeding; finite manual volley sag behavior remains intact. Diagnostic Abort consumes a queued Start in the same tick. CAN health is sampled on the robot thread rather than the native control callback. Full browser/device-topology diagnostic parity remains open.
 
 ## Historical migration validation
 
