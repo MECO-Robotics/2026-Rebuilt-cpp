@@ -94,7 +94,11 @@ void SystemCheck::Advance() {
 }
 void SystemCheck::Periodic() {
   if(frc::SmartDashboard::GetBoolean("SystemCheck/Abort",false)) {
-    frc::SmartDashboard::PutBoolean("SystemCheck/Abort",false); Cancel();
+    // Abort wins over a queued Start even while idle. A fresh operator
+    // request is required after this cycle before any actuator reservation.
+    frc::SmartDashboard::PutBoolean("SystemCheck/Abort",false);
+    frc::SmartDashboard::PutBoolean("SystemCheck/Start",false);
+    Cancel();
   }
   if(frc::SmartDashboard::GetBoolean("SystemCheck/Start",false)) {
     frc::SmartDashboard::PutBoolean("SystemCheck/Start",false); Start();

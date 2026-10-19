@@ -52,3 +52,22 @@ TEST(SystemCheckSafety, OwnershipInterruptionCancelsDuringCountdown) {
   conflicting.Cancel();
   ConfigureDS(false);
 }
+
+TEST(SystemCheckSafety, AbortWinsOverQueuedStartWhileIdle) {
+  ConfigureDS(true);
+  int actions=0,stops=0;
+  struct MockSubsystem : frc2::SubsystemBase {} mechanism;
+  season::SystemCheck check([&]{++stops;},"/tmp/frc-systemcheck-abort.json");
+  check.ConfigureRequirements({&mechanism});
+  check.AddStage({"mock",1,[&]{++actions;},[]{return season::CheckEvaluation{true,"ok",{}};}});
+  frc::SmartDashboard::PutBoolean("SystemCheck/Armed",true);
+  frc::SmartDashboard::PutBoolean("SystemCheck/SetupConfirmed",true);
+  frc::SmartDashboard::PutBoolean("SystemCheck/Start",true);
+  frc::SmartDashboard::PutBoolean("SystemCheck/Abort",true);
+  check.Periodic();
+  EXPECT_FALSE(check.Active());
+  EXPECT_FALSE(frc::SmartDashboard::GetBoolean("SystemCheck/Start",true));
+  EXPECT_EQ(actions,0);
+  EXPECT_EQ(stops,1);
+  ConfigureDS(false);
+}
