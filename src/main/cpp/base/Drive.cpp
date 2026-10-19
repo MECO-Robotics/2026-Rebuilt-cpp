@@ -89,7 +89,7 @@ void Drive::RunVelocity(const frc::ChassisSpeeds& speeds) {
   DriveTarget::Value value;
   value.speeds = speeds;
   value.timestamp = frc::Timer::GetFPGATimestamp().value();
-  if (frc::DriverStation::IsEnabled()) control_->target.Publish(value);
+  control_->target.Publish(value, []{ return frc::DriverStation::IsEnabled(); });
 }
 void Drive::RunVelocity(const frc::ChassisSpeeds& speeds,const pathplanner::DriveFeedforwards& ff) {
   DriveTarget::Value value;
@@ -100,7 +100,7 @@ void Drive::RunVelocity(const frc::ChassisSpeeds& speeds,const pathplanner::Driv
       value.forceX[i] = ff.robotRelativeForcesX[i].value();
       value.forceY[i] = ff.robotRelativeForcesY[i].value();
     }
-  if (frc::DriverStation::IsEnabled()) control_->target.Publish(value);
+  control_->target.Publish(value, []{ return frc::DriverStation::IsEnabled(); });
 }
 void Drive::FieldDrive(double x,double y,double omega) {
   if (!frc::DriverStation::IsTeleopEnabled()) { Stop(); return; }
@@ -110,7 +110,7 @@ void Drive::FieldDrive(double x,double y,double omega) {
   value.speeds = {units::meters_per_second_t{x*sign}, units::meters_per_second_t{y*sign}, units::radians_per_second_t{omega}};
   value.fieldRelative = value.teleopOnly = true;
   value.timestamp = frc::Timer::GetFPGATimestamp().value();
-  control_->target.Publish(value);
+  control_->target.Publish(value, []{ return frc::DriverStation::IsTeleopEnabled(); });
 }
 void Drive::RunHeading(double x, double y, frc::Rotation2d heading, double kp, double maxOmega) {
   DriveTarget::Value value;
@@ -120,14 +120,14 @@ void Drive::RunHeading(double x, double y, frc::Rotation2d heading, double kp, d
   value.maxOmega = maxOmega;
   value.headingControl = true;
   value.timestamp = frc::Timer::GetFPGATimestamp().value();
-  if (frc::DriverStation::IsEnabled()) control_->target.Publish(value);
+  control_->target.Publish(value, []{ return frc::DriverStation::IsEnabled(); });
 }
 void Drive::Stop() { RunVelocity(frc::ChassisSpeeds{}); }
 void Drive::StopWithX() {
   DriveTarget::Value value;
   value.brake = true;
   value.timestamp = frc::Timer::GetFPGATimestamp().value();
-  if (frc::DriverStation::IsEnabled()) control_->target.Publish(value);
+  control_->target.Publish(value, []{ return frc::DriverStation::IsEnabled(); });
 }
 void Drive::ConfigureAuto() {
   std::vector<frc::Translation2d> locations;
@@ -156,7 +156,7 @@ frc2::CommandPtr Drive::Aim(std::function<double()> x,std::function<double()> y,
     value.maxOmega = config_.maxAngularRate;
     value.headingControl = value.fieldRelative = value.teleopOnly = true;
     value.timestamp = frc::Timer::GetFPGATimestamp().value();
-    control_->target.Publish(value);
+    control_->target.Publish(value, []{ return frc::DriverStation::IsTeleopEnabled(); });
   },[this]{Stop();},{this});
 }
 }

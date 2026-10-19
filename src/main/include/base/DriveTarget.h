@@ -22,8 +22,12 @@ class DriveTarget {
     double timestamp = 0;
     uint64_t epoch = 0;
   };
-  void Publish(Value value) {
+  template<class Enabled>
+  void Publish(Value value, Enabled&& enabled) {
+    // Capture the epoch before authorization: a disable between either check and
+    // the write must invalidate this packet, including across a fast re-enable.
     value.epoch = epoch_.load();
+    if (!enabled()) return;
     std::scoped_lock lock(mutex_);
     pending_ = value;
   }
@@ -45,6 +49,8 @@ class DriveTarget {
     return valid ? cached_ : Value{};
   }
   static frc::ChassisSpeeds Resolve(const Value& target, frc::Rotation2d measuredHeading) {
+    if ((target.fieldRelative || target.headingControl) &&
+        !std::isfinite(measuredHeading.Radians().value())) return {};
     auto speeds = target.speeds;
     if (target.headingControl) speeds.omega = units::radians_per_second_t{std::clamp(
         target.headingKP * (target.heading - measuredHeading).Radians().value(),
