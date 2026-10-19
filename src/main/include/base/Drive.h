@@ -2,6 +2,7 @@
 #include <array>
 #include <memory>
 #include <mutex>
+#include <frc/Notifier.h>
 #include <string>
 #include <frc2/command/SubsystemBase.h>
 #include <frc2/command/CommandPtr.h>
@@ -68,5 +69,6 @@ class Drive : public frc2::SubsystemBase {
   double nextTelemetry_ = 0, nextBusTelemetry_ = 0;
   std::unique_ptr<ControlRequest> control_;
   std::unique_ptr<NativeDrive> native_;
+  std::unique_ptr<frc::Notifier> simNotifier_;
 };
 }

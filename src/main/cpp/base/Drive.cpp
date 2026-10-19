@@ -1,6 +1,7 @@
 #include "base/Drive.h"
 #include "base/DriveTarget.h"
 #include <frc/Timer.h>
+#include <frc/RobotBase.h>
 #include <array>
 #include <algorithm>
 #include <cmath>
@@ -72,9 +73,21 @@ Drive::Drive(DriveConfig config) : config_(std::move(config)) {
     if (std::unique_lock lock(snapshotMutex_, std::try_to_lock); lock.owns_lock())
       snapshot_ = {state.Pose, state.Speeds, state.OdometryPeriod.value(), state.FailedDaqs};
   });
+  if (frc::RobotBase::IsSimulation()) {
+    simNotifier_ = std::make_unique<frc::Notifier>([this] {
+      native_->UpdateSimState(.004_s, frc::RobotController::GetBatteryVoltage());
+    });
+    simNotifier_->SetName("DriveSimulation");
+    simNotifier_->StartPeriodic(.004_s);
+  }
   SetName("Drive");
 }
-Drive::~Drive() { native_->GetOdometryThread().Stop(); native_.reset(); }
+Drive::~Drive() {
+  if (simNotifier_) simNotifier_->Stop();
+  simNotifier_.reset();
+  native_->GetOdometryThread().Stop();
+  native_.reset();
+}
 void Drive::Periodic() {
   if (frc::DriverStation::IsDisabled()) {
     auto a=frc::DriverStation::GetAlliance();
@@ -104,7 +117,9 @@ void Drive::Periodic() {
   frc::SmartDashboard::PutNumberArray("Drive/Pose",std::array<double,3>{state.pose.X().value(),state.pose.Y().value(),state.pose.Rotation().Degrees().value()});
   frc::SmartDashboard::PutNumberArray("Drive/Speeds",std::array<double,3>{state.speeds.vx.value(),state.speeds.vy.value(),state.speeds.omega.value()});
 }
-void Drive::SimulationPeriodic() { native_->UpdateSimState(.02_s,frc::RobotController::GetBatteryVoltage()); }
+void Drive::SimulationPeriodic() {
+  // The 4 ms simulation notifier is the sole native plant writer.
+}
 frc::Pose2d Drive::Pose() const { std::scoped_lock lock(snapshotMutex_); return snapshot_.pose; }
 frc::ChassisSpeeds Drive::Speeds() const { std::scoped_lock lock(snapshotMutex_); return snapshot_.speeds; }
 void Drive::ResetPose(const frc::Pose2d& pose) {
