@@ -21,7 +21,7 @@ The season fork also publishes `Pose3d[]` fuel positions under `/AdvantageScope/
 
 ## Recorded logs and reusable layout
 
-Open a completed file from `logs/*.wpilog` through **File → Open Log**. WPILib DataLogManager records the NT values and their struct schemas. Expand the `NT:/AdvantageScope` tree. Do not substitute the mechanism CSV replay stream for WPILOG: CSV is the robot's own injected-input replay format.
+Open a completed file from `logs/*.wpilog` through **File → Open Log**. WPILib DataLogManager records the NT values and their struct schemas. Expand the `NT:/AdvantageScope` tree. The versioned mechanism input records also live in WPILOG; their six-double replay schema is separate from the standard typed geometry topics used for visualization.
 
 Validate a log and generate a layout using the installed application's actual parser:
 

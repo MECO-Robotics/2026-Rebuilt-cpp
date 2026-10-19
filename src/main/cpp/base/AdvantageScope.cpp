@@ -1,7 +1,16 @@
 #include "base/AdvantageScope.h"
 #include <stdexcept>
+#include <WPILibVersion.h>
+#include <networktables/NetworkTable.h>
 
 namespace base {
+void PublishTelemetryMetadata(std::string_view project, nt::NetworkTableInstance instance) {
+  auto table = instance.GetTable("Metadata");
+  table->PutString("Project",project);
+  table->PutString("Language","C++");
+  table->PutString("WPILib",GetWPILibVersion());
+  table->PutString("Telemetry","WPILib structs / NT4 / WPILOG");
+}
 DriveTelemetry::DriveTelemetry(nt::NetworkTableInstance instance)
     : pose_(instance.GetStructTopic<frc::Pose2d>("/AdvantageScope/Drive/Pose").Publish()),
       robotPose_(instance.GetStructTopic<frc::Pose3d>("/AdvantageScope/Drive/RobotPose").Publish()),

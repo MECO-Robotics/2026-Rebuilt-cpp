@@ -1,10 +1,12 @@
 #include "Robot.h"
+#include "base/AdvantageScope.h"
 #include <frc/DataLogManager.h>
 #include <frc/DriverStation.h>
 #include <frc/RobotController.h>
 #include <frc2/command/CommandScheduler.h>
 Robot::Robot() {
   frc::DataLogManager::Start();
+  base::PublishTelemetryMetadata("2026_Base_Bot-cpp");
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
   frc::RobotController::SetBrownoutVoltage(units::volt_t{6});
 }
