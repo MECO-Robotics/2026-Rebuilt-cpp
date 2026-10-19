@@ -53,3 +53,15 @@ git merge upstream/main
 ```
 
 `origin` is the season fork; `upstream` is the C++ base. Season code lives in `season/` and `RobotContainer`; small base configuration extensions in this fork supply the original Phoenix/PathPlanner season setup.
+
+## Migration finalization
+
+The `codex/finalize-cpp-migration` branch merges generic changes from the C++ base and retains season hardware IDs, offsets, gearing, source gains and autonomous assets. See [the finalization review](docs/cpp-finalization.md), [current port status](docs/cpp-port-status.md), and `artifacts/finalization-validation.json` for current evidence and remaining gaps. Earlier validation artifacts remain historical evidence.
+
+QuestNav now uses the pinned 2026 protobuf transport, source mounting transform and covariance, freshness/field readiness checks, version/battery diagnostics and absolute-vision fallback. Local field resets synchronize operator, AutoBuilder and Choreo resets. There is no physical headset or calibration evidence, headset reset ACK protocol, or automatic Quest noise/drift plant.
+
+The season requests 250 Hz native Phoenix odometry/control on `MECO CANIvore`. Commands retain exclusive ownership at 50 Hz, publishing targets to native-rate heading feedback. Native swerve physics runs on a separate 4 ms notifier. Pose/speed telemetry is capped at 10 Hz, bus diagnostics at 1 Hz. Moving targets expire after 100 ms without refresh, and disabled ticks neutralize/invalidate targets. This preserves Phoenix ownership; Phoenix already repeated native requests before this work.
+
+Each mechanism opts into disabled-only tuning at `<name>/Gains/Values`, with its ten-field order at `<name>/Gains/Fields` and acceptance status at `<name>/Gains/Status`. The whole candidate array must validate; enabled updates are locked, physical limits are excluded, and values are not persisted across reboot. Native versioned `<name>/MotorInputs` logs include disabled and fault inputs. MotorIO replay and model-derived feedforward pretuning are reusable base facilities; these do not constitute whole-robot replay or automatic hardware calibration.
+
+For the additional disabled-only Quest transport/fallback fixture, run the local headless simulator and `python scripts/questnav_smoke.py --output artifacts/finalization-questnav-smoke.json` in the documented Python environment. It injects synthetic NetworkTables sensor data only; stop/restart the simulator before other smoke checks so those fixtures cannot contaminate their measurements.
