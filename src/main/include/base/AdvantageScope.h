@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <frc/geometry/Pose2d.h>
 #include <frc/geometry/Pose3d.h>
 #include <frc/geometry/struct/Pose2dStruct.h>
@@ -14,6 +15,9 @@
 #include <networktables/StructArrayTopic.h>
 
 namespace base {
+// Standard string metadata recognized in both NT4 and WPILib NT log captures.
+void PublishTelemetryMetadata(std::string_view project,
+    nt::NetworkTableInstance instance=nt::NetworkTableInstance::GetDefault());
 // Standard WPILib structs are discoverable in AdvantageScope via NT4 and WPILOG.
 // Angles are radians, translation/speed metres and metres/s. Module array order
 // is front-left, front-right, back-left, back-right, supplied by the caller.

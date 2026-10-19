@@ -1,13 +1,18 @@
 #include "Robot.h"
+<<<<<<< HEAD
 #include "season/HubShift.h"
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <fmt/format.h>
+=======
+#include "base/AdvantageScope.h"
+>>>>>>> 9800ddb11cf9cf52487c69cadcef013d3169d9bf
 #include <frc/DataLogManager.h>
 #include <frc/DriverStation.h>
 #include <frc/RobotController.h>
 #include <frc2/command/CommandScheduler.h>
 Robot::Robot() {
   frc::DataLogManager::Start();
+  base::PublishTelemetryMetadata("2026-Rebuilt-cpp");
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
   frc::RobotController::SetBrownoutVoltage(units::volt_t{6});
 }
