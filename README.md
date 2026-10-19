@@ -72,3 +72,7 @@ Call `EnableInputLogging(frc::DataLogManager::GetLog())` during initialization t
 Native NT4 and WPILOG visualization uses standard WPILib structs for 2D/3D robot pose, chassis speeds, and measured/target swerve states under `/AdvantageScope/Drive`. Existing scalar mechanism telemetry remains graphable. Metadata identifies the native project without requiring AdvantageKit. See [the AdvantageScope guide](docs/advantagescope.md) for live simulation, recorded logs, an installed-parser validation command and an importable layout. This supports log viewing; it does not turn MotorIO replay into whole-robot deterministic re-execution.
 
 Season simulation also publishes `/AdvantageScope/Simulation/FloorFuel`, `HopperFuel`, and `Projectiles` as `Pose3d[]` at 10 Hz; their legacy XYZ topics remain available.
+
+## Explicit-time mechanism control
+
+The integrated base now separates observational motor reads, explicit plant stepping, timestep-aware control, and cached telemetry. Season simulation tests step hood/rack physics explicitly; source hardware mappings and gains are retained. See [the explicit-time audit](docs/explicit-time-control.md) for execution ownership, deterministic mechanism evidence, and the unresolved whole-robot replay/Phoenix/Systemcore boundaries.
