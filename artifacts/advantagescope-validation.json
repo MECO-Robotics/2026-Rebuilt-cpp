@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-19",
+  "branch": "codex/finalize-cpp-migration",
+  "sourceCommit": "ba8e887e8ec4d95acf26fbb15f09f29bad2c04d5",
+  "sourceTreeSha256": "4af95d9a533d3875dae09d51e9f324672e54dcce27252a1e17048e0adfb37591",
+  "build": {
+    "command": "./gradlew build --max-workers=2",
+    "passed": true,
+    "targets": [
+      "roboRIO debug",
+      "roboRIO release",
+      "desktop debug",
+      "desktop release"
+    ],
+    "log": "advantagescope-build.log"
+  },
+  "tests": {
+    "debug": {
+      "passed": 53,
+      "failed": 0
+    },
+    "release": {
+      "passed": 53,
+      "failed": 0
+    }
+  },
+  "nativeSimulation": {
+    "passed": true,
+    "evidence": "advantagescope-drive-smoke.json"
+  },
+  "advantageScope": {
+    "version": "26.0.0",
+    "parser": "Installed unmodified WPILOG worker and WASM indexer",
+    "passed": true,
+    "parserEvidence": "advantagescope-parser.json",
+    "sampleLog": "advantagescope-sample.wpilog",
+    "sampleSha256": "5938ff67e514432478ac12e5d75b314859e12beb874ce3db895b0f259a2ba47a",
+    "layout": "advantagescope-layout.json",
+    "guiRenderingVerified": false,
+    "decodedFuelTopics": [
+      "NT:/AdvantageScope/Simulation/FloorFuel",
+      "NT:/AdvantageScope/Simulation/HopperFuel",
+      "NT:/AdvantageScope/Simulation/Projectiles"
+    ]
+  },
+  "hardwareDeployed": false,
+  "physicalValidation": false,
+  "limitations": [
+    "Simulation and parser evidence only; graphical import/rendering not exercised",
+    "RobotPose is estimated planar pose lifted to 3D, not independent ground truth",
+    "MotorIO replay and AdvantageScope log viewing are not whole-robot deterministic re-execution"
+  ],
+  "liveNt4": {
+    "passed": true,
+    "evidence": "advantagescope-live-nt4.json"
+  },
+  "genericImplementationMatchesUpstream": true,
+  "upstreamCommit": "f32001c58be11ebc9d95ca0e8477b37528b6ed0b"
+}

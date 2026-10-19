@@ -1,0 +1,54 @@
+{
+  "scope": "Read-only localhost NT4 native simulation wire capture",
+  "passed": true,
+  "checks": {
+    "all_wire_types": true,
+    "fixed_drive_lengths": true,
+    "floor_fuel_populated": true,
+    "empty_hopper_and_projectiles": true,
+    "field_metres_identity_orientation": true
+  },
+  "fields": {
+    "Drive/Pose": {
+      "type": "struct:Pose2d",
+      "bytes": 24
+    },
+    "Drive/RobotPose": {
+      "type": "struct:Pose3d",
+      "bytes": 56
+    },
+    "Drive/Speeds": {
+      "type": "struct:ChassisSpeeds",
+      "bytes": 24
+    },
+    "Drive/MeasuredStates": {
+      "type": "struct:SwerveModuleState[]",
+      "bytes": 64
+    },
+    "Drive/TargetStates": {
+      "type": "struct:SwerveModuleState[]",
+      "bytes": 64
+    },
+    "Simulation/FloorFuel": {
+      "type": "struct:Pose3d[]",
+      "bytes": 16632
+    },
+    "Simulation/HopperFuel": {
+      "type": "struct:Pose3d[]",
+      "bytes": 0
+    },
+    "Simulation/Projectiles": {
+      "type": "struct:Pose3d[]",
+      "bytes": 0
+    }
+  },
+  "firstFloorFuelPose": [
+    7.0,
+    0.75,
+    0.06985,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+  ]
+}

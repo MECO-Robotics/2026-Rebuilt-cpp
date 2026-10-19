@@ -1,0 +1,189 @@
+{
+  "version": "26.0.0",
+  "hubs": [
+    {
+      "x": 50,
+      "y": 50,
+      "width": 1280,
+      "height": 800,
+      "state": {
+        "sidebar": {
+          "width": 300,
+          "expanded": [
+            "NT:",
+            "NT:/AdvantageScope",
+            "NT:/AdvantageScope/Drive"
+          ]
+        },
+        "tabs": {
+          "selected": 0,
+          "tabs": [
+            {
+              "type": 2,
+              "title": "MECO Field Pose",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "robot",
+                    "logKey": "NT:/AdvantageScope/Drive/Pose",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "bumpers": ""
+                    }
+                  }
+                ],
+                "field": "FRC:Evergreen",
+                "orientation": 0,
+                "size": "large"
+              },
+              "controllerUUID": "12b0c726-a754-4039-a178-a3ac5d971cb3",
+              "renderer": null,
+              "controlsHeight": 180
+            },
+            {
+              "type": 3,
+              "title": "MECO 3D Pose",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "axes",
+                    "logKey": "NT:/AdvantageScope/Drive/RobotPose",
+                    "logType": "Pose3d",
+                    "visible": true,
+                    "options": {}
+                  },
+                  {
+                    "type": "axes",
+                    "logKey": "NT:/AdvantageScope/Simulation/FloorFuel",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {}
+                  },
+                  {
+                    "type": "axes",
+                    "logKey": "NT:/AdvantageScope/Simulation/HopperFuel",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {}
+                  },
+                  {
+                    "type": "axes",
+                    "logKey": "NT:/AdvantageScope/Simulation/Projectiles",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {}
+                  }
+                ],
+                "game": "FRC:Evergreen"
+              },
+              "controllerUUID": "14ad284b-b631-41d1-a7fb-2cfa57c59fc9",
+              "renderer": null,
+              "controlsHeight": 180
+            },
+            {
+              "type": 1,
+              "title": "MECO Chassis Speeds",
+              "controller": {
+                "leftSources": [
+                  {
+                    "type": "smooth",
+                    "logKey": "NT:/AdvantageScope/Drive/Speeds/vx",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "smooth",
+                    "logKey": "NT:/AdvantageScope/Drive/Speeds/vy",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#af2437",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "rightSources": [
+                  {
+                    "type": "smooth",
+                    "logKey": "NT:/AdvantageScope/Drive/Speeds/omega",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#3b875a",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "discreteSources": [],
+                "leftLockedRange": null,
+                "rightLockedRange": null,
+                "leftUnitConversion": {
+                  "autoTarget": null,
+                  "preset": null
+                },
+                "rightUnitConversion": {
+                  "autoTarget": null,
+                  "preset": null
+                },
+                "leftFilter": 0,
+                "rightFilter": 0
+              },
+              "controllerUUID": "a2b90c3b-0b22-4f59-a899-519effa717a1",
+              "renderer": null,
+              "controlsHeight": 180
+            },
+            {
+              "type": 9,
+              "title": "MECO Swerve",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "states",
+                    "logKey": "NT:/AdvantageScope/Drive/MeasuredStates",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "states",
+                    "logKey": "NT:/AdvantageScope/Drive/TargetStates",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#0000ff",
+                      "arrangement": "0,1,2,3"
+                    }
+                  }
+                ],
+                "maxSpeed": 5.24,
+                "sizeX": 0.5588,
+                "sizeY": 0.5588,
+                "orientation": 0
+              },
+              "controllerUUID": "9e4b1e61-3aff-4753-9aa6-4e6799e54999",
+              "renderer": null,
+              "controlsHeight": 180
+            },
+            {
+              "type": 12,
+              "title": "MECO Build Metadata",
+              "controller": null,
+              "controllerUUID": "2fc97ab2-9bb6-405f-ab8c-93d3a2342bb8",
+              "renderer": null,
+              "controlsHeight": 180
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "satellites": []
+}
