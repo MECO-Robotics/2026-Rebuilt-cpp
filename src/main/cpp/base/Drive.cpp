@@ -1,4 +1,7 @@
 #include "base/Drive.h"
+#include <ctre/phoenix6/swerve/SwerveDrivetrain.hpp>
+#include <ctre/phoenix6/TalonFX.hpp>
+#include <ctre/phoenix6/CANcoder.hpp>
 #include "base/DriveTarget.h"
 #include <frc/Timer.h>
 #include <frc/RobotBase.h>
@@ -19,6 +22,11 @@ using namespace units::literals;
 namespace p = ctre::phoenix6;
 namespace s = p::swerve;
 namespace base {
+// Vendor hardware and estimator implementation stays behind the public API.
+struct Drive::NativeDrive : s::SwerveDrivetrain<p::hardware::TalonFX, p::hardware::TalonFX, p::hardware::CANcoder> {
+  using Parent = s::SwerveDrivetrain<p::hardware::TalonFX, p::hardware::TalonFX, p::hardware::CANcoder>;
+  using Parent::Parent;
+};
 struct Drive::ControlRequest final : s::requests::SwerveRequest {
   DriveTarget target;
   s::requests::ApplyRobotSpeeds velocity;

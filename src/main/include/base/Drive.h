@@ -6,9 +6,10 @@
 #include <string>
 #include <frc2/command/SubsystemBase.h>
 #include <frc2/command/CommandPtr.h>
-#include <ctre/phoenix6/swerve/SwerveDrivetrain.hpp>
-#include <ctre/phoenix6/TalonFX.hpp>
-#include <ctre/phoenix6/CANcoder.hpp>
+#include <functional>
+#include <frc/geometry/Pose2d.h>
+#include <frc/kinematics/ChassisSpeeds.h>
+#include <units/time.h>
 #include <pathplanner/lib/util/DriveFeedforwards.h>
 namespace base {
 struct ModuleConfig {
@@ -55,7 +56,7 @@ class Drive : public frc2::SubsystemBase {
   frc2::CommandPtr Aim(std::function<double()> x, std::function<double()> y, std::function<frc::Rotation2d()> heading);
   const DriveConfig& Config() const { return config_; }
  private:
-  using NativeDrive = ctre::phoenix6::swerve::SwerveDrivetrain<ctre::phoenix6::hardware::TalonFX,ctre::phoenix6::hardware::TalonFX,ctre::phoenix6::hardware::CANcoder>;
+  struct NativeDrive;
   struct ControlRequest;
   DriveConfig config_;
   struct Snapshot {
