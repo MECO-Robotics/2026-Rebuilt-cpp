@@ -157,3 +157,15 @@ TEST(MechanismTuning, UnchangedDashboardPreservesDynamicProfileConstraints) {
   frc::sim::DriverStationSim::SetEnabled(false);
   frc::sim::DriverStationSim::NotifyNewData();
 }
+
+TEST(MechanismSimulation, HighReductionConvergesToMotorFreeSpeedWithoutNumericalOscillation) {
+  base::MotorConfig config{{1},{false},105,40,""};
+  auto simulation=base::MakeMotorIO(base::Mode::Sim,base::Vendor::SparkMax,config,.01);
+  simulation->SetVoltage(6);
+  for(int i=0;i<200;++i) simulation->Read();
+  // Ideal half-voltage NEO free speed, expressed at the 105:1 output.
+  // Model viscous drag shifts equilibrium by <3 ppm; 0.1% allows that drag
+  // while rejecting the oscillating fixed-1ms Euler result.
+  constexpr double expected=5676./60*.5/105;
+  EXPECT_NEAR(simulation->Read().velocity,expected,expected*.001);
+}
