@@ -14,6 +14,26 @@ Install WPILib 2026.2.1 with its C++ toolchains and Java 17+. From this folder:
 
 `deploy` writes to the team's roboRIO; review hardware configuration before deploying. Desktop tests run with `./gradlew check`. Both desktop and roboRIO targets are enabled. Native dependencies retain the source project's pinned versions.
 
+## Verified simulation check
+
+`./gradlew build --max-workers=2` passed for desktop and roboRIO in debug and release, including nine mechanism tests in both configurations. A real desktop `frcUserProgram` was exercised through local HAL simulation and NetworkTables: forward/reverse motion, rotation, pose changes, and stationary disabled behavior passed. The captured result is in `artifacts/sim-smoke.json`. This verifies runtime behavior; it does not establish physical calibration or hardware acceptance.
+
+For the regular graphical simulator use `./gradlew simulateNative`. For a repeatable Linux headless check, run these in separate terminals:
+
+```sh
+# Terminal 1: after ./gradlew build; WPILIB_ROOT can override ~/wpilib/2026
+./scripts/sim_headless.sh
+```
+
+```sh
+# Terminal 2: isolated Python dependencies, used only by the test driver
+python3 -m venv /tmp/frc-cpp-sim-venv
+/tmp/frc-cpp-sim-venv/bin/pip install 'pyntcore>=2026,<2027' 'websockets>=14,<17'
+/tmp/frc-cpp-sim-venv/bin/python scripts/sim_smoke.py --output artifacts/sim-smoke.json
+```
+
+The script controls only the local desktop HAL simulator and leaves it disabled. The headless HAL server is a development tool; stop the process after testing. Example base tuning is not hardware calibration.
+
 ## Reusable code
 
 - `base/Drive.h`: configurable four-module TalonFX/CANcoder/Pigeon swerve, Phoenix native odometry, field driving, heading hold, X brake, vision fusion, PathPlanner autos and wheel-force feedforwards.

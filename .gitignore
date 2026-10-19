@@ -8,3 +8,8 @@ ctre_sim/
 *.so
 *.dll
 .vscode/c_cpp_properties.json
+
+# Local simulator state
+networktables.json
+simgui*.json
+systemcheck-latest.json

@@ -19,7 +19,9 @@ struct DriveConfig {
   int pigeon = 0;
   double driveRatio = 6.122448979591837, steerRatio = 150.0 / 7.0, couplingRatio = 0;
   double wheelRadius = 0.0508, maxSpeed = 4.572, maxAngularRate = 7;
-  double driveKP = 1, driveKD = 0, driveKS = .5, driveKV = .71;
+  // Phoenix native swerve drive gains use rotor turns; Java used output-wheel turns.
+  // Divide the Java P/D/V gains by driveRatio; static voltage is unchanged.
+  double driveKP = 1 / 6.122448979591837, driveKD = 0, driveKS = .5, driveKV = .71 / 6.122448979591837;
   double steerKP = 25, steerKD = 0, steerKS = 0, steerKV = 2.5;
   double driveCurrent = 40, steerCurrent = 40, slipCurrent = 50;
   double massKg = 74.088, moi = 6.883, cof = 1.2;
