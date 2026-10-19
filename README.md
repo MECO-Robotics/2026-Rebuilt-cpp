@@ -39,7 +39,7 @@ Pilot controls: left stick drives translation, right X rotates, Start resets hea
 
 Shooting calculations preserve all eight calibration rows, shooter exit/yaw, alliance/tag target selection, ferry trajectory exclusion, readiness ordering and volley latch/debounce. Calibration dashboard values are bounded. Autonomous includes copied PathPlanner assets, named mechanism commands, a stationary vision-initialized shot and native Choreo `LeftBlueBump` followed by a shot. Marker shots do not claim drivetrain ownership; they check the path's current heading rather than overriding the path follower.
 
-Absolute vision comes from Limelight; PhotonVision is available as a reusable base adapter. Stationary autonomous shooting requires a recently accepted field pose; camera heartbeat alone is insufficient. Path-following autos seed their own field pose.
+QuestNav provides aligned inertial poses with validated Limelight absolute fallback; PhotonVision remains a reusable base adapter. Stationary autonomous shooting requires a recently accepted field pose; camera heartbeat alone is insufficient. Path-following autos seed their own field pose.
 
 ## Diagnostics
 
@@ -52,7 +52,7 @@ git fetch upstream
 git merge upstream/main
 ```
 
-`origin` is the season fork; `upstream` is the C++ base. Season code lives in `season/` and `RobotContainer`; small base configuration extensions in this fork supply the original Phoenix/PathPlanner season setup.
+`origin` is the season fork; `upstream` is the C++ base. Season code lives in `season/` and `RobotContainer`; the reusable Phoenix/PathPlanner configuration fields now live upstream, while this container supplies the season values.
 
 ## Migration finalization
 
