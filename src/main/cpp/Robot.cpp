@@ -1,11 +1,8 @@
 #include "Robot.h"
-<<<<<<< HEAD
 #include "season/HubShift.h"
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <fmt/format.h>
-=======
 #include "base/AdvantageScope.h"
->>>>>>> 9800ddb11cf9cf52487c69cadcef013d3169d9bf
 #include <frc/DataLogManager.h>
 #include <frc/DriverStation.h>
 #include <frc/RobotController.h>
