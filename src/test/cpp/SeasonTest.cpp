@@ -54,6 +54,23 @@ TEST(SeasonAlgorithms, MatchesJavaShootingAndReadinessCases) {
   ShotIntakeSettings invalid{nan,nan};Near(invalid.retractSpeedMetersPerSecond,.1);Near(invalid.holdPositionMeters,.13);
 }
 
+TEST(SeasonAlgorithms, InvalidShotFeedbackCannotAuthorizeFeed) {
+  auto shot=CalculateShot({3,0,0},Point{0,0});
+  for(double invalid:{std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::infinity()}) {
+    EXPECT_EQ(EvaluateReadiness(true,shot,invalid,0,0,shot.headingRadians,shot.hoodRotations,shot.flywheelRps),Readiness::MovingTooFast);
+    EXPECT_EQ(EvaluateReadiness(true,shot,0,0,0,invalid,shot.hoodRotations,shot.flywheelRps),Readiness::PoseNotReady);
+    EXPECT_EQ(EvaluateReadiness(true,shot,0,0,0,shot.headingRadians,invalid,shot.flywheelRps),Readiness::HoodMoving);
+    EXPECT_EQ(EvaluateReadiness(true,shot,0,0,0,shot.headingRadians,shot.hoodRotations,invalid),Readiness::FlywheelSpinningUp);
+    auto bad=shot;bad.flywheelRps=invalid;
+    EXPECT_EQ(EvaluateReadiness(true,bad,0,0,0,shot.headingRadians,shot.hoodRotations,shot.flywheelRps),Readiness::OutOfRange);
+    VolleyFeedGate gate;gate.Reset(0);
+    ASSERT_TRUE(gate.Calculate(true,37,37,.2));
+    EXPECT_FALSE(gate.Calculate(true,invalid,37,.21));
+    EXPECT_FALSE(gate.Calculate(true,37,37,.22));
+    EXPECT_TRUE(gate.Calculate(true,37,37,.4));
+  }
+}
+
 #include "season/SeasonCommands.h"
 #include "season/HardwareAdapter.h"
 #include <frc/simulation/DriverStationSim.h>
