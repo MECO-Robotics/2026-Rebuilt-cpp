@@ -22,6 +22,7 @@ TEST(SeasonSimulation, HoodHighReductionTracksSmallPositionWithoutNumericalInsta
   double maxPosition=0;
   for(int step=0;step<1000;++step) {
     hood.Periodic();
+    hood.SimulationPeriodic();
     ASSERT_TRUE(std::isfinite(hood.Position()));
     ASSERT_TRUE(std::isfinite(hood.Velocity()));
     maxPosition=std::max(maxPosition,std::abs(hood.Position()));
@@ -41,6 +42,7 @@ TEST(SeasonSimulation, RackUsesPhysicalNineToOneReductionAndDrumCircumference) {
   double maxPosition=0;
   for(int step=0;step<1000;++step) {
     rack.Periodic();
+    rack.SimulationPeriodic();
     ASSERT_TRUE(std::isfinite(rack.Position()));
     ASSERT_TRUE(std::isfinite(rack.Velocity()));
     maxPosition=std::max(maxPosition,std::abs(rack.Position()));
