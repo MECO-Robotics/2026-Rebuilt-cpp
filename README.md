@@ -4,6 +4,8 @@ MECO Robotics team 8324's native WPILib 2026 C++ robot project. This repository 
 
 The original Java projects are preserved in sibling folders. See [the port contract](docs/port-contract.md) for source commits, units and validation boundaries.
 
+For architecture-aware Codex assistance, use the repository skill [`frc-base-project`](.agents/skills/frc-base-project/SKILL.md), or invoke `$frc-base-project`. Test guidance lives in `AGENTS.md`.
+
 ## Build and simulate
 
 Install WPILib 2026.2.1 with its C++ toolchains and native vendor dependencies:

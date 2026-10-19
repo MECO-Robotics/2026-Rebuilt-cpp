@@ -1,0 +1,27 @@
+---
+name: frc-base-project
+description: Implement or review command-based C++ robot behavior in MECO's base project and its season forks, preserving reusable mechanisms, IO boundaries, units, and command lifetimes. Use for this architecture, not general FRC hardware maintenance or Java robot code.
+---
+
+# FRC C++ base project
+
+Read the repository's `AGENTS.md`, `README.md`, and relevant port-status/contract documents before changing behavior. Resolve paths below from the repository root. Inspect `build.gradle`, `vendordeps/`, and the owning configuration for actual versions and hardware values; do not substitute latest APIs or example tuning. Use season- and language-matched official documentation or FRC reference tools when available, then verify against pinned headers and compilation.
+
+## Reuse and boundaries
+
+- Start with `src/main/include/base/Mechanism.h` and its implementation. Reuse `Flywheel` for a motor group sharing one velocity target and `PositionJoint` for one position degree of freedom. Keep independently controlled axes separate; coordinate assemblies with commands rather than copying control loops into a new subsystem.
+- Keep vendor motor access behind `MotorIO` and its factories. Preserve lazy mode selection: simulation must not construct real controllers, and replay must not construct real controllers or a simulator. Injected replay inputs are not Java AdvantageKit log playback.
+- Put reusable control/IO fixes in the base; keep game rules, season hardware configuration, shot tables, and autonomous choices in the season fork. When working downstream, identify generic fixes suitable for upstream without moving season behavior into the base or publishing changes without task authorization.
+
+## Units and ownership
+
+- Trace each signal through sensor, rotor, output, and physical coordinates. Mechanism angles use output rotations; linear joints use metres; rates are per second. Field geometry uses metres and API-required angular units. Convert gains, ratios, offsets, limits, and tolerances with their coordinate system; copied Java drive gains may use wheel turns while native Phoenix uses rotor turns. Check the port contract before conversion.
+- Treat `frc2::CommandPtr` as owning and move-only. Move each command into one composition; create a fresh command for another use. Captures and subsystem pointers must outlive scheduled commands; avoid references to local variables in deferred lambdas.
+- Declare all affected subsystem requirements. Parallel, race, and deadline children must have disjoint requirements. For held motor actions, use commands with release/interruption cleanup; a `RunOnce` that latches output does not stop that output when a trigger is released. Make any intentional persistent setpoint and its stop path explicit.
+- Reuse existing command helpers: `VelocityCommand` and `VoltageCommand` stop on end; `PositionCommand` finishes at tolerance and leaves position control active. Account for that hold behavior when coordinating or interrupting an assembly.
+
+## Evidence proportional to the change
+
+Follow `AGENTS.md`'s less-is-more testing guidance. Protect distinct observable behaviors and meaningful regressions; skip new tests for documentation-only changes. For control changes, choose focused native tests or existing simulation scripts that exercise the actual concern, such as units, command cancellation, limits, or IO mode selection.
+
+Use the build and simulation commands documented in this checkout and inspect available `scripts/` before adding tooling. During a base-to-season port, establish a successful base native build and running desktop simulation before starting season behavior. Report build, numerical simulation, and hardware evidence separately, including relevant unverified behavior; a passing simulation does not establish calibration, physical fidelity, or field acceptance. Deployment and hardware motion require task authorization.
