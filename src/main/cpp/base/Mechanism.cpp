@@ -1,4 +1,6 @@
 #include "base/Mechanism.h"
+#include "base/MotorInputLog.h"
+#include <array>
 #include <algorithm>
 #include <numbers>
 #include <set>
@@ -6,6 +8,7 @@
 #include <frc/DriverStation.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
+#include <networktables/NetworkTableInstance.h>
 
 namespace base {
 namespace {
@@ -42,6 +45,39 @@ Mechanism::Mechanism(std::string name, std::unique_ptr<MotorIO> io, Gains gains,
   gains_.Validate(joint_); calibration_.Validate(); SetName(name);
 }
 void Mechanism::SetGains(Gains gains) { gains.Validate(joint_); gains_=gains; maxVelocity_=gains.maxVelocity; maxAcceleration_=gains.maxAcceleration; }
+void Mechanism::EnableInputLogging(wpi::log::DataLog& log) {
+  inputLog_=std::make_unique<wpi::log::DoubleArrayLogEntry>(log,GetName()+"/MotorInputs",kMotorInputSchema);
+}
+void Mechanism::EnableLiveTuning(bool enabled) {
+  liveTuning_=enabled;
+  if(!enabled) return;
+  const auto table=nt::NetworkTableInstance::GetDefault().GetTable(GetName()+"/Gains");
+  table->GetEntry("Fields").SetString("kP,kI,kD,kS,kV,kA,kG,kMaxVelo,kMaxAccel,kTolerance");
+  table->GetEntry("Values").SetDoubleArray(std::array<double,10>{gains_.p,gains_.i,gains_.d,gains_.s,gains_.v,
+      gains_.a,gains_.gravity,gains_.maxVelocity,gains_.maxAcceleration,gains_.tolerance});
+  table->GetEntry("Status").SetString("Disabled-only tuning ready");
+}
+void Mechanism::UpdateLiveTuning() {
+  if(!liveTuning_) return;
+  const auto table=nt::NetworkTableInstance::GetDefault().GetTable(GetName()+"/Gains");
+  if(!frc::DriverStation::IsDisabled()) {
+    table->GetEntry("Status").SetString("Locked while enabled");
+    return;
+  }
+  const auto values=table->GetEntry("Values").GetDoubleArray({});
+  if(values.size()!=10) { table->GetEntry("Status").SetString("Rejected: expected 10 gains"); return; }
+  auto candidate=gains_;
+  candidate.p=values[0]; candidate.i=values[1]; candidate.d=values[2];
+  candidate.s=values[3]; candidate.v=values[4]; candidate.a=values[5]; candidate.gravity=values[6];
+  candidate.maxVelocity=values[7]; candidate.maxAcceleration=values[8]; candidate.tolerance=values[9];
+  try {
+    candidate.Validate(joint_);
+    SetGains(candidate);
+    table->GetEntry("Status").SetString("Accepted while disabled");
+  } catch(const std::invalid_argument&) {
+    table->GetEntry("Status").SetString("Rejected: invalid gains; previous gains retained");
+  }
+}
 void Mechanism::SetVelocity(double velocity) {
   Finite(velocity);
   if(control_!=Control::Velocity) profiledVelocity_=Velocity();
@@ -68,7 +104,9 @@ bool Mechanism::AtSetpoint() const {
 }
 void Mechanism::Periodic() {
   constexpr double dt=.02;
+  UpdateLiveTuning();
   inputs_=io_->Read();
+  if(inputLog_) inputLog_->Append(EncodeMotorInputs(inputs_));
   physicalPosition_=externalEncoder_ ? calibration_.Apply(externalEncoder_()) : inputs_.position*units_;
   if(!std::isfinite(physicalPosition_) || !std::isfinite(Velocity())) { Stop(); return; }
   auto publish=[this]{

@@ -1,7 +1,9 @@
 #include "base/Mechanism.h"
+#include <array>
 #include <gtest/gtest.h>
 #include <frc/simulation/DriverStationSim.h>
 #include <hal/HAL.h>
+#include <networktables/NetworkTableInstance.h>
 
 TEST(MechanismConfig, RejectsInvalidMappingAndLimits) {
   base::MotorConfig valid{{1,2},{false,true},2,40,""};
@@ -103,4 +105,33 @@ TEST(MechanismFlywheel, VelocityTargetHasNoJointProfileSpeedCap) {
   base::Flywheel wheel("FlywheelTarget",std::move(io),base::Gains{});
   wheel.SetVelocity(30);
   EXPECT_DOUBLE_EQ(wheel.VelocitySetpoint(),30);
+}
+
+TEST(MechanismTuning, AppliesAtomicValidatedGainsOnlyWhileDisabled) {
+  HAL_Initialize(500,0);
+  frc::sim::DriverStationSim::SetEnabled(false);
+  frc::sim::DriverStationSim::NotifyNewData();
+  auto io=std::make_unique<base::InjectedMotorIO>(); auto* observed=io.get();
+  base::Flywheel wheel("TuningTest",std::move(io),base::Gains{});
+  wheel.EnableLiveTuning();
+  auto entry=nt::NetworkTableInstance::GetDefault().GetTable("TuningTest/Gains")->GetEntry("Values");
+  entry.SetDoubleArray(std::array<double,10>{2,0,0,.1,.2,.3,.4,10,20,.01});
+  wheel.Periodic();
+  EXPECT_DOUBLE_EQ(wheel.GetGains().p,2);
+  EXPECT_DOUBLE_EQ(wheel.GetGains().a,.3);
+  EXPECT_DOUBLE_EQ(observed->requestedVoltage,0);
+  entry.SetDoubleArray(std::array<double,10>{9,0,0,.1,.2,.3,.4,10,-1,.01});
+  wheel.Periodic();
+  EXPECT_DOUBLE_EQ(wheel.GetGains().p,2);
+  EXPECT_DOUBLE_EQ(wheel.GetGains().maxAcceleration,20);
+  frc::sim::DriverStationSim::SetEnabled(true);
+  frc::sim::DriverStationSim::NotifyNewData();
+  entry.SetDoubleArray(std::array<double,10>{5,0,0,.1,.2,.3,.4,10,20,.01});
+  wheel.Periodic();
+  EXPECT_DOUBLE_EQ(wheel.GetGains().p,2);
+  frc::sim::DriverStationSim::SetEnabled(false);
+  frc::sim::DriverStationSim::NotifyNewData();
+  wheel.EnableLiveTuning(false);
+  wheel.Periodic();
+  EXPECT_DOUBLE_EQ(wheel.GetGains().p,2);
 }

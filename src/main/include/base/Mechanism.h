@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <wpi/DataLog.h>
 #include <frc/DigitalInput.h>
 #include <frc2/command/SubsystemBase.h>
 #include <frc2/command/CommandPtr.h>
@@ -72,6 +73,12 @@ class Mechanism : public frc2::SubsystemBase {
   void ResetPosition();
   void SetBrake(bool enabled);
   void SetGains(Gains gains);
+  // Opt-in NT array at <name>/Gains/Values; accepted only while disabled.
+  // Order is published at <name>/Gains/Fields; one array is one atomic candidate.
+  void EnableLiveTuning(bool enabled=true);
+  // Log must outlive this mechanism. Call during initialization, off control threads.
+  void EnableInputLogging(wpi::log::DataLog& log);
+  const Gains& GetGains() const { return gains_; }
   bool AtSetpoint() const;
   bool VelocityControlActive() const { return control_==Control::Velocity; }
   double VelocitySetpoint() const { return target_; }
@@ -95,6 +102,9 @@ class Mechanism : public frc2::SubsystemBase {
   std::function<double()> externalEncoder_;
   EncoderCalibration calibration_;
   MotorInputs inputs_;
+  std::unique_ptr<wpi::log::DoubleArrayLogEntry> inputLog_;
+  bool liveTuning_=false;
+  void UpdateLiveTuning();
   Control control_=Control::Stopped;
 };
 class Flywheel final : public Mechanism {

@@ -1,7 +1,11 @@
 #include "base/Drive.h"
+#include "base/DriveTarget.h"
+#include <frc/Timer.h>
+#include <frc/RobotBase.h>
 #include <array>
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 #include <frc/DriverStation.h>
 #include <ctre/phoenix6/Utils.hpp>
 #include <frc/RobotController.h>
@@ -15,7 +19,36 @@ using namespace units::literals;
 namespace p = ctre::phoenix6;
 namespace s = p::swerve;
 namespace base {
+struct Drive::ControlRequest final : s::requests::SwerveRequest {
+  DriveTarget target;
+  s::requests::ApplyRobotSpeeds velocity;
+  s::requests::SwerveDriveBrake brake;
+  ControlRequest() {
+    velocity.DriveRequestType = s::impl::DriveRequestType::Velocity;
+    velocity.WheelForceFeedforwardsX.resize(4);
+    velocity.WheelForceFeedforwardsY.resize(4);
+  }
+  ctre::phoenix::StatusCode Apply(const ControlParameters& params,
+      std::span<std::unique_ptr<s::impl::SwerveModuleImpl> const> modules) override {
+    const bool enabled = frc::DriverStation::IsEnabled();
+    const auto value = target.Consume(frc::Timer::GetFPGATimestamp().value(), enabled);
+    if (!enabled || (value.teleopOnly && !frc::DriverStation::IsTeleopEnabled())) {
+      for (const auto& module : modules)
+        module->Apply(p::controls::NeutralOut{}, p::controls::NeutralOut{});
+      return ctre::phoenix::StatusCode::OK;
+    }
+    if (value.brake) return brake.Apply(params, modules);
+    velocity.Speeds = DriveTarget::Resolve(value, params.currentPose.Rotation());
+    for (int i=0;i<4;++i) {
+      velocity.WheelForceFeedforwardsX[i] = units::newton_t{value.forceX[i]};
+      velocity.WheelForceFeedforwardsY[i] = units::newton_t{value.forceY[i]};
+    }
+    return velocity.Apply(params, modules);
+  }
+};
 Drive::Drive(DriveConfig config) : config_(std::move(config)) {
+  if (!std::isfinite(config_.odometryHz) || config_.odometryHz < 0)
+    throw std::invalid_argument("Invalid odometry frequency");
   p::configs::TalonFXConfiguration drive, steer;
   drive.CurrentLimits.WithSupplyCurrentLimit(units::ampere_t{config_.driveCurrent}).WithSupplyCurrentLimitEnable(true);
   steer.CurrentLimits.WithStatorCurrentLimit(units::ampere_t{config_.steerCurrent}).WithStatorCurrentLimitEnable(true);
@@ -32,39 +65,113 @@ Drive::Drive(DriveConfig config) : config_(std::move(config)) {
     .WithSteerInertia(units::kilogram_square_meter_t{config_.steerInertia}).WithDriveInertia(units::kilogram_square_meter_t{config_.driveInertia})
     .WithSteerFrictionVoltage(.1_V).WithDriveFrictionVoltage(.1_V);
   auto make = [&](int i) { const auto& m=config_.modules[i]; return factory.CreateModuleConstants(m.steer,m.drive,m.encoder,units::turn_t{m.offsetTurns},units::meter_t{m.xMeters},units::meter_t{m.yMeters},m.driveInverted,m.steerInverted,m.encoderInverted); };
-  native_ = std::make_unique<NativeDrive>(s::SwerveDrivetrainConstants{}.WithCANBusName(config_.bus).WithPigeon2Id(config_.pigeon),make(0),make(1),make(2),make(3));
+  native_ = std::make_unique<NativeDrive>(s::SwerveDrivetrainConstants{}.WithCANBusName(config_.bus).WithPigeon2Id(config_.pigeon),units::hertz_t{config_.odometryHz},make(0),make(1),make(2),make(3));
+  control_ = std::make_unique<ControlRequest>();
+  native_->SetControl(*control_);
+  native_->RegisterTelemetry([this](const auto& state) {
+    // Fixed-size handoff only. Skip a busy consumer instead of delaying native DAQ.
+    if (std::unique_lock lock(snapshotMutex_, std::try_to_lock); lock.owns_lock())
+      snapshot_ = {state.Pose, state.Speeds, state.OdometryPeriod.value(), state.FailedDaqs};
+  });
+  if (frc::RobotBase::IsSimulation()) {
+    simNotifier_ = std::make_unique<frc::Notifier>([this] {
+      native_->UpdateSimState(.004_s, frc::RobotController::GetBatteryVoltage());
+    });
+    simNotifier_->SetName("DriveSimulation");
+    simNotifier_->StartPeriodic(.004_s);
+  }
   SetName("Drive");
 }
-Drive::~Drive() = default;
+Drive::~Drive() {
+  if (simNotifier_) simNotifier_->Stop();
+  simNotifier_.reset();
+  native_->GetOdometryThread().Stop();
+  native_.reset();
+}
 void Drive::Periodic() {
   if (frc::DriverStation::IsDisabled()) {
     auto a=frc::DriverStation::GetAlliance();
     native_->SetOperatorPerspectiveForward(frc::Rotation2d{a && *a==frc::DriverStation::Alliance::kRed ? 180_deg : 0_deg});
     Stop();
   }
-  auto state=native_->GetState();
-  frc::SmartDashboard::PutNumberArray("Drive/Pose",std::array<double,3>{state.Pose.X().value(),state.Pose.Y().value(),state.Pose.Rotation().Degrees().value()});
-  frc::SmartDashboard::PutNumberArray("Drive/Speeds",std::array<double,3>{state.Speeds.vx.value(),state.Speeds.vy.value(),state.Speeds.omega.value()});
+  const double now = frc::Timer::GetFPGATimestamp().value();
+  if (now < nextTelemetry_) return;
+  nextTelemetry_ = now + .1;
+  if (now >= nextBusTelemetry_) {
+    nextBusTelemetry_ = now + 1;
+    const p::CANBus bus{config_.bus};
+    const auto status = bus.GetStatus();
+    frc::SmartDashboard::PutBoolean("Drive/CANFD", bus.IsNetworkFD());
+    frc::SmartDashboard::PutBoolean("Drive/CANStatusOK", status.Status.IsOK());
+    frc::SmartDashboard::PutNumber("Drive/CANUtilization", status.BusUtilization);
+    frc::SmartDashboard::PutNumber("Drive/CANBusOff", status.BusOffCount);
+    frc::SmartDashboard::PutNumber("Drive/CANTxFull", status.TxFullCount);
+    frc::SmartDashboard::PutNumber("Drive/CANReceiveErrors", status.REC);
+    frc::SmartDashboard::PutNumber("Drive/CANTransmitErrors", status.TEC);
+  }
+  Snapshot state;
+  { std::scoped_lock lock(snapshotMutex_); state = snapshot_; }
+  frc::SmartDashboard::PutNumber("Drive/OdometryHz", native_->GetOdometryFrequency().value());
+  frc::SmartDashboard::PutNumber("Drive/OdometryPeriod", state.odometryPeriod);
+  frc::SmartDashboard::PutNumber("Drive/FailedDaqs", state.failedDaqs);
+  frc::SmartDashboard::PutNumberArray("Drive/Pose",std::array<double,3>{state.pose.X().value(),state.pose.Y().value(),state.pose.Rotation().Degrees().value()});
+  frc::SmartDashboard::PutNumberArray("Drive/Speeds",std::array<double,3>{state.speeds.vx.value(),state.speeds.vy.value(),state.speeds.omega.value()});
 }
-void Drive::SimulationPeriodic() { native_->UpdateSimState(.02_s,frc::RobotController::GetBatteryVoltage()); }
-frc::Pose2d Drive::Pose() const { return native_->GetState().Pose; }
-frc::ChassisSpeeds Drive::Speeds() const { return native_->GetState().Speeds; }
-void Drive::ResetPose(const frc::Pose2d& pose) { native_->ResetPose(pose); }
+void Drive::SimulationPeriodic() {
+  // The 4 ms simulation notifier is the sole native plant writer.
+}
+frc::Pose2d Drive::Pose() const { std::scoped_lock lock(snapshotMutex_); return snapshot_.pose; }
+frc::ChassisSpeeds Drive::Speeds() const { std::scoped_lock lock(snapshotMutex_); return snapshot_.speeds; }
+void Drive::ResetPose(const frc::Pose2d& pose) {
+  native_->ResetPose(pose);
+  std::scoped_lock lock(snapshotMutex_);
+  snapshot_.pose = pose;
+}
 void Drive::AddVision(const frc::Pose2d& pose,units::second_t time,std::array<double,3> noise) { native_->AddVisionMeasurement(pose,p::utils::FPGAToCurrentTime(time),noise); }
 void Drive::RunVelocity(const frc::ChassisSpeeds& speeds) {
-  native_->SetControl(s::requests::ApplyRobotSpeeds{}.WithSpeeds(speeds).WithDriveRequestType(s::impl::DriveRequestType::Velocity));
+  DriveTarget::Value value;
+  value.speeds = speeds;
+  value.timestamp = frc::Timer::GetFPGATimestamp().value();
+  control_->target.Publish(value, []{ return frc::DriverStation::IsEnabled(); });
 }
 void Drive::RunVelocity(const frc::ChassisSpeeds& speeds,const pathplanner::DriveFeedforwards& ff) {
-  native_->SetControl(s::requests::ApplyRobotSpeeds{}.WithSpeeds(speeds).WithDriveRequestType(s::impl::DriveRequestType::Velocity).WithWheelForceFeedforwardsX(ff.robotRelativeForcesX).WithWheelForceFeedforwardsY(ff.robotRelativeForcesY));
+  DriveTarget::Value value;
+  value.speeds = speeds;
+  value.timestamp = frc::Timer::GetFPGATimestamp().value();
+  if (ff.robotRelativeForcesX.size() == 4 && ff.robotRelativeForcesY.size() == 4)
+    for (int i=0;i<4;++i) {
+      value.forceX[i] = ff.robotRelativeForcesX[i].value();
+      value.forceY[i] = ff.robotRelativeForcesY[i].value();
+    }
+  control_->target.Publish(value, []{ return frc::DriverStation::IsEnabled(); });
 }
 void Drive::FieldDrive(double x,double y,double omega) {
   if (!frc::DriverStation::IsTeleopEnabled()) { Stop(); return; }
   auto alliance=frc::DriverStation::GetAlliance();
   double sign=alliance && *alliance==frc::DriverStation::Alliance::kRed ? -1 : 1;
-  RunVelocity(frc::ChassisSpeeds::FromFieldRelativeSpeeds(units::meters_per_second_t{x*sign},units::meters_per_second_t{y*sign},units::radians_per_second_t{omega},Pose().Rotation()));
+  DriveTarget::Value value;
+  value.speeds = {units::meters_per_second_t{x*sign}, units::meters_per_second_t{y*sign}, units::radians_per_second_t{omega}};
+  value.fieldRelative = value.teleopOnly = true;
+  value.timestamp = frc::Timer::GetFPGATimestamp().value();
+  control_->target.Publish(value, []{ return frc::DriverStation::IsTeleopEnabled(); });
+}
+void Drive::RunHeading(double x, double y, frc::Rotation2d heading, double kp, double maxOmega) {
+  DriveTarget::Value value;
+  value.speeds = {units::meters_per_second_t{x}, units::meters_per_second_t{y}, units::radians_per_second_t{0}};
+  value.heading = heading;
+  value.headingKP = kp;
+  value.maxOmega = maxOmega;
+  value.headingControl = true;
+  value.timestamp = frc::Timer::GetFPGATimestamp().value();
+  control_->target.Publish(value, []{ return frc::DriverStation::IsEnabled(); });
 }
 void Drive::Stop() { RunVelocity(frc::ChassisSpeeds{}); }
-void Drive::StopWithX() { native_->SetControl(s::requests::SwerveDriveBrake{}); }
+void Drive::StopWithX() {
+  DriveTarget::Value value;
+  value.brake = true;
+  value.timestamp = frc::Timer::GetFPGATimestamp().value();
+  control_->target.Publish(value, []{ return frc::DriverStation::IsEnabled(); });
+}
 void Drive::ConfigureAuto() {
   std::vector<frc::Translation2d> locations;
   for (const auto& m:config_.modules) locations.emplace_back(units::meter_t{m.xMeters},units::meter_t{m.yMeters});
@@ -81,6 +188,19 @@ frc2::CommandPtr Drive::Joystick(std::function<double()> x,std::function<double(
   return frc2::cmd::RunEnd([=,this]{FieldDrive(Deadband(x())*config_.maxSpeed,Deadband(y())*config_.maxSpeed,Deadband(omega())*config_.maxAngularRate);},[this]{Stop();},{this});
 }
 frc2::CommandPtr Drive::Aim(std::function<double()> x,std::function<double()> y,std::function<frc::Rotation2d()> heading) {
-  return frc2::cmd::RunEnd([=,this]{double error=(heading()-Pose().Rotation()).Radians().value(); FieldDrive(Deadband(x())*config_.maxSpeed,Deadband(y())*config_.maxSpeed,std::clamp(5*error,-config_.maxAngularRate,config_.maxAngularRate));},[this]{Stop();},{this});
+  return frc2::cmd::RunEnd([=,this]{
+    if (!frc::DriverStation::IsTeleopEnabled()) { Stop(); return; }
+    auto alliance=frc::DriverStation::GetAlliance();
+    const double sign=alliance && *alliance==frc::DriverStation::Alliance::kRed ? -1 : 1;
+    DriveTarget::Value value;
+    value.speeds = {units::meters_per_second_t{Deadband(x())*config_.maxSpeed*sign},
+                    units::meters_per_second_t{Deadband(y())*config_.maxSpeed*sign}, units::radians_per_second_t{0}};
+    value.heading = heading();
+    value.headingKP = 5;
+    value.maxOmega = config_.maxAngularRate;
+    value.headingControl = value.fieldRelative = value.teleopOnly = true;
+    value.timestamp = frc::Timer::GetFPGATimestamp().value();
+    control_->target.Publish(value, []{ return frc::DriverStation::IsTeleopEnabled(); });
+  },[this]{Stop();},{this});
 }
 }
