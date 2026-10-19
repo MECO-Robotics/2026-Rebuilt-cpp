@@ -41,8 +41,10 @@ async def exercise(args):
         reader = asyncio.create_task(drain())
 
         async def control(enabled, forward=0., turn=0., reset=False):
+            buttons=[False]*10
+            if reset: buttons[args.reset_button-1]=True
             await websocket.send(json.dumps({"type": "Joystick", "device": "0", "data": {
-                ">axes": [0., -forward, 0., 0., -turn, 0.], ">buttons": [False,reset]+[False]*8, ">povs": [-1]}}))
+                ">axes": [0., -forward, 0., 0., -turn, 0.], ">buttons": buttons, ">povs": [-1]}}))
             await websocket.send(json.dumps({"type": "DriverStation", "device": "", "data": {
                 ">enabled": enabled, ">autonomous": False, ">test": False,
                 ">estop": False, ">fms": False, ">ds": True, ">new_data": True}}))
@@ -69,9 +71,10 @@ async def exercise(args):
                 await asyncio.sleep(.02)
             if not instance.isConnected():
                 raise RuntimeError("Local simulator NetworkTables server did not connect")
-            # Base B binding resets heading even while disabled. Hold across several robot loops.
+            # Hold the configured reset binding across several robot loops.
+            # Base B supports disabled reset; season Start requires --reset-enabled.
             for _ in range(6):
-                await control(False, reset=True)
+                await control(args.reset_enabled, reset=True)
                 await asyncio.sleep(.02)
             await control(False)
             initial=await phase("disabled_initial",False,duration=1.)
@@ -105,6 +108,8 @@ def main():
     parser.add_argument("--hal-port",type=int,default=3300)
     parser.add_argument("--nt-port",type=int,default=5810)
     parser.add_argument("--output",type=Path)
+    parser.add_argument("--reset-button",type=int,choices=range(1,11),default=2)
+    parser.add_argument("--reset-enabled",action="store_true")
     parser.add_argument("--max-speed",type=float,default=4.572)
     parser.add_argument("--max-angular-rate",type=float,default=7.)
     args=parser.parse_args()

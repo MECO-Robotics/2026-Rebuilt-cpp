@@ -93,15 +93,23 @@ class SimMotorIO final : public MotorIO {
     if(!std::isfinite(inertia_) || inertia_<=0) throw std::invalid_argument("Invalid output inertia");
   }
   MotorInputs Read() override {
-    // Integrate in 1 ms steps for stability at high gear ratios.
-    for(int step=0;step<20;++step) {
+    // Back-EMF damping grows with gearing squared. Bound alpha*dt to .25;
+    // a fixed 1 ms Euler step diverges for the 105:1 hood's output inertia.
+    const double alpha=(kt_*config_.ids.size()*config_.gearRatio*config_.gearRatio/
+                        (resistance_*kv_)+.0001)/inertia_;
+    const double requestedSteps=std::max(20.,std::ceil(.02*alpha/.25));
+    if(!std::isfinite(requestedSteps) || requestedSteps>100000)
+      throw std::invalid_argument("Motor simulation stiffness exceeds supported substep bound");
+    const int steps=static_cast<int>(requestedSteps);
+    const double dt=.02/steps;
+    for(int step=0;step<steps;++step) {
       double rotorSpeed=velocity_*config_.gearRatio;
       double current=std::clamp((voltage_-rotorSpeed/kv_)/resistance_,
                                -static_cast<double>(config_.currentLimit),static_cast<double>(config_.currentLimit));
       if(!brake_ && std::abs(voltage_)<1e-9) current=0;
       current_=current;
-      velocity_+=(kt_*current*config_.ids.size()*config_.gearRatio-.0001*velocity_)/inertia_*.001;
-      position_+=velocity_*.001;
+      velocity_+=(kt_*current*config_.ids.size()*config_.gearRatio-.0001*velocity_)/inertia_*dt;
+      position_+=velocity_*dt;
     }
     return {position_/(2*std::numbers::pi),velocity_/(2*std::numbers::pi),voltage_,12,std::abs(current_)*config_.ids.size(),true};
   }

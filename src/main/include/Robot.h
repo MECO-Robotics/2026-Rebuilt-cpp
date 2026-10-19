@@ -8,6 +8,8 @@ class Robot : public frc::TimedRobot {
   void AutonomousInit() override;
   void TeleopInit() override;
   void TestInit() override;
+  void SimulationPeriodic() override;
+  void DisabledInit() override;
  private:
   RobotContainer container_;
   frc2::Command* autonomous_ = nullptr;

@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-19",
+  "upstream_base": "MECO-Robotics/2026_Base_Bot-cpp",
+  "validated_base_ancestor": "3ca35f7",
+  "base_build_and_native_simulation_passed_before_season_resumed": true,
+  "build": {
+    "command": "./gradlew build --max-workers=2 --console=plain",
+    "passed": true,
+    "targets": [
+      "linuxx86-64Debug",
+      "linuxx86-64Release",
+      "linuxathenaDebug",
+      "linuxathenaRelease"
+    ],
+    "native_tests_debug": 29,
+    "native_tests_release": 29,
+    "raw_log": "artifacts/gradle-build.log"
+  },
+  "native_simulation": {
+    "drive": "artifacts/season-drive-smoke.json",
+    "mechanisms": "artifacts/season-mechanism-smoke.json",
+    "choreo_auto": "artifacts/season-auto-smoke.json",
+    "all_passed": true,
+    "choreo_endpoint_error_meters": 0.345843519567141,
+    "choreo_acceptance_bound_meters": 0.4
+  },
+  "hardware_deployed": false,
+  "hardware_motion_tested": false,
+  "port_differences": "docs/cpp-port-status.md"
+}

@@ -71,10 +71,19 @@ void Mechanism::Periodic() {
   inputs_=io_->Read();
   physicalPosition_=externalEncoder_ ? calibration_.Apply(externalEncoder_()) : inputs_.position*units_;
   if(!std::isfinite(physicalPosition_) || !std::isfinite(Velocity())) { Stop(); return; }
+  auto publish=[this]{
+  auto prefix=GetName()+"/";
+  frc::SmartDashboard::PutNumber(prefix+"Position",Position());
+  frc::SmartDashboard::PutNumber(prefix+"Velocity",Velocity());
+  frc::SmartDashboard::PutNumber(prefix+"Voltage",inputs_.voltage);
+  frc::SmartDashboard::PutNumber(prefix+"Target",joint_ ? DesiredPosition() : target_);
+  frc::SmartDashboard::PutBoolean(prefix+"Connected",inputs_.connected);
+  };
   if(frc::DriverStation::IsDisabled()) {
     integral_=0; previousError_=0;
     profiledPosition_=physicalPosition_; profiledVelocity_=Velocity();
     io_->SetVoltage(0);
+    publish();
     return;
   }
   double volts=0;
@@ -102,11 +111,7 @@ void Mechanism::Periodic() {
   }
   if(joint_ && ((physicalPosition_<=gains_.minimum && volts<0) || (physicalPosition_>=gains_.maximum && volts>0))) volts=0;
   io_->SetVoltage(std::clamp(volts,-12.,12.));
-  auto prefix=GetName()+"/";
-  frc::SmartDashboard::PutNumber(prefix+"Position",Position());
-  frc::SmartDashboard::PutNumber(prefix+"Velocity",Velocity());
-  frc::SmartDashboard::PutNumber(prefix+"Target",joint_ ? DesiredPosition() : target_);
-  frc::SmartDashboard::PutBoolean(prefix+"Connected",inputs_.connected);
+  publish();
 }
 frc2::CommandPtr Mechanism::VelocityCommand(std::function<double()> supplier) {
   return frc2::cmd::RunEnd([this,supplier]{SetVelocity(supplier());},[this]{Stop();},{this});

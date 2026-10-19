@@ -109,3 +109,15 @@ model {
         }
     }
 }
+
+// Gradle's native test runner forces its working directory to outputDir inside exec().
+// Stage real deployed assets there so WPILib's desktop deploy path resolves normally.
+tasks.withType(org.gradle.nativeplatform.test.tasks.RunTestExecutable).configureEach {
+    inputs.dir('src/main/deploy')
+    doFirst {
+        project.copy {
+            from('src/main/deploy')
+            into(new File(outputDir, 'src/main/deploy'))
+        }
+    }
+}

@@ -26,10 +26,10 @@ Drive::Drive(DriveConfig config) : config_(std::move(config)) {
     .WithSteerMotorGains(p::configs::Slot0Configs{}.WithKP(config_.steerKP).WithKD(config_.steerKD).WithKS(config_.steerKS).WithKV(config_.steerKV))
     .WithDriveMotorClosedLoopOutput(s::ClosedLoopOutputType::Voltage).WithSteerMotorClosedLoopOutput(s::ClosedLoopOutputType::Voltage)
     .WithDriveMotorType(s::DriveMotorArrangement::TalonFX_Integrated).WithSteerMotorType(s::SteerMotorArrangement::TalonFX_Integrated)
-    .WithFeedbackSource(s::SteerFeedbackType::RemoteCANcoder)
-    .WithSlipCurrent(units::ampere_t{config_.slipCurrent}).WithSpeedAt12Volts(units::meters_per_second_t{config_.maxSpeed})
+    .WithFeedbackSource(config_.fusedEncoder ? s::SteerFeedbackType::FusedCANcoder : s::SteerFeedbackType::RemoteCANcoder)
+    .WithSlipCurrent(units::ampere_t{config_.slipCurrent}).WithSpeedAt12Volts(units::meters_per_second_t{config_.speedAt12Volts})
     .WithDriveMotorInitialConfigs(drive).WithSteerMotorInitialConfigs(steer)
-    .WithSteerInertia(units::kilogram_square_meter_t{.004}).WithDriveInertia(units::kilogram_square_meter_t{.025})
+    .WithSteerInertia(units::kilogram_square_meter_t{config_.steerInertia}).WithDriveInertia(units::kilogram_square_meter_t{config_.driveInertia})
     .WithSteerFrictionVoltage(.1_V).WithDriveFrictionVoltage(.1_V);
   auto make = [&](int i) { const auto& m=config_.modules[i]; return factory.CreateModuleConstants(m.steer,m.drive,m.encoder,units::turn_t{m.offsetTurns},units::meter_t{m.xMeters},units::meter_t{m.yMeters},m.driveInverted,m.steerInverted,m.encoderInverted); };
   native_ = std::make_unique<NativeDrive>(s::SwerveDrivetrainConstants{}.WithCANBusName(config_.bus).WithPigeon2Id(config_.pigeon),make(0),make(1),make(2),make(3));
@@ -70,9 +70,10 @@ void Drive::ConfigureAuto() {
   for (const auto& m:config_.modules) locations.emplace_back(units::meter_t{m.xMeters},units::meter_t{m.yMeters});
   pathplanner::RobotConfig rc{units::kilogram_t{config_.massKg},units::kilogram_square_meter_t{config_.moi},
     pathplanner::ModuleConfig{units::meter_t{config_.wheelRadius},units::meters_per_second_t{config_.maxSpeed},config_.cof,frc::DCMotor::KrakenX60FOC(1).WithReduction(config_.driveRatio),units::ampere_t{config_.driveCurrent},1},locations};
+  if(config_.autoConfigFromGUI) rc=pathplanner::RobotConfig::fromGUISettings();
   pathplanner::AutoBuilder::configure([this]{return Pose();},[this](const auto& pose){ResetPose(pose);},[this]{return Speeds();},
     [this](const frc::ChassisSpeeds& speed,const pathplanner::DriveFeedforwards& ff){RunVelocity(speed,ff);},
-    std::make_shared<pathplanner::PPHolonomicDriveController>(pathplanner::PIDConstants{5,0,0},pathplanner::PIDConstants{5,0,0}),rc,
+    std::make_shared<pathplanner::PPHolonomicDriveController>(pathplanner::PIDConstants{config_.autoTranslationKP,0,0},pathplanner::PIDConstants{config_.autoRotationKP,0,0}),rc,
     []{auto a=frc::DriverStation::GetAlliance(); return a && *a==frc::DriverStation::Alliance::kRed;},this);
 }
 static double Deadband(double value) { return std::abs(value)<.1 ? 0 : std::copysign((std::abs(value)-.1)/.9,value); }
