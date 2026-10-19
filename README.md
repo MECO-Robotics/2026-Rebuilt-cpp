@@ -6,6 +6,8 @@ Native WPILib 2026 command-based C++ port of the reusable Java `2026_Base_Bot` a
 
 For architecture-aware Codex assistance, use the repository skill [`frc-base-project`](.agents/skills/frc-base-project/SKILL.md), or invoke `$frc-base-project`. Test guidance lives in `AGENTS.md`.
 
+For device configuration, commissioning, and diagnosis, use [`frc-hardware`](.agents/skills/frc-hardware/SKILL.md) or invoke `$frc-hardware`.
+
 Install WPILib 2026.2.1 with its C++ toolchains and Java 17+. From this folder:
 
 ```sh
