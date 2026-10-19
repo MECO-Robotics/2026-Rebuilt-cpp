@@ -17,6 +17,8 @@ struct ModuleConfig {
 struct DriveConfig {
   std::string bus = "rio";
   int pigeon = 0;
+  // 0 selects Phoenix defaults: 250 Hz CAN FD, 100 Hz CAN 2.0.
+  double odometryHz = 0;
   double driveRatio = 6.122448979591837, steerRatio = 150.0 / 7.0, couplingRatio = 0;
   double wheelRadius = 0.0508, maxSpeed = 4.572, maxAngularRate = 7;
   // Phoenix native swerve drive gains use rotor turns; Java used output-wheel turns.
@@ -42,6 +44,8 @@ class Drive : public frc2::SubsystemBase {
   void RunVelocity(const frc::ChassisSpeeds& speeds);
   void RunVelocity(const frc::ChassisSpeeds& speeds, const pathplanner::DriveFeedforwards& ff);
   void FieldDrive(double x, double y, double omega);
+  // Robot-relative translation; heading feedback resolves on native control ticks.
+  void RunHeading(double x, double y, frc::Rotation2d heading, double kp, double maxOmega);
   void Stop();
   void StopWithX();
   void ConfigureAuto();
@@ -50,7 +54,9 @@ class Drive : public frc2::SubsystemBase {
   const DriveConfig& Config() const { return config_; }
  private:
   using NativeDrive = ctre::phoenix6::swerve::SwerveDrivetrain<ctre::phoenix6::hardware::TalonFX,ctre::phoenix6::hardware::TalonFX,ctre::phoenix6::hardware::CANcoder>;
+  struct ControlRequest;
   DriveConfig config_;
+  std::unique_ptr<ControlRequest> control_;
   std::unique_ptr<NativeDrive> native_;
 };
 }
