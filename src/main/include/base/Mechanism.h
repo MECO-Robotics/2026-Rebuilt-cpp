@@ -72,6 +72,10 @@ class Mechanism : public frc2::SubsystemBase {
   void ResetPosition();
   void SetBrake(bool enabled);
   void SetGains(Gains gains);
+  // Opt-in NT array at <name>/Gains/Values; accepted only while disabled.
+  // Order is published at <name>/Gains/Fields; one array is one atomic candidate.
+  void EnableLiveTuning(bool enabled=true);
+  const Gains& GetGains() const { return gains_; }
   bool AtSetpoint() const;
   bool VelocityControlActive() const { return control_==Control::Velocity; }
   double VelocitySetpoint() const { return target_; }
@@ -95,6 +99,8 @@ class Mechanism : public frc2::SubsystemBase {
   std::function<double()> externalEncoder_;
   EncoderCalibration calibration_;
   MotorInputs inputs_;
+  bool liveTuning_=false;
+  void UpdateLiveTuning();
   Control control_=Control::Stopped;
 };
 class Flywheel final : public Mechanism {
