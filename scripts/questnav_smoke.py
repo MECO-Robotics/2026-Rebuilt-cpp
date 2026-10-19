@@ -69,6 +69,7 @@ async def exercise(args):
     subscriptions = {
         "ready": dashboard.getBooleanTopic("QuestNav/PoseReady").subscribe(False),
         "connected": dashboard.getBooleanTopic("QuestNav/Connected").subscribe(False),
+        "combined": dashboard.getBooleanTopic("QuestNav/CombinedConnected").subscribe(False),
         "aligned": dashboard.getBooleanTopic("QuestNav/FieldAligned").subscribe(False),
         "combined": dashboard.getBooleanTopic("QuestNav/CombinedConnected").subscribe(False),
         "fallback": dashboard.getBooleanTopic("QuestNav/BypassingToAbsolute").subscribe(False),
@@ -128,13 +129,14 @@ async def exercise(args):
             version.set("2026-2.2.0")
             device.set(scalar(1, 3) + scalar(3, 85))
             sample = await phase("absolute_fallback", absolute=True)
-            require("absolute_fallback_without_quest", sample["fallback"] and not sample["ready"] and sample["combined"])
+            require("absolute_fallback_without_quest", sample["fallback"] and not sample["ready"] and sample["combined"] and sample["combined"])
             sample = await phase("aligned_tracking", absolute=True, inertial=True)
             require("field_aligned_tracking", sample["ready"] and sample["aligned"] and sample["connected"] and not sample["fallback"])
             require("pinned_version_and_battery_diagnostics", sample["versionMatches"] and sample["battery"] == 85)
             # Drain the last absolute capture before imposing a synthetic step;
             # no old absolute frame should align away that subsequent motion.
             await phase("absolute_capture_drained", seconds=.1, inertial=True)
+            await phase("absolute_alignment_settled", seconds=.1, inertial=True)
             sample = await phase("relative_headset_motion", inertial=True, robot_x=3.4)
             require("mounted_headset_motion_fused", len(sample["pose"]) == 3 and
                     abs(sample["pose"][0]-3.4) < .35 and abs(sample["pose"][1]-2.) < .35)
@@ -154,6 +156,7 @@ async def exercise(args):
             # Driver reset is intentionally not exercised: the source binding is
             # teleop-enabled only. This fixture keeps the DS disabled throughout.
             result["resetObserver"] = "Not exercised; driver reset requires enabled teleop"
+            result["passed"] = True
             result["passed"] = all(result["checks"].values())
         finally:
             await disabled()
