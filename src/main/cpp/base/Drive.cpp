@@ -1,4 +1,5 @@
 #include "base/Drive.h"
+#include "base/AdvantageScope.h"
 #include <ctre/phoenix6/swerve/SwerveDrivetrain.hpp>
 #include <ctre/phoenix6/TalonFX.hpp>
 #include <ctre/phoenix6/CANcoder.hpp>
@@ -78,8 +79,20 @@ Drive::Drive(DriveConfig config) : config_(std::move(config)) {
   native_->SetControl(*control_);
   native_->RegisterTelemetry([this](const auto& state) {
     // Fixed-size handoff only. Skip a busy consumer instead of delaying native DAQ.
-    if (std::unique_lock lock(snapshotMutex_, std::try_to_lock); lock.owns_lock())
-      snapshot_ = {state.Pose, state.Speeds, state.OdometryPeriod.value(), state.FailedDaqs};
+    if (std::unique_lock lock(snapshotMutex_, std::try_to_lock); lock.owns_lock()) {
+      snapshot_.pose = state.Pose;
+      snapshot_.speeds = state.Speeds;
+      snapshot_.odometryPeriod = state.OdometryPeriod.value();
+      snapshot_.failedDaqs = state.FailedDaqs;
+      snapshot_.timestampUs = static_cast<int64_t>(p::utils::CurrentTimeToFPGATime(state.Timestamp).value()*1e6);
+      if (state.ModuleStates.size()==4 && state.ModuleTargets.size()==4) {
+        std::copy_n(state.ModuleStates.begin(),4,snapshot_.measured.begin());
+        std::copy_n(state.ModuleTargets.begin(),4,snapshot_.targets.begin());
+      } else {
+        snapshot_.measured = {};
+        snapshot_.targets = {};
+      }
+    }
   });
   if (frc::RobotBase::IsSimulation()) {
     simNotifier_ = std::make_unique<frc::Notifier>([this] {
@@ -88,6 +101,7 @@ Drive::Drive(DriveConfig config) : config_(std::move(config)) {
     simNotifier_->SetName("DriveSimulation");
     simNotifier_->StartPeriodic(.004_s);
   }
+  telemetry_ = std::make_unique<DriveTelemetry>();
   SetName("Drive");
 }
 Drive::~Drive() {
@@ -119,6 +133,7 @@ void Drive::Periodic() {
   }
   Snapshot state;
   { std::scoped_lock lock(snapshotMutex_); state = snapshot_; }
+  telemetry_->Publish(state.pose,state.speeds,state.measured,state.targets,state.timestampUs);
   frc::SmartDashboard::PutNumber("Drive/OdometryHz", native_->GetOdometryFrequency().value());
   frc::SmartDashboard::PutNumber("Drive/OdometryPeriod", state.odometryPeriod);
   frc::SmartDashboard::PutNumber("Drive/FailedDaqs", state.failedDaqs);
