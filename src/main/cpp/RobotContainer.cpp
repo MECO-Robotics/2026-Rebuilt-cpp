@@ -122,7 +122,7 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
  autoChooser_.AddOption("You better hit the A stop before this -Manny (none)",seasonAutos_[2].get());
  frc::SmartDashboard::PutData("Auto Choices",&autoChooser_);
  checks_.ConfigureRequirements({&drive_,&rack_,&hood_,&shooter_,&intake_,&conveyor_,&bottom_,&top_});
- season::ConfigureSystemChecks(checks_,drive_,rack_,hood_,shooter_,{{"intake",&intake_},{"conveyor",&conveyor_},{"bottom-indexer",&bottom_},{"top-indexer",&top_}},[this]{return vision_.Connected()&&quest_.Connected(frc::Timer::GetFPGATimestamp());});
+ season::ConfigureSystemChecks(checks_,drive_,rack_,hood_,shooter_,{{"intake",&intake_},{"conveyor",&conveyor_},{"bottom-indexer",&bottom_},{"top-indexer",&top_}},[this]{return VisionConnected();});
 }
 season::ShotTarget RobotContainer::SelectTarget(){
  auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed)==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;
@@ -177,6 +177,7 @@ void RobotContainer::Periodic(){
    frc::SmartDashboard::PutBoolean("QuestNav/PoseReady",questReady);
    frc::SmartDashboard::PutBoolean("QuestNav/BypassingToAbsolute",!questReady);
    frc::SmartDashboard::PutBoolean("QuestNav/AbsoluteConnected",vision_.Connected());
+   frc::SmartDashboard::PutBoolean("QuestNav/CombinedConnected",VisionConnected());
    frc::SmartDashboard::PutNumber("QuestNav/RejectedFrames",quest_.RejectedFrames());
    frc::SmartDashboard::PutNumber("QuestNav/DecodeFailures",questTransport_.DecodeFailures());
    frc::SmartDashboard::PutNumber("QuestNav/DroppedAbsoluteFrames",droppedAbsolute_);
@@ -193,4 +194,8 @@ void RobotContainer::Periodic(){
 }
 void RobotContainer::ResetLocalization(const frc::Pose2d& pose){
  drive_.ResetPose(pose);  // Shared observer also handles AutoBuilder/Choreo resets.
+}
+bool RobotContainer::VisionConnected() const {
+ // Java VisionIOQuestNav keeps the absolute link available during Quest loss.
+ return vision_.Connected() || quest_.Connected(frc::Timer::GetFPGATimestamp());
 }

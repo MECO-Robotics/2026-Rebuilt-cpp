@@ -42,6 +42,7 @@ class RobotContainer {
   frc::SendableChooser<frc2::Command*> autoChooser_;
   std::vector<frc2::CommandPtr> seasonAutos_;
   season::Mechanisms Mechanisms();
+  bool VisionConnected() const;
   season::ShotTarget SelectTarget();
   frc2::CommandPtr HubShot(bool ownDrive=true,bool requireVision=false);
 };
