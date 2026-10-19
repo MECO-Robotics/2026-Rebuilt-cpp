@@ -1,4 +1,5 @@
 #include "base/Mechanism.h"
+#include "base/MotorInputLog.h"
 #include <array>
 #include <algorithm>
 #include <numbers>
@@ -44,6 +45,9 @@ Mechanism::Mechanism(std::string name, std::unique_ptr<MotorIO> io, Gains gains,
   gains_.Validate(joint_); calibration_.Validate(); SetName(name);
 }
 void Mechanism::SetGains(Gains gains) { gains.Validate(joint_); gains_=gains; maxVelocity_=gains.maxVelocity; maxAcceleration_=gains.maxAcceleration; }
+void Mechanism::EnableInputLogging(wpi::log::DataLog& log) {
+  inputLog_=std::make_unique<wpi::log::DoubleArrayLogEntry>(log,GetName()+"/MotorInputs",kMotorInputSchema);
+}
 void Mechanism::EnableLiveTuning(bool enabled) {
   liveTuning_=enabled;
   if(!enabled) return;
@@ -102,6 +106,7 @@ void Mechanism::Periodic() {
   constexpr double dt=.02;
   UpdateLiveTuning();
   inputs_=io_->Read();
+  if(inputLog_) inputLog_->Append(EncodeMotorInputs(inputs_));
   physicalPosition_=externalEncoder_ ? calibration_.Apply(externalEncoder_()) : inputs_.position*units_;
   if(!std::isfinite(physicalPosition_) || !std::isfinite(Velocity())) { Stop(); return; }
   if(frc::DriverStation::IsDisabled()) {
