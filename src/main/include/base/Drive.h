@@ -6,9 +6,10 @@
 #include <string>
 #include <frc2/command/SubsystemBase.h>
 #include <frc2/command/CommandPtr.h>
-#include <ctre/phoenix6/swerve/SwerveDrivetrain.hpp>
-#include <ctre/phoenix6/TalonFX.hpp>
-#include <ctre/phoenix6/CANcoder.hpp>
+#include <functional>
+#include <frc/geometry/Pose2d.h>
+#include <frc/kinematics/ChassisSpeeds.h>
+#include <units/time.h>
 #include <pathplanner/lib/util/DriveFeedforwards.h>
 namespace base {
 struct ModuleConfig {
@@ -29,7 +30,8 @@ struct DriveConfig {
   double steerKP = 25, steerKD = 0, steerKS = 0, steerKV = 2.5;
   double driveCurrent = 40, steerCurrent = 40, slipCurrent = 50;
   double massKg = 74.088, moi = 6.883, cof = 1.2;
-  double speedAt12Volts = 4.572, driveInertia = .025, steerInertia = .004;
+  // 0 retains maxSpeed as the native speed-at-12V model value.
+  double speedAt12Volts = 0, driveInertia = .025, steerInertia = .004;
   double autoTranslationKP = 5, autoRotationKP = 5;
   bool fusedEncoder = false, autoConfigFromGUI = false;
   std::array<ModuleConfig, 4> modules{{
@@ -45,6 +47,9 @@ class Drive : public frc2::SubsystemBase {
   frc::Pose2d Pose() const;
   frc::ChassisSpeeds Speeds() const;
   void ResetPose(const frc::Pose2d& pose);
+  // Install during container initialization. All reset APIs run on robot thread;
+  // the observer may realign external estimators but must not call ResetPose.
+  void SetPoseResetCallback(std::function<void(const frc::Pose2d&)> callback);
   void AddVision(const frc::Pose2d& pose, units::second_t time, std::array<double,3> noise);
   void RunVelocity(const frc::ChassisSpeeds& speeds);
   void RunVelocity(const frc::ChassisSpeeds& speeds, const pathplanner::DriveFeedforwards& ff);
@@ -58,9 +63,10 @@ class Drive : public frc2::SubsystemBase {
   frc2::CommandPtr Aim(std::function<double()> x, std::function<double()> y, std::function<frc::Rotation2d()> heading);
   const DriveConfig& Config() const { return config_; }
  private:
-  using NativeDrive = ctre::phoenix6::swerve::SwerveDrivetrain<ctre::phoenix6::hardware::TalonFX,ctre::phoenix6::hardware::TalonFX,ctre::phoenix6::hardware::CANcoder>;
+  struct NativeDrive;
   struct ControlRequest;
   DriveConfig config_;
+  std::function<void(const frc::Pose2d&)> poseResetCallback_;
   struct Snapshot {
     frc::Pose2d pose;
     frc::ChassisSpeeds speeds;

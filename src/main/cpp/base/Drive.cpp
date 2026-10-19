@@ -1,4 +1,7 @@
 #include "base/Drive.h"
+#include <ctre/phoenix6/swerve/SwerveDrivetrain.hpp>
+#include <ctre/phoenix6/TalonFX.hpp>
+#include <ctre/phoenix6/CANcoder.hpp>
 #include "base/DriveTarget.h"
 #include <frc/Timer.h>
 #include <frc/RobotBase.h>
@@ -19,6 +22,11 @@ using namespace units::literals;
 namespace p = ctre::phoenix6;
 namespace s = p::swerve;
 namespace base {
+// Vendor hardware and estimator implementation stays behind the public API.
+struct Drive::NativeDrive : s::SwerveDrivetrain<p::hardware::TalonFX, p::hardware::TalonFX, p::hardware::CANcoder> {
+  using Parent = s::SwerveDrivetrain<p::hardware::TalonFX, p::hardware::TalonFX, p::hardware::CANcoder>;
+  using Parent::Parent;
+};
 struct Drive::ControlRequest final : s::requests::SwerveRequest {
   DriveTarget target;
   s::requests::ApplyRobotSpeeds velocity;
@@ -60,7 +68,7 @@ Drive::Drive(DriveConfig config) : config_(std::move(config)) {
     .WithDriveMotorClosedLoopOutput(s::ClosedLoopOutputType::Voltage).WithSteerMotorClosedLoopOutput(s::ClosedLoopOutputType::Voltage)
     .WithDriveMotorType(s::DriveMotorArrangement::TalonFX_Integrated).WithSteerMotorType(s::SteerMotorArrangement::TalonFX_Integrated)
     .WithFeedbackSource(config_.fusedEncoder ? s::SteerFeedbackType::FusedCANcoder : s::SteerFeedbackType::RemoteCANcoder)
-    .WithSlipCurrent(units::ampere_t{config_.slipCurrent}).WithSpeedAt12Volts(units::meters_per_second_t{config_.speedAt12Volts})
+    .WithSlipCurrent(units::ampere_t{config_.slipCurrent}).WithSpeedAt12Volts(units::meters_per_second_t{config_.speedAt12Volts > 0 ? config_.speedAt12Volts : config_.maxSpeed})
     .WithDriveMotorInitialConfigs(drive).WithSteerMotorInitialConfigs(steer)
     .WithSteerInertia(units::kilogram_square_meter_t{config_.steerInertia}).WithDriveInertia(units::kilogram_square_meter_t{config_.driveInertia})
     .WithSteerFrictionVoltage(.1_V).WithDriveFrictionVoltage(.1_V);
@@ -124,8 +132,11 @@ frc::Pose2d Drive::Pose() const { std::scoped_lock lock(snapshotMutex_); return 
 frc::ChassisSpeeds Drive::Speeds() const { std::scoped_lock lock(snapshotMutex_); return snapshot_.speeds; }
 void Drive::ResetPose(const frc::Pose2d& pose) {
   native_->ResetPose(pose);
-  std::scoped_lock lock(snapshotMutex_);
-  snapshot_.pose = pose;
+  { std::scoped_lock lock(snapshotMutex_); snapshot_.pose = pose; }
+  if (poseResetCallback_) poseResetCallback_(pose);
+}
+void Drive::SetPoseResetCallback(std::function<void(const frc::Pose2d&)> callback) {
+  poseResetCallback_ = std::move(callback);
 }
 void Drive::AddVision(const frc::Pose2d& pose,units::second_t time,std::array<double,3> noise) { native_->AddVisionMeasurement(pose,p::utils::FPGAToCurrentTime(time),noise); }
 void Drive::RunVelocity(const frc::ChassisSpeeds& speeds) {

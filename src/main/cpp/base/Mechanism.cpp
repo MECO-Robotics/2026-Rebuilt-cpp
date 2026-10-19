@@ -72,7 +72,10 @@ void Mechanism::UpdateLiveTuning() {
   candidate.maxVelocity=values[7]; candidate.maxAcceleration=values[8]; candidate.tolerance=values[9];
   try {
     candidate.Validate(joint_);
-    SetGains(candidate);
+    const std::array<double,10> current{gains_.p,gains_.i,gains_.d,gains_.s,gains_.v,
+        gains_.a,gains_.gravity,gains_.maxVelocity,gains_.maxAcceleration,gains_.tolerance};
+    // An unchanged dashboard must not reset SetPositionDynamic's profile constraints.
+    if(!std::equal(values.begin(),values.end(),current.begin())) SetGains(candidate);
     table->GetEntry("Status").SetString("Accepted while disabled");
   } catch(const std::invalid_argument&) {
     table->GetEntry("Status").SetString("Rejected: invalid gains; previous gains retained");

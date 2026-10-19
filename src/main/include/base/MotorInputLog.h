@@ -15,6 +15,7 @@ inline constexpr std::string_view kMotorInputSchema=
 inline std::array<double,6> EncodeMotorInputs(const MotorInputs& input) {
   return {input.position,input.velocity,input.voltage,input.supplyVoltage,input.current,input.connected ? 1. : 0.};
 }
+// Nonfinite sensor readings are retained to reproduce the control safety response.
 // Offline only: allocations and sorting are intentionally outside control loops.
 // The returned vector must outlive ReplayMotorIO's non-owning span.
 inline std::vector<MotorReplaySample> ReadMotorInputLog(const wpi::log::DataLogReader& log,
@@ -33,7 +34,6 @@ inline std::vector<MotorReplaySample> ReadMotorInputLog(const wpi::log::DataLogR
     } else if(record.GetEntry()==entry) {
       std::vector<double> values;
       if(!record.GetDoubleArray(&values) || values.size()!=6 ||
-          !std::all_of(values.begin(),values.end(),[](double value){return std::isfinite(value);}) ||
           (values[5]!=0 && values[5]!=1) || record.GetTimestamp()<0)
         throw std::invalid_argument("Malformed motor input record");
       samples.push_back({record.GetTimestamp(),{values[0],values[1],values[2],values[3],values[4],values[5]!=0}});

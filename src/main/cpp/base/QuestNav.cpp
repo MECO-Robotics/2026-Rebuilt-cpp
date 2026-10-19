@@ -33,6 +33,7 @@ bool QuestNav::Connected(units::second_t now) const {
 }
 void QuestNav::InvalidateAlignment() {
   aligned_ = false;
+  fieldValid_ = false;
   count_ = index_ = 0;
   offset_ = frc::Translation3d{};
   yawOffset_ = frc::Rotation3d{};
@@ -40,6 +41,7 @@ void QuestNav::InvalidateAlignment() {
 std::optional<QuestNavObservation> QuestNav::Update(
     const QuestNavFrame& frame, units::second_t now,
     std::optional<QuestNavObservation> absolute) {
+  fieldValid_ = false;
   if (frame.restarted) InvalidateAlignment();
   tracking_ = frame.tracking;
   if (!frame.tracking || !Finite(frame.headsetPose) || !std::isfinite(now.value()) ||
@@ -76,6 +78,7 @@ std::optional<QuestNavObservation> QuestNav::Update(
   const frc::Pose3d pose{lastRaw_.Translation().RotateBy(yawOffset_) + offset_,
       lastRaw_.Rotation() + yawOffset_};
   if (!ValidFieldPose(pose)) { ++rejected_; return std::nullopt; }
+  fieldValid_ = true;
   return QuestNavObservation{pose.ToPose2d(), frame.timestamp};
 }
 bool QuestNav::ResetPose(const frc::Pose2d& fieldPose, units::second_t now) {
@@ -85,6 +88,7 @@ bool QuestNav::ResetPose(const frc::Pose2d& fieldPose, units::second_t now) {
       fieldPose.Rotation().Radians() - lastRaw_.Rotation().Z()};
   offset_ = frc::Pose3d{fieldPose}.Translation() - lastRaw_.Translation().RotateBy(yawOffset_);
   aligned_ = true;
+  fieldValid_ = true;
   return true;
 }
 }
