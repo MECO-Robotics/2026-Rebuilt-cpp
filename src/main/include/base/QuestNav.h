@@ -41,6 +41,9 @@ class QuestNav {
   void InvalidateAlignment();
   bool Initialized() const { return aligned_; }
   bool Connected(units::second_t now) const;
+  // Readiness additionally requires the latest transformed field pose to pass
+  // bounds/finite validation; a live headset alone is insufficient.
+  bool Ready(units::second_t now) const { return aligned_ && fieldValid_ && Connected(now); }
   units::second_t LastAbsoluteTimestamp() const { return lastAbsoluteTimestamp_; }
   unsigned RejectedFrames() const { return rejected_; }
  private:
@@ -57,6 +60,7 @@ class QuestNav {
   unsigned rejected_ = 0;
   bool aligned_ = false;
   bool tracking_ = false;
+  bool fieldValid_ = false;
 };
 }
 

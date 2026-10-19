@@ -121,3 +121,18 @@ TEST(QuestNavTransport, NativeNtInjectionKeepsCaptureTimeAndDetectsRestart) {
   instance.StopLocal();
   nt::NetworkTableInstance::Destroy(instance);
 }
+TEST(QuestNav, RejectedFieldPoseCannotRemainReadyDespiteLiveTracking) {
+  base::QuestNav quest;
+  const frc::Pose3d raw{1_m, 1_m, 0_m, frc::Rotation3d{}};
+  ASSERT_TRUE(quest.Update({raw, 1_s, true}, 1_s,
+      base::QuestNavObservation{frc::Pose2d{2_m, 2_m, frc::Rotation2d{}}, 1_s}));
+  ASSERT_TRUE(quest.Ready(1_s));
+  EXPECT_FALSE(quest.Update({frc::Pose3d{30_m, 1_m, 0_m, frc::Rotation3d{}}, 1.02_s, true}, 1.02_s));
+  EXPECT_TRUE(quest.Connected(1.02_s));
+  EXPECT_FALSE(quest.Ready(1.02_s));
+  // Explicit reset can recover a bad field transform while raw tracking works.
+  ASSERT_TRUE(quest.ResetPose(frc::Pose2d{2_m, 2_m, frc::Rotation2d{}}, 1.02_s));
+  EXPECT_TRUE(quest.Ready(1.02_s));
+  quest.InvalidateAlignment();
+  EXPECT_FALSE(quest.Ready(1.02_s));
+}
