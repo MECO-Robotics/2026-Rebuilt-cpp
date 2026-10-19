@@ -1,0 +1,26 @@
+{
+  "transport": "127.0.0.1 HAL websocket + NT4",
+  "checks": {
+    "chooser_selected_choreo": true,
+    "trajectory_endpoint_tracking": true,
+    "autonomous_pose_reset": true
+  },
+  "selected": "Choreo LeftBlueBump + Shoot",
+  "initialPose": [
+    4.138236743640425,
+    7.456266571767582,
+    -176.98203162532175
+  ],
+  "endPose": [
+    3.2117373460351324,
+    5.217212296092179,
+    -16.52406464490259
+  ],
+  "finalPose": [
+    3.2126390685543416,
+    5.217859181323326,
+    -7.7839655160581955
+  ],
+  "endpointErrorMeters": 0.009607827123485036,
+  "passed": true
+}

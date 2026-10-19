@@ -1,0 +1,187 @@
+HAL Extensions: Attempting to load: libhalsim_ws_server
+Websocket WS Server Initializing.
+Listening at http://localhost:3300
+WebSocket URI: /wpilibws
+No WS Message Filters specifiedWebsocket WS Server Initialized!
+HAL Extensions: Successfully loaded extension
+
+********** Robot program starting **********
+Not loading CameraServerShared
+NT: Listening on NT3 port 1735, NT4 port 5810
+[phoenix] CANbus Connected: sim
+[phoenix] CANbus Network Up: sim
+DataLog: Logging to '/home/brian/Documents/FRC/2026-Rebuilt-cpp-finalize/logs/FRC_TBD_75230fdce66e162b.wpilog' (53.1 GiB free space)
+Warning: Joystick Button 8 missing (max 0), check if all controllers are plugged in
+	at frc::ReportErrorV(int, char const*, int, char const*, fmt::v11::basic_string_view<char>, fmt::v11::basic_format_args<fmt::v11::context>) + 0x152 [0x78dff18ff472]
+	at  + 0x1820e6 [0x78dff19a60e6]
+	at frc::DriverStation::GetStickButton(int, int) + 0x10b [0x78dff19a722b]
+	at std::_Function_handler<bool (), frc2::Trigger::operator&&(std::function<bool ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) + 0x15 [0x5b6327d3bc65]
+	at frc2::Trigger::AddBinding(wpi::unique_function<void (bool, bool)>&&) + 0x93 [0x78dff21ff1f3]
+	at frc2::Trigger::OnTrue(frc2::CommandPtr&&) + 0xd0 [0x78dff22000c0]
+	at RobotContainer::RobotContainer() + 0x1b0a [0x5b6327d37e7a]
+	at Robot::Robot() + 0x37 [0x5b6327d405c7]
+	at void frc::impl::RunRobot<Robot>(std::mutex&, Robot**) + 0x9c [0x5b6327d4122c]
+	at int frc::StartRobot<Robot>() + 0x233 [0x5b6327d415f3]
+	at  + 0x2a601 [0x78dff062a601]
+	at __libc_start_main + 0x88 [0x78dff062a718]
+	at _start + 0x25 [0x5b6327d05c55]
+
+NT: Got a NT4 connection from 127.0.0.1 port 54364
+NT: CONNECTED NT4 client 'base-cpp-sim-smoke@1' (from 127.0.0.1:54364)
+GET /wpilibws HTTP/1.1 200
+HALWebSim: websocket connected
+
+********** Robot program startup complete **********
+Default DisabledPeriodic() method... Override me!
+Warning: Joystick POV 0 missing (max 0), check if all controllers are plugged in
+	at frc::ReportErrorV(int, char const*, int, char const*, fmt::v11::basic_string_view<char>, fmt::v11::basic_format_args<fmt::v11::context>) + 0x152 [0x78dff18ff472]
+	at  + 0x1820e6 [0x78dff19a60e6]
+	at frc::DriverStation::GetStickPOV(int, int) + 0x10c [0x78dff19a621c]
+	at  + 0x3d3d3 [0x78dff220d3d3]
+	at std::_Function_handler<bool (), frc2::Trigger::operator&&(std::function<bool ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) + 0x15 [0x5b6327d3bc65]
+	at  + 0x2e8e7 [0x78dff21fe8e7]
+	at frc::EventLoop::Poll() + 0x4b [0x78dff192b01b]
+	at frc2::CommandScheduler::Run() + 0x90 [0x78dff2211770]
+	at Robot::RobotPeriodic() + 0x36 [0x5b6327d3ff46]
+	at frc::IterativeRobotBase::LoopFunc() + 0x178 [0x78dff1956df8]
+	at frc::TimedRobot::StartCompetition() + 0x14c [0x78dff198f88c]
+	at void frc::impl::RunRobot<Robot>(std::mutex&, Robot**) + 0x6e [0x5b6327d411fe]
+	at int frc::StartRobot<Robot>() + 0x233 [0x5b6327d415f3]
+	at  + 0x2a601 [0x78dff062a601]
+	at __libc_start_main + 0x88 [0x78dff062a718]
+	at _start + 0x25 [0x5b6327d05c55]
+
+Default TeleopPeriodic() method... Override me!
+DataLog: Renamed log file from 'FRC_TBD_75230fdce66e162b.wpilog' to 'FRC_20261019_165000.wpilog'
+Warning: Joystick POV 0 missing (max 0), check if all controllers are plugged in
+	at frc::ReportErrorV(int, char const*, int, char const*, fmt::v11::basic_string_view<char>, fmt::v11::basic_format_args<fmt::v11::context>) + 0x152 [0x78dff18ff472]
+	at  + 0x1820e6 [0x78dff19a60e6]
+	at frc::DriverStation::GetStickPOV(int, int) + 0x10c [0x78dff19a621c]
+	at  + 0x3d3d3 [0x78dff220d3d3]
+	at std::_Function_handler<bool (), frc2::Trigger::operator&&(std::function<bool ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) + 0x15 [0x5b6327d3bc65]
+	at  + 0x2e8e7 [0x78dff21fe8e7]
+	at frc::EventLoop::Poll() + 0x4b [0x78dff192b01b]
+	at frc2::CommandScheduler::Run() + 0x90 [0x78dff2211770]
+	at Robot::RobotPeriodic() + 0x36 [0x5b6327d3ff46]
+	at frc::IterativeRobotBase::LoopFunc() + 0x178 [0x78dff1956df8]
+	at frc::TimedRobot::StartCompetition() + 0x14c [0x78dff198f88c]
+	at void frc::impl::RunRobot<Robot>(std::mutex&, Robot**) + 0x6e [0x5b6327d411fe]
+	at int frc::StartRobot<Robot>() + 0x233 [0x5b6327d415f3]
+	at  + 0x2a601 [0x78dff062a601]
+	at __libc_start_main + 0x88 [0x78dff062a718]
+	at _start + 0x25 [0x5b6327d05c55]
+
+[phoenix] Library initialization is complete.
+	
+Warning: Joystick Button 4 missing (max 0), check if all controllers are plugged in
+	at frc::ReportErrorV(int, char const*, int, char const*, fmt::v11::basic_string_view<char>, fmt::v11::basic_format_args<fmt::v11::context>) + 0x152 [0x78dff18ff472]
+	at  + 0x1820e6 [0x78dff19a60e6]
+	at frc::DriverStation::GetStickButton(int, int) + 0x10b [0x78dff19a722b]
+	at std::_Function_handler<bool (), frc2::Trigger::operator&&(std::function<bool ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) + 0x15 [0x5b6327d3bc65]
+	at  + 0x2e8e7 [0x78dff21fe8e7]
+	at frc::EventLoop::Poll() + 0x4b [0x78dff192b01b]
+	at frc2::CommandScheduler::Run() + 0x90 [0x78dff2211770]
+	at Robot::RobotPeriodic() + 0x36 [0x5b6327d3ff46]
+	at frc::IterativeRobotBase::LoopFunc() + 0x178 [0x78dff1956df8]
+	at frc::TimedRobot::StartCompetition() + 0x14c [0x78dff198f88c]
+	at void frc::impl::RunRobot<Robot>(std::mutex&, Robot**) + 0x6e [0x5b6327d411fe]
+	at int frc::StartRobot<Robot>() + 0x233 [0x5b6327d415f3]
+	at  + 0x2a601 [0x78dff062a601]
+	at __libc_start_main + 0x88 [0x78dff062a718]
+	at _start + 0x25 [0x5b6327d05c55]
+
+Warning: Joystick POV 0 missing (max 0), check if all controllers are plugged in
+	at frc::ReportErrorV(int, char const*, int, char const*, fmt::v11::basic_string_view<char>, fmt::v11::basic_format_args<fmt::v11::context>) + 0x152 [0x78dff18ff472]
+	at  + 0x1820e6 [0x78dff19a60e6]
+	at frc::DriverStation::GetStickPOV(int, int) + 0x10c [0x78dff19a621c]
+	at  + 0x3d3d3 [0x78dff220d3d3]
+	at std::_Function_handler<bool (), frc2::Trigger::operator&&(std::function<bool ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) + 0x15 [0x5b6327d3bc65]
+	at  + 0x2e8e7 [0x78dff21fe8e7]
+	at frc::EventLoop::Poll() + 0x4b [0x78dff192b01b]
+	at frc2::CommandScheduler::Run() + 0x90 [0x78dff2211770]
+	at Robot::RobotPeriodic() + 0x36 [0x5b6327d3ff46]
+	at frc::IterativeRobotBase::LoopFunc() + 0x178 [0x78dff1956df8]
+	at frc::TimedRobot::StartCompetition() + 0x14c [0x78dff198f88c]
+	at void frc::impl::RunRobot<Robot>(std::mutex&, Robot**) + 0x6e [0x5b6327d411fe]
+	at int frc::StartRobot<Robot>() + 0x233 [0x5b6327d415f3]
+	at  + 0x2a601 [0x78dff062a601]
+	at __libc_start_main + 0x88 [0x78dff062a718]
+	at _start + 0x25 [0x5b6327d05c55]
+
+[phoenix-diagnostics] Server 2026.1.2 (Mar 11 2026, 19:44:59) running on port: 1250
+	
+Warning: Joystick POV 0 missing (max 0), check if all controllers are plugged in
+	at frc::ReportErrorV(int, char const*, int, char const*, fmt::v11::basic_string_view<char>, fmt::v11::basic_format_args<fmt::v11::context>) + 0x152 [0x78dff18ff472]
+	at  + 0x1820e6 [0x78dff19a60e6]
+	at frc::DriverStation::GetStickPOV(int, int) + 0x10c [0x78dff19a621c]
+	at  + 0x3d3d3 [0x78dff220d3d3]
+	at std::_Function_handler<bool (), frc2::Trigger::operator&&(std::function<bool ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) + 0x15 [0x5b6327d3bc65]
+	at  + 0x2e8e7 [0x78dff21fe8e7]
+	at frc::EventLoop::Poll() + 0x4b [0x78dff192b01b]
+	at frc2::CommandScheduler::Run() + 0x90 [0x78dff2211770]
+	at Robot::RobotPeriodic() + 0x36 [0x5b6327d3ff46]
+	at frc::IterativeRobotBase::LoopFunc() + 0x178 [0x78dff1956df8]
+	at frc::TimedRobot::StartCompetition() + 0x14c [0x78dff198f88c]
+	at void frc::impl::RunRobot<Robot>(std::mutex&, Robot**) + 0x6e [0x5b6327d411fe]
+	at int frc::StartRobot<Robot>() + 0x233 [0x5b6327d415f3]
+	at  + 0x2a601 [0x78dff062a601]
+	at __libc_start_main + 0x88 [0x78dff062a718]
+	at _start + 0x25 [0x5b6327d05c55]
+
+Warning: Joystick POV 0 missing (max 0), check if all controllers are plugged in
+	at frc::ReportErrorV(int, char const*, int, char const*, fmt::v11::basic_string_view<char>, fmt::v11::basic_format_args<fmt::v11::context>) + 0x152 [0x78dff18ff472]
+	at  + 0x1820e6 [0x78dff19a60e6]
+	at frc::DriverStation::GetStickPOV(int, int) + 0x10c [0x78dff19a621c]
+	at  + 0x3d3d3 [0x78dff220d3d3]
+	at std::_Function_handler<bool (), frc2::Trigger::operator&&(std::function<bool ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) + 0x15 [0x5b6327d3bc65]
+	at  + 0x2e8e7 [0x78dff21fe8e7]
+	at frc::EventLoop::Poll() + 0x4b [0x78dff192b01b]
+	at frc2::CommandScheduler::Run() + 0x90 [0x78dff2211770]
+	at Robot::RobotPeriodic() + 0x36 [0x5b6327d3ff46]
+	at frc::IterativeRobotBase::LoopFunc() + 0x178 [0x78dff1956df8]
+	at frc::TimedRobot::StartCompetition() + 0x14c [0x78dff198f88c]
+	at void frc::impl::RunRobot<Robot>(std::mutex&, Robot**) + 0x6e [0x5b6327d411fe]
+	at int frc::StartRobot<Robot>() + 0x233 [0x5b6327d415f3]
+	at  + 0x2a601 [0x78dff062a601]
+	at __libc_start_main + 0x88 [0x78dff062a718]
+	at _start + 0x25 [0x5b6327d05c55]
+
+Warning: Joystick POV 0 missing (max 0), check if all controllers are plugged in
+	at frc::ReportErrorV(int, char const*, int, char const*, fmt::v11::basic_string_view<char>, fmt::v11::basic_format_args<fmt::v11::context>) + 0x152 [0x78dff18ff472]
+	at  + 0x1820e6 [0x78dff19a60e6]
+	at frc::DriverStation::GetStickPOV(int, int) + 0x10c [0x78dff19a621c]
+	at  + 0x3d3d3 [0x78dff220d3d3]
+	at std::_Function_handler<bool (), frc2::Trigger::operator&&(std::function<bool ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) + 0x15 [0x5b6327d3bc65]
+	at  + 0x2e8e7 [0x78dff21fe8e7]
+	at frc::EventLoop::Poll() + 0x4b [0x78dff192b01b]
+	at frc2::CommandScheduler::Run() + 0x90 [0x78dff2211770]
+	at Robot::RobotPeriodic() + 0x36 [0x5b6327d3ff46]
+	at frc::IterativeRobotBase::LoopFunc() + 0x178 [0x78dff1956df8]
+	at frc::TimedRobot::StartCompetition() + 0x14c [0x78dff198f88c]
+	at void frc::impl::RunRobot<Robot>(std::mutex&, Robot**) + 0x6e [0x5b6327d411fe]
+	at int frc::StartRobot<Robot>() + 0x233 [0x5b6327d415f3]
+	at  + 0x2a601 [0x78dff062a601]
+	at __libc_start_main + 0x88 [0x78dff062a718]
+	at _start + 0x25 [0x5b6327d05c55]
+
+Warning: Joystick POV 0 missing (max 0), check if all controllers are plugged in
+	at frc::ReportErrorV(int, char const*, int, char const*, fmt::v11::basic_string_view<char>, fmt::v11::basic_format_args<fmt::v11::context>) + 0x152 [0x78dff18ff472]
+	at  + 0x1820e6 [0x78dff19a60e6]
+	at frc::DriverStation::GetStickPOV(int, int) + 0x10c [0x78dff19a621c]
+	at  + 0x3d3d3 [0x78dff220d3d3]
+	at std::_Function_handler<bool (), frc2::Trigger::operator&&(std::function<bool ()>)::{lambda()#1}>::_M_invoke(std::_Any_data const&) + 0x15 [0x5b6327d3bc65]
+	at  + 0x2e8e7 [0x78dff21fe8e7]
+	at frc::EventLoop::Poll() + 0x4b [0x78dff192b01b]
+	at frc2::CommandScheduler::Run() + 0x90 [0x78dff2211770]
+	at Robot::RobotPeriodic() + 0x36 [0x5b6327d3ff46]
+	at frc::IterativeRobotBase::LoopFunc() + 0x178 [0x78dff1956df8]
+	at frc::TimedRobot::StartCompetition() + 0x14c [0x78dff198f88c]
+	at void frc::impl::RunRobot<Robot>(std::mutex&, Robot**) + 0x6e [0x5b6327d411fe]
+	at int frc::StartRobot<Robot>() + 0x233 [0x5b6327d415f3]
+	at  + 0x2a601 [0x78dff062a601]
+	at __libc_start_main + 0x88 [0x78dff062a718]
+	at _start + 0x25 [0x5b6327d05c55]
+
+HALWebSim: websocket disconnected
+NT: DISCONNECTED NT4 client 'base-cpp-sim-smoke@1' (from 127.0.0.1:54364): remote end closed connection
+NT: NT4 socket error: operation canceled

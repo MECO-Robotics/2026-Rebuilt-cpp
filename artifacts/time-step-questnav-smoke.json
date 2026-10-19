@@ -1,0 +1,220 @@
+{
+  "scope": "Disabled localhost native simulator; synthetic protobuf and Limelight observations",
+  "hardwareValidation": false,
+  "passed": true,
+  "checks": {
+    "localhost_nt_connected": true,
+    "absolute_fallback_without_quest": true,
+    "field_aligned_tracking": true,
+    "pinned_version_and_battery_diagnostics": true,
+    "mounted_headset_motion_fused": true,
+    "tracking_loss_uses_absolute_fallback": true,
+    "stale_tracking_not_ready": true,
+    "out_of_field_not_ready": true,
+    "version_mismatch_visible": true,
+    "disabled_stationary": true
+  },
+  "samples": {
+    "absolute_fallback": {
+      "ready": false,
+      "connected": false,
+      "combined": true,
+      "aligned": false,
+      "fallback": true,
+      "versionMatches": true,
+      "battery": 85.0,
+      "rejected": 0.0,
+      "pose": [
+        3.0,
+        2.0,
+        -1.4116137437432555e-19
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "aligned_tracking": {
+      "ready": true,
+      "connected": true,
+      "combined": true,
+      "aligned": true,
+      "fallback": false,
+      "versionMatches": true,
+      "battery": 85.0,
+      "rejected": 0.0,
+      "pose": [
+        3.0,
+        2.0,
+        -6.068139681871685e-39
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "absolute_capture_drained": {
+      "ready": true,
+      "connected": true,
+      "combined": true,
+      "aligned": true,
+      "fallback": false,
+      "versionMatches": true,
+      "battery": 85.0,
+      "rejected": 0.0,
+      "pose": [
+        3.0,
+        2.0,
+        -4.4999989442725644e-41
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "absolute_alignment_settled": {
+      "ready": true,
+      "connected": true,
+      "combined": true,
+      "aligned": true,
+      "fallback": false,
+      "versionMatches": true,
+      "battery": 85.0,
+      "rejected": 0.0,
+      "pose": [
+        3.0,
+        2.0,
+        -3.3376186520375597e-43
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "relative_headset_motion": {
+      "ready": true,
+      "connected": true,
+      "combined": true,
+      "aligned": true,
+      "fallback": false,
+      "versionMatches": true,
+      "battery": 85.0,
+      "rejected": 0.0,
+      "pose": [
+        3.4000000000000004,
+        2.0,
+        -5.261689206291838e-47
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "tracking_lost": {
+      "ready": false,
+      "connected": false,
+      "combined": true,
+      "aligned": true,
+      "fallback": true,
+      "versionMatches": true,
+      "battery": 85.0,
+      "rejected": 32.0,
+      "pose": [
+        3.0,
+        2.0,
+        -9.542016576995617e-67
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "tracking_recovered": {
+      "ready": true,
+      "connected": true,
+      "combined": true,
+      "aligned": true,
+      "fallback": false,
+      "versionMatches": true,
+      "battery": 85.0,
+      "rejected": 39.0,
+      "pose": [
+        3.0,
+        2.0,
+        -5.261689206286004e-47
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "stale_frames": {
+      "ready": false,
+      "connected": false,
+      "combined": false,
+      "aligned": true,
+      "fallback": true,
+      "versionMatches": true,
+      "battery": 85.0,
+      "rejected": 39.0,
+      "pose": [
+        3.0,
+        2.0,
+        -5.261689206286051e-47
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "field_bounds_rejection": {
+      "ready": false,
+      "connected": true,
+      "combined": true,
+      "aligned": true,
+      "fallback": true,
+      "versionMatches": true,
+      "battery": 85.0,
+      "rejected": 74.0,
+      "pose": [
+        3.0,
+        2.0,
+        -5.261689206286051e-47
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    },
+    "version_mismatch": {
+      "ready": false,
+      "connected": false,
+      "combined": false,
+      "aligned": true,
+      "fallback": true,
+      "versionMatches": false,
+      "battery": 85.0,
+      "rejected": 78.0,
+      "pose": [
+        3.0,
+        2.0,
+        -5.261689206286051e-47
+      ],
+      "speeds": [
+        0.0,
+        -0.0,
+        -0.0
+      ]
+    }
+  },
+  "resetObserver": "Not exercised; driver reset requires enabled teleop"
+}

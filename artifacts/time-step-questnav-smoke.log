@@ -1,0 +1,12 @@
+{
+  "localhost_nt_connected": true,
+  "absolute_fallback_without_quest": true,
+  "field_aligned_tracking": true,
+  "pinned_version_and_battery_diagnostics": true,
+  "mounted_headset_motion_fused": true,
+  "tracking_loss_uses_absolute_fallback": true,
+  "stale_tracking_not_ready": true,
+  "out_of_field_not_ready": true,
+  "version_mismatch_visible": true,
+  "disabled_stationary": true
+}
