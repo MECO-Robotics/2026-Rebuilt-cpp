@@ -30,6 +30,10 @@ struct DriveConfig {
   double steerKP = 25, steerKD = 0, steerKS = 0, steerKV = 2.5;
   double driveCurrent = 40, steerCurrent = 40, slipCurrent = 50;
   double massKg = 74.088, moi = 6.883, cof = 1.2;
+  // 0 retains maxSpeed as the native speed-at-12V model value.
+  double speedAt12Volts = 0, driveInertia = .025, steerInertia = .004;
+  double autoTranslationKP = 5, autoRotationKP = 5;
+  bool fusedEncoder = false, autoConfigFromGUI = false;
   std::array<ModuleConfig, 4> modules{{
     {31,41,21,0,.33655,.33655}, {32,42,22,0,.33655,-.33655},
     {33,43,23,0,-.33655,.33655}, {34,44,24,0,-.33655,-.33655}}};
