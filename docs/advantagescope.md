@@ -8,14 +8,16 @@ Build and launch `scripts/sim_headless.sh`, then connect AdvantageScope to NT4 a
 
 Use the typed topics under `/AdvantageScope/Drive`:
 
-| Type | Visualization |
-|---|---|
-| `Pose2d` | 2D Field robot pose |
-| `Pose3d` | 3D Field robot or coordinate axes |
-| `ChassisSpeeds` | Expand `vx`, `vy`, `omega` into line graphs; metres/second and radians/second |
-| `SwerveModuleState[]` | Swerve module states; FL, FR, BL, BR ordering |
+| Topic under `/AdvantageScope/Drive` | Type | Visualization |
+|---|---|---|
+| `Pose` | `Pose2d` | 2D Field robot pose |
+| `RobotPose` | `Pose3d` | 3D Field robot or coordinate axes; estimated planar pose lifted to z=0 |
+| `Speeds` | `ChassisSpeeds` | Expand `vx`, `vy`, `omega` into line graphs; robot-relative metres/second and radians/second |
+| `MeasuredStates`, `TargetStates` | `SwerveModuleState[]` | Swerve module states; FL, FR, BL, BR ordering |
 
-These describe the Phoenix estimator and requested/measured states. A displayed robot pose is not an independent ground-truth sensor or a physical calibration result. Existing SmartDashboard arrays remain available for older tools.
+These describe the Phoenix estimator and requested/measured states. A displayed robot pose is not an independent ground-truth sensor or a physical calibration result. Existing SmartDashboard arrays remain available for older tools. Typed snapshots publish at most 10 Hz with one shared capture timestamp; no NetworkTables or log serialization runs in the 250 Hz control callback. Its bounded snapshot copy includes the eight measured/target module states. No new controller or actuator path is introduced.
+
+Mechanism graphs remain available at `/SmartDashboard/<name>/Position`, `Velocity`, `Voltage`, `Target`, and `Connected`. Rack position/rate is metres/metres per second; hood position/rate and flywheel rate use output rotations/rotations per second, as documented in the port contract. These scalar mechanism values are not radians. Gain arrays and disabled-only acceptance status remain under `/<name>/Gains`; AdvantageScope viewing does not change their tuning safety gates.
 
 The season fork also publishes `Pose3d[]` fuel positions under `/AdvantageScope/Simulation`. They describe the native numerical simulation. They do not establish field-contact accuracy or real game-piece tracking.
 
@@ -50,6 +52,6 @@ Use **File → Import Layout** for the generated layout. AdvantageScope's import
 
 ## What the validator establishes
 
-The tool reads the installed ASAR archive, extracts its unmodified WPILOG worker, JavaScript indexer, and WASM indexer to a temporary directory, then invokes the same worker messages the application uses. It loads recorded struct schemas and checks that the four drivetrain types contain samples, decode into finite numeric child fields, and do not produce type warnings. `--require-fuel` additionally requires a decoded simulation `Pose3d[]` topic; an empty array is valid. The JSON evidence includes the exact application version and worker hash.
+The tool reads the installed ASAR archive, extracts its unmodified WPILOG worker, JavaScript indexer, and WASM indexer to a temporary directory, then invokes the same worker messages the application uses. It loads recorded struct schemas and checks that the four drivetrain types contain samples, decode into finite numeric child fields, and do not produce type warnings. It expects a healthy four-module fixture; nonfinite sensor fault samples can still be valid logs but fail this stricter fixture check. `--require-fuel` additionally requires a decoded simulation `Pose3d[]` topic; an empty array is valid. The JSON evidence includes the exact application version and worker hash.
 
 This is parser evidence, not a GUI rendering test. Layout generation follows the installed 26.0.0 export/restore schema; graphical import, assets, GPU rendering, camera placement, and a real NT connection must be assessed separately. The tool does not edit AdvantageScope preferences, saved windows, application files, or robot logs. A missing schema or typed topic fails validation instead of treating a raw byte stream as successful visualization.

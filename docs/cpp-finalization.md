@@ -58,3 +58,8 @@ A read-only season desktop sample reported configured odometry 250 Hz and averag
 Hardware mapping blocks, source mechanism constants, Choreo implementation and deployed assets match season baseline `9c498ec`, except the explicit 250 Hz rate selection. Generic `src/main/include/base` and `src/main/cpp/base` implementations match upstream byte-for-byte. The pre-existing Java base `gradlew` working-tree change was preserved.
 
 Commit inventories through the validated source revisions are stored in `artifacts/base-finalization-commits.json` upstream and `artifacts/finalization-commits.json` downstream. These separate parity, control/concurrency, telemetry/optimization, simulation, tuning/replay and evidence changes. Later evidence-only commits do not change the validated runtime.
+
+
+## AdvantageScope follow-up
+
+Standard WPILib struct topics now identify Pose2d, planar Pose3d, ChassisSpeeds and measured/target SwerveModuleState arrays. The season adds Pose3d arrays for numerical floor/hopper/projectile positions. Publication is capped at 10 Hz on the robot thread; the native telemetry callback only copies fixed-size state and module arrays with a capture timestamp. Legacy topics remain intact. NT4 values and their schemas are automatically captured by DataLogManager into standard WPILOG files. See `docs/advantagescope.md` for the parser-backed check and version-matched layout workflow. This closes visualization compatibility; it does not close the separate whole-robot replay, sensor-physics or physical-validation gaps above.
