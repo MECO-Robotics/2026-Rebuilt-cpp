@@ -62,7 +62,8 @@ function layout(version, fields, options) {
       sources: [source('axes', pose3d, {}), ...fuel.map(field => source('axes', field, {}))], game: 'FRC:Evergreen'
     }},
     {type: 1, title: 'MECO Chassis Speeds', controller: {
-      leftSources: graphSources, rightSources: [], discreteSources: [],
+      leftSources: graphSources.filter(source => !source.logKey.endsWith('/omega')),
+      rightSources: graphSources.filter(source => source.logKey.endsWith('/omega')), discreteSources: [],
       leftLockedRange: null, rightLockedRange: null,
       leftUnitConversion: {autoTarget: null, preset: null},
       rightUnitConversion: {autoTarget: null, preset: null}, leftFilter: 0, rightFilter: 0
