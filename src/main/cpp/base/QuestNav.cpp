@@ -40,6 +40,7 @@ void QuestNav::InvalidateAlignment() {
 std::optional<QuestNavObservation> QuestNav::Update(
     const QuestNavFrame& frame, units::second_t now,
     std::optional<QuestNavObservation> absolute) {
+  if (frame.restarted) InvalidateAlignment();
   tracking_ = frame.tracking;
   if (!frame.tracking || !Finite(frame.headsetPose) || !std::isfinite(now.value()) ||
       !std::isfinite(frame.timestamp.value()) || frame.timestamp < units::second_t{0} ||
@@ -55,8 +56,12 @@ std::optional<QuestNavObservation> QuestNav::Update(
       absolute->timestamp > lastAbsoluteTimestamp_ && absolute->timestamp <= now &&
       units::math::abs(absolute->timestamp - frame.timestamp) <= config_.maxAlignmentSkew &&
       ValidFieldPose(frc::Pose3d{absolute->pose})) {
+    const auto previousYaw = yawOffset_;
     yawOffset_ = frc::Rotation3d{units::radian_t{0}, units::radian_t{0},
         absolute->pose.Rotation().Radians() - lastRaw_.Rotation().Z()};
+    // Existing offsets use the previous yaw frame. A changed heading requires
+    // recomputing offsets, rather than averaging incompatible transforms.
+    if (std::abs((yawOffset_ - previousYaw).Z().value()) > 1e-9) count_ = index_ = 0;
     offsets_[index_] = frc::Pose3d{absolute->pose}.Translation() -
         lastRaw_.Translation().RotateBy(yawOffset_);
     index_ = (index_ + 1) % offsets_.size();
@@ -73,8 +78,8 @@ std::optional<QuestNavObservation> QuestNav::Update(
   if (!ValidFieldPose(pose)) { ++rejected_; return std::nullopt; }
   return QuestNavObservation{pose.ToPose2d(), frame.timestamp};
 }
-bool QuestNav::ResetPose(const frc::Pose2d& fieldPose) {
-  if (lastTimestamp_ < units::second_t{0} || !ValidFieldPose(frc::Pose3d{fieldPose})) return false;
+bool QuestNav::ResetPose(const frc::Pose2d& fieldPose, units::second_t now) {
+  if (!Connected(now) || !ValidFieldPose(frc::Pose3d{fieldPose})) return false;
   InvalidateAlignment();
   yawOffset_ = frc::Rotation3d{units::radian_t{0}, units::radian_t{0},
       fieldPose.Rotation().Radians() - lastRaw_.Rotation().Z()};

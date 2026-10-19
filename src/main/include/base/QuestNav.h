@@ -12,6 +12,7 @@ struct QuestNavFrame {
   frc::Pose3d headsetPose;
   units::second_t timestamp{0};
   bool tracking = false;
+  bool restarted = false;
 };
 struct QuestNavObservation {
   frc::Pose2d pose;
@@ -36,7 +37,7 @@ class QuestNav {
   std::optional<QuestNavObservation> Update(
       const QuestNavFrame& frame, units::second_t now,
       std::optional<QuestNavObservation> absolute = std::nullopt);
-  bool ResetPose(const frc::Pose2d& fieldPose);
+  bool ResetPose(const frc::Pose2d& fieldPose, units::second_t now);
   void InvalidateAlignment();
   bool Initialized() const { return aligned_; }
   bool Connected(units::second_t now) const;
@@ -56,5 +57,47 @@ class QuestNav {
   unsigned rejected_ = 0;
   bool aligned_ = false;
   bool tracking_ = false;
+};
+}
+
+#include <cstdint>
+#include <functional>
+#include <span>
+#include <string>
+#include <networktables/NetworkTableInstance.h>
+#include <networktables/RawTopic.h>
+#include <networktables/StringTopic.h>
+namespace base {
+struct QuestNavDecodedFrame {
+  frc::Pose3d headsetPose;
+  double appTimestamp = 0;
+  std::int32_t frameCount = 0;
+  bool tracking = false;
+};
+struct QuestNavDeviceData {
+  std::int32_t trackingLostCounter = 0;
+  std::int32_t batteryPercent = 0;
+};
+// Schema pinned to QuestNav 2026-2.2.0. Unknown protobuf fields are skipped;
+// malformed messages, wrong wire types, missing pose, and >2 KiB are rejected.
+std::optional<QuestNavDecodedFrame> DecodeQuestNavFrame(std::span<const std::uint8_t> bytes);
+std::optional<QuestNavDeviceData> DecodeQuestNavDevice(std::span<const std::uint8_t> bytes);
+// Read-only live transport; no actuator access or headset reset requests.
+// Poll on the same thread as QuestNav. Subscriber queue holds 20 frames (~200 ms
+// at 100 Hz); callers must poll at least every 20 ms to preserve normal samples.
+class QuestNavTransport {
+ public:
+  explicit QuestNavTransport(nt::NetworkTableInstance instance = nt::NetworkTableInstance::GetDefault());
+  void Poll(const std::function<void(const QuestNavFrame&)>& consumer);
+  const std::optional<QuestNavDeviceData>& Device() const { return device_; }
+  std::string Version() const { return version_.Get(); }
+  unsigned DecodeFailures() const { return decodeFailures_; }
+ private:
+  nt::RawSubscriber frames_;
+  nt::RawSubscriber devices_;
+  nt::StringSubscriber version_;
+  std::optional<QuestNavDeviceData> device_;
+  std::optional<std::int32_t> lastFrameCount_;
+  unsigned decodeFailures_ = 0;
 };
 }
