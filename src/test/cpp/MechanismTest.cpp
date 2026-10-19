@@ -135,3 +135,25 @@ TEST(MechanismTuning, AppliesAtomicValidatedGainsOnlyWhileDisabled) {
   wheel.Periodic();
   EXPECT_DOUBLE_EQ(wheel.GetGains().p,2);
 }
+
+TEST(MechanismTuning, UnchangedDashboardPreservesDynamicProfileConstraints) {
+  HAL_Initialize(500,0);
+  frc::sim::DriverStationSim::SetEnabled(false);
+  frc::sim::DriverStationSim::NotifyNewData();
+  auto io=std::make_unique<base::InjectedMotorIO>(); auto* observed=io.get();
+  observed->inputs.position=.5;
+  base::Gains gains; gains.p=100;
+  base::PositionJoint joint("DynamicTuningTest",std::move(io),gains);
+  joint.Periodic();
+  joint.EnableLiveTuning();
+  joint.SetPositionDynamic(.8,1,.1);
+  joint.Periodic();
+  frc::sim::DriverStationSim::SetEnabled(true);
+  frc::sim::DriverStationSim::NotifyNewData();
+  joint.Periodic();
+  // First 20 ms profile step: a*dt^2 = .00004 rotations, P=100.
+  EXPECT_NEAR(observed->requestedVoltage,.004,1e-10);
+  joint.Stop();
+  frc::sim::DriverStationSim::SetEnabled(false);
+  frc::sim::DriverStationSim::NotifyNewData();
+}
