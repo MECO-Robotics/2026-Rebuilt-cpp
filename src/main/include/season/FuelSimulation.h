@@ -2,6 +2,10 @@
 #include "season/SeasonCommands.h"
 #include <random>
 #include <vector>
+#include <span>
+#include <cstdint>
+#include <frc/geometry/struct/Pose3dStruct.h>
+#include <networktables/StructArrayTopic.h>
 namespace season {
 struct FuelPoint {double x{},y{},z{};};
 struct FuelParticle {FuelPoint position,velocity;};
@@ -38,6 +42,16 @@ class FuelModel {
   int stored_=0,scored_=0,launched_=0,pending_=0,burstIndex_=0;
   double time_=0,lastBurst_=-1e9,nextShot_=-1e9;
 };
+// Typed field poses for AdvantageScope. Fuel is represented as spheres, so
+// orientation is identity; all translations are field-relative metres.
+class FuelTelemetry {
+ public:
+  explicit FuelTelemetry(nt::NetworkTableInstance instance=nt::NetworkTableInstance::GetDefault());
+  void Publish(const FuelModel& model,std::span<const FuelPoint> hopper,std::int64_t timestampMicros);
+ private:
+  nt::StructArrayPublisher<frc::Pose3d> floor_,hopper_,projectiles_;
+  std::vector<frc::Pose3d> poses_;
+};
 // Call only from Robot::SimulationPeriodic. Actuator voltages select collection
 // and feeding, so command cancellation immediately stops simulated launching.
 class FuelSimulation {
@@ -50,5 +64,7 @@ class FuelSimulation {
   Mechanisms mechanisms_;
   base::Drive& drive_;
   FuelModel model_;
+  FuelTelemetry telemetry_;
+  std::int64_t nextTypedTelemetry_=0;
 };
 }

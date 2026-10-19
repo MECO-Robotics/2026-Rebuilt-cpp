@@ -57,3 +57,34 @@ TEST(FuelSimulation,ResetReproducesSeededBurstAndFlight){
   EXPECT_DOUBLE_EQ(first[i].velocity.z,second[i].velocity.z);
  }
 }
+
+TEST(FuelSimulation,TypedFieldPosesPreserveMetresAndClearEmptySnapshots){
+ auto instance=nt::NetworkTableInstance::Create();
+ {
+  FuelTelemetry telemetry{instance};
+  auto floorTopic=instance.GetStructArrayTopic<frc::Pose3d>("/AdvantageScope/Simulation/FloorFuel");
+  auto floor=floorTopic.Subscribe({});
+  auto hopper=instance.GetStructArrayTopic<frc::Pose3d>("/AdvantageScope/Simulation/HopperFuel").Subscribe({});
+  auto projectiles=instance.GetStructArrayTopic<frc::Pose3d>("/AdvantageScope/Simulation/Projectiles").Subscribe({});
+  FuelModel model;model.AddFloorFuel({2,3});model.SetStoredFuel(1);
+  FuelInputs input;input.feeding=true;input.flywheelRps=30;model.Step(.02,input);
+  auto centers=FuelModel::HopperCenters(1,.3,{4,5,kPi/2});
+  telemetry.Publish(model,centers,1000000);
+  EXPECT_EQ(floorTopic.GetTypeString(),"struct:Pose3d[]");
+  auto floorPoses=floor.Get();ASSERT_EQ(floorPoses.size(),1u);
+  EXPECT_DOUBLE_EQ(floorPoses[0].X().value(),2);EXPECT_DOUBLE_EQ(floorPoses[0].Y().value(),3);
+  EXPECT_DOUBLE_EQ(floorPoses[0].Z().value(),5.5*.0254/2);
+  EXPECT_EQ(floorPoses[0].Rotation(),frc::Rotation3d{});
+  auto hopperPoses=hopper.Get();ASSERT_EQ(hopperPoses.size(),1u);
+  EXPECT_DOUBLE_EQ(hopperPoses[0].X().value(),centers[0].x);
+  EXPECT_DOUBLE_EQ(hopperPoses[0].Y().value(),centers[0].y);
+  auto projectilePoses=projectiles.Get();ASSERT_EQ(projectilePoses.size(),1u);
+  EXPECT_DOUBLE_EQ(projectilePoses[0].Z().value(),model.Projectiles()[0].position.z);
+  EXPECT_EQ(floor.GetAtomic().time,1000000);
+  EXPECT_EQ(hopper.GetAtomic().time,1000000);
+  EXPECT_EQ(projectiles.GetAtomic().time,1000000);
+  model.Reset();telemetry.Publish(model,{},2000000);
+  EXPECT_TRUE(floor.Get().empty());EXPECT_TRUE(hopper.Get().empty());EXPECT_TRUE(projectiles.Get().empty());
+ }
+ nt::NetworkTableInstance::Destroy(instance);
+}

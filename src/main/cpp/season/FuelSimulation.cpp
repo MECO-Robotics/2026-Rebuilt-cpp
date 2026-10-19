@@ -1,5 +1,6 @@
 #include "season/FuelSimulation.h"
 #include <frc/DriverStation.h>
+#include <frc/RobotController.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <algorithm>
 #include <cmath>
@@ -44,8 +45,20 @@ void FuelModel::Step(double dt,const FuelInputs& in){
   for(auto& p:floor_){p.position.x+=p.velocity.x*h;p.position.y+=p.velocity.y*h;double attenuation=std::exp(-2*h);p.velocity.x*=attenuation;p.velocity.y*=attenuation;}
  }
 }
+FuelTelemetry::FuelTelemetry(nt::NetworkTableInstance instance)
+ :floor_(instance.GetStructArrayTopic<frc::Pose3d>("/AdvantageScope/Simulation/FloorFuel").Publish()),
+  hopper_(instance.GetStructArrayTopic<frc::Pose3d>("/AdvantageScope/Simulation/HopperFuel").Publish()),
+  projectiles_(instance.GetStructArrayTopic<frc::Pose3d>("/AdvantageScope/Simulation/Projectiles").Publish()){}
+void FuelTelemetry::Publish(const FuelModel& model,std::span<const FuelPoint> hopper,std::int64_t timestampMicros){
+ // One reusable buffer; NT serializes each Set before the next conversion.
+ poses_.reserve(std::max({model.FloorFuel().size(),hopper.size(),model.Projectiles().size()}));
+ auto append=[this](FuelPoint point){poses_.emplace_back(units::meter_t{point.x},units::meter_t{point.y},units::meter_t{point.z},frc::Rotation3d{});};
+ poses_.clear();for(const auto& particle:model.FloorFuel())append(particle.position);floor_.Set(poses_,timestampMicros);
+ poses_.clear();for(const auto& point:hopper)append(point);hopper_.Set(poses_,timestampMicros);
+ poses_.clear();for(const auto& particle:model.Projectiles())append(particle.position);projectiles_.Set(poses_,timestampMicros);
+}
 FuelSimulation::FuelSimulation(Mechanisms mechanisms,base::Drive& drive):mechanisms_(mechanisms),drive_(drive){Reset();}
-void FuelSimulation::Reset(){model_.Reset();
+void FuelSimulation::Reset(){model_.Reset();nextTypedTelemetry_=0;
  // Deterministic neutral-zone grid, rather than claiming official Maple arena placement.
  for(double x=7.0;x<=9.5;x+=.25)for(double y=.75;y<=7.25;y+=.25)model_.AddFloorFuel({x,y});
 }
@@ -53,6 +66,9 @@ void FuelSimulation::Periodic(double dt){auto pose=drive_.Pose();auto speed=driv
  FuelInputs input;input.robot={pose.X().value(),pose.Y().value(),heading};input.vx=speed.vx.value()*c-speed.vy.value()*s;input.vy=speed.vx.value()*s+speed.vy.value()*c;input.omega=speed.omega.value();input.rackMetres=mechanisms_.rack.Position();input.hoodRotations=mechanisms_.hood.Position();input.flywheelRps=mechanisms_.shooter.Velocity();input.collecting=mechanisms_.intake.Inputs().voltage<-1&&mechanisms_.conveyor.Inputs().voltage>1;input.feeding=mechanisms_.bottomIndexer.Inputs().voltage<-1&&mechanisms_.topIndexer.Inputs().voltage>1&&mechanisms_.conveyor.Inputs().voltage<-1;
  input.alliance=frc::DriverStation::GetAlliance()==frc::DriverStation::Alliance::kRed?Alliance::Red:Alliance::Blue;model_.Step(dt,input);
  auto hopper=FuelModel::HopperCenters(model_.StoredFuel(),input.rackMetres,input.robot);
+ // Typed 3D fuel snapshots are 10 Hz; legacy XYZ telemetry remains 50 Hz.
+ const auto timestamp=static_cast<std::int64_t>(frc::RobotController::GetFPGATime());
+ if(timestamp>=nextTypedTelemetry_){telemetry_.Publish(model_,hopper,timestamp);nextTypedTelemetry_=timestamp+100000;}
  frc::SmartDashboard::PutNumber("FieldSimulation/StoredFuelCount",model_.StoredFuel());frc::SmartDashboard::PutNumber("FieldSimulation/HopperFuelCount",hopper.size());frc::SmartDashboard::PutNumber("FieldSimulation/HopperFillRatio",hopper.empty()?0:static_cast<double>(hopper.size())/FuelModel::HopperCenters(54,input.rackMetres).size());
  frc::SmartDashboard::PutNumber("FieldSimulation/SuccessfulScoreCount",model_.SuccessfulScores());frc::SmartDashboard::PutNumber("FieldSimulation/LaunchedFuelCount",model_.LaunchedFuel());frc::SmartDashboard::PutNumber("FieldSimulation/FuelProjectileCount",model_.Projectiles().size());frc::SmartDashboard::PutNumberArray("FieldSimulation/FuelPositionsXYZ",Positions(model_.FloorFuel()));frc::SmartDashboard::PutNumberArray("FieldSimulation/HopperFuelPositionsXYZ",Positions(hopper));frc::SmartDashboard::PutNumberArray("FieldSimulation/FuelProjectilePositionsXYZ",Positions(model_.Projectiles()));
 }
