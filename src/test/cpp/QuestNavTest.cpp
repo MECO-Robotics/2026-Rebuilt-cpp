@@ -91,3 +91,33 @@ TEST(QuestNav, ReplacingAlignmentYawDoesNotAverageIncompatibleTranslations) {
   EXPECT_NEAR(updated->pose.X().value(), 4, 1e-9);
   EXPECT_NEAR(updated->pose.Y().value(), 3, 1e-9);
 }
+TEST(QuestNavTransport, NativeNtInjectionKeepsCaptureTimeAndDetectsRestart) {
+  auto instance = nt::NetworkTableInstance::Create();
+  instance.StartLocal();
+  {
+    base::QuestNavTransport transport{instance};
+    auto publisher = instance.GetRawTopic("/QuestNav/frameData").Publish(
+        "proto:questnav.protos.data.ProtobufQuestNavFrameData");
+    auto bytes = FrameBytes();
+    publisher.Set(bytes, 1000000);
+    unsigned received = 0;
+    transport.Poll([&](const base::QuestNavFrame& frame) {
+      ++received;
+      EXPECT_EQ(frame.timestamp, 1_s);
+      EXPECT_FALSE(frame.restarted);
+    });
+    EXPECT_EQ(received, 1u);
+    // Simulate app restart: frame count falls from 42 to 1. App uptime is
+    // diagnostic only; NT capture timestamp remains monotonic in robot time.
+    bytes[1] = 1;
+    publisher.Set(bytes, 1020000);
+    transport.Poll([&](const base::QuestNavFrame& frame) {
+      ++received;
+      EXPECT_EQ(frame.timestamp, 1.02_s);
+      EXPECT_TRUE(frame.restarted);
+    });
+    EXPECT_EQ(received, 2u);
+  }
+  instance.StopLocal();
+  nt::NetworkTableInstance::Destroy(instance);
+}

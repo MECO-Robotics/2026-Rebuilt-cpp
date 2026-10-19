@@ -101,10 +101,13 @@ void QuestNavTransport::Poll(const std::function<void(const QuestNavFrame&)>& co
   }
   for (const auto& sample : frames_.ReadQueue()) {
     auto decoded = DecodeQuestNavFrame(sample.value);
-    if (!decoded || sample.serverTime <= 0) { ++decodeFailures_; continue; }
+    // NT uses serverTime 0/1 for local publications. The local timestamp is
+    // already FPGA-clock based on the robot and supports desktop NT injection.
+    const auto timestamp = sample.serverTime > 1 ? sample.serverTime : sample.time;
+    if (!decoded || timestamp <= 0) { ++decodeFailures_; continue; }
     const bool restarted = lastFrameCount_ && decoded->frameCount < *lastFrameCount_;
     lastFrameCount_ = decoded->frameCount;
-    if (consumer) consumer({decoded->headsetPose, units::second_t{sample.serverTime * 1e-6},
+    if (consumer) consumer({decoded->headsetPose, units::second_t{timestamp * 1e-6},
         decoded->tracking, restarted});
   }
 }
