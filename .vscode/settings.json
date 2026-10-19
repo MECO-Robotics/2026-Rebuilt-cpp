@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.h": "cpp"
+  },
+  "C_Cpp.default.configurationProvider": "wpilibsuite.vscode-wpilib"
+}

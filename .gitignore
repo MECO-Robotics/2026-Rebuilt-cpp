@@ -1,0 +1,10 @@
+.gradle/
+build/
+bin/
+logs/
+*.wpilog
+*.hoot
+ctre_sim/
+*.so
+*.dll
+.vscode/c_cpp_properties.json
