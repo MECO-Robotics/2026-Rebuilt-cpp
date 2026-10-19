@@ -21,12 +21,12 @@ TEST(DriveOwnership, AimPreemptsJoystickAndDisableCancelsOwner) {
   base::Drive drive;
   auto joystick = drive.Joystick([] { return .5; }, [] { return 0.; }, [] { return 0.; });
   auto aim = drive.Aim([] { return 0.; }, [] { return 0.; }, [] { return frc::Rotation2d{}; });
-  joystick.Schedule();
+  scheduler.Schedule(joystick.get());
   scheduler.Run();
   EXPECT_EQ(scheduler.Requiring(&drive), joystick.get());
   EXPECT_TRUE(joystick.IsScheduled());
 
-  aim.Schedule();
+  scheduler.Schedule(aim.get());
   scheduler.Run();
   EXPECT_FALSE(joystick.IsScheduled());
   EXPECT_TRUE(aim.IsScheduled());
