@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <frc2/command/SubsystemBase.h>
 #include <frc2/command/CommandPtr.h>
@@ -56,6 +57,15 @@ class Drive : public frc2::SubsystemBase {
   using NativeDrive = ctre::phoenix6::swerve::SwerveDrivetrain<ctre::phoenix6::hardware::TalonFX,ctre::phoenix6::hardware::TalonFX,ctre::phoenix6::hardware::CANcoder>;
   struct ControlRequest;
   DriveConfig config_;
+  struct Snapshot {
+    frc::Pose2d pose;
+    frc::ChassisSpeeds speeds;
+    double odometryPeriod = 0;
+    int failedDaqs = 0;
+  };
+  mutable std::mutex snapshotMutex_;
+  Snapshot snapshot_;
+  double nextTelemetry_ = 0, nextBusTelemetry_ = 0;
   std::unique_ptr<ControlRequest> control_;
   std::unique_ptr<NativeDrive> native_;
 };

@@ -67,6 +67,11 @@ Drive::Drive(DriveConfig config) : config_(std::move(config)) {
   native_ = std::make_unique<NativeDrive>(s::SwerveDrivetrainConstants{}.WithCANBusName(config_.bus).WithPigeon2Id(config_.pigeon),units::hertz_t{config_.odometryHz},make(0),make(1),make(2),make(3));
   control_ = std::make_unique<ControlRequest>();
   native_->SetControl(*control_);
+  native_->RegisterTelemetry([this](const auto& state) {
+    // Fixed-size handoff only. Skip a busy consumer instead of delaying native DAQ.
+    if (std::unique_lock lock(snapshotMutex_, std::try_to_lock); lock.owns_lock())
+      snapshot_ = {state.Pose, state.Speeds, state.OdometryPeriod.value(), state.FailedDaqs};
+  });
   SetName("Drive");
 }
 Drive::~Drive() { native_->GetOdometryThread().Stop(); native_.reset(); }
@@ -76,14 +81,37 @@ void Drive::Periodic() {
     native_->SetOperatorPerspectiveForward(frc::Rotation2d{a && *a==frc::DriverStation::Alliance::kRed ? 180_deg : 0_deg});
     Stop();
   }
-  const auto state=native_->GetState();
-  frc::SmartDashboard::PutNumberArray("Drive/Pose",std::array<double,3>{state.Pose.X().value(),state.Pose.Y().value(),state.Pose.Rotation().Degrees().value()});
-  frc::SmartDashboard::PutNumberArray("Drive/Speeds",std::array<double,3>{state.Speeds.vx.value(),state.Speeds.vy.value(),state.Speeds.omega.value()});
+  const double now = frc::Timer::GetFPGATimestamp().value();
+  if (now < nextTelemetry_) return;
+  nextTelemetry_ = now + .1;
+  if (now >= nextBusTelemetry_) {
+    nextBusTelemetry_ = now + 1;
+    const p::CANBus bus{config_.bus};
+    const auto status = bus.GetStatus();
+    frc::SmartDashboard::PutBoolean("Drive/CANFD", bus.IsNetworkFD());
+    frc::SmartDashboard::PutBoolean("Drive/CANStatusOK", status.Status.IsOK());
+    frc::SmartDashboard::PutNumber("Drive/CANUtilization", status.BusUtilization);
+    frc::SmartDashboard::PutNumber("Drive/CANBusOff", status.BusOffCount);
+    frc::SmartDashboard::PutNumber("Drive/CANTxFull", status.TxFullCount);
+    frc::SmartDashboard::PutNumber("Drive/CANReceiveErrors", status.REC);
+    frc::SmartDashboard::PutNumber("Drive/CANTransmitErrors", status.TEC);
+  }
+  Snapshot state;
+  { std::scoped_lock lock(snapshotMutex_); state = snapshot_; }
+  frc::SmartDashboard::PutNumber("Drive/OdometryHz", native_->GetOdometryFrequency().value());
+  frc::SmartDashboard::PutNumber("Drive/OdometryPeriod", state.odometryPeriod);
+  frc::SmartDashboard::PutNumber("Drive/FailedDaqs", state.failedDaqs);
+  frc::SmartDashboard::PutNumberArray("Drive/Pose",std::array<double,3>{state.pose.X().value(),state.pose.Y().value(),state.pose.Rotation().Degrees().value()});
+  frc::SmartDashboard::PutNumberArray("Drive/Speeds",std::array<double,3>{state.speeds.vx.value(),state.speeds.vy.value(),state.speeds.omega.value()});
 }
 void Drive::SimulationPeriodic() { native_->UpdateSimState(.02_s,frc::RobotController::GetBatteryVoltage()); }
-frc::Pose2d Drive::Pose() const { return native_->GetState().Pose; }
-frc::ChassisSpeeds Drive::Speeds() const { return native_->GetState().Speeds; }
-void Drive::ResetPose(const frc::Pose2d& pose) { native_->ResetPose(pose); }
+frc::Pose2d Drive::Pose() const { std::scoped_lock lock(snapshotMutex_); return snapshot_.pose; }
+frc::ChassisSpeeds Drive::Speeds() const { std::scoped_lock lock(snapshotMutex_); return snapshot_.speeds; }
+void Drive::ResetPose(const frc::Pose2d& pose) {
+  native_->ResetPose(pose);
+  std::scoped_lock lock(snapshotMutex_);
+  snapshot_.pose = pose;
+}
 void Drive::AddVision(const frc::Pose2d& pose,units::second_t time,std::array<double,3> noise) { native_->AddVisionMeasurement(pose,p::utils::FPGAToCurrentTime(time),noise); }
 void Drive::RunVelocity(const frc::ChassisSpeeds& speeds) {
   DriveTarget::Value value;
