@@ -43,6 +43,9 @@ class Drive : public frc2::SubsystemBase {
   frc::Pose2d Pose() const;
   frc::ChassisSpeeds Speeds() const;
   void ResetPose(const frc::Pose2d& pose);
+  // Install during container initialization. All reset APIs run on robot thread;
+  // the observer may realign external estimators but must not call ResetPose.
+  void SetPoseResetCallback(std::function<void(const frc::Pose2d&)> callback);
   void AddVision(const frc::Pose2d& pose, units::second_t time, std::array<double,3> noise);
   void RunVelocity(const frc::ChassisSpeeds& speeds);
   void RunVelocity(const frc::ChassisSpeeds& speeds, const pathplanner::DriveFeedforwards& ff);
@@ -59,6 +62,7 @@ class Drive : public frc2::SubsystemBase {
   struct NativeDrive;
   struct ControlRequest;
   DriveConfig config_;
+  std::function<void(const frc::Pose2d&)> poseResetCallback_;
   struct Snapshot {
     frc::Pose2d pose;
     frc::ChassisSpeeds speeds;

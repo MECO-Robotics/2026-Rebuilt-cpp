@@ -132,8 +132,11 @@ frc::Pose2d Drive::Pose() const { std::scoped_lock lock(snapshotMutex_); return 
 frc::ChassisSpeeds Drive::Speeds() const { std::scoped_lock lock(snapshotMutex_); return snapshot_.speeds; }
 void Drive::ResetPose(const frc::Pose2d& pose) {
   native_->ResetPose(pose);
-  std::scoped_lock lock(snapshotMutex_);
-  snapshot_.pose = pose;
+  { std::scoped_lock lock(snapshotMutex_); snapshot_.pose = pose; }
+  if (poseResetCallback_) poseResetCallback_(pose);
+}
+void Drive::SetPoseResetCallback(std::function<void(const frc::Pose2d&)> callback) {
+  poseResetCallback_ = std::move(callback);
 }
 void Drive::AddVision(const frc::Pose2d& pose,units::second_t time,std::array<double,3> noise) { native_->AddVisionMeasurement(pose,p::utils::FPGAToCurrentTime(time),noise); }
 void Drive::RunVelocity(const frc::ChassisSpeeds& speeds) {
