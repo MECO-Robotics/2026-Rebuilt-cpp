@@ -122,7 +122,7 @@ season::ShotTarget RobotContainer::SelectTarget(){
  if(vision_.Connected())for(size_t i=0;i+6<raw.size();i+=7)ids.push_back(static_cast<int>(raw[i]));
  return season::SelectTarget(alliance,{p.X().value(),p.Y().value(),p.Rotation().Radians().value()},ids,field_);
 }
-frc2::CommandPtr RobotContainer::HubShot(bool ownDrive,bool requireVision){season::CoordinatedShotOptions o;o.ownDrive=ownDrive;o.autonomous=true;o.simulation=frc::RobotBase::IsSimulation();o.poseReady=[this,requireVision]{return (!requireVision&&frc::DriverStation::IsAutonomousEnabled())||(quest_.Initialized()&&quest_.Connected(frc::Timer::GetFPGATimestamp()))||frc::Timer::GetFPGATimestamp().value()-lastAcceptedVision_<.5;};return season::CoordinatedShot(Mechanisms(),drive_,field_,[]{auto a=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed)==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;return season::ShotTarget{season::ShotMode::Hub,season::HubPosition(a)};},o);}
+frc2::CommandPtr RobotContainer::HubShot(bool ownDrive,bool requireVision){season::CoordinatedShotOptions o;o.ownDrive=ownDrive;o.autonomous=true;o.simulation=frc::RobotBase::IsSimulation();o.poseReady=[this,requireVision]{return (!requireVision&&frc::DriverStation::IsAutonomousEnabled())||quest_.Ready(frc::Timer::GetFPGATimestamp())||frc::Timer::GetFPGATimestamp().value()-lastAcceptedVision_<.5;};return season::CoordinatedShot(Mechanisms(),drive_,field_,[]{auto a=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed)==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;return season::ShotTarget{season::ShotMode::Hub,season::HubPosition(a)};},o);}
 frc2::Command* RobotContainer::GetAutonomousCommand(){return autoChooser_.GetSelected();}
 void RobotContainer::CancelChecks(){checks_.Cancel("Robot mode changed");}
 
@@ -149,7 +149,7 @@ void RobotContainer::Periodic(){
  // Absolute vision corrects Quest's field transform when it is tracking. Fuse
  // that source independently only during fallback, avoiding correlated updates
  // from the same absolute measurement and its derived Quest pose in one cycle.
- const bool questReady=quest_.Initialized()&&quest_.Connected(now);
+ const bool questReady=quest_.Ready(now);
  if(!fusedQuest&&!questReady){
    for(std::size_t i=0;i<pendingAbsoluteCount_;++i){
      const auto& observation=pendingAbsolute_[(pendingAbsoluteStart_+i)%pendingAbsolute_.size()];
