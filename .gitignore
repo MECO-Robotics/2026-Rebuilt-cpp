@@ -13,3 +13,6 @@ ctre_sim/
 networktables.json
 simgui*.json
 systemcheck-latest.json
+
+__pycache__/
+*.py[cod]
