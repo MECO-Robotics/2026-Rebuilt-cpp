@@ -9,9 +9,12 @@
 #include <functional>
 #include <frc/geometry/Pose2d.h>
 #include <frc/kinematics/ChassisSpeeds.h>
+#include <frc/kinematics/SwerveModuleState.h>
+#include <cstdint>
 #include <units/time.h>
 #include <pathplanner/lib/util/DriveFeedforwards.h>
 namespace base {
+class DriveTelemetry;
 struct ModuleConfig {
   int drive, steer, encoder;
   double offsetTurns, xMeters, yMeters;
@@ -70,12 +73,15 @@ class Drive : public frc2::SubsystemBase {
   struct Snapshot {
     frc::Pose2d pose;
     frc::ChassisSpeeds speeds;
+    std::array<frc::SwerveModuleState,4> measured{}, targets{};
+    int64_t timestampUs = 0;
     double odometryPeriod = 0;
     int failedDaqs = 0;
   };
   mutable std::mutex snapshotMutex_;
   Snapshot snapshot_;
   double nextTelemetry_ = 0, nextBusTelemetry_ = 0;
+  std::unique_ptr<DriveTelemetry> telemetry_;
   std::unique_ptr<ControlRequest> control_;
   std::unique_ptr<NativeDrive> native_;
   std::unique_ptr<frc::Notifier> simNotifier_;
