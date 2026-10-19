@@ -71,8 +71,10 @@ frc2::CommandPtr CoordinatedShot(Mechanisms m,base::Drive& drive,FieldGeometry f
    frc::SmartDashboard::PutBoolean("Shooter/SolutionCalibrated",solution.calibrated);
    frc::SmartDashboard::PutBoolean("Shooter/CalibrationMode",calibration);
    state->feeding=ready;if(ready){Feed(m);state->started=true;}else StopFeed(m);options.readyFeedback(ready);
-   double error=std::atan2(std::sin(solution.headingRadians-pose.heading),std::cos(solution.headingRadians-pose.heading));
-   if(options.ownDrive) drive.RunVelocity(frc::ChassisSpeeds{units::meters_per_second_t{0}, units::meters_per_second_t{0}, units::radians_per_second_t{(poseReady||force)?std::clamp(error*7.,-7.,7.):0}});
+   if(options.ownDrive) {
+     if(poseReady||force) drive.RunHeading(0,0,frc::Rotation2d{units::radian_t{solution.headingRadians}},7,7);
+     else drive.Stop();
+   }
    frc::SmartDashboard::PutBoolean("Shooter/Ready",ready);frc::SmartDashboard::PutBoolean("Shooter/Feeding",ready);
  },[m,&drive,options]{StopFeed(m);m.shooter.Stop();m.hood.Stop();if(options.ownDrive)drive.Stop();options.readyFeedback(false);frc::SmartDashboard::PutBoolean("Shooter/Ready",false);frc::SmartDashboard::PutBoolean("Shooter/Feeding",false);},frc2::Requirements{std::span<frc2::Subsystem* const>{requirements}}).BeforeStarting([state,supplier]{state->target=supplier();state->start=state->lastFalse=state->previous=Now();state->feedElapsed=0;state->started=state->feeding=false;state->volley.Reset(state->start);});
  if(options.autonomous)return std::move(action).Until([state,options]{return state->feedElapsed>=options.feedSeconds||(!state->started&&Now()-state->start>=options.readyTimeoutSeconds);}).WithTimeout(units::second_t{3});

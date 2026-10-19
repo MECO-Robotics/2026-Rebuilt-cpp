@@ -13,12 +13,13 @@
 #include <networktables/NetworkTableInstance.h>
 #include <numbers>
 #include <algorithm>
+#include <frc/DataLogManager.h>
 #include <cmath>
 using namespace units::literals;
 namespace {
 base::Mode Mode(){return frc::RobotBase::IsReal()?base::Mode::Real:base::Mode::Sim;}
 base::DriveConfig DriveConfig(){
- base::DriveConfig c;c.bus="MECO CANIvore";c.pigeon=13;
+ base::DriveConfig c;c.bus="MECO CANIvore";c.pigeon=13;c.odometryHz=250;
  c.driveRatio=5.8909090909090915;c.steerRatio=12.1;c.couplingRatio=4.909090909090909;
  c.maxSpeed=5.24;c.maxAngularRate=7;c.driveKP=.15;c.driveKS=.1;c.driveKV=.124;
  c.steerKP=100;c.steerKD=.5;c.steerKS=.2;c.steerKV=1.5;c.driveCurrent=55;c.steerCurrent=30;
@@ -64,6 +65,18 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
    pendingAbsolute_[(pendingAbsoluteStart_+pendingAbsoluteCount_++)%pendingAbsolute_.size()]=obs;
  },[this]{return drive_.Pose().Rotation();}),
  checks_([this]{drive_.Stop();rack_.Stop();hood_.Stop();intake_.Stop();conveyor_.Stop();bottom_.Stop();top_.Stop();shooter_.Stop();},frc::RobotBase::IsReal()?"/home/lvuser/systemcheck-latest.json":"systemcheck-latest.json") {
+ // Restore native tuning and versioned input logs for every season mechanism.
+ for(base::Mechanism* mechanism : std::array<base::Mechanism*,7>{&rack_, &hood_,
+     &intake_, &conveyor_, &bottom_, &top_, &shooter_}) {
+   mechanism->EnableLiveTuning();
+   mechanism->EnableInputLogging(frc::DataLogManager::GetLog());
+ }
+ drive_.SetPoseResetCallback([this](const frc::Pose2d& pose){
+   if(!quest_.ResetPose(pose,frc::Timer::GetFPGATimestamp()))quest_.InvalidateAlignment();
+   absoluteVision_.reset();
+   pendingAbsoluteCount_=pendingAbsoluteStart_=0;
+   lastAcceptedVision_=-1e9;
+ });
  drive_.ConfigureAuto();
  drive_.SetDefaultCommand(drive_.Joystick([this]{return -controller_.GetLeftY();},[this]{return -controller_.GetLeftX();},[this]{return -controller_.GetRightX();}));
  auto m=Mechanisms();
@@ -98,8 +111,7 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
  pathplanner::NamedCommands::registerCommand("Fender",season::ShooterPreset(m,0,30));
  pathplanner::NamedCommands::registerCommand("AutoAim",frc2::cmd::RunEnd([this]{
    auto p=drive_.Pose();auto target=SelectTarget();auto shot=season::CalculateShot({p.X().value(),p.Y().value(),p.Rotation().Radians().value()},target,field_,frc::RobotBase::IsSimulation());
-   double error=std::remainder(shot.headingRadians-p.Rotation().Radians().value(),2*std::numbers::pi);
-   drive_.RunVelocity(frc::ChassisSpeeds{0_mps,0_mps,units::radians_per_second_t{std::clamp(7*error,-7.,7.)}});
+   drive_.RunHeading(0,0,frc::Rotation2d{units::radian_t{shot.headingRadians}},7,7);
  },[this]{drive_.Stop();},{&drive_}).AlongWith(calculatedSpinUp()));
  autoChooser_=pathplanner::AutoBuilder::buildAutoChooser();
  seasonAutos_.emplace_back(HubShot(true,true));
@@ -180,9 +192,5 @@ void RobotContainer::Periodic(){
  }
 }
 void RobotContainer::ResetLocalization(const frc::Pose2d& pose){
- drive_.ResetPose(pose);
- if(!quest_.ResetPose(pose,frc::Timer::GetFPGATimestamp()))quest_.InvalidateAlignment();
- absoluteVision_.reset();
- pendingAbsoluteCount_=pendingAbsoluteStart_=0;
- lastAcceptedVision_=-1e9;
+ drive_.ResetPose(pose);  // Shared observer also handles AutoBuilder/Choreo resets.
 }
