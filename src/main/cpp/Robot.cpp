@@ -13,6 +13,7 @@ Robot::Robot() {
 }
 void Robot::RobotPeriodic() {
  frc2::CommandScheduler::GetInstance().Run();
+ container_.Periodic();
  auto alliance=frc::DriverStation::GetAlliance();
  std::optional<season::Alliance> own;
  if(alliance)own=*alliance==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;
