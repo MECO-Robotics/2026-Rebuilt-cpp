@@ -48,4 +48,13 @@ Quest alignment initializes on the first compatible absolute/Quest pair and aver
 
 ## Validation evidence
 
-See `artifacts/finalization-validation.json` for current build, native test and simulator results. Existing historical evidence is preserved under its original filename. All simulation scripts control only local HAL simulation and leave the robot disabled. Hardware evidence is explicitly absent.
+See `artifacts/base-finalization-validation.json` upstream and `artifacts/finalization-validation.json` in the season fork for current build, native test and simulator results. Existing historical evidence is preserved under its original filename. All simulation scripts control only local HAL simulation and leave the robot disabled. Hardware evidence is explicitly absent.
+
+
+The final checks passed 28 base tests and 51 season tests in each of debug and release, with desktop and roboRIO debug/release builds passing. Native desktop base/season drive checks, season mechanism binding/output cleanup and Choreo checks passed. Choreo endpoint error was 0.0241 m against the existing 0.4 m ideal-model acceptance bound. The disabled-only Quest fixture passed alignment, mounting/relative-motion fusion, absolute fallback, combined diagnostic connectivity, tracking loss, staleness, field rejection, version/battery reporting and stationary-output checks. It injects synthetic camera/headset measurements, not a sensor physics model.
+
+A read-only season desktop sample reported configured odometry 250 Hz and average native period 3.98346 ms, with the cumulative failed-DAQ counter at 1. This is neither a worst-case jitter measurement nor evidence of physical CAN performance. All seven mechanism gain arrays were present and their native versioned log records were decoded from the running simulator's file. Individual JSON artifacts and build logs retain raw values. Historical evidence was not overwritten.
+
+Hardware mapping blocks, source mechanism constants, Choreo implementation and deployed assets match season baseline `9c498ec`, except the explicit 250 Hz rate selection. Generic `src/main/include/base` and `src/main/cpp/base` implementations match upstream byte-for-byte. The pre-existing Java base `gradlew` working-tree change was preserved.
+
+Commit inventories through the validated source revisions are stored in `artifacts/base-finalization-commits.json` upstream and `artifacts/finalization-commits.json` downstream. These separate parity, control/concurrency, telemetry/optimization, simulation, tuning/replay and evidence changes. Later evidence-only commits do not change the validated runtime.
