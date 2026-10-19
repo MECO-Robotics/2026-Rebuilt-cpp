@@ -91,7 +91,7 @@ async function main() {
   const responses = [];
   const report = {passed: false, advantageScopeVersion: version, log: path.resolve(options.log),
     workerSha256: crypto.createHash('sha256').update(read('bundles/hub$wpilogWorker.js')).digest('hex'),
-    parser: 'Installed unmodified hub$wpilogWorker.js + hub$wpilogIndexer.wasm', fields: [], errors};
+    parser: 'Installed unmodified hub$wpilogWorker.js + hub$wpilogIndexer.wasm', fields: [], metadata: [], errors};
   try {
     for (const filename of ['hub$wpilogWorker.js', 'hub$wpilogIndexer.js', 'hub$wpilogIndexer.wasm']) {
       fs.writeFileSync(path.join(temporary, filename), read('bundles/' + filename));
@@ -116,6 +116,19 @@ async function main() {
     // The UI normally requests schemas on demand before decoding structures.
     for (const key of keys.filter(key => key.includes('/.schema/'))) {
       await context.self.onmessage({data: {type: 'parseField', key}});
+    }
+    for (const key of keys.filter(key => key.startsWith('/Metadata/') || key.startsWith('NT:/Metadata/'))) {
+      await context.self.onmessage({data: {type: 'parseField', key}});
+      const field = evaluate(`log.getField(${JSON.stringify(key)}).toSerialized()`);
+      report.metadata.push({key, name: key.slice(key.indexOf('/Metadata/') + '/Metadata/'.length),
+        wpilibType: field.wpilibType, sampleCount: field.timestamps.length,
+        last: field.values.at(-1), typeWarning: field.typeWarning});
+    }
+    for (const name of ['Project', 'WPILib']) {
+      if (!report.metadata.some(field => field.name === name && field.wpilibType === 'string' &&
+          field.sampleCount > 0 && !field.typeWarning && typeof field.last === 'string' && field.last.trim().length > 0)) {
+        throw Error(`Missing or undecodable nonempty /Metadata/${name} string`);
+      }
     }
     const wanted = keys.filter(key => key.includes('/AdvantageScope/') &&
       evaluate(`log.getStructuredType(${JSON.stringify(key)})`) !== null);
