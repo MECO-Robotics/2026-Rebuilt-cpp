@@ -38,6 +38,15 @@ TEST(DriveOwnership, AimPreemptsJoystickAndDisableCancelsOwner) {
   scheduler.Run();
   EXPECT_FALSE(aim.IsScheduled());
   EXPECT_EQ(scheduler.Requiring(&drive), nullptr);
+  int resets = 0;
+  const frc::Pose2d resetPose{units::meter_t{1}, units::meter_t{2}, frc::Rotation2d{}};
+  drive.SetPoseResetCallback([&](const frc::Pose2d& pose) {
+    ++resets;
+    EXPECT_EQ(pose, resetPose);
+    EXPECT_EQ(drive.Pose(), resetPose);  // Observer runs outside snapshot lock.
+  });
+  drive.ResetPose(resetPose);
+  EXPECT_EQ(resets, 1);
   // Motion/neutral-output timing belongs to the running native simulator test;
   // this regression checks real command ownership and cancellation only.
   scheduler.CancelAll();
