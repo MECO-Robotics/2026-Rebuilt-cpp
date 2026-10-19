@@ -1,0 +1,124 @@
+{
+  "date": "2026-10-19",
+  "branch": "codex/finalize-cpp-migration",
+  "sourceCommit": "d23638c399de5e94ffc9c63fc1e97a223e4917e7",
+  "hardwareValidation": false,
+  "deployed": false,
+  "build": {
+    "command": "./gradlew build --max-workers=2",
+    "passed": true,
+    "targets": [
+      "linuxathena debug",
+      "linuxathena release",
+      "linuxx86-64 debug",
+      "linuxx86-64 release"
+    ],
+    "log": "finalization-build.log"
+  },
+  "nativeTests": {
+    "debug": {
+      "passed": 51,
+      "failed": 0
+    },
+    "release": {
+      "passed": 51,
+      "failed": 0
+    }
+  },
+  "simulation": {
+    "finalization-drive-smoke.json": {
+      "passed": true,
+      "checks": {
+        "initial_disabled_stationary": true,
+        "forward_velocity": true,
+        "forward_speed_tracking": true,
+        "reverse_speed_tracking": true,
+        "turn_speed_tracking": true,
+        "pose_changes_on_drive": true,
+        "reverse_velocity": true,
+        "turn_velocity": true,
+        "final_disabled_stationary": true
+      },
+      "sha256": "715d1a566371eaedbdd628a9a1123c0fe4a38ee19b16edc730cd93a214fe0f26"
+    },
+    "finalization-mechanism-smoke.json": {
+      "passed": true,
+      "checks": {
+        "hub_preset_target": true,
+        "hub_velocity_tracks": true,
+        "intake_rack_deployed": true,
+        "acquire_roller_direction": true,
+        "acquire_storage_directions": true,
+        "acquire_release_stops_outputs": true,
+        "idle_stops_shooter": true,
+        "disabled_stops_shooter": true,
+        "fuel_model_publishes": true
+      },
+      "sha256": "cabd19481e0186ac41ec38dbc1070f316ec523765970f3e09ed8822c0262b9de"
+    },
+    "finalization-auto-smoke.json": {
+      "passed": true,
+      "checks": {
+        "chooser_selected_choreo": true,
+        "trajectory_endpoint_tracking": true,
+        "autonomous_pose_reset": true
+      },
+      "sha256": "76fbb6de510977e8747bf81657da6e5fb062dee496f775a457c79a3d059e1217"
+    },
+    "finalization-questnav-smoke.json": {
+      "passed": true,
+      "checks": {
+        "localhost_nt_connected": true,
+        "absolute_fallback_without_quest": true,
+        "field_aligned_tracking": true,
+        "pinned_version_and_battery_diagnostics": true,
+        "mounted_headset_motion_fused": true,
+        "tracking_loss_uses_absolute_fallback": true,
+        "stale_tracking_not_ready": true,
+        "out_of_field_not_ready": true,
+        "version_mismatch_visible": true,
+        "disabled_stationary": true
+      },
+      "sha256": "0ea74d1b6c04d981b8084ca91cfce4ff6d51c8a22c12e60123ba85a31f60819a"
+    },
+    "finalization-input-log-smoke.json": {
+      "passed": true,
+      "checks": {},
+      "sha256": "f7c2864cd8b2b66fee8a8ecd9d55f881b93ead1ed36845e14169d3d108f4cfc0"
+    },
+    "finalization-health-smoke.json": {
+      "passed": true,
+      "checks": {},
+      "sha256": "a9deb6752e7543033715500a4575c1f2ab40a62c496c4065b661b87e83b7a56d"
+    }
+  },
+  "limitations": [
+    "No physical hardware, calibration, field acceptance or real-time CAN FD load/jitter validation",
+    "Deterministic offline harness and MotorIO replay do not constitute deterministic whole-robot playback",
+    "QuestNav wire/native fixtures use synthetic measurements, not a physical headset"
+  ],
+  "staticEstimates": {
+    "commandPeriodMs": 20,
+    "seasonNativePeriodMs": 4,
+    "controlEvaluationsPerCommand": 5,
+    "uniformFeedbackWaitMeanMs": {
+      "previousHeadingLoop": 10,
+      "nativeHeadingLoop": 2
+    },
+    "movingTargetWatchdogMs": 100,
+    "desktopTargetPacketBytes": 152,
+    "poseSpeedPublishCallReductionFraction": 0.8
+  },
+  "upstreamSourceCommit": "1431761dc57e7257ab3f2103e92f910618ee98f2",
+  "genericImplementationMatchesUpstream": true,
+  "hardwarePreservation": {
+    "baseline": "9c498ec",
+    "driveConfiguration": "Exact match except odometryHz=250",
+    "mechanismMappingBlockSha256": "9b9cfe595f82dfdc6ca9b33567e9cc0b16f2e5091d223c708e94d226e265ac6c",
+    "mechanismConstantsSha256": "91a2ec1159c3a1df33e15855e028050ee8995252149fda492175c41bc5265cfc",
+    "hardwareAdapterSha256": "f80c95ef45e5423a4e3ffeffe58f24530f6b6a3a1cc702483af5954aa59a4771",
+    "choreoAndDeployAssets": "Unchanged"
+  },
+  "upstreamRuntimeSourceCommit": "e0e4a85d6152fed696fd08906d17b8f26dcb5978",
+  "sourceCommitNote": "Runtime and fixture source revision; later commits merge evidence and documentation only."
+}

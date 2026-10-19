@@ -1,0 +1,86 @@
+{
+  "transport": "localhost HAL websocket + NT4",
+  "scope": "Native simulator direction, steady speed tracking, pose change, and disable behavior; excludes physical calibration",
+  "samples": {
+    "disabled_initial": {
+      "speeds": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "pose": [
+        0.0,
+        -4.9807201519045735e-08,
+        0.0
+      ],
+      "count": 44
+    },
+    "forward": {
+      "speeds": [
+        2.331339599875464,
+        0.0,
+        -0.003197465929010303
+      ],
+      "pose": [
+        4.222764818976825,
+        -0.012006747420052083,
+        -0.3296336874998076
+      ],
+      "count": 96
+    },
+    "reverse": {
+      "speeds": [
+        -2.3313402856092766,
+        -0.0008940577143785448,
+        0.0015987329645051518
+      ],
+      "pose": [
+        0.589052870259484,
+        0.0037218473634868373,
+        -0.20047497265627356
+      ],
+      "count": 96
+    },
+    "turn": {
+      "speeds": [
+        -5.57771537185725e-05,
+        -3.7643917981722286e-05,
+        3.112661807323437
+      ],
+      "pose": [
+        0.12289539643732589,
+        0.0017581078053496484,
+        -43.50997968741161
+      ],
+      "count": 96
+    },
+    "disabled_final": {
+      "speeds": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "pose": [
+        0.12288911583185932,
+        0.001764940008783463,
+        -17.707214355468775
+      ],
+      "count": 96
+    }
+  },
+  "checks": {
+    "initial_disabled_stationary": true,
+    "forward_velocity": true,
+    "forward_speed_tracking": true,
+    "reverse_speed_tracking": true,
+    "turn_speed_tracking": true,
+    "pose_changes_on_drive": true,
+    "reverse_velocity": true,
+    "turn_velocity": true,
+    "final_disabled_stationary": true
+  },
+  "driverStationSchema": [
+    ">new_data"
+  ],
+  "passed": true
+}

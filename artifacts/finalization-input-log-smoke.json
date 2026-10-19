@@ -1,0 +1,40 @@
+{
+  "scope": "Native simulator-produced MotorIO logs, not hardware",
+  "entries": {
+    "IntakeRoller/MotorInputs": 8243,
+    "TopIndexer/MotorInputs": 8243,
+    "Hood/MotorInputs": 8243,
+    "BottomIndexer/MotorInputs": 8243,
+    "ShooterFlywheel/MotorInputs": 8243,
+    "Conveyor/MotorInputs": 8243,
+    "IntakeRack/MotorInputs": 8243
+  },
+  "firstTimestampUs": {
+    "IntakeRoller/MotorInputs": 788972,
+    "TopIndexer/MotorInputs": 789021,
+    "Hood/MotorInputs": 789072,
+    "BottomIndexer/MotorInputs": 789116,
+    "ShooterFlywheel/MotorInputs": 789261,
+    "Conveyor/MotorInputs": 789289,
+    "IntakeRack/MotorInputs": 789312
+  },
+  "lastTimestampUs": {
+    "IntakeRoller/MotorInputs": 165613823,
+    "TopIndexer/MotorInputs": 165613853,
+    "Hood/MotorInputs": 165613899,
+    "BottomIndexer/MotorInputs": 165613914,
+    "ShooterFlywheel/MotorInputs": 165613968,
+    "Conveyor/MotorInputs": 165613979,
+    "IntakeRack/MotorInputs": 165613993
+  },
+  "schema": {
+    "BottomIndexer/MotorInputs": "{\"schema\":\"meco.motorinputs.v1\",\"fields\":[\"position_rot\",\"velocity_rot_s\",\"voltage_V\",\"supplyVoltage_V\",\"current_A\",\"connected_0_1\"]}",
+    "Conveyor/MotorInputs": "{\"schema\":\"meco.motorinputs.v1\",\"fields\":[\"position_rot\",\"velocity_rot_s\",\"voltage_V\",\"supplyVoltage_V\",\"current_A\",\"connected_0_1\"]}",
+    "Hood/MotorInputs": "{\"schema\":\"meco.motorinputs.v1\",\"fields\":[\"position_rot\",\"velocity_rot_s\",\"voltage_V\",\"supplyVoltage_V\",\"current_A\",\"connected_0_1\"]}",
+    "IntakeRack/MotorInputs": "{\"schema\":\"meco.motorinputs.v1\",\"fields\":[\"position_rot\",\"velocity_rot_s\",\"voltage_V\",\"supplyVoltage_V\",\"current_A\",\"connected_0_1\"]}",
+    "IntakeRoller/MotorInputs": "{\"schema\":\"meco.motorinputs.v1\",\"fields\":[\"position_rot\",\"velocity_rot_s\",\"voltage_V\",\"supplyVoltage_V\",\"current_A\",\"connected_0_1\"]}",
+    "ShooterFlywheel/MotorInputs": "{\"schema\":\"meco.motorinputs.v1\",\"fields\":[\"position_rot\",\"velocity_rot_s\",\"voltage_V\",\"supplyVoltage_V\",\"current_A\",\"connected_0_1\"]}",
+    "TopIndexer/MotorInputs": "{\"schema\":\"meco.motorinputs.v1\",\"fields\":[\"position_rot\",\"velocity_rot_s\",\"voltage_V\",\"supplyVoltage_V\",\"current_A\",\"connected_0_1\"]}"
+  },
+  "passed": true
+}

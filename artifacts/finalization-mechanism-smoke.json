@@ -1,0 +1,108 @@
+{
+  "transport": "127.0.0.1 HAL websocket + NT4",
+  "samples": {
+    "hub_button": {
+      "IntakeRack/Position": 0.0,
+      "IntakeRoller/Velocity": 0.0,
+      "Conveyor/Velocity": 0.0,
+      "BottomIndexer/Velocity": 0.0,
+      "TopIndexer/Velocity": 0.0,
+      "ShooterFlywheel/Velocity": 0.0,
+      "ShooterFlywheel/Target": 30.0,
+      "IntakeRoller/Voltage": 0.0,
+      "Conveyor/Voltage": 0.0,
+      "BottomIndexer/Voltage": 0.0,
+      "TopIndexer/Voltage": 0.0
+    },
+    "hub_latched": {
+      "IntakeRack/Position": 0.0,
+      "IntakeRoller/Velocity": 0.0,
+      "Conveyor/Velocity": 0.0,
+      "BottomIndexer/Velocity": 0.0,
+      "TopIndexer/Velocity": 0.0,
+      "ShooterFlywheel/Velocity": 30.36677367495287,
+      "ShooterFlywheel/Target": 30.0,
+      "IntakeRoller/Voltage": 0.0,
+      "Conveyor/Voltage": 0.0,
+      "BottomIndexer/Voltage": 0.0,
+      "TopIndexer/Voltage": 0.0
+    },
+    "acquire": {
+      "IntakeRack/Position": 0.29999999999999855,
+      "IntakeRoller/Velocity": -43.29714933092009,
+      "Conveyor/Velocity": 12.882629242342578,
+      "BottomIndexer/Velocity": 10.0818491277689,
+      "TopIndexer/Velocity": -12.882629242342578,
+      "ShooterFlywheel/Velocity": 30.36677367495287,
+      "ShooterFlywheel/Target": 30.0,
+      "IntakeRoller/Voltage": -10.0,
+      "Conveyor/Voltage": 5.0,
+      "BottomIndexer/Voltage": 5.0,
+      "TopIndexer/Voltage": -5.0
+    },
+    "acquire_released": {
+      "IntakeRack/Position": 0.29999999999999855,
+      "IntakeRoller/Velocity": -21.491001943541576,
+      "Conveyor/Velocity": 11.252772204434862,
+      "BottomIndexer/Velocity": 6.583121708822588,
+      "TopIndexer/Velocity": -11.252772204434862,
+      "ShooterFlywheel/Velocity": 30.366773674952963,
+      "ShooterFlywheel/Target": 30.0,
+      "IntakeRoller/Voltage": 0.0,
+      "Conveyor/Voltage": 0.0,
+      "BottomIndexer/Voltage": 0.0,
+      "TopIndexer/Voltage": 0.0
+    },
+    "idle_button": {
+      "IntakeRack/Position": 0.29999999999999855,
+      "IntakeRoller/Velocity": -16.947689795243026,
+      "Conveyor/Velocity": 10.664482881822096,
+      "BottomIndexer/Velocity": 5.742352205350079,
+      "TopIndexer/Velocity": -10.664482881822096,
+      "ShooterFlywheel/Velocity": 28.14267387391915,
+      "ShooterFlywheel/Target": 30.0,
+      "IntakeRoller/Voltage": 0.0,
+      "Conveyor/Voltage": 0.0,
+      "BottomIndexer/Voltage": 0.0,
+      "TopIndexer/Voltage": 0.0
+    },
+    "idle": {
+      "IntakeRack/Position": 0.29999999999999855,
+      "IntakeRoller/Velocity": -3.765750223290346,
+      "Conveyor/Velocity": 7.590112349145603,
+      "BottomIndexer/Velocity": 2.416889481123851,
+      "TopIndexer/Velocity": -7.590112349145603,
+      "ShooterFlywheel/Velocity": 3.815258263709898e-05,
+      "ShooterFlywheel/Target": 30.0,
+      "IntakeRoller/Voltage": 0.0,
+      "Conveyor/Voltage": 0.0,
+      "BottomIndexer/Voltage": 0.0,
+      "TopIndexer/Voltage": 0.0
+    },
+    "disabled": {
+      "IntakeRack/Position": 0.29999999999999855,
+      "IntakeRoller/Velocity": -1.7062041205594665,
+      "Conveyor/Velocity": 6.346229665785048,
+      "BottomIndexer/Velocity": 1.53267449761142,
+      "TopIndexer/Velocity": -6.346229665785048,
+      "ShooterFlywheel/Velocity": 1.3045610835341078e-08,
+      "ShooterFlywheel/Target": 30.0,
+      "IntakeRoller/Voltage": 0.0,
+      "Conveyor/Voltage": 0.0,
+      "BottomIndexer/Voltage": 0.0,
+      "TopIndexer/Voltage": 0.0
+    }
+  },
+  "checks": {
+    "hub_preset_target": true,
+    "hub_velocity_tracks": true,
+    "intake_rack_deployed": true,
+    "acquire_roller_direction": true,
+    "acquire_storage_directions": true,
+    "acquire_release_stops_outputs": true,
+    "idle_stops_shooter": true,
+    "disabled_stops_shooter": true,
+    "fuel_model_publishes": true
+  },
+  "passed": true
+}
