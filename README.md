@@ -6,6 +6,8 @@ The original Java projects are preserved in sibling folders. See [the port contr
 
 For architecture-aware Codex assistance, use the repository skill [`frc-base-project`](.agents/skills/frc-base-project/SKILL.md), or invoke `$frc-base-project`. Test guidance lives in `AGENTS.md`.
 
+For device configuration, commissioning, and diagnosis, use [`frc-hardware`](.agents/skills/frc-hardware/SKILL.md) or invoke `$frc-hardware`.
+
 ## Build and simulate
 
 Install WPILib 2026.2.1 with its C++ toolchains and native vendor dependencies:
