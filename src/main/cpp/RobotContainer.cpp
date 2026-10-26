@@ -8,6 +8,7 @@
 #include "season/SimulationTuning.h"
 #include "season/SystemCheckSetup.h"
 #include <frc/RobotBase.h>
+#include <frc/system/plant/DCMotor.h>
 #include <frc/Timer.h>
 #include <frc/DriverStation.h>
 #include <frc/GenericHID.h>
@@ -33,9 +34,10 @@ base::DriveConfig DriveConfig(){
  const bool simulation=frc::RobotBase::IsSimulation();
  c.steerKP=100;c.steerKD=.5;
  c.steerKS=.2;c.steerKV=1.5;c.driveCurrent=55;c.steerCurrent=30;
- // Match the 2026 simulation chassis inputs. The yaw MOI is the existing
+ // Simulation ready-to-drive maximum: robot, bumpers and battery (67.6 kg).
+ // The real configuration remains unchanged. The yaw MOI is the existing
  // PathPlanner estimate; replace it when a measured or CAD value is available.
- c.massKg=53;c.moi=6.883;c.cof=2.9;c.simulation.wheelInertia=.01;c.simulation.steerInertia=.01;
+ c.massKg=simulation?67.6:53;c.moi=6.883;c.cof=2.9;c.simulation.wheelInertia=.01;c.simulation.steerInertia=.01;
  c.autoConfigFromGUI=true;c.autoTranslationKP=15;c.autoRotationKP=10;
  c.modules={{{2,1,9,.3076171875,.2794,.2794,false,true,false},
  {8,3,10,.304931640625,.2794,-.2794,true,true,false},
@@ -50,17 +52,18 @@ base::DriveConfig DriveConfig(){
                         {Orientation::CounterClockwisePositive,Orientation::ClockwisePositive,Orientation::CounterClockwisePositive},
                         {Orientation::ClockwisePositive,Orientation::ClockwisePositive,Orientation::CounterClockwisePositive}}};
  if(simulation){
-   // These motor constants match the Phoenix/ Kraken model defaults in
-   // MecoSimulation's DrivePhysicsConfig. The Jolt plant uses SI output inertia.
-   constexpr double motorResistance=12.0/366.0;
-   constexpr double motorTorqueConstant=7.09/366.0;
-   constexpr double motorVelocityConstant=55.0;
+   // Native Phoenix swerve requests enable FOC. Use the same electrical
+   // plant and stator torque limit as the simulation adapter, not supply amps.
+   const auto motor=frc::DCMotor::KrakenX60FOC(1);
+   const double motorResistance=motor.R.value();
+   const double motorTorqueConstant=motor.Kt.value();
+   const double motorVelocityConstant=motor.Kv.value();
    std::array<season::simulation::ModuleLocation,4> locations{};
    for(std::size_t i=0;i<locations.size();++i)
      locations[i]={c.modules[i].xMeters,c.modules[i].yMeters};
    const auto tuned=season::simulation::DeriveSimulationTuning({
        c.massKg,c.moi,c.cof,c.wheelRadius,c.driveRatio,c.steerRatio,c.simulation.steerInertia,
-       c.driveCurrent,c.steerCurrent,motorResistance,motorTorqueConstant,motorVelocityConstant,12.0,locations});
+       c.slipCurrent,c.steerCurrent,motorResistance,motorTorqueConstant,motorVelocityConstant,12.0,locations});
    c.steerKP=tuned.steerKP;c.steerKD=tuned.steerKD;
    c.autoTranslationKP=tuned.autoTranslationKP;c.autoRotationKP=tuned.autoRotationKP;
  }
