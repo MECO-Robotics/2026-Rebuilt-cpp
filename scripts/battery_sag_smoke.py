@@ -18,7 +18,7 @@ from websockets.asyncio.client import connect
 
 
 async def run(args):
-    binary=running_sim_binary()
+    binary=running_sim_binary(nt_port=args.nt_port)
     result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),
             'running_binary':str(binary),'scope':'Numerical desktop battery estimate, not hardware calibration',
             'samples':{},'checks':{}}

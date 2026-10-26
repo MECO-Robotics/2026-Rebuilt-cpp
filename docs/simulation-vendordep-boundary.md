@@ -29,4 +29,6 @@ For concurrent desktop validation, `FRC_SIM_NT_PORT=5811` starts this robot's
 NetworkTables server on loopback port 5811. Use `--nt-port 5811` with the field
 and battery smoke drivers. The default remains 5810. Confirm that the HAL websocket
 and telemetry server belong to the same process; results mixing two simulators
-are invalid. This option does not alter or stop another simulator.
+are invalid. The evidence helper checks listening socket owners and rejects
+mismatched endpoints before sending input. This option does not alter or stop
+another simulator.

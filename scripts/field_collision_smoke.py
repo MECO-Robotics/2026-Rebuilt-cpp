@@ -8,6 +8,8 @@ import argparse
 import asyncio
 import contextlib
 import json
+import hashlib
+from sim_evidence import running_sim_binary
 import math
 from pathlib import Path
 import time
@@ -18,6 +20,7 @@ from wpimath.geometry import Pose2d, Pose3d
 
 
 async def exercise(args):
+    binary=running_sim_binary(nt_port=args.nt_port)
     client = ntcore.NetworkTableInstance.create()
     client.startClient4('field-collision-check')
     client.setServer('127.0.0.1', args.nt_port)
@@ -27,7 +30,9 @@ async def exercise(args):
     model = client.getStructTopic('/Simulation/RobotTruth', Pose3d).subscribe(Pose3d(), options)
     grounded = client.getDoubleTopic('/SmartDashboard/FieldSimulation/GroundedBodyHeight').subscribe(.30)
     count = client.getDoubleTopic('/SmartDashboard/FieldSimulation/ColliderCount').subscribe(0)
-    result = {'transport': 'localhost HAL websocket + NT4', 'samples': {}, 'checks': {}}
+    result = {'transport': 'localhost HAL websocket + NT4', 'running_binary': str(binary),
+              'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
+              'samples': {}, 'checks': {}}
     async with connect('ws://127.0.0.1:3300/wpilibws', max_size=None) as websocket:
         async def drain():
             async for _ in websocket:
