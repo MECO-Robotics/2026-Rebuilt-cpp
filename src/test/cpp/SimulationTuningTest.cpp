@@ -32,7 +32,7 @@ TEST(SimulationTuning, DerivesSteeringAndChassisGainsFromTheirOwnPlantParameters
     const auto base = DeriveSimulationTuning(input);
 
     EXPECT_NEAR(base.steerKP, 30.61, .1);
-    EXPECT_DOUBLE_EQ(base.steerKD, 0.0);
+    EXPECT_NEAR(base.steerKD, .6122, .002);
     EXPECT_NEAR(base.autoTranslationKP, 15.2, .2);
     EXPECT_NEAR(base.autoRotationKP, 10.6, .2);
     EXPECT_GT(base.maxLinearAcceleration, 0);
@@ -49,7 +49,7 @@ TEST(SimulationTuning, DerivesSteeringAndChassisGainsFromTheirOwnPlantParameters
     higherSteerInertia.steerInertiaKgMetersSquared *= 2;
     const auto inertiaTune = DeriveSimulationTuning(higherSteerInertia);
     EXPECT_LT(inertiaTune.steerKP, base.steerKP);
-    EXPECT_DOUBLE_EQ(inertiaTune.steerKD, 0.0);
+    EXPECT_LT(inertiaTune.steerKD, base.steerKD);
 
     auto largerYawMoi = input;
     largerYawMoi.yawMoiKgMetersSquared *= 2;

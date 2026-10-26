@@ -37,6 +37,7 @@ class RobotContainer {
   std::unique_ptr<season::FuelSimulation> simulation_;
 #ifndef __FRC_ROBORIO__
   nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
+  int simulationResetFeedbackLoops_{};
 #endif
   frc2::CommandXboxController controller_{0},copilot_{1};
   frc::SendableChooser<frc2::Command*> autoChooser_;

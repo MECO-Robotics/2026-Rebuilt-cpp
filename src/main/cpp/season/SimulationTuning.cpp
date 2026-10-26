@@ -15,6 +15,8 @@ constexpr double kPi = 3.14159265358979323846;
 constexpr double kTranslationErrorScaleMeters = .08;
 constexpr double kHeadingErrorScaleRadians = .50;
 constexpr double kSteerLinearizationErrorRadians = 10.0 * kPi / 180.0;
+// Phoenix consumes sensor feedback asynchronously, once per robot-period batch
+// of physics substeps. Keep the dominant response slower than that feedback delay.
 constexpr double kSteerSettlingSeconds = .15;
 
 void RequirePositive(double value, const char* name)
@@ -47,9 +49,9 @@ TuningResult DeriveSimulationTuning(const TuningInputs& in)
 
     // The linearized Jolt azimuth plant is J*theta'' + B*theta' = A*V,
     // where theta is module output radians. Phoenix gains use module rotations.
-    // The motor's back-EMF already contributes B, so use zero additional D gain
-    // and place the dominant pole with proportional feedback. This avoids the
-    // long, overdamped response caused by adding a second large velocity damper.
+    // Place the nominal plant pole with proportional feedback, including the
+    // electrical damping B. Add a small feedback lead below for the asynchronous
+    // Phoenix/robot-period transport boundary.
     const double steerTorquePerVolt = in.steerRatio * in.motorTorqueConstantNmPerAmp / in.motorResistanceOhms;
     const double steerElectricalDamping = in.steerRatio * in.steerRatio * in.motorTorqueConstantNmPerAmp /
                                           (in.motorResistanceOhms * in.motorVelocityConstantRadPerSecondPerVolt);
@@ -68,7 +70,9 @@ TuningResult DeriveSimulationTuning(const TuningInputs& in)
                               (steerElectricalDamping / in.steerInertiaKgMetersSquared - slowPole) /
                               steerTorquePerVolt;
     const double steerKP = 2.0 * kPi * steerKpRad;
-    constexpr double steerKD = 0.0;
+    // Lead the asynchronous feedback by one robot period. This damps large
+    // azimuth steps without sacrificing stiffness against drive/steer coupling.
+    const double steerKD = steerKP * .02;
     if (!std::isfinite(steerKP) || steerKP <= 0 || steerKP > maxLinearKp ||
         !std::isfinite(currentLimitedSlowPole) || currentLimitedSlowPole <= 0)
         throw std::invalid_argument("Derived steering gains exceed the simulated actuator limits");

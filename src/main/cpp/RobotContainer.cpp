@@ -159,6 +159,12 @@ void RobotContainer::SimulationPeriodic(){
  if(simulation_)simulation_->Periodic();
 #ifndef __FRC_ROBORIO__
  if(auto truth=drive_.SimulationTruth()){
+   // Scene reset changes encoder and gyro raw inputs asynchronously. Reconcile
+   // once after transport/odometry has consumed them, using the current physical
+   // pose so motion since reset is retained. No wait blocks the robot loop.
+   if(simulationResetFeedbackLoops_>0 && --simulationResetFeedbackLoops_==0)
+     drive_.ResetPose(frc::Pose2d{units::meter_t{truth->x},units::meter_t{truth->y},
+                                frc::Rotation2d{units::radian_t{truth->yaw}}});
    simulationPosePublisher_.Set(frc::Pose3d{
        units::meter_t{truth->x}, units::meter_t{truth->y}, units::meter_t{truth->z},
        frc::Rotation3d{0_rad, 0_rad, units::radian_t{truth->yaw}}});
@@ -168,6 +174,7 @@ void RobotContainer::SimulationPeriodic(){
 void RobotContainer::ResetSimulation(){
 #ifndef __FRC_ROBORIO__
  drive_.ResetSimulation(frc::Pose2d{});
+ simulationResetFeedbackLoops_=5;
 #endif
  if(simulation_)simulation_->Reset();
 }
