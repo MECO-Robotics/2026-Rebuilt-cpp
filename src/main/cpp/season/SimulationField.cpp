@@ -78,7 +78,7 @@ std::vector<base::sim::BodySpec> FieldColliders() {
 }
 frc::Pose2d DefaultSpawn(bool red) {
     return {units::meter_t{red?kFieldLength-3.65:3.65},
-            units::meter_t{red?kFieldWidth-.75:.75},
+            units::meter_t{red?kFieldWidth-In(50.34)/2:In(50.34)/2},
             frc::Rotation2d{units::radian_t{red?std::numbers::pi:0}}};
 }
 bool IsClearStartingPose(const frc::Pose2d& pose) {

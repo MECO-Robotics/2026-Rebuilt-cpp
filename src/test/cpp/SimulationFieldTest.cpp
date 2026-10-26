@@ -8,6 +8,9 @@ TEST(SimulationField, StartsInsideFieldClearOfStructuresAndOverStartingLine) {
     for (bool red : {false,true}) {
         const auto spawn=DefaultSpawn(red);
         EXPECT_TRUE(IsClearStartingPose(spawn));
+        // A square chassis sweeps its largest footprint at 45 degrees. The
+        // default lane must permit turning, not merely an axis-aligned spawn.
+        EXPECT_TRUE(IsClearStartingPose({spawn.Translation(),frc::Rotation2d{units::degree_t{45}}}));
         const double line=red?kFieldLength-kStartingLineX:kStartingLineX;
         EXPECT_LT(std::abs(spawn.X().value()-line),.43);
     }

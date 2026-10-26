@@ -32,7 +32,18 @@ physics libraries. Choreo remains a separate season dependency.
 
 The build includes desktop and roboRIO debug/release executables and GoogleTest regressions. Deployment is `./gradlew deploy` and writes to team 8324's roboRIO. This port has not been deployed or commissioned on hardware.
 
-For headless Linux validation, start `./scripts/sim_headless.sh` in one terminal after building. In another terminal:
+Desktop simulation now enables the REBUILT field colliders by default. Startup
+and Back/View reset use a clear alliance start, not `(0,0)`. See
+[the field scene and validation](docs/simulation-field.md). For the field-aware
+runtime check, launch `./scripts/sim_headless.sh`, then run
+`python scripts/field_collision_smoke.py --output artifacts/field-collision-repeat.json`
+with the Python dependencies below installed.
+
+For the free-space drive, mechanism and Choreo checks below, start
+`FRC_SIM_FIELD_COLLIDERS=0 ./scripts/sim_headless.sh` in one terminal after
+building. This deliberately restores the empty-world origin/reset contract;
+otherwise field contacts invalidate open-loop speed and trajectory assumptions.
+In another terminal:
 
 ```sh
 python3 -m venv /tmp/frc-cpp-sim-venv
