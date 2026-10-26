@@ -1,0 +1,4 @@
+Original point-contact steering implementation compiled with extended record layout
+Exit: -6
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Azimuth load contract at line 53

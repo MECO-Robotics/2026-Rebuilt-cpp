@@ -102,15 +102,16 @@ async def exercise(args):
     nt = ntcore.NetworkTableInstance.create()
     nt.startClient4('season-drive-patterns')
     nt.setServer('127.0.0.1', 5810)
-    pose = nt.getStructTopic('/AdvantageScope/Drive/Pose', Pose2d).subscribe(Pose2d())
-    speed = nt.getStructTopic('/AdvantageScope/Drive/ChassisSpeeds', ChassisSpeeds).subscribe(ChassisSpeeds())
-    states = nt.getStructArrayTopic('/AdvantageScope/Drive/ModuleStates', SwerveModuleState).subscribe([])
-    targets = nt.getStructArrayTopic('/AdvantageScope/Drive/ModuleTargets', SwerveModuleState).subscribe([])
+    options = ntcore.PubSubOptions(periodic=.02, sendAll=True)
+    pose = nt.getStructTopic('/AdvantageScope/Drive/Pose', Pose2d).subscribe(Pose2d(), options)
+    speed = nt.getStructTopic('/AdvantageScope/Drive/ChassisSpeeds', ChassisSpeeds).subscribe(ChassisSpeeds(), options)
+    states = nt.getStructArrayTopic('/AdvantageScope/Drive/ModuleStates', SwerveModuleState).subscribe([], options)
+    targets = nt.getStructArrayTopic('/AdvantageScope/Drive/ModuleTargets', SwerveModuleState).subscribe([], options)
     chooser = nt.getStringTopic('/SmartDashboard/Auto Choices/selected').publish()
     active_auto = nt.getStringTopic('/SmartDashboard/Auto Choices/active').subscribe('')
     previous_auto = ''
     grounded = nt.getDoubleTopic('/SmartDashboard/FieldSimulation/GroundedBodyHeight').subscribe(.30)
-    truth = nt.getRawTopic('/Simulation/PhysicsBodyTruth').subscribe('struct:Pose3d', b'', ntcore.PubSubOptions(periodic=.02, sendAll=True))
+    truth = nt.getRawTopic('/Simulation/PhysicsBodyTruth').subscribe('struct:Pose3d', b'', options)
     binary = Path('build/exe/frcUserProgram/linuxx86-64/release/frcUserProgram')
     evidence = {'revision': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
                 'worktree_dirty': bool(subprocess.check_output(['git','status','--porcelain'], text=True).strip()),
@@ -149,13 +150,15 @@ async def exercise(args):
                 v = struct.unpack('<7d', raw.value)
                 qw, qx, qy, qz = v[3:]
                 yaw = math.atan2(2*(qw*qz+qx*qy), 1-2*(qy*qy+qz*qz))
-                p, s = pose.get(), speed.get()
+                pa, sa = pose.getAtomic(), speed.getAtomic()
+                p, s = pa.value, sa.value
                 ms, mt = states.get(), targets.get()
                 if len(ms) != 4 or len(mt) != 4:
                     raise RuntimeError('Missing module telemetry')
                 row = {'t': t, 'joystick': joystick, 'truthTimestamp': raw.time,
                        'truth': [*v[:3], yaw], 'quaternion': list(v[3:]),
                        'pose': [p.X(), p.Y(), p.rotation().radians()],
+                       'poseTimestamp': pa.time, 'speedTimestamp': sa.time,
                        'speeds': [s.vx, s.vy, s.omega],
                        'states': [[m.speed, m.angle.radians()] for m in ms],
                        'targets': [[m.speed, m.angle.radians()] for m in mt]}

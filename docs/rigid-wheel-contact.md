@@ -27,9 +27,11 @@ Mass, center of mass, tire friction and inertia still need physical calibration.
 
 ## Integration and pose frames
 
-Upstream source fix: MecoSimulation-cpp commit `a8bea08`. It preserves public object
-layouts; legacy suspension configuration fields remain ABI-compatible but are
-unused by the new drive plant. The published 2026.0.8 package has not been replaced
+The original rigid-contact fix, MecoSimulation-cpp `a8bea08`, preserved public
+object layouts; legacy suspension fields remain unused. The later
+[azimuth load extension](simulation-azimuth-load.md) changes the DrivePhysics
+configuration/state layout and requires the matched local header and complete
+physics/session adapter objects to be rebuilt together. The published 2026.0.8 package has not been replaced
 or republished.
 
 `src/main/cpp/simulation/RigidWheelContactPhysics.cpp` is a desktop-only copy of that

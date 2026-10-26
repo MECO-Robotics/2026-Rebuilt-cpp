@@ -2,10 +2,12 @@
 // Compatibility replacement for the complete MecoSimulation 2026.0.8 adapter
 // archive object. Source: MecoSimulation-cpp 7001f22, adapters/wpilib-2026/src/
 // DriveSimulationAdapter.cpp (GPL-3.0; see LICENSE.md). Matches native Phoenix
-// FOC constants and stator limits. Remove when the vendordep includes this fix.
+// FOC constants and stator limits. Also requires the local azimuth-load physics
+// layout/header; remove these replacements together after a compatible vendordep update.
 #include "meco/sim/DriveSimulationAdapter.h"
 
 #include "base/SimulationRuntime.h"
+#include "season/SimulationLatency.h"
 
 #include <frc/system/plant/DCMotor.h>
 
@@ -164,6 +166,25 @@ struct DriveSimulationSession::Impl
             out.wheelVelocity = module.wheelVelocity;
             out.steerAngle = module.steerAngle;
             out.steerVelocity = module.steerVelocity;
+        }
+        if (season::simulation::LatencyProbeEnabled())
+        {
+            static int64_t last=0;
+            const auto now=nt::Now();
+            if(now-last>=20000) {
+                last=now;
+                std::array<double,25> values{};
+                values[0]=now;
+                for(size_t i=0;i<truth.modules.size();++i) {
+                    const auto&m=truth.modules[i];
+                    const std::array<double,6> module{m.normalForce,m.azimuthGroundTorque,m.azimuthContactTwist,
+                                                    m.steerMotorTorque,m.driveCurrent,m.steerCurrent};
+                    std::copy(module.begin(),module.end(),values.begin()+1+6*i);
+                }
+                static auto publisher=nt::NetworkTableInstance::GetDefault()
+                    .GetDoubleArrayTopic("/Diagnostics/Drive/AzimuthLoad").Publish();
+                publisher.Set(values);
+            }
         }
         const auto &q = truth.body.pose.rotation;
         const double yaw = std::atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z));

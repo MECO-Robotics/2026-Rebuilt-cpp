@@ -59,7 +59,9 @@ The reusable implementation is MecoSimulation-cpp `d3f125e`. A new
 public structure/class layouts remain unchanged. Invalid wall thickness and
 unknown shapes are rejected. The season compatibility copies replace complete
 static archive objects and carry upstream GPL-3.0 attribution. The header extension
-preserves the pinned vendordep ABI; no package was published or upgraded.
+preserves the world ABI. The subsequent [azimuth load model](simulation-azimuth-load.md)
+extends DrivePhysics records and requires matched physics/adapter/header replacements.
+No package was published or upgraded.
 
 The world replacement needs Jolt headers matching the pinned binary. Gradle's
 `prepareJoltHeaders` fetches revision `0373ec0dd762e4bc2f6acdb08371ee84fa23c6db`,

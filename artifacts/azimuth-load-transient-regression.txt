@@ -1,0 +1,5 @@
+Before passive normal-load remapping: expected failure
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Azimuth load contract at line 117
+
+After remapping: azimuth_load test and all 5 CTest suites pass.

@@ -145,3 +145,5 @@ the old spring model. Legacy suspension fields in its headers are unused by
 this replacement. See [the rigid-contact correction](docs/rigid-wheel-contact.md).
 
 The [bumper contact model](docs/bumper-contact.md) uses a hollow perimeter with a 0.25-inch floor gap. It contacts carpet, bumps and field structures; the requested low gap catches the leading bump plate. The body origin moved to bumper centre while the assumed physical CoM remains 0.30 m. First desktop builds fetch hash-verified, pinned Jolt headers for the compatibility implementation.
+
+[Load-dependent azimuth simulation](docs/simulation-azimuth-load.md) adds elastic tire scrub, load/rolling dependence and a shared traction/twist budget. The local physics header and complete session/physics replacements must be built together with layout version 2; native tests use the same headers.

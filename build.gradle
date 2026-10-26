@@ -171,6 +171,11 @@ tasks.configureEach {
 model {
     binaries {
         all { binary ->
+            // The extended azimuth physics layout requires all direct owners,
+            // including cached native-test objects, to rebuild together.
+            binary.cppCompiler.define 'MECO_DRIVE_PHYSICS_LAYOUT', '2'
+            // Native test source sets otherwise put vendordep headers first.
+            if (binary.name.contains('Test')) binary.cppCompiler.args "-I${file('src/main/include').absolutePath}"
             // WPILib omits NDEBUG for optimized builds; Jolt's ABI uses it.
             if (binary.buildType.name == 'release') binary.cppCompiler.define 'MECO_JOLT_RELEASE'
         }

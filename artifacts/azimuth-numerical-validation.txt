@@ -1,0 +1,2 @@
+Azimuth static/load, rolling, unloading, shared friction, reaction and passivity passed
+stationary angle=0.0218584 heavy=0.0109292 rolling=0.780352 stationary ground torque=-1.88962 stationary steer current=8.05
