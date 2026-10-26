@@ -1,0 +1,41 @@
+2026-10-26 bumper contact validation
+
+Reusable implementation: MecoSimulation-cpp d3f125e.
+Season implementation/evidence: 77421ea.
+
+Configured envelope: 0.86 m outer square, nominal 3.5-inch segment depth,
+0.25-inch floor gap, 5.5-inch height. Body origin is bumper centre at .0762 m;
+relative CoM +.2238 m preserves the previous assumed .30 m world CoM.
+Mass remains 67.6 kg. Tire coefficient and current limits unchanged.
+
+Upstream CMake build and ctest: 4/4 passed.
+The new bumper regression covers hollow centre/edge hits, invalid depth,
+tilted floor drop, clearance versus low obstacles, and sloped-plate contact.
+It fails against the original world implementation (see original-regression file).
+
+Full Gradle build: passed desktop Debug/Release and roboRIO Debug/Release.
+25 GoogleTests passed in each desktop configuration. The complete world-object
+replacement uses the exact pinned Jolt headers and matching Debug/Release ABI.
+A Debug ABI mismatch found during integration was corrected before these passes.
+
+Actual desktop HAL/NT field integration: 9/9 passed. The new low-bumper bump
+contact replaces the historical elevated-box bump-crossing expectation.
+Robot stopped near x=3.63 m when its bumper met the leading bump plate.
+
+Full-stick flat-ground bumper stress: PASS.
+Physical approach: 4.515 m/s. Peak tilt: 4.744 degrees.
+Minimum nominal outer-corner height: -.003719 m (rounded collider corners and
+numerical contact; required >-.005 m). Prior elevated-box diagnostic: ~70 degrees.
+This is ground-contact acceptance, not full-stick square tracking acceptance.
+
+Moderate patterns: circle PASS, circle-with-yaw PASS.
+Square FAILS existing yaw criterion: 0.26344 rad >0.15 rad. Other square metrics pass.
+This known steering/control limitation is not attributed to or fixed by bumper contact.
+
+Acceleration/braking: all three modes PASS after bumper integration.
+Release 0.5->4 m/s acceleration .980 s; 4->.5 m/s braking .820 s;
+stop from ~5.30 m/s: 1.340 s / 3.423 m. Reversal and disabled brake also pass.
+
+Rigid contact only: foam deformation, rebound/energy absorption, wear and damage
+are not calibrated. Low rigid bumpers can catch edges that real foam may compress
+against. Physical dimensions, CoM, inertia and tire/material friction remain estimates.

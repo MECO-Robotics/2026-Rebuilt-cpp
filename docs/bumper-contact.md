@@ -91,3 +91,8 @@ Normal moderate square/circle results are in `artifacts/bumper-drive-patterns.js
 Both circle checks pass; the square's existing yaw-drift check still fails
 (0.263 rad versus a 0.15 rad limit). Other square metrics pass. No tracking or yaw
 threshold was relaxed to claim that bumper contact fixes steering.
+
+The post-integration [drive dynamics run](../artifacts/bumper-drive-dynamics.json)
+also passes release, reversal and disabled-braking regression bands. The full
+validation scope and remaining limitations are recorded in
+[bumper-validation.txt](../artifacts/bumper-validation.txt).
