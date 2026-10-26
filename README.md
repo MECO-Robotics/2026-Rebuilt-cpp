@@ -15,7 +15,7 @@ For device configuration, commissioning, and diagnosis, use [`frc-hardware`](.ag
 
 Install WPILib 2026.2.1 with its C++ toolchains. This project uses the published
 [MecoBase 2026.2.1 vendordep](https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json)
-and the matching-year [MecoSimulation 2026.0.9 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
+and the matching-year [MecoSimulation 2026.0.10 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
 The current checkout resolves both from their public Maven URLs; the build,
 Debug/Release tests, and localhost desktop drive smoke against MecoSimulation
 2026.0.6 are recorded in the [public-package validation record](artifacts/public-multivendordep-validation-2026.0.6.json)
@@ -139,10 +139,11 @@ offset follows chassis rotation and preserves bump/airborne height changes.
 
 The swerve modules are hard mounted. The rigid wheel-contact model has no
 vertical springs, dampers, suspension travel or load-dependent sag.
-MecoSimulation 2026.0.9 provides rigid hard-mounted wheel contact, hollow bumper
+MecoSimulation 2026.0.10 provides rigid hard-mounted wheel contact, hollow bumper
 contacts and load-dependent azimuth dynamics. Legacy suspension fields remain
 unused. See [the rigid-contact model](docs/rigid-wheel-contact.md),
-[bumper contact](docs/bumper-contact.md), and
+[bumper contact](docs/bumper-contact.md) and its
+[bump lift validation](artifacts/bump-contact-validation-2026.0.10.json), and
 [azimuth load](docs/simulation-azimuth-load.md). Jolt headers, compilation and
 Debug/Release ABI settings belong entirely to the Simulation package; robot builds
 do not fetch or compile Jolt source.

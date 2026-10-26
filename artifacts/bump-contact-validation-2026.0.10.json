@@ -1,0 +1,78 @@
+{
+  "version": "2026.0.10",
+  "simulation_source_commit": "84daa281ffdb982ba0803fb2cfe488bf546993be",
+  "scope": "Numerical desktop simulation, estimated contact properties; no physical calibration",
+  "configuration": {
+    "ready_to_drive_mass_kg": 67.6,
+    "drive_stator_limit_A": 50,
+    "drive_supply_limit_A": 55,
+    "tire_cof": 2.1,
+    "bumper_floor_gap_m": 0.00635,
+    "nominal_bumper_corner_radius_m": 0.0381,
+    "bump_material_friction": 0.01,
+    "bumper_material_friction": 0.65,
+    "combined_pair_friction": 0.0806225774829855
+  },
+  "baseline_regression": {
+    "published_version": "2026.0.9",
+    "passed": false,
+    "final_x_m": 4.45577,
+    "peak_body_height_m": 0.457034,
+    "reason": "Leading-edge launch and insufficient progress past crest"
+  },
+  "corrected_native_regression": {
+    "passed": true,
+    "final_x_m": 4.95288,
+    "peak_body_height_m": 0.253388,
+    "bumper_supported_unloaded_steps": 756,
+    "approach_mps": 4,
+    "step_s": 0.004,
+    "module_axis_offset_m": 0.2794,
+    "test_suites_passed": 6
+  },
+  "staged_robot_build": {
+    "all_four_native_targets": true,
+    "tests_passed_per_desktop_configuration": 28
+  },
+  "staged_field": {
+    "checks": {
+      "grounded_model_height_is_zero": true,
+      "hard_mounted_body_has_no_static_sag": true,
+      "startup_clear_blue_spawn": true,
+      "blue_reset_matches_truth_and_odometry": true,
+      "red_reset_matches_truth_and_odometry": true,
+      "can_turn_at_default_spawn": true,
+      "actual_wall_contact_blocks_motion": true,
+      "field_installed": true,
+      "bumper_slides_up_and_lifts_chassis": true
+    },
+    "metrics": {
+      "peak_body_height_m": 0.29414987564086914,
+      "lifted_samples": 260,
+      "final_x_m": 5.226434707641602,
+      "cleared_entire_bump": false
+    },
+    "binary_sha256": "8344afe71c608f1b63d5ef4448502c102440bc96e932ac54f05480e8b5b1cc46",
+    "raw_record_sha256": "3c3ca60fc5397ca2c2722898e7a7be44bd691abea7c8ee76279be3b09e33d990"
+  },
+  "staged_ground_stress": {
+    "passed": true,
+    "metrics": {
+      "max_tilt_deg": 4.328383669196873,
+      "minimum_bumper_corner_height_m": -0.00351517102156354,
+      "minimum_bumper_surface_height_m": -0.0013068166081916313,
+      "bumper_corner_radius_m": 0.0381,
+      "approach_physical_speed_mps": 4.41621906417236
+    },
+    "raw_record_sha256": "5e4a7264a040a76993c514f2a396deb210857a0374bf58841e6b9a9d4361469f"
+  },
+  "limitations": [
+    "Full bump crossing remains inconsistent: low-clearance bumper can high-center with no wheel load.",
+    "No forces from airborne tires; tire-on-HDPE traction and foam compression are not calibrated.",
+    "Existing square/azimuth tracking limitations are separate."
+  ],
+  "publication": {
+    "ci_run": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40405979050",
+    "status": "in_progress"
+  }
+}

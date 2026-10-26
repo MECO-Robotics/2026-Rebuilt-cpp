@@ -111,6 +111,7 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
    // Hard-mounted wheels have a fixed geometric body-to-floor offset.
    simulationGroundedBodyHeight_=units::meter_t{physics.rideHeight};
    frc::SmartDashboard::PutNumber("FieldSimulation/GroundedBodyHeight",physics.rideHeight);
+   frc::SmartDashboard::PutNumber("FieldSimulation/BumperCornerRadius",base::sim::kBumperCornerRadius);
    frc::SmartDashboard::PutNumber("FieldSimulation/BumperBottomHeight",physics.rideHeight-physics.bumperHalfHeight);
    frc::SmartDashboard::PutNumber("FieldSimulation/BumperTopHeight",physics.rideHeight+physics.bumperHalfHeight);
    auto simulation=meco::sim::CreateDriveSimulationAdapter(drive_.Config(),backend);

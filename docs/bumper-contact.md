@@ -24,12 +24,13 @@ zone, not every construction/inspection requirement.
 
 Four compound box segments use an estimated 3.5-inch radial depth. Corners meet
 without overlap, and the centre stays open: an obstacle under the robot does not
-hit an imaginary solid belly plate. Rounded collision edges use a 5 mm convex
-radius, below the 6.35 mm floor gap. Bumper material friction is 0.65, following
+hit an imaginary solid belly plate. Rounded collision edges use an estimated nominal 1.5-inch (38.1 mm) radius,
+bounded to 95% of each segment half dimension. The outer envelope and floor gap
+remain unchanged. This rounded profile prevents the former 5 mm corners catching
+the bump leading lip. Bumper material friction is 0.65, following
 MapleSim's reference bumper coefficient; Jolt combines it with the opposing
 material. Restitution is zero. This is **rigid contact**, not a calibrated foam
-compression, rebound or damage model. A real foam bumper may compress and climb
-an edge that this rigid approximation catches.
+compression, rebound or damage model. The rounded geometry approximates a padded edge; it does not model foam deflection.
 
 The former solid box was centred 0.30 m above the floor with 0.12 m half-height:
 its bottom was 0.18 m high. That missed low bumper strikes and let the robot lean
@@ -46,18 +47,26 @@ reports the bumper-centre body origin. The dashboard publishes
 `FieldSimulation/GroundedBodyHeight`, `BumperBottomHeight` and `BumperTopHeight`.
 Runtime support checks read the configured origin height instead of assuming 0.30 m.
 
-At the requested low clearance, the bumper strikes the REBUILT bump's leading
-plate before the wheels reach it. The field integration check verifies that the
-shell stops near x=3.63 m on the lower blue bump approach, rather than requiring
-the old elevated-box model's unobstructed bump crossing. The low gap has a real
-modeled traversal cost; no special collision exclusion is used for bumps.
+At the requested low clearance, the bumper strikes the REBUILT bump before
+its wheels. MecoSimulation 2026.0.10 lowers only the HDPE ramp material friction
+from 1.0 to 0.010. Jolt combines this with the bumper's 0.65 to give an estimated
+pair coefficient of 0.081, previously 0.806. The official ramp geometry is
+unchanged. These are model estimates, not measured friction coefficients.
+
+Live full-stick approaches now ride up and lift all four wheels. Complete crossing
+is inconsistent: the 0.25-inch shell can high-center between the ramp and carpet,
+leaving its tires unloaded. The acceptance check requires actual ramp progress,
+body lift and wheel unloading; it separately reports whether the entire bump was
+cleared. There are no airborne tire forces, special bump exclusions or lift forces.
+The separate tire traction model remains CoF 2.1; HDPE tire traction is not calibrated.
 
 ## Implementation and validation
 
-The reusable implementation is MecoSimulation-cpp `d3f125e`. A new
+The reusable bumper-ring implementation originated in MecoSimulation-cpp `d3f125e`;
+2026.0.10 adds rounded, low-friction bump contact in upstream `84daa28`. A new
 `BodySpec::Shape::BumperRing` uses the existing `radius` slot for wall thickness;
 public structure/class layouts remain unchanged. Invalid wall thickness and
-unknown shapes are rejected. MecoSimulation 2026.0.9 packages the world, drive
+unknown shapes are rejected. MecoSimulation 2026.0.10 packages the world, drive
 physics and matching adapter/header layouts together. Jolt headers and ABI build
 settings are internal to that package; Jolt is not linked into roboRIO code.
 
@@ -67,7 +76,10 @@ objects, low-obstacle blocking and sloped-plate contact. It fails against the
 original world implementation (`artifacts/bumper-original-regression.txt`). Existing
 world, drive-physics and arena tests also pass. The actual desktop robot field
 run is recorded in `artifacts/bumper-field-runtime.json` and checks floor support,
-legal blue/red spawns, rotation, wall contact and low-bumper bump contact.
+legal blue/red spawns, rotation, wall contact and low-bumper bump contact. That historical run expected a leading-edge stop;
+[current bump validation](../artifacts/bump-contact-validation-2026.0.10.json)
+requires sliding up and lifting the chassis. The focused native regression fails
+against the published 2026.0.9 archive and passes with the corrected contact model.
 
 These are numerical simulation checks. Actual bumper profile, compression,
 friction, ground clearance and robot mass distribution still need measurement.
@@ -80,7 +92,8 @@ python scripts/drive_pattern_smoke.py --bumper-stress --output artifacts/bumper-
 ```
 
 It verifies a >4 m/s approach, a real lean caught below 15 degrees and at most
-5 mm numerical corner penetration. The recorded run approached at 4.51 m/s,
+5 mm numerical penetration of the actual rounded surface. Nominal bounding-box
+corners are also reported but do not represent material at rounded edges. The historical 5 mm-radius run approached at 4.51 m/s,
 peaked at 4.74 degrees and had 3.72 mm nominal corner penetration (the collider's
 rounded corners matter at that scale). This passes the bumper-ground check,
 **not** square tracking acceptance. The former elevated-box run reached about

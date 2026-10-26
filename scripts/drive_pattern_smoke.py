@@ -76,21 +76,24 @@ def analyze_pattern(name, rows, final, max_speed, grounded_height=.30):
     return result, passed
 
 
-def analyze_bumper_stress(rows):
-    # Current 0.86 m square / 5.5-inch-high shell; all outer corners are material.
-    lowest, tilt, before_corner_speed = [], [], []
+def analyze_bumper_stress(rows, corner_radius=.005):
+    # Current 0.86 m square / 5.5-inch-high shell, with rounded padded edges.
+    lowest, nominal_corners, tilt, before_corner_speed = [], [], [], []
     for i, r in enumerate(rows):
         w, x, y, z = r['quaternion']
         zz = 1-2*(x*x+y*y)
         tilt.append(math.degrees(math.acos(max(-1., min(1., zz)))))
-        lowest.append(r['truth'][2]-.43*abs(2*(x*z-w*y))
-                      -.43*abs(2*(y*z+w*x))-.06985*abs(zz))
+        ax,ay,az=abs(2*(x*z-w*y)),abs(2*(y*z+w*x)),abs(zz)
+        nominal_corners.append(r['truth'][2]-.43*(ax+ay)-.06985*az)
+        lowest.append(r['truth'][2]-(.43-corner_radius)*(ax+ay)
+                      -(.06985-corner_radius)*az-corner_radius)
         if i >= 5 and 1.0 < r['t'] < 1.8:
             prev = rows[i-5]
             dt = (r['truthTimestamp']-prev['truthTimestamp'])/1e6
             if dt > 0:
                 before_corner_speed.append((r['truth'][0]-prev['truth'][0])/dt)
-    metrics = {'max_tilt_deg': max(tilt), 'minimum_bumper_corner_height_m': min(lowest),
+    metrics = {'max_tilt_deg': max(tilt), 'minimum_bumper_corner_height_m': min(nominal_corners),
+               'minimum_bumper_surface_height_m': min(lowest), 'bumper_corner_radius_m': corner_radius,
                'approach_physical_speed_mps': quantile(before_corner_speed, .5)}
     # Require a real speed/tilt stimulus, shallow numerical penetration (<5 mm),
     # and a ground catch well before the former approximately 70-degree lean.
@@ -102,7 +105,7 @@ def analyze_bumper_stress(rows):
 async def exercise(args):
     nt = ntcore.NetworkTableInstance.create()
     nt.startClient4('season-drive-patterns')
-    nt.setServer('127.0.0.1', 5810)
+    nt.setServer('127.0.0.1', args.nt_port)
     options = ntcore.PubSubOptions(periodic=.02, sendAll=True)
     pose = nt.getStructTopic('/AdvantageScope/Drive/Pose', Pose2d).subscribe(Pose2d(), options)
     speed = nt.getStructTopic('/AdvantageScope/Drive/ChassisSpeeds', ChassisSpeeds).subscribe(ChassisSpeeds(), options)
@@ -111,9 +114,10 @@ async def exercise(args):
     chooser = nt.getStringTopic('/SmartDashboard/Auto Choices/selected').publish()
     active_auto = nt.getStringTopic('/SmartDashboard/Auto Choices/active').subscribe('')
     previous_auto = ''
+    rounding = nt.getDoubleTopic('/SmartDashboard/FieldSimulation/BumperCornerRadius').subscribe(.005)
     grounded = nt.getDoubleTopic('/SmartDashboard/FieldSimulation/GroundedBodyHeight').subscribe(.30)
     truth = nt.getRawTopic('/Simulation/PhysicsBodyTruth').subscribe('struct:Pose3d', b'', options)
-    binary = running_sim_binary()
+    binary = running_sim_binary(nt_port=args.nt_port)
     evidence = {'revision': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
                 'worktree_dirty': bool(subprocess.check_output(['git','status','--porcelain'], text=True).strip()),
                 'running_binary': str(binary), 'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
@@ -203,7 +207,7 @@ async def exercise(args):
                     final = sample(duration+1.5, [0.,0.,0.])
                     result, passed = analyze_pattern(name, rows, final, args.max_speed, grounded.get())
                     if args.bumper_stress:
-                        result['bumper_stress_metrics'], passed = analyze_bumper_stress(rows)
+                        result['bumper_stress_metrics'], passed = analyze_bumper_stress(rows, rounding.get())
                         evidence['scope'] = 'Full-stick bumper-to-ground stress check; tracking metrics are informational'
                         print('bumper stress', json.dumps(result['bumper_stress_metrics']), flush=True)
                     evidence['patterns'][name] = result
@@ -225,6 +229,7 @@ async def exercise(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--nt-port', type=int, default=5810)
     parser.add_argument('--bumper-stress', action='store_true', help='Check ground catch during a full-stick square; not a tracking acceptance run')
     parser.add_argument('--max-speed', type=float, default=5.24)
     parser.add_argument('--output', type=Path, required=True)

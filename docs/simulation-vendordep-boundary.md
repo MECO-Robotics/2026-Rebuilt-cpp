@@ -3,7 +3,7 @@
 | Owner | Responsibilities |
 | --- | --- |
 | MecoBase 2026.2.1 | Commands, motor IO, hardware configuration and Jolt-free shared motor runtime |
-| MecoSimulation 2026.0.9 | Jolt/world, rigid wheel and bumper contact, load-dependent azimuth, Phoenix feedback bridge, shared battery helper, simulation diagnostics and reusable 2026 field collider geometry |
+| MecoSimulation 2026.0.10 | Jolt/world, rigid wheel and bumper contact, load-dependent azimuth, Phoenix feedback bridge, shared battery helper, simulation diagnostics and reusable 2026 field collider geometry |
 | This robot | Hardware dimensions/mass/current settings, controls, commands, robot-specific fuel behavior, legal starting-pose policy and telemetry presentation |
 
 The robot consumes Simulation public headers and its combined static archive.
