@@ -1,5 +1,6 @@
 #include "season/SimulationLatency.h"
 #include "season/SimulationAttitude.h"
+#include "season/SimulationField.h"
 #include "RobotContainer.h"
 #include "season/HardwareAdapter.h"
 #include "season/ChoreoAuto.h"
@@ -18,6 +19,9 @@
 #include <numbers>
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <string_view>
+#include <stdexcept>
 using namespace units::literals;
 namespace {
 base::Mode Mode(){return frc::RobotBase::IsReal()?base::Mode::Real:base::Mode::Sim;}
@@ -93,6 +97,14 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
    simulationPosePublisher_ = nt::NetworkTableInstance::GetDefault()
        .GetStructTopic<frc::Pose3d>("/Simulation/RobotTruth").Publish();
    auto simulation=meco::sim::CreateDriveSimulationAdapter(drive_.Config());
+   const char* fieldMode=std::getenv("FRC_SIM_FIELD_COLLIDERS");
+   simulationFieldCollidersEnabled_=!fieldMode || std::string_view{fieldMode}!="0";
+   if(simulationFieldCollidersEnabled_){
+     auto& arena=simulation->CreateArena(base::sim::ArenaScene::Empty);
+     season::simulation::InstallField(arena);
+   }
+   frc::SmartDashboard::PutBoolean("FieldSimulation/CollidersEnabled",simulationFieldCollidersEnabled_);
+   frc::SmartDashboard::PutNumber("FieldSimulation/ColliderCount",simulationFieldCollidersEnabled_?season::simulation::FieldColliders().size():0);
    drive_.SetSimulationAdapter(std::move(simulation));
    drive_.SetPoseResetCallback([this](const frc::Pose2d& pose){
      if(simulationResetFeedbackLoops_>0)simulationResetPose_=pose;
@@ -150,6 +162,7 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
  frc::SmartDashboard::PutData("Auto Choices",&autoChooser_);
  checks_.ConfigureRequirements({&drive_,&rack_,&hood_,&shooter_,&intake_,&conveyor_,&bottom_,&top_});
  season::ConfigureSystemChecks(checks_,drive_,rack_,hood_,shooter_,{{"intake",&intake_},{"conveyor",&conveyor_},{"bottom-indexer",&bottom_},{"top-indexer",&top_}},[this]{return vision_.Connected();});
+ if(frc::RobotBase::IsSimulation())ResetSimulation();
 }
 season::ShotTarget RobotContainer::SelectTarget(){
  auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed)==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;
@@ -174,7 +187,7 @@ void RobotContainer::SimulationPeriodic(){
    // pose seed applied since reset and motion in that frame. No loop waits.
    if(simulationResetFeedbackLoops_>0 && --simulationResetFeedbackLoops_==0)
      drive_.ResetPose(simulationResetPose_.TransformBy(frc::Transform2d{
-         frc::Pose2d{},frc::Pose2d{units::meter_t{truth->x},units::meter_t{truth->y},
+         simulationResetPhysicalOrigin_,frc::Pose2d{units::meter_t{truth->x},units::meter_t{truth->y},
                                   frc::Rotation2d{units::radian_t{truth->yaw}}}}));
    simulationPosePublisher_.Set(frc::Pose3d{
        units::meter_t{truth->x}, units::meter_t{truth->y}, units::meter_t{truth->z},
@@ -184,8 +197,12 @@ void RobotContainer::SimulationPeriodic(){
 }
 void RobotContainer::ResetSimulation(){
 #ifndef __FRC_ROBORIO__
+ const bool red=frc::DriverStation::GetAlliance()==frc::DriverStation::Alliance::kRed;
+ simulationResetPhysicalOrigin_=simulationFieldCollidersEnabled_?season::simulation::DefaultSpawn(red):frc::Pose2d{};
+ if(simulationFieldCollidersEnabled_ && !season::simulation::IsClearStartingPose(simulationResetPhysicalOrigin_))
+   throw std::logic_error("Simulation spawn intersects field geometry");
  simulationResetFeedbackLoops_=5;
- drive_.ResetSimulation(frc::Pose2d{});
+ drive_.ResetSimulation(simulationResetPhysicalOrigin_);
 #endif
  if(simulation_)simulation_->Reset();
 }
