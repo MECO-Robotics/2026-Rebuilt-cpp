@@ -1,0 +1,6 @@
+Source: c7c3fa8 plus centered trench-lane spawn and field runtime validation.
+Command: TMPDIR=/home/brian/.cache/rebuilt-sim-tmp JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --max-workers=2 --console=plain
+Result: BUILD SUCCESSFUL; desktop and roboRIO Debug/Release; 23 tests passed in each desktop configuration.
+Release binary SHA256: a57fba84ec7a76b2425867ba62a6d210a3f3ba64e8e7fa5fe26a2bebd37a1e2a
+Runtime: default field enabled, 40 colliders, six field_collision_smoke.py checks passed.
+Source geometry/limits: docs/simulation-field.md
