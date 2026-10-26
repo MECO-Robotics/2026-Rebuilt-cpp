@@ -17,29 +17,21 @@ struct TuningInputs
     double frictionCoefficient;
     double wheelRadiusMeters;
     double driveRatio;
-    double steerRatio;
-    double steerInertiaKgMetersSquared;
     double driveCurrentLimitAmps;
-    double steerCurrentLimitAmps;
-    double motorResistanceOhms;
     double motorTorqueConstantNmPerAmp;
-    double motorVelocityConstantRadPerSecondPerVolt;
-    double nominalVoltage;
     std::array<ModuleLocation, 4> modules;
 };
 
 struct TuningResult
 {
-    double steerKP;
-    double steerKD;
     double autoTranslationKP;
     double autoRotationKP;
     double maxLinearAcceleration;
     double maxAngularAcceleration;
 };
 
-// Derives model-based initial gains for the simulated drivetrain. Steering
-// gains use the Jolt azimuth motor plant; PathPlanner gains use a stopping
-// envelope based on motor and traction limits. Hardware gains are unaffected.
+// Initial simulation-only PathPlanner gains from a motor/traction stopping
+// envelope. This is an acceleration upper bound, not a steering-load model.
+// Steering uses the robot's configured gains with the contact-loaded plant.
 TuningResult DeriveSimulationTuning(const TuningInputs& inputs);
 } // namespace season::simulation

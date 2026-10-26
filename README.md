@@ -55,7 +55,7 @@ python3 -m venv /tmp/frc-cpp-sim-venv
 
 Drivetrain acceleration/braking inputs, the FOC/current-limit correction and the measured asymmetric response are documented in [simulation dynamics](docs/simulation-dynamics.md).
 
-These scripts use localhost HAL simulation and leave the simulator disabled. Before constructing the simulated drivetrain, the code derives a simulation-only steering P gain from Jolt's output-side azimuth inertia, steer ratio, motor back-EMF, current limit, and a 0.15 s nominal dominant settling target. A small derivative term (`kD = kP × 0.02 s`) adds feedback lead for the asynchronous Phoenix transport; motor back-EMF remains part of the plant damping. This is a linear model estimate; voltage, current, and simulation-step limits affect large steps. Phoenix firmware computes voltages from Jolt feedback; its built-in `DCMotorSim` plants are not stepped. The code derives PathPlanner translation and rotation gains from motor-limited chassis acceleration, mass, yaw MOI, module locations, and 8 cm/0.5 rad stopping-error scales. These simulation gains do not tune or change the real-robot gains. The drive smoke checks small-stick response, measured and target module azimuth travel at small and medium inputs, 3D chassis floor support, direction, speed tracking, pose change, and disable behavior.
+These scripts use localhost HAL simulation and leave the simulator disabled. Steering now uses the configured robot gains (`kP=100`, `kD=0.5`) with the [contact-loaded azimuth plant](docs/simulation-azimuth-load.md); the old unloaded-motor steering estimate has been removed. Phoenix firmware computes voltages from physical feedback, and its separate built-in plants are not stepped. Simulation-only PathPlanner gains still use a motor/traction acceleration upper bound with mass, yaw inertia, module locations, and stopping-error scales. These numerical estimates do not calibrate the physical robot. The drive smoke checks small-stick response, module azimuth travel, floor support, physical rotation, tracking and disable behavior.
 
 The desktop-only compatibility bridge in `src/main/cpp/simulation/DriveHardwareSimulation.cpp` replaces the two hardware bridge methods from MecoSimulation 2026.0.8. It removes the competing Phoenix physics update; the same fix is committed upstream at `67e0a35`. Keep both methods together because they replace one static archive object. Remove this compatibility translation unit when adopting a Simulation release containing the fix. Scene resets reconcile odometry after five robot loops, allowing asynchronous sensor feedback to arrive without blocking the scheduler. Any autonomous pose seed and subsequent motion in that frame are preserved. This one-time correction is limited to scene reset; driving never continuously copies truth into odometry.
 
@@ -140,7 +140,7 @@ offset follows chassis rotation and preserves bump/airborne height changes.
 The swerve modules are hard mounted. The rigid wheel-contact model has no
 vertical springs, dampers, suspension travel or load-dependent sag. A temporary
 `RigidWheelContactPhysics.cpp` compatibility replacement integrates upstream
-MecoSimulation commit `d3f125e` (rigid support plus bumper shell) while the pinned 2026.0.8 package still contains
+MecoSimulation commit `8eff394` (rigid support, bumper shell and azimuth load) while the pinned 2026.0.8 package still contains
 the old spring model. Legacy suspension fields in its headers are unused by
 this replacement. See [the rigid-contact correction](docs/rigid-wheel-contact.md).
 

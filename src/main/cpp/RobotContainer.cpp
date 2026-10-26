@@ -62,16 +62,14 @@ base::DriveConfig DriveConfig(){
    // Native Phoenix swerve requests enable FOC. Use the same electrical
    // plant and stator torque limit as the simulation adapter, not supply amps.
    const auto motor=frc::DCMotor::KrakenX60FOC(1);
-   const double motorResistance=motor.R.value();
    const double motorTorqueConstant=motor.Kt.value();
-   const double motorVelocityConstant=motor.Kv.value();
    std::array<season::simulation::ModuleLocation,4> locations{};
    for(std::size_t i=0;i<locations.size();++i)
      locations[i]={c.modules[i].xMeters,c.modules[i].yMeters};
    const auto tuned=season::simulation::DeriveSimulationTuning({
-       c.massKg,c.moi,c.cof,c.wheelRadius,c.driveRatio,c.steerRatio,c.simulation.steerInertia,
-       c.slipCurrent,c.steerCurrent,motorResistance,motorTorqueConstant,motorVelocityConstant,12.0,locations});
-   c.steerKP=tuned.steerKP;c.steerKD=tuned.steerKD;
+       c.massKg,c.moi,c.cof,c.wheelRadius,c.driveRatio,c.slipCurrent,motorTorqueConstant,locations});
+   // The contact-loaded plant uses the configured robot steering gains.
+   // The old simulation-only pole estimate assumed an unloaded azimuth motor.
    c.autoTranslationKP=tuned.autoTranslationKP;c.autoRotationKP=tuned.autoRotationKP;
  }
  return c;

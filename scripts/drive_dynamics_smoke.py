@@ -13,6 +13,7 @@ import struct
 import subprocess
 import time
 import ntcore
+from sim_evidence import running_sim_binary
 from websockets.asyncio.client import connect
 
 
@@ -24,18 +25,9 @@ async def measure():
     electrical = nt.getDoubleArrayTopic('/Diagnostics/Drive/MotorElectrical').subscribe([], ntcore.PubSubOptions(periodic=.02, sendAll=True))
     requested = nt.getRawTopic('/AdvantageScope/Drive/RequestedChassisSpeeds').subscribe('struct:ChassisSpeeds', b'', ntcore.PubSubOptions(periodic=.02, sendAll=True))
     colliders = nt.getBooleanTopic('/SmartDashboard/FieldSimulation/CollidersEnabled').subscribe(True)
-    running = []
-    for entry in Path('/proc').glob('[0-9]*/cmdline'):
-        try:
-            command = entry.read_bytes().split(b'\0')[0].decode()
-        except (FileNotFoundError, ProcessLookupError, PermissionError):
-            continue
-        if '/base-bot-halsim.' in command and command.endswith('/frcUserProgram'):
-            running.append(command)
-    if len(running) != 1:
-        raise RuntimeError('Expected one task-owned desktop simulator')
-    result = {'running_binary': running[0], 'worktree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], text=True).strip()), 'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-              'binary_sha256': hashlib.sha256(Path(running[0]).read_bytes()).hexdigest(),
+    binary = running_sim_binary()
+    result = {'running_binary': str(binary), 'worktree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], text=True).strip()), 'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+              'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
               'scope': 'Desktop physical body truth; not hardware calibration', 'runs': {}}
     try:
         async with connect('ws://127.0.0.1:3300/wpilibws') as ws:

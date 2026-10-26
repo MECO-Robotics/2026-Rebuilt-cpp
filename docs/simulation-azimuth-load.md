@@ -61,7 +61,10 @@ Phoenix still computes applied motor voltage from physical sensor feedback. Moto
 constants remain Kraken X60 FOC; current limits remain 50 A drive stator, 55 A drive
 supply and 30 A steering. The existing 0.1 V plant loss approximation remains;
 controller feedforward `steerKS=0.2` is not the ground-load model. No physical-robot
-gains were tuned from this estimate.
+gains were tuned from this estimate. Desktop steering now uses the robot's existing
+configured `kP=100`, `kD=0.5`; the old unloaded-motor simulation-only detuning has
+been removed. The tuning helper now derives only the simulation PathPlanner
+chassis envelope.
 
 With `FRC_SIM_LATENCY_PROBE=1`, `/Diagnostics/Drive/AzimuthLoad` publishes at most
 once per 20 ms. Its 25 numbers are a timestamp followed by six values per module:

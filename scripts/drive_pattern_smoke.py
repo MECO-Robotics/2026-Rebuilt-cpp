@@ -15,6 +15,7 @@ import subprocess
 import time
 
 import ntcore
+from sim_evidence import running_sim_binary
 from websockets.asyncio.client import connect
 from wpimath.geometry import Pose2d
 from wpimath.kinematics import ChassisSpeeds, SwerveModuleState
@@ -112,10 +113,10 @@ async def exercise(args):
     previous_auto = ''
     grounded = nt.getDoubleTopic('/SmartDashboard/FieldSimulation/GroundedBodyHeight').subscribe(.30)
     truth = nt.getRawTopic('/Simulation/PhysicsBodyTruth').subscribe('struct:Pose3d', b'', options)
-    binary = Path('build/exe/frcUserProgram/linuxx86-64/release/frcUserProgram')
+    binary = running_sim_binary()
     evidence = {'revision': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
                 'worktree_dirty': bool(subprocess.check_output(['git','status','--porcelain'], text=True).strip()),
-                'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
+                'running_binary': str(binary), 'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
                 'dependencies': {name: json.loads(Path('vendordeps', name+'.json').read_text())['version']
                                  for name in ('MecoBase','MecoSimulation')},
                 'settling_allowance_s': .75,
