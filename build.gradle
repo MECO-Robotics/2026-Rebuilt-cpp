@@ -68,7 +68,6 @@ model {
                 }
                 exportedHeaders {
                     srcDir 'src/main/include'
-                    srcDir layout.buildDirectory.dir('jolt-headers').get().asFile
                 }
             }
 
@@ -124,60 +123,6 @@ tasks.withType(org.gradle.nativeplatform.test.tasks.RunTestExecutable).configure
         project.copy {
             from('src/main/deploy')
             into(new File(outputDir, 'src/main/deploy'))
-        }
-    }
-}
-
-// Headers must match the Jolt objects already linked in MecoSimulation 2026.0.8.
-// Only desktop compatibility sources include them; no roboRIO dependency is added.
-def joltRevision = '0373ec0dd762e4bc2f6acdb08371ee84fa23c6db'
-def joltHeaders = tasks.register('prepareJoltHeaders') {
-    def destination = layout.buildDirectory.dir('jolt-headers')
-    outputs.dir(destination)
-    doLast {
-        def archive = layout.buildDirectory.file('jolt-source.tar.gz').get().asFile
-        if (!archive.exists()) {
-            archive.parentFile.mkdirs()
-            new URL("https://codeload.github.com/jrouwe/JoltPhysics/tar.gz/${joltRevision}").withInputStream { input ->
-                archive.withOutputStream { output -> output << input }
-            }
-        }
-        def digest = java.security.MessageDigest.getInstance('SHA-256')
-        archive.withInputStream { input ->
-            byte[] buffer = new byte[65536]
-            int count
-            while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count)
-        }
-        if (digest.digest().encodeHex().toString() != '834644d7e9dffee9be0220748015667649d3361611b01c7e6839a5eb58e89711') {
-            archive.delete()
-            throw new GradleException('Pinned Jolt header archive SHA-256 mismatch')
-        }
-        copy {
-            from tarTree(resources.gzip(archive))
-            include '*/Jolt/**', '*/LICENSE'
-            eachFile { path = path.substring(path.indexOf('/') + 1) }
-            includeEmptyDirs = false
-            into destination
-        }
-    }
-}
-tasks.configureEach {
-    if (name.startsWith('compileFrcUserProgram')) {
-        if (name.contains('Linuxathena')) mustRunAfter(joltHeaders)
-        else dependsOn(joltHeaders)
-    }
-}
-
-model {
-    binaries {
-        all { binary ->
-            // The extended azimuth physics layout requires all direct owners,
-            // including cached native-test objects, to rebuild together.
-            binary.cppCompiler.define 'MECO_DRIVE_PHYSICS_LAYOUT', '2'
-            // Native test source sets otherwise put vendordep headers first.
-            if (binary.name.contains('Test')) binary.cppCompiler.args "-I${file('src/main/include').absolutePath}"
-            // WPILib omits NDEBUG for optimized builds; Jolt's ABI uses it.
-            if (binary.buildType.name == 'release') binary.cppCompiler.define 'MECO_JOLT_RELEASE'
         }
     }
 }

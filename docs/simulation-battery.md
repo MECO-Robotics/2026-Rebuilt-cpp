@@ -19,9 +19,8 @@ target voltage for the next period. One half-weight numerical relaxation step
 prevents the alternating high/low supply cycle observed with direct feedback.
 It is not a calibrated battery capacitance or electrochemical time constant.
 It adds no additional physics steps or controller
-threads. The helper is maintained upstream in MecoSimulation's WPILib adapter;
-a matching header is included locally until a compatible vendordep is published.
-No ABI layout changes are required.
+threads. The helper is consumed from the MecoSimulation 2026.0.9 vendordep;
+there is no local copy. No Base ABI layout changes are required.
 
 Telemetry:
 

@@ -17,13 +17,13 @@ from sim_evidence import running_sim_binary
 from websockets.asyncio.client import connect
 
 
-async def run():
+async def run(args):
     binary=running_sim_binary()
     result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),
             'running_binary':str(binary),'scope':'Numerical desktop battery estimate, not hardware calibration',
             'samples':{},'checks':{}}
     nt=ntcore.NetworkTableInstance.create()
-    nt.startClient4('battery-sag-smoke');nt.setServer('127.0.0.1',5810)
+    nt.startClient4('battery-sag-smoke');nt.setServer('127.0.0.1',args.nt_port)
     power=nt.getDoubleArrayTopic('/Simulation/PowerSamples').subscribe([],ntcore.PubSubOptions(periodic=.02,sendAll=True))
     colliders=nt.getBooleanTopic('/SmartDashboard/FieldSimulation/CollidersEnabled').subscribe(True)
     async with connect('ws://127.0.0.1:3300/wpilibws') as ws:
@@ -80,7 +80,8 @@ async def run():
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path,required=True)
-    args=parser.parse_args();result=asyncio.run(run())
+    parser.add_argument('--nt-port',type=int,default=5810)
+    args=parser.parse_args();result=asyncio.run(run(args))
     args.output.write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps({k:v for k,v in result.items() if k!='samples'},indent=2))
     raise SystemExit(0 if result['passed'] else 1)

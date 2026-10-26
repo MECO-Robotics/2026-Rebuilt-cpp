@@ -81,19 +81,12 @@ especially during commanded yaw. Acceptance limits are unchanged.
 
 ## Integration contract
 
-Reusable source: MecoSimulation-cpp `8eff394` (initial model `657c27b`). The new
-patch settings and module load records **extend the DrivePhysics ABI**. They must
-not be mixed with old physics objects. Archive inspection found the two direct
-owners in the pinned package: `DrivePhysics.cpp.o` and `DriveSimulationAdapter.o`.
-This checkout replaces both complete objects and supplies their matching local
-`base/sim/DrivePhysics.h`; the base robot and SimulationWorld interfaces retain
-their existing layouts. No vendordep was published or upgraded.
-
-`MECO_DRIVE_PHYSICS_LAYOUT=2` forces coordinated native rebuilds. Native-test
-include order explicitly puts local headers before vendordep headers; the linked
-wheel-lift regression accesses new load fields and would fail to compile against
-the old record layout. Remove the header, whole-object replacements and build
-marker together when adopting a compatible published package.
+MecoSimulation 2026.0.9 packages the contact-loaded plant, matching public
+DrivePhysics header and complete adapter together. The robot has no copied
+physics headers, layout macros or archive-object replacements. Its native linked
+wheel-lift regression exercises the vendordep directly. The new `PhysicsTruth()`
+session accessor provides full body orientation and module loads without a Base
+ABI change or application callback inside vendor implementation.
 
 ## Validation and physical limits
 

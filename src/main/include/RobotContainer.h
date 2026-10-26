@@ -36,6 +36,7 @@ class RobotContainer {
   season::SystemCheck checks_;
   std::unique_ptr<season::FuelSimulation> simulation_;
 #ifndef __FRC_ROBORIO__
+  meco::sim::DriveSimulationSession* simulationSession_{}; // Non-owning; drive_ owns it.
   nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
   nt::StructPublisher<frc::Pose3d> simulationBodyPosePublisher_;
   units::meter_t simulationGroundedBodyHeight_{};

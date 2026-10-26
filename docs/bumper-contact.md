@@ -57,17 +57,9 @@ modeled traversal cost; no special collision exclusion is used for bumps.
 The reusable implementation is MecoSimulation-cpp `d3f125e`. A new
 `BodySpec::Shape::BumperRing` uses the existing `radius` slot for wall thickness;
 public structure/class layouts remain unchanged. Invalid wall thickness and
-unknown shapes are rejected. The season compatibility copies replace complete
-static archive objects and carry upstream GPL-3.0 attribution. The header extension
-preserves the world ABI. The subsequent [azimuth load model](simulation-azimuth-load.md)
-extends DrivePhysics records and requires matched physics/adapter/header replacements.
-No package was published or upgraded.
-
-The world replacement needs Jolt headers matching the pinned binary. Gradle's
-`prepareJoltHeaders` fetches revision `0373ec0dd762e4bc2f6acdb08371ee84fa23c6db`,
-checks its SHA-256 and extracts headers into `build/jolt-headers`. A first desktop
-build therefore needs network access. Jolt Debug/Release layout macros match the
-respective vendordep libraries; Jolt is not linked into roboRIO code.
+unknown shapes are rejected. MecoSimulation 2026.0.9 packages the world, drive
+physics and matching adapter/header layouts together. Jolt headers and ABI build
+settings are internal to that package; Jolt is not linked into roboRIO code.
 
 The focused upstream regression verifies a hollow centre, actual edge ray hits,
 a tilted drop onto the floor without deep penetration, passage of sub-clearance

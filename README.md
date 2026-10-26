@@ -15,7 +15,7 @@ For device configuration, commissioning, and diagnosis, use [`frc-hardware`](.ag
 
 Install WPILib 2026.2.1 with its C++ toolchains. This project uses the published
 [MecoBase 2026.2.1 vendordep](https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json)
-and the matching-year [MecoSimulation 2026.0.8 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
+and the matching-year [MecoSimulation 2026.0.9 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
 The current checkout resolves both from their public Maven URLs; the build,
 Debug/Release tests, and localhost desktop drive smoke against MecoSimulation
 2026.0.6 are recorded in the [public-package validation record](artifacts/public-multivendordep-validation-2026.0.6.json)
@@ -57,7 +57,7 @@ Drivetrain acceleration/braking inputs, the FOC/current-limit correction and the
 
 These scripts use localhost HAL simulation and leave the simulator disabled. Desktop plants now share a [load-dependent battery supply](docs/simulation-battery.md) using aggregate supply current (12 V, 20 mΩ estimate). Steering now uses the configured robot gains (`kP=100`, `kD=0.5`) with the [contact-loaded azimuth plant](docs/simulation-azimuth-load.md); the old unloaded-motor steering estimate has been removed. Phoenix firmware computes voltages from physical feedback, and its separate built-in plants are not stepped. Simulation-only PathPlanner gains still use a motor/traction acceleration upper bound with mass, yaw inertia, module locations, and stopping-error scales. These numerical estimates do not calibrate the physical robot. The drive smoke checks small-stick response, module azimuth travel, floor support, physical rotation, tracking and disable behavior.
 
-The desktop-only compatibility bridge in `src/main/cpp/simulation/DriveHardwareSimulation.cpp` replaces the two hardware bridge methods from MecoSimulation 2026.0.8. It removes the competing Phoenix physics update; the same fix is committed upstream at `67e0a35`. Keep both methods together because they replace one static archive object. Remove this compatibility translation unit when adopting a Simulation release containing the fix. Scene resets reconcile odometry after five robot loops, allowing asynchronous sensor feedback to arrive without blocking the scheduler. Any autonomous pose seed and subsequent motion in that frame are preserved. This one-time correction is limited to scene reset; driving never continuously copies truth into odometry.
+MecoSimulation owns the desktop physics, hardware feedback, diagnostics, battery helper, and 2026 field collider map. This robot consumes its public headers and archive without source or header overrides; see the [ownership boundary](docs/simulation-vendordep-boundary.md). Scene resets reconcile odometry after five robot loops, allowing asynchronous sensor feedback to arrive without blocking the scheduler. Any autonomous pose seed and subsequent motion in that frame are preserved. This one-time correction is limited to scene reset; driving never continuously copies truth into odometry.
 
 The mechanism smoke checks button bindings and motor outputs; the auto smoke checks the Choreo chooser/trajectory endpoint. Simulated rollers can coast after voltage is removed; cancellation checks applied output rather than assuming an immediate mechanical stop. Fuel collection and projectile telemetry appears under `FieldSimulation/`.
 
@@ -138,12 +138,11 @@ geometry on flat ground). Physics validation scripts use that raw pose. The mode
 offset follows chassis rotation and preserves bump/airborne height changes.
 
 The swerve modules are hard mounted. The rigid wheel-contact model has no
-vertical springs, dampers, suspension travel or load-dependent sag. A temporary
-`RigidWheelContactPhysics.cpp` compatibility replacement integrates upstream
-MecoSimulation commit `8eff394` (rigid support, bumper shell and azimuth load) while the pinned 2026.0.8 package still contains
-the old spring model. Legacy suspension fields in its headers are unused by
-this replacement. See [the rigid-contact correction](docs/rigid-wheel-contact.md).
-
-The [bumper contact model](docs/bumper-contact.md) uses a hollow perimeter with a 0.25-inch floor gap. It contacts carpet, bumps and field structures; the requested low gap catches the leading bump plate. The body origin moved to bumper centre while the assumed physical CoM remains 0.30 m. First desktop builds fetch hash-verified, pinned Jolt headers for the compatibility implementation.
-
-[Load-dependent azimuth simulation](docs/simulation-azimuth-load.md) adds elastic tire scrub, load/rolling dependence and a shared traction/twist budget. The local physics header and complete session/physics replacements must be built together with layout version 2; native tests use the same headers.
+vertical springs, dampers, suspension travel or load-dependent sag.
+MecoSimulation 2026.0.9 provides rigid hard-mounted wheel contact, hollow bumper
+contacts and load-dependent azimuth dynamics. Legacy suspension fields remain
+unused. See [the rigid-contact model](docs/rigid-wheel-contact.md),
+[bumper contact](docs/bumper-contact.md), and
+[azimuth load](docs/simulation-azimuth-load.md). Jolt headers, compilation and
+Debug/Release ABI settings belong entirely to the Simulation package; robot builds
+do not fetch or compile Jolt source.

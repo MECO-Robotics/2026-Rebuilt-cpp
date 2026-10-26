@@ -1,0 +1,225 @@
+{
+  "scope": "Vendordep ownership and packaged desktop integration; not physical calibration",
+  "simulation_source_commit": "de0b1a541907b0d7ad0f3526c660ea41e770f31e",
+  "base_version": "2026.2.1",
+  "simulation_version": "2026.0.9",
+  "local_package_manifest": {
+    "artifacts": {
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-headers.zip": "800c2b0d271ce16f718fe8a0f8b4a19f0a353117663aaf55755250bd3c36126c",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-linuxx86-64static.zip": "fdc757a65ffa545e46d2c28fac95739382c9ea0012c7495cfffa2cbc2c4507a9",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-linuxx86-64staticdebug.zip": "11954d51530bbfc7c0a5582da2765e90f13ef7c59c03bce54c9bacb04ba47f87",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-sources.zip": "e3d6494412f41fca6dc4c8ba90819db68965eca5f21661d47308c59a4bb8ebc7",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9.pom": "06addb108d5c04abe3a1a783ccfe3b62045774eafa0a3ee88dfa362df6ba3eda"
+    },
+    "buildProvenance": {
+      "linuxx86-64": {
+        "baseCommit": "58f7462702282517f239e12a76af1cf32f6a8050",
+        "baseTrackedPatchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "baseVendordepVersion": "2026.2.1",
+        "baseWorkingTreeClean": true,
+        "cmakeVersion": "cmake version 4.4.4",
+        "gradleRioVersion": "2026.2.1",
+        "gradleVersion": "8.11",
+        "javaRuntime": "openjdk version \"17.0.16\" 2025-07-15",
+        "platform": "linuxx86-64",
+        "simulationCommit": "de0b1a541907b0d7ad0f3526c660ea41e770f31e",
+        "simulationTrackedPatchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "simulationWorkingTreeClean": true,
+        "vendorDependencies": [
+          [
+            "com.ctre.phoenix6",
+            "tools",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6",
+            "wpiapi-cpp",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simPigeonIMU",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProCANcoder",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProCANdi",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProCANdle",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProCANrange",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProPigeon2",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProTalonFX",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProTalonFXS",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simTalonSRX",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simVictorSPX",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "tools-sim",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "wpiapi-cpp-sim",
+            "26.1.2"
+          ],
+          [
+            "com.pathplanner.lib",
+            "PathplannerLib-cpp",
+            "2026.1.2"
+          ],
+          [
+            "edu.wpi.first.wpilibNewCommands",
+            "wpilibNewCommands-cpp",
+            "wpilib"
+          ]
+        ],
+        "wpilibYear": "2026"
+      }
+    },
+    "cmakeVersion": "cmake version 4.4.4",
+    "sourceCommit": "de0b1a541907b0d7ad0f3526c660ea41e770f31e",
+    "version": "2026.0.9"
+  },
+  "season_build": {
+    "all_four_native_targets": "passed",
+    "desktop_tests_each_configuration": 28
+  },
+  "portable_ctest_suites": 5,
+  "packaging_unit_tests": 14,
+  "field": {
+    "transport": "localhost HAL websocket + NT4",
+    "checks": {
+      "grounded_model_height_is_zero": true,
+      "hard_mounted_body_has_no_static_sag": true,
+      "startup_clear_blue_spawn": true,
+      "blue_reset_matches_truth_and_odometry": true,
+      "red_reset_matches_truth_and_odometry": true,
+      "can_turn_at_default_spawn": true,
+      "actual_wall_contact_blocks_motion": true,
+      "field_installed": true,
+      "low_bumper_contacts_bump_before_wheels_climb": true
+    },
+    "collider_count": 40.0,
+    "grounded_body_height_m": 0.07619999999999999,
+    "wall_approach_s": 2.605887067000367,
+    "wall_bumper_clearance_m": {
+      "final": -0.00014678627233339904,
+      "minimum": -0.00014678627233339904
+    },
+    "passed": true
+  },
+  "battery": {
+    "binary_sha256": "1e5866e7caf55502e2f91296b12e215039ad2241968d57d6b05e04e03587f979",
+    "running_binary": "/home/brian/.cache/rebuilt-sim-tmp/base-bot-halsim.vVciDj/frcUserProgram",
+    "scope": "Numerical desktop battery estimate, not hardware calibration",
+    "checks": {
+      "finite_bounded": true,
+      "relaxed_battery_equation": true,
+      "no_drive_two_cycle": true,
+      "no_combined_two_cycle": true,
+      "mechanism_causes_sag": true,
+      "drive_causes_sag": true,
+      "combined_causes_sag": true,
+      "recovers": true,
+      "no_voltage_collapse": true
+    },
+    "summary": {
+      "settle": {
+        "min_voltage": 12.0,
+        "median_voltage": 12.0,
+        "peak_supply_current": 0.0
+      },
+      "idle": {
+        "min_voltage": 12.0,
+        "median_voltage": 12.0,
+        "peak_supply_current": 0.0
+      },
+      "mechanism": {
+        "min_voltage": 9.790553034529259,
+        "median_voltage": 10.214634975165875,
+        "peak_supply_current": 111.29536134295144
+      },
+      "recover_mechanism": {
+        "min_voltage": 11.108623418289977,
+        "median_voltage": 11.999999999990273,
+        "peak_supply_current": 1.823509345513163e-12
+      },
+      "drive": {
+        "min_voltage": 9.343078134636396,
+        "median_voltage": 11.40721524263186,
+        "peak_supply_current": 153.02246697771594
+      },
+      "combined": {
+        "min_voltage": 9.695178074796889,
+        "median_voltage": 10.128809535910527,
+        "peak_supply_current": 116.98889364698742
+      },
+      "disabled_recovery": {
+        "min_voltage": 10.290498279314845,
+        "median_voltage": 12.0,
+        "peak_supply_current": 84.68012313266917
+      }
+    },
+    "passed": true
+  },
+  "boundary": {
+    "local_vendor_headers": 0,
+    "replacement_library_translation_units": 0,
+    "robot_build_jolt_downloads": false,
+    "base_modified": false
+  },
+  "validation_transport": {
+    "host": "127.0.0.1",
+    "nt4_port": 5811,
+    "hal_websocket_port": 3300,
+    "same_process_verified": true
+  },
+  "discarded_run": {
+    "reason": "Unrelated GUI owned default NT port; inputs and telemetry belonged to different processes. Excluded from acceptance."
+  },
+  "cross_platform_ci": {
+    "run_id": 40390243913,
+    "url": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40390243913",
+    "status": "pending"
+  },
+  "public_maven": "pending",
+  "raw_capture_directory": "/home/brian/.cache/rebuilt-sim-tmp",
+  "remaining_model_limits": [
+    "Existing square and azimuth-travel tracking failures are not resolved by packaging.",
+    "Battery and contact parameters remain estimates."
+  ]
+}

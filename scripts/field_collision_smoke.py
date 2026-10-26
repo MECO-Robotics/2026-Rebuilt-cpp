@@ -17,10 +17,10 @@ from websockets.asyncio.client import connect
 from wpimath.geometry import Pose2d, Pose3d
 
 
-async def exercise():
+async def exercise(args):
     client = ntcore.NetworkTableInstance.create()
     client.startClient4('field-collision-check')
-    client.setServer('127.0.0.1', 5810)
+    client.setServer('127.0.0.1', args.nt_port)
     options = ntcore.PubSubOptions(periodic=.02, sendAll=True)
     pose = client.getStructTopic('/AdvantageScope/Drive/Pose', Pose2d).subscribe(Pose2d(), options)
     truth = client.getStructTopic('/Simulation/PhysicsBodyTruth', Pose3d).subscribe(Pose3d(), options)
@@ -136,8 +136,9 @@ async def exercise():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--nt-port', type=int, default=5810)
     args = parser.parse_args()
-    result = asyncio.run(exercise())
+    result = asyncio.run(exercise(args))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps({'checks': result['checks'], 'passed': result['passed']}, indent=2))

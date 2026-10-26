@@ -13,9 +13,23 @@
 #include <networktables/DoubleArrayTopic.h>
 #include <networktables/NetworkTableInstance.h>
 #include <array>
+#include <charconv>
+#include <stdexcept>
 #endif
 #include <frc2/command/CommandScheduler.h>
 Robot::Robot() {
+#ifndef __FRC_ROBORIO__
+  if(const char* text=std::getenv("FRC_SIM_NT_PORT")) {
+    const std::string_view value{text};
+    unsigned int port=0;
+    const auto parsed=std::from_chars(value.data(),value.data()+value.size(),port);
+    if(parsed.ec!=std::errc{} || parsed.ptr!=value.data()+value.size() || port<1024 || port>65535)
+      throw std::invalid_argument("FRC_SIM_NT_PORT must be an integer in [1024,65535]");
+    auto nt=nt::NetworkTableInstance::GetDefault();
+    nt.StopServer();
+    nt.StartServer("", "127.0.0.1", 0, port);
+  }
+#endif
   frc::DataLogManager::Start();
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
   frc::RobotController::SetBrownoutVoltage(units::volt_t{6});
@@ -54,15 +68,7 @@ void Robot::SimulationPeriodic(){
  static auto powerPublisher=nt::NetworkTableInstance::GetDefault()
      .GetDoubleArrayTopic("/Simulation/PowerSamples").Publish();
  powerPublisher.Set(std::array<double,3>{static_cast<double>(nt::Now()),runtime.SupplyCurrent(),batteryVoltage});
- // Raw HAL joystick writes are not DS packets. Publish the current desktop
- // inputs for the next loop's normal DriverStation::RefreshData(), independently
- // of GUI redraws or a websocket client's notification cadence. This is a
- // synchronous cache update; it does not wait or change the scheduler period.
- static const bool emitPackets=[] {
-   const char* value=std::getenv("FRC_SIM_DS_PACKET_CLOCK");
-   return !value || std::string_view{value}!="0";
- }();
- if(emitPackets)HALSIM_NotifyDriverStationNewData();
+ meco::sim::PublishDriverStationPacket();
 #endif
 }
 void Robot::DisabledInit(){container_.CancelChecks();}

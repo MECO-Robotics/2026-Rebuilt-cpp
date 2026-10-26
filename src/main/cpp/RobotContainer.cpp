@@ -1,5 +1,4 @@
 #include "season/SimulationLatency.h"
-#include "season/SimulationAttitude.h"
 #include "season/SimulationField.h"
 #include "season/SimulationPose.h"
 #include "RobotContainer.h"
@@ -123,6 +122,7 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
    }
    frc::SmartDashboard::PutBoolean("FieldSimulation/CollidersEnabled",simulationFieldCollidersEnabled_);
    frc::SmartDashboard::PutNumber("FieldSimulation/ColliderCount",simulationFieldCollidersEnabled_?season::simulation::FieldColliders().size():0);
+   simulationSession_=simulation.get(); // Drive owns the session for this container lifetime.
    drive_.SetSimulationAdapter(std::move(simulation));
    drive_.SetPoseResetCallback([this](const frc::Pose2d& pose){
      if(simulationResetFeedbackLoops_>0)simulationResetPose_=pose;
@@ -207,9 +207,10 @@ void RobotContainer::SimulationPeriodic(){
      drive_.ResetPose(simulationResetPose_.TransformBy(frc::Transform2d{
          simulationResetPhysicalOrigin_,frc::Pose2d{units::meter_t{truth->x},units::meter_t{truth->y},
                                   frc::Rotation2d{units::radian_t{truth->yaw}}}}));
+   const auto q=simulationSession_->PhysicsTruth().body.pose.rotation;
    const frc::Pose3d bodyPose{
        units::meter_t{truth->x}, units::meter_t{truth->y}, units::meter_t{truth->z},
-       season::simulation::chassisAttitude};
+       frc::Rotation3d{frc::Quaternion{q.w,q.x,q.y,q.z}}};
    simulationBodyPosePublisher_.Set(bodyPose);
    simulationPosePublisher_.Set(season::simulation::FloorReferencedRobotPose(bodyPose,simulationGroundedBodyHeight_));
  }

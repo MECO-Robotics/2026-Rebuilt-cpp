@@ -55,9 +55,9 @@ TEST(SimulationField, LinkedDriveModelKeepsRigidModuleHeightUnderLoad) {
 #endif
 
 #ifndef __FRC_ROBORIO__
-// Exercises the linked replacement from the separate native-test source set.
-// Accessing the new load fields also prevents silently compiling against the
-// pinned vendordep's incompatible point-contact physics record layout.
+// Exercises the packaged plant from the separate native-test source set.
+// Accessing contact-load fields also checks that the package exports its matching
+// public physics record layout.
 TEST(SimulationField, LinkedAzimuthLoadVanishesWhenWheelIsLifted) {
     using namespace base::sim;
     SimulationWorld world(Backend::Full3D);
