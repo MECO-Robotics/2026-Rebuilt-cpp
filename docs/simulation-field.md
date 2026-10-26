@@ -80,21 +80,26 @@ of the robot's hard-mounted swerve modules.
 
 ## Validation and free-space mode
 
-The final Gradle build passed desktop and roboRIO Debug/Release targets, with
-25 tests in each desktop configuration. The field regressions cover rigid support height under different loads, clear
+The current Gradle build passes desktop and roboRIO Debug/Release targets, with
+28 tests in each desktop configuration. The field regressions cover rigid support height under different loads, clear
 blue/red starts (and rejected invalid starts) and actual powered-body contact
 with a hub, using the Jolt solver.
 
-The running robot executable additionally passed the field-runtime checks:
+The earlier elevated-collider robot executable passed these field-runtime checks:
 clear initial spawn, blue/red physics-and-odometry resets, real south-wall
 contact blocking lateral motion, actual turning at the default spawn, a zero grounded
 model height, an installed scene, fixed hard-mount body height, and traversal of
 a bump followed by a return to that height. Evidence:
 `artifacts/rigid-contact-runtime.json` (earlier runs are retained in
-`artifacts/ground-origin-runtime.json` and `artifacts/field-collision-runtime.json`). Repeat after a build with:
+`artifacts/ground-origin-runtime.json` and `artifacts/field-collision-runtime.json`).
+The current low-clearance bumper run requires sliding onto the ramp and lifting
+all four wheels; full crossing is reported separately and remains inconsistent
+when the shell high-centers. See
+[bump-contact-validation-2026.0.10.json](../artifacts/bump-contact-validation-2026.0.10.json).
+Repeat after a build with:
 
 ```sh
-./scripts/sim_headless.sh
+FRC_SIM_LATENCY_PROBE=1 ./scripts/sim_headless.sh
 # In another terminal, using the documented isolated Python dependencies:
 python scripts/field_collision_smoke.py --output artifacts/field-collision-repeat.json
 ```
@@ -110,4 +115,6 @@ is read at construction and requires restarting; the dashboard fields are status
 not runtime enable controls. All geometry and spawn changes are excluded from
 roboRIO builds.
 
-The earlier bump-crossing evidence below predates the low bumper shell. With the requested 0.25-inch gap, the updated runtime check verifies bumper contact at the bump approach instead; see [bumper contact](bumper-contact.md).
+The earlier bump-crossing evidence predates the low bumper shell. The current
+2026.0.10 contact model uses rounded bumper edges and lower HDPE friction while
+preserving the requested 0.25-inch gap; see [bumper contact](bumper-contact.md).

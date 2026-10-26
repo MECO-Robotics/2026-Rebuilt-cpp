@@ -35,7 +35,7 @@ The build includes desktop and roboRIO debug/release executables and GoogleTest 
 Desktop simulation now enables the REBUILT field colliders by default. Startup
 and Back/View reset use a clear alliance start, not `(0,0)`. See
 [the field scene and validation](docs/simulation-field.md). For the field-aware
-runtime check, launch `./scripts/sim_headless.sh`, then run
+runtime check, launch `FRC_SIM_LATENCY_PROBE=1 ./scripts/sim_headless.sh`, then run
 `python scripts/field_collision_smoke.py --output artifacts/field-collision-repeat.json`
 with the Python dependencies below installed.
 
