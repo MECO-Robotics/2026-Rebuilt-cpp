@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 import time
 import ntcore
+from wpimath.geometry import Pose2d
 from websockets.asyncio.client import connect
 
 
@@ -16,7 +17,12 @@ async def run():
     instance=ntcore.NetworkTableInstance.create()
     instance.startClient4("season-cpp-auto-smoke");instance.setServer("127.0.0.1",5810)
     table=instance.getTable("SmartDashboard")
-    pose=table.getDoubleArrayTopic("Drive/Pose").subscribe([])
+    pose=instance.getStructTopic("/AdvantageScope/Drive/Pose",Pose2d).subscribe(Pose2d())
+    def read_pose():
+        value=pose.getAtomic()
+        if not value.time:return []
+        p=value.value
+        return [p.X(),p.Y(),p.rotation().radians()]
     active=table.getStringTopic("Auto Choices/active").subscribe("")
     selection=table.getStringTopic("Auto Choices/selected").publish()
     name="Choreo LeftBlueBump + Shoot"
@@ -36,12 +42,12 @@ async def run():
             started=time.monotonic()
             while time.monotonic()-started<6.5:
                 await control(True)
-                values=list(pose.get());elapsed=time.monotonic()-started
+                values=read_pose();elapsed=time.monotonic()-started
                 if len(values)==3:
                     if .1<elapsed<.2:initial=values
                     if 3.1<elapsed<3.3:endpoint=values
                 await asyncio.sleep(.02)
-            result["selected"]=active.get();result["initialPose"]=initial;result["endPose"]=endpoint;result["finalPose"]=list(pose.get())
+            result["selected"]=active.get();result["initialPose"]=initial;result["endPose"]=endpoint;result["finalPose"]=read_pose()
             # 2026 reflection is a half-turn about the official field center.
             expected=[(3.2206907272338867,5.213726997375488),(16.541-3.2206907272338867,8.0692-5.213726997375488)]
             error=min(math.hypot(endpoint[0]-x,endpoint[1]-y) for x,y in expected) if endpoint else float("inf")

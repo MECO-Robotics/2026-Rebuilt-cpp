@@ -92,6 +92,9 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
        .GetStructTopic<frc::Pose3d>("/Simulation/RobotTruth").Publish();
    auto simulation=meco::sim::CreateDriveSimulationAdapter(drive_.Config());
    drive_.SetSimulationAdapter(std::move(simulation));
+   drive_.SetPoseResetCallback([this](const frc::Pose2d& pose){
+     if(simulationResetFeedbackLoops_>0)simulationResetPose_=pose;
+   });
  }
 #endif
  drive_.SetDefaultCommand(drive_.Joystick([this]{return -controller_.GetLeftY();},[this]{return -controller_.GetLeftX();},[this]{return -controller_.GetRightX();}));
@@ -160,11 +163,12 @@ void RobotContainer::SimulationPeriodic(){
 #ifndef __FRC_ROBORIO__
  if(auto truth=drive_.SimulationTruth()){
    // Scene reset changes encoder and gyro raw inputs asynchronously. Reconcile
-   // once after transport/odometry has consumed them, using the current physical
-   // pose so motion since reset is retained. No wait blocks the robot loop.
+   // once after transport/odometry has consumed them. Preserve any autonomous
+   // pose seed applied since reset and motion in that frame. No loop waits.
    if(simulationResetFeedbackLoops_>0 && --simulationResetFeedbackLoops_==0)
-     drive_.ResetPose(frc::Pose2d{units::meter_t{truth->x},units::meter_t{truth->y},
-                                frc::Rotation2d{units::radian_t{truth->yaw}}});
+     drive_.ResetPose(simulationResetPose_.TransformBy(frc::Transform2d{
+         frc::Pose2d{},frc::Pose2d{units::meter_t{truth->x},units::meter_t{truth->y},
+                                  frc::Rotation2d{units::radian_t{truth->yaw}}}}));
    simulationPosePublisher_.Set(frc::Pose3d{
        units::meter_t{truth->x}, units::meter_t{truth->y}, units::meter_t{truth->z},
        frc::Rotation3d{0_rad, 0_rad, units::radian_t{truth->yaw}}});
@@ -173,8 +177,8 @@ void RobotContainer::SimulationPeriodic(){
 }
 void RobotContainer::ResetSimulation(){
 #ifndef __FRC_ROBORIO__
- drive_.ResetSimulation(frc::Pose2d{});
  simulationResetFeedbackLoops_=5;
+ drive_.ResetSimulation(frc::Pose2d{});
 #endif
  if(simulation_)simulation_->Reset();
 }

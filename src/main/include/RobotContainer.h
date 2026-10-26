@@ -38,6 +38,7 @@ class RobotContainer {
 #ifndef __FRC_ROBORIO__
   nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
   int simulationResetFeedbackLoops_{};
+  frc::Pose2d simulationResetPose_{};
 #endif
   frc2::CommandXboxController controller_{0},copilot_{1};
   frc::SendableChooser<frc2::Command*> autoChooser_;

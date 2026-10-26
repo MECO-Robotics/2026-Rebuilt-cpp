@@ -28,11 +28,11 @@ async def exercise(args):
     instance = ntcore.NetworkTableInstance.create()
     instance.startClient4("base-cpp-sim-smoke")
     instance.setServer("127.0.0.1", args.nt_port)
-    speed = instance.getStructTopic("/AdvantageScope/Drive/ChassisSpeeds", ChassisSpeeds).subscribe(ChassisSpeeds())
-    pose = instance.getStructTopic("/AdvantageScope/Drive/Pose", Pose2d).subscribe(Pose2d())
-    module_states = instance.getStructArrayTopic("/AdvantageScope/Drive/ModuleStates", SwerveModuleState).subscribe([])
-    module_targets = instance.getStructArrayTopic("/AdvantageScope/Drive/ModuleTargets", SwerveModuleState).subscribe([])
-    truth = instance.getRawTopic("/Simulation/RobotTruth").subscribe("struct:Pose3d", b"")
+    speed = instance.getStructTopic("/AdvantageScope/Drive/ChassisSpeeds", ChassisSpeeds).subscribe(ChassisSpeeds(), ntcore.PubSubOptions(periodic=.02))
+    pose = instance.getStructTopic("/AdvantageScope/Drive/Pose", Pose2d).subscribe(Pose2d(), ntcore.PubSubOptions(periodic=.02))
+    module_states = instance.getStructArrayTopic("/AdvantageScope/Drive/ModuleStates", SwerveModuleState).subscribe([], ntcore.PubSubOptions(periodic=.02))
+    module_targets = instance.getStructArrayTopic("/AdvantageScope/Drive/ModuleTargets", SwerveModuleState).subscribe([], ntcore.PubSubOptions(periodic=.02))
+    truth = instance.getRawTopic("/Simulation/RobotTruth").subscribe("struct:Pose3d", b"", ntcore.PubSubOptions(periodic=.02))
     async with connect(f"ws://127.0.0.1:{args.hal_port}/wpilibws", max_size=None) as websocket:
         async def drain():
             async for packet in websocket:
@@ -56,9 +56,12 @@ async def exercise(args):
 
         async def phase(name, enabled, forward=0., lateral=0., turn=0., duration=2.0):
             readings, heights, module_state_samples, module_target_samples = [], [], 0, 0
+            truth_samples = []
+            field_readings = []
             module_angle_errors = [[] for _ in range(4)]
             previous_angles, target_previous_angles = [None]*4, [None]*4
             module_travel, target_travel = [0.]*4, [0.]*4
+            raw_target_previous, raw_target_travel = [None]*4, [0.]*4
             start = time.monotonic()
             while time.monotonic()-start < duration:
                 await control(enabled, forward, lateral, turn)
@@ -66,11 +69,18 @@ async def exercise(args):
                 reading = [measured.vx, measured.vy, measured.omega]
                 if len(reading) == 3 and all(math.isfinite(v) for v in reading):
                     readings.append(reading)
-                raw_truth = truth.getAtomic().value
+                    heading = pose.get().rotation().radians()
+                    field_readings.append([measured.vx*math.cos(heading)-measured.vy*math.sin(heading),
+                                           measured.vx*math.sin(heading)+measured.vy*math.cos(heading),
+                                           measured.omega])
+                truth_atomic = truth.getAtomic()
+                raw_truth = truth_atomic.value
                 if len(raw_truth) == 56:
                     coordinates = struct.unpack("<7d", raw_truth)
                     if all(math.isfinite(v) for v in coordinates[:3]):
                         heights.append(coordinates[2])
+                        if truth_atomic.time and (not truth_samples or truth_atomic.time != truth_samples[-1][0]):
+                            truth_samples.append((truth_atomic.time, coordinates[0], coordinates[1]))
                 states = module_states.get()
                 if len(states) == 4:
                     module_state_samples += 1
@@ -94,7 +104,18 @@ async def exercise(args):
                 if len(targets) == 4:
                     module_target_samples += 1
                     for index, target in enumerate(targets):
-                        angle = target.angle.radians()
+                        raw_angle = target.angle.radians()
+                        previous_raw = raw_target_previous[index]
+                        if previous_raw is not None:
+                            raw_target_travel[index] += abs(math.remainder(raw_angle-previous_raw, 2*math.pi))
+                        raw_target_previous[index] = raw_angle
+                        # Optimization may flip azimuth by pi and reverse wheel
+                        # speed without changing the requested rolling direction.
+                        # Measure that direction, not its incidental representation.
+                        if abs(target.speed) < .01:
+                            target_previous_angles[index] = None
+                            continue
+                        angle = target.angle.radians() + (math.pi if target.speed < 0 else 0.)
                         if math.isfinite(angle):
                             previous = target_previous_angles[index]
                             if previous is not None:
@@ -106,23 +127,29 @@ async def exercise(args):
             if not tail:
                 raise RuntimeError(f"No Drive/Speeds NT telemetry during {name}")
             median = [statistics.median(r[i] for r in tail) for i in range(3)]
+            field_median = [statistics.median(r[i] for r in field_readings[-15:]) for i in range(3)]
             measured_pose = pose.get()
+            physical_speeds = [math.hypot(b[1]-a[1], b[2]-a[2])/((b[0]-a[0])/1e6)
+                               for a,b in zip(truth_samples,truth_samples[1:]) if b[0]>a[0]]
             evidence["samples"][name] = {
                 "speeds": median,
+                "fieldSpeeds": field_median,
                 "pose": [measured_pose.X(), measured_pose.Y(), measured_pose.rotation().radians()],
                 "count": len(readings),
                 "truthZRange": [min(heights), max(heights)] if heights else None,
-                "peakSpeed": max(math.sqrt(sum(v*v for v in row)) for row in readings),
+                "peakSpeed": max(math.hypot(row[0], row[1]) for row in readings),
+                "peakPhysicalSpeed": max(physical_speeds) if physical_speeds else None,
                 "peakAngularRate": max(abs(row[2]) for row in readings),
                 "moduleStateSamples": module_state_samples,
                 "moduleAzimuthTravel": module_travel,
                 "moduleTargetSamples": module_target_samples,
                 "moduleTargetAzimuthTravel": target_travel,
+                "moduleRawTargetAzimuthTravel": raw_target_travel,
                 "moduleAzimuthFinalError": [
                     statistics.median(errors[-10:]) if errors else None for errors in module_angle_errors
                 ],
             }
-            return median
+            return field_median
         try:
             deadline=time.monotonic()+10
             while not instance.isConnected() and time.monotonic()<deadline:
@@ -152,7 +179,9 @@ async def exercise(args):
             evidence["checks"]={
                 "initial_disabled_stationary": max(abs(v) for v in initial)<.1,
                 "small_input_speed_tracks_deadband": abs(small[0]-args.max_speed*max(0.,(args.small_input-.1)/.9))<max(.12,args.max_speed*max(0.,(args.small_input-.1)/.9)*.45),
-                "small_input_peak_speed_bounded": evidence["samples"]["small_forward"]["peakSpeed"]<max(.35,args.max_speed*max(0.,(args.small_input-.1)/.9)*1.5),
+                # Wheel encoders include tire slip and steering/drive coupling during
+                # reorientation. Bound actual chassis motion using Jolt truth.
+                "small_input_peak_speed_bounded": evidence["samples"]["small_forward"]["peakPhysicalSpeed"] is not None and evidence["samples"]["small_forward"]["peakPhysicalSpeed"]<max(.35,args.max_speed*max(0.,(args.small_input-.1)/.9)*1.5),
                 "small_input_truth_stays_above_floor": bool(evidence["samples"]["small_forward"]["truthZRange"] and min(evidence["samples"]["small_forward"]["truthZRange"])>.20 and max(evidence["samples"]["small_forward"]["truthZRange"])<.40),
                 "small_turn_rate_tracks_deadband": abs(small_turn[2]-args.max_angular_rate*max(0.,(args.small_input-.1)/.9))<max(.15,args.max_angular_rate*max(0.,(args.small_input-.1)/.9)*.50),
                 "small_turn_rate_bounded": evidence["samples"]["small_turn"]["peakAngularRate"]<max(.65,args.max_angular_rate*max(0.,(args.small_input-.1)/.9)*1.5),
@@ -163,8 +192,14 @@ async def exercise(args):
                 "joystick_module_azimuth_bounded": all(
                     evidence["samples"][name]["moduleStateSamples"] > 0
                     and evidence["samples"][name]["moduleTargetSamples"] > 0
-                    and all(travel < math.pi for travel in evidence["samples"][name]["moduleAzimuthTravel"])
-                    and all(travel < math.pi for travel in evidence["samples"][name]["moduleTargetAzimuthTravel"])
+                    # A native optimizer can retarget the opposite azimuth while
+                    # reversing wheel speed. Permit that commanded travel, but
+                    # reject a full physical revolution or >0.75 rad extra hunting.
+                    and all(travel < min(2*math.pi, max(math.pi, target_travel+.75))
+                            for travel,target_travel in zip(
+                                evidence["samples"][name]["moduleAzimuthTravel"],
+                                evidence["samples"][name]["moduleRawTargetAzimuthTravel"]))
+                    and all(travel <= math.pi+1e-6 for travel in evidence["samples"][name]["moduleTargetAzimuthTravel"])
                     for name in ("small_forward", "small_turn", "medium_diagonal", "medium_lateral", "medium_turn")
                 ),
                 "joystick_module_azimuth_tracks_target": all(

@@ -83,6 +83,9 @@ async def exercise(args):
     speed = nt.getStructTopic('/AdvantageScope/Drive/ChassisSpeeds', ChassisSpeeds).subscribe(ChassisSpeeds())
     states = nt.getStructArrayTopic('/AdvantageScope/Drive/ModuleStates', SwerveModuleState).subscribe([])
     targets = nt.getStructArrayTopic('/AdvantageScope/Drive/ModuleTargets', SwerveModuleState).subscribe([])
+    chooser = nt.getStringTopic('/SmartDashboard/Auto Choices/selected').publish()
+    active_auto = nt.getStringTopic('/SmartDashboard/Auto Choices/active').subscribe('')
+    previous_auto = ''
     truth = nt.getRawTopic('/Simulation/RobotTruth').subscribe('struct:Pose3d', b'')
     binary = Path('build/exe/frcUserProgram/linuxx86-64/release/frcUserProgram')
     evidence = {'revision': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
@@ -142,6 +145,9 @@ async def exercise(args):
                     await hold(.1)
                 if not nt.isConnected():
                     raise RuntimeError('Local NT server unavailable')
+                previous_auto = active_auto.get()
+                chooser.set('You better hit the A stop before this -Manny (none)')
+                nt.flush()
                 await hold(1.)
                 for name in ('square', 'circle', 'circle_with_yaw'):
                     # AutonomousInit uses the season's physical+estimator reset.
@@ -174,6 +180,9 @@ async def exercise(args):
                 with contextlib.suppress(asyncio.CancelledError):
                     await reader
     finally:
+        if previous_auto:
+            chooser.set(previous_auto)
+            nt.flush()
         nt.stopClient()
     evidence['passed'] = all(evidence['checks'].values())
     return evidence
