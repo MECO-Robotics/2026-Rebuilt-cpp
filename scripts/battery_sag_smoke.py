@@ -60,6 +60,7 @@ async def run():
                 'relaxed_battery_equation':all(abs(b[2]-.5*(a[2]+max(0,12-.02*b[1])))<1e-8
                     for a,b in zip(allrows,allrows[1:]) if 15000<b[0]-a[0]<25000),
                 'no_drive_two_cycle':max(abs(b[2]-a[2]) for a,b in zip(drive[-25:],drive[-24:]))<.5,
+                'no_combined_two_cycle':max(abs(b[2]-a[2]) for a,b in zip(both[-25:],both[-24:]))<.5,
                 'mechanism_causes_sag':min(r[2] for r in mechanism)<11.8,
                 'drive_causes_sag':min(r[2] for r in drive)<11.8,
                 'combined_causes_sag':min(r[2] for r in both)<11.8,

@@ -1,0 +1,105 @@
+{
+  "binary_sha256": "719ed1bfaa312984a52c0dea35af5868b6fc85f2fbaeb4a3183dfd23d7f72322",
+  "running_binary": "/home/brian/.cache/rebuilt-sim-tmp/base-bot-halsim.PAfykw/frcUserProgram",
+  "scope": "Numerical desktop battery estimate, not hardware calibration",
+  "checks": {
+    "finite_bounded": true,
+    "relaxed_battery_equation": true,
+    "no_drive_two_cycle": true,
+    "mechanism_causes_sag": true,
+    "drive_causes_sag": true,
+    "combined_causes_sag": true,
+    "recovers": true,
+    "no_voltage_collapse": true,
+    "no_combined_two_cycle": true
+  },
+  "summary": {
+    "settle": {
+      "min_voltage": 12.0,
+      "median_voltage": 12.0,
+      "peak_supply_current": 0.0
+    },
+    "idle": {
+      "min_voltage": 12.0,
+      "median_voltage": 12.0,
+      "peak_supply_current": 0.0
+    },
+    "mechanism": {
+      "min_voltage": 9.792284296691964,
+      "median_voltage": 10.214134804229346,
+      "peak_supply_current": 111.23796487877027
+    },
+    "recover_mechanism": {
+      "min_voltage": 11.1192293739437,
+      "median_voltage": 11.999999999990386,
+      "peak_supply_current": 1.824154526735362e-12
+    },
+    "drive": {
+      "min_voltage": 9.458963070720475,
+      "median_voltage": 11.32378346482485,
+      "peak_supply_current": 146.9925722253625
+    },
+    "combined": {
+      "min_voltage": 9.65968950361693,
+      "median_voltage": 10.118420501650267,
+      "peak_supply_current": 119.37643458296472
+    },
+    "disabled_recovery": {
+      "min_voltage": 10.344155665577153,
+      "median_voltage": 12.0,
+      "peak_supply_current": 81.73757280202352
+    }
+  },
+  "passed": true,
+  "production_revision": "10409ca",
+  "upstream_revision": "3f92888",
+  "configuration": {
+    "open_circuit_volts": 12,
+    "resistance_ohms": 0.02,
+    "auxiliary_amps": 0,
+    "numerical_relaxation": 0.5,
+    "feedback_period_seconds": 0.02
+  },
+  "build": {
+    "all_four_native_targets": "passed",
+    "google_tests_each_desktop_configuration": 28
+  },
+  "last_half_second_max_voltage_step": {
+    "direct_feedback": {
+      "drive": 3.55111629830097,
+      "combined": 4.744893189536726
+    },
+    "relaxed_feedback": {
+      "drive": 0.00834591747632274,
+      "combined": 0.09129197163768055
+    }
+  },
+  "drive_smoke": {
+    "arguments": "--max-speed 5.24 --reset-button 8 --reset-enabled",
+    "passed": false,
+    "checks": {
+      "initial_disabled_stationary": true,
+      "small_input_speed_tracks_deadband": true,
+      "small_input_peak_speed_bounded": true,
+      "small_input_truth_stays_above_floor": true,
+      "small_turn_rate_tracks_deadband": true,
+      "small_turn_rate_bounded": true,
+      "forward_velocity": true,
+      "forward_speed_tracking": true,
+      "reverse_speed_tracking": true,
+      "turn_truth_rotates": true,
+      "turn_speed_tracking": true,
+      "joystick_module_azimuth_bounded": false,
+      "joystick_module_azimuth_tracks_target": true,
+      "pose_changes_on_drive": true,
+      "reverse_velocity": true,
+      "turn_velocity": true,
+      "final_disabled_stationary": true
+    }
+  },
+  "mechanism_smoke": {
+    "completed": false,
+    "reason": "Expected /SmartDashboard/*/Voltage topics are not published; actual intake load exercised by battery smoke."
+  },
+  "raw_capture_directory": "/home/brian/.cache/rebuilt-sim-tmp"
+}

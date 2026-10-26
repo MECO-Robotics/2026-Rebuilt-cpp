@@ -50,3 +50,24 @@ The smoke disables the robot on exit. It checks drivetrain and mechanism sag,
 the recorded current/voltage equation, and recovery after disabling. Existing
 azimuth and braking evidence predates battery sag and is not acceptance evidence
 for the updated electrical model.
+
+## Recorded validation
+
+[Desktop evidence](../artifacts/battery-sag-validation.json): all four native
+build targets and 28 tests in each desktop configuration passed. The shared-load
+regression covers sag, recovery and roboRIO/plant agreement. A high-conductance
+load regression converges to its 4 V circuit equilibrium; direct unrelaxed
+feedback would alternate between 0 and 12 V.
+
+The actual joystick/intake capture measured minimum bus voltage of 9.46 V during
+drive acceleration and 9.79 V with intake mechanisms running; disabling recovered
+to 12 V. The largest adjacent voltage step over the last half-second of steady
+drive fell from 3.55 V with direct feedback to 0.0084 V with relaxation; combined
+drive/intake fell from 4.74 V to 0.0913 V. The phases occur sequentially at different
+speeds, so their peak currents are not an additive load comparison.
+
+The existing drive smoke, using the documented season arguments, passed all
+checks except the azimuth-travel bound during direction changes. That tracking
+limitation remains. The older mechanism smoke could not complete because its
+expected voltage topics are absent; its acceptance is not claimed. The dedicated
+battery smoke did exercise the actual intake controls and shared current path.
