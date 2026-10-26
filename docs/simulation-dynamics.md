@@ -13,10 +13,10 @@ its illustrative motor defaults in place (12/366 ohms, 7.09/366 Nm/A and
 55 rad/s/V), and incorrectly used the 55 A supply setting as winding current.
 The adapter now uses WPILib 2026.2.1 `DCMotor::KrakenX60FOC(1)` and the configured
 50 A `slipCurrent`. SparkMax retains the NEO model and SmartCurrentLimit mapping.
-The reusable correction is MecoSimulation-cpp commit `7001f22`; this checkout
-includes a complete desktop adapter archive-object replacement until the pinned
-vendordep contains it. Like the other compatibility replacements, it preserves
-public ABI and carries the upstream GPL-3.0 attribution.
+The correction originated in MecoSimulation-cpp commit `7001f22` and is included
+in the 2026.0.9 vendordep with matching contact-loaded physics and headers. The
+robot no longer replaces the adapter archive object. The Base ABI is unchanged;
+Simulation's extended DrivePhysics layout is packaged as a matched unit.
 
 This matters especially when braking: Phoenix adjusts voltage near the motor's
 back-EMF to enforce current limiting. A plant with different back-EMF constants

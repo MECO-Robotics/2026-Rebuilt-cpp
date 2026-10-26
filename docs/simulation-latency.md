@@ -173,3 +173,7 @@ scheduler-end NT microseconds, cached forward stick, command-read forward stick,
 command-read NT microseconds, FPGA microseconds, raw HAL forward stick, cached DS
 attached, cached enabled. `Background` appends the worker publication timestamp.
 Both arrays capture data by value; the worker does not read robot state.
+
+The reusable loop probes and Driver Station packet publication now come from
+MecoSimulation 2026.0.9 through `meco/sim/SimulationDiagnostics.h`; the season
+header only provides platform integration aliases and real-robot no-ops.
