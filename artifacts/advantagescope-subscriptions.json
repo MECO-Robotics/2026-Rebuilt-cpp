@@ -1,0 +1,251 @@
+{
+  "$clientsub$AdvantageScope@1": [
+    {
+      "uid": 34694464,
+      "topics": [
+        ""
+      ],
+      "options": {
+        "topicsonly": true,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 9607905,
+      "topics": [
+        "/AdvantageScope/Drive/ModuleTargets"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 62664827,
+      "topics": [
+        "/.schema"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 14979861,
+      "topics": [
+        "/AdvantageScope/Drive/ChassisSpeeds"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 69959497,
+      "topics": [
+        "/FMSInfo/.type"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 23931159,
+      "topics": [
+        "/SmartDashboard/Match Time"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 39023096,
+      "topics": [
+        "/FMSInfo/FMSControlData"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 83489983,
+      "topics": [
+        "/Preferences/.type"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 68957408,
+      "topics": [
+        "/SmartDashboard/Auto Choices/.type"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 39103304,
+      "topics": [
+        "/AdvantageScope/Drive/Pose"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 91896496,
+      "topics": [
+        "/FMSInfo/IsRedAlliance"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 72997732,
+      "topics": [
+        "/AdvantageScope/Drive/RequestedChassisSpeeds"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 18992223,
+      "topics": [
+        "/AdvantageScope/Drive/ModuleStates"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    },
+    {
+      "uid": 94479673,
+      "topics": [
+        "/FMSInfo/StationNumber"
+      ],
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    }
+  ],
+  "$sub$/AdvantageScope/Drive/RequestedChassisSpeeds": [
+    {
+      "client": "",
+      "subuid": -3,
+      "options": {
+        "prefix": true
+      }
+    },
+    {
+      "client": "",
+      "subuid": -2,
+      "options": {
+        "topicsonly": true,
+        "prefix": true
+      }
+    },
+    {
+      "client": "",
+      "subuid": -1,
+      "options": {
+        "prefix": true
+      }
+    },
+    {
+      "client": "AdvantageScope@1",
+      "subuid": 34694464,
+      "options": {
+        "topicsonly": true,
+        "prefix": true
+      }
+    },
+    {
+      "client": "AdvantageScope@1",
+      "subuid": 72997732,
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    }
+  ],
+  "$sub$/AdvantageScope/Drive/ModuleStates": [
+    {
+      "client": "",
+      "subuid": -3,
+      "options": {
+        "prefix": true
+      }
+    },
+    {
+      "client": "",
+      "subuid": -2,
+      "options": {
+        "topicsonly": true,
+        "prefix": true
+      }
+    },
+    {
+      "client": "",
+      "subuid": -1,
+      "options": {
+        "prefix": true
+      }
+    },
+    {
+      "client": "AdvantageScope@1",
+      "subuid": 34694464,
+      "options": {
+        "topicsonly": true,
+        "prefix": true
+      }
+    },
+    {
+      "client": "AdvantageScope@1",
+      "subuid": 18992223,
+      "options": {
+        "all": true,
+        "periodic": 0.019999999552965164,
+        "prefix": true
+      }
+    }
+  ],
+  "$clients": [
+    {
+      "id": "AdvantageScope@1",
+      "conn": "127.0.0.1:44896",
+      "ver": 1025
+    },
+    {
+      "id": "inspect-AS-rate@2",
+      "conn": "127.0.0.1:54392",
+      "ver": 1025
+    }
+  ]
+}

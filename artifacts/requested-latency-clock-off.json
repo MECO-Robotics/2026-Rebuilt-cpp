@@ -1,0 +1,216 @@
+{
+  "scope": "Local native simulator; send timestamps precede websocket send; NT clock-synchronized source times. No display/pixel latency measurement.",
+  "raw_only": true,
+  "trials": [
+    {
+      "input": 0.35,
+      "expected_mps": 1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031333634444
+    },
+    {
+      "input": -0.35,
+      "expected_mps": -1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031334785513
+    },
+    {
+      "input": 0.35,
+      "expected_mps": 1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031335949002
+    },
+    {
+      "input": -0.35,
+      "expected_mps": -1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031337125824
+    },
+    {
+      "input": 0.35,
+      "expected_mps": 1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031338315138
+    },
+    {
+      "input": -0.35,
+      "expected_mps": -1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031339517298
+    },
+    {
+      "input": 0.35,
+      "expected_mps": 1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031340668193
+    },
+    {
+      "input": -0.35,
+      "expected_mps": -1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031341832045,
+      "fast_HAL_sample_ms": 644.815,
+      "fast_probe_arrival_ms": 663.347,
+      "fast_command_sample_ms": 645.198,
+      "nt_minus_fpga_us": 0.0,
+      "fast_request_source_ms": 664.845,
+      "fast_request_arrival_ms": 682.955,
+      "default_HAL_sample_ms": 644.841,
+      "default_probe_arrival_ms": 716.907,
+      "default_command_sample_ms": 645.224,
+      "default_request_source_ms": 664.871,
+      "default_request_arrival_ms": 716.948,
+      "default_feedback_10pct_source_ms": 704.895,
+      "fast_feedback_10pct_source_ms": 704.869
+    },
+    {
+      "input": 0.35,
+      "expected_mps": 1.4555555555555555,
+      "previous_mps": 0.0014018676686257613,
+      "sent_us": 1793031343008220
+    },
+    {
+      "input": -0.35,
+      "expected_mps": -1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031344197667
+    },
+    {
+      "input": 0.35,
+      "expected_mps": 1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031345399958
+    },
+    {
+      "input": -0.35,
+      "expected_mps": -1.4555555555555555,
+      "previous_mps": 0.0,
+      "sent_us": 1793031346550196
+    }
+  ],
+  "latency": {
+    "default_HAL_sample_ms": {
+      "n": 1,
+      "min_ms": 644.841,
+      "median_ms": 644.841,
+      "p95_ms": 644.841,
+      "max_ms": 644.841
+    },
+    "default_command_sample_ms": {
+      "n": 1,
+      "min_ms": 645.224,
+      "median_ms": 645.224,
+      "p95_ms": 645.224,
+      "max_ms": 645.224
+    },
+    "default_feedback_10pct_source_ms": {
+      "n": 1,
+      "min_ms": 704.895,
+      "median_ms": 704.895,
+      "p95_ms": 704.895,
+      "max_ms": 704.895
+    },
+    "default_probe_arrival_ms": {
+      "n": 1,
+      "min_ms": 716.907,
+      "median_ms": 716.907,
+      "p95_ms": 716.907,
+      "max_ms": 716.907
+    },
+    "default_request_arrival_ms": {
+      "n": 1,
+      "min_ms": 716.948,
+      "median_ms": 716.948,
+      "p95_ms": 716.948,
+      "max_ms": 716.948
+    },
+    "default_request_source_ms": {
+      "n": 1,
+      "min_ms": 664.871,
+      "median_ms": 664.871,
+      "p95_ms": 664.871,
+      "max_ms": 664.871
+    },
+    "fast_HAL_sample_ms": {
+      "n": 1,
+      "min_ms": 644.815,
+      "median_ms": 644.815,
+      "p95_ms": 644.815,
+      "max_ms": 644.815
+    },
+    "fast_command_sample_ms": {
+      "n": 1,
+      "min_ms": 645.198,
+      "median_ms": 645.198,
+      "p95_ms": 645.198,
+      "max_ms": 645.198
+    },
+    "fast_feedback_10pct_source_ms": {
+      "n": 1,
+      "min_ms": 704.869,
+      "median_ms": 704.869,
+      "p95_ms": 704.869,
+      "max_ms": 704.869
+    },
+    "fast_probe_arrival_ms": {
+      "n": 1,
+      "min_ms": 663.347,
+      "median_ms": 663.347,
+      "p95_ms": 663.347,
+      "max_ms": 663.347
+    },
+    "fast_request_arrival_ms": {
+      "n": 1,
+      "min_ms": 682.955,
+      "median_ms": 682.955,
+      "p95_ms": 682.955,
+      "max_ms": 682.955
+    },
+    "fast_request_source_ms": {
+      "n": 1,
+      "min_ms": 664.845,
+      "median_ms": 664.845,
+      "p95_ms": 664.845,
+      "max_ms": 664.845
+    }
+  },
+  "scheduler_duration": {
+    "n": 758,
+    "min_ms": 0.096,
+    "median_ms": 0.2085,
+    "p95_ms": 0.456,
+    "max_ms": 1.821
+  },
+  "robot_loop_interval": {
+    "n": 757,
+    "min_ms": 19.927,
+    "median_ms": 19.999,
+    "p95_ms": 20.03,
+    "max_ms": 20.07
+  },
+  "background_publish_wait": {
+    "n": 758,
+    "min_ms": 0.003,
+    "median_ms": 0.01,
+    "p95_ms": 0.028,
+    "max_ms": 0.119
+  },
+  "NT_source_age_on_arrival": {
+    "fast": {
+      "n": 1418,
+      "min_ms": 2.078,
+      "median_ms": 13.5445,
+      "p95_ms": 20.802,
+      "max_ms": 23.51
+    },
+    "default": {
+      "n": 1368,
+      "min_ms": 5.162,
+      "median_ms": 50.3455,
+      "p95_ms": 91.784,
+      "max_ms": 95.416
+    }
+  },
+  "binary_sha256": "fda3cdbef737343fc1a4592be108a2b05e1c75a86a91de507f292b77294e12f2",
+  "complete_trials": false
+}

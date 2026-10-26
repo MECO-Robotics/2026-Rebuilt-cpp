@@ -1,0 +1,8 @@
+Source base: b2cd415 plus simulation DS packet clock fix and diagnostic updates.
+Build command: TMPDIR=/home/brian/.cache/rebuilt-sim-tmp JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --max-workers=2 --console=plain
+Result: BUILD SUCCESSFUL; desktop and roboRIO Debug/Release; 21 tests passed in each desktop configuration.
+Release binary SHA256: fda3cdbef737343fc1a4592be108a2b05e1c75a86a91de507f292b77294e12f2
+GUI A/B: FRC_SIM_GUI=1 FRC_SIM_LATENCY_PROBE=1; FRC_SIM_DS_PACKET_CLOCK=0 for off, default for on.
+Stimulus: scripts/sim_latency.py --raw-only --steps 12
+Off: regression failed, 1/12 steps observed within hold window.
+On: passed, 12/12 steps observed.
