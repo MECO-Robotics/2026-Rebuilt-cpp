@@ -1,0 +1,399 @@
+{
+  "date": "2026-10-26",
+  "scope": "Linux desktop HAL joystick + NT4, Jolt 3D, Phoenix simulated firmware; no hardware or MapleSim runtime acceptance",
+  "fix_revision": "48ad064d91bc607f1538f69580f3b8920c0bcdc1",
+  "upstream_adapter_fix": "MecoSimulation-cpp 67e0a35",
+  "dependencies": {
+    "MecoBase": "2026.2.1",
+    "MecoSimulation": "2026.0.8 plus source compatibility bridge"
+  },
+  "stimulus": {
+    "square": "0.4 stick, +X/+Y/-X/-Y, 2 seconds per side",
+    "circle": "0.4-radius circular stick sweep over 12 seconds",
+    "circle_with_yaw": "same sweep with 0.25 rotation stick"
+  },
+  "analysis": {
+    "corner_settling_s": 0.75,
+    "field_velocity_error_p95_limit_mps": 0.5,
+    "physical_encoder_velocity_error_p95_limit_mps": 0.5,
+    "azimuth_error_p95_limit_rad": 0.25,
+    "pose_error_max_limit_m": 0.5,
+    "heading_error_max_limit_rad": 0.15,
+    "uncommanded_yaw_limit_rad": 0.15,
+    "truth_height_limits_m": [
+      0.2,
+      0.4
+    ]
+  },
+  "references": [
+    {
+      "url": "https://github.com/Shenzhen-Robotics-Alliance/CTRE-Swerve-MapleSim",
+      "comparison": "External motor-voltage-to-physics-to-sensor boundary replaces Phoenix built-in plant."
+    },
+    {
+      "url": "https://github.com/Shenzhen-Robotics-Alliance/maple-sim/blob/main/project/src/main/java/org/ironmaple/simulation/drivesims/SwerveModuleSimulation.java",
+      "comparison": "Motor/current/traction modeling and measured encoder feedback, separate physical truth and odometry."
+    }
+  ],
+  "results": {
+    "baseline": {
+      "checks": {
+        "square": false,
+        "circle": false,
+        "circle_with_yaw": false
+      },
+      "metrics": {
+        "square": {
+          "field_velocity_error_p95_mps": 0.19456528276443902,
+          "physical_vs_encoder_velocity_p95_mps": 0.9114019343807134,
+          "azimuth_error_p95_rad": 0.12943239368859127,
+          "heading_error_max_rad": 0.512136812045772,
+          "pose_error_max_m": 43.61912948187917,
+          "uncommanded_yaw_max_rad": 0.654406057217692,
+          "truth_z_range_m": [
+            0.27823373675346375,
+            0.3097021281719208
+          ]
+        },
+        "circle": {
+          "field_velocity_error_p95_mps": 0.3248380098732164,
+          "physical_vs_encoder_velocity_p95_mps": 0.9253725428911342,
+          "azimuth_error_p95_rad": 0.34882771464337914,
+          "heading_error_max_rad": 0.5038454732340683,
+          "pose_error_max_m": 4.2611332605882675,
+          "uncommanded_yaw_max_rad": 0.014201133252135394,
+          "truth_z_range_m": [
+            0.2781986594200134,
+            0.27834388613700867
+          ]
+        },
+        "circle_with_yaw": {
+          "field_velocity_error_p95_mps": 0.19257068896117774,
+          "physical_vs_encoder_velocity_p95_mps": 0.1484901956041884,
+          "azimuth_error_p95_rad": 0.27260520596959026,
+          "heading_error_max_rad": 0.11171116658415858,
+          "pose_error_max_m": 19.659138644016434,
+          "uncommanded_yaw_max_rad": null,
+          "truth_z_range_m": [
+            0.278205007314682,
+            0.27834388613700867
+          ]
+        }
+      },
+      "trace": "artifacts/drivetrain-simulation/baseline-patterns.json.gz",
+      "sha256": "2ca1b2047773b52ccb575ba1f7bcce33605c42c5bfeb1ea669e13fb485af6625"
+    },
+    "fixed": {
+      "checks": {
+        "square": true,
+        "circle": true,
+        "circle_with_yaw": true
+      },
+      "metrics": {
+        "square": {
+          "field_velocity_error_p95_mps": 0.07375104720275918,
+          "physical_vs_encoder_velocity_p95_mps": 0.0303204463685204,
+          "azimuth_error_p95_rad": 0.02893772155962118,
+          "heading_error_max_rad": 0.0003980199622870967,
+          "pose_error_max_m": 0.058865093331464134,
+          "uncommanded_yaw_max_rad": 0.1305306237897161,
+          "truth_z_range_m": [
+            0.27819564938545227,
+            0.28666773438453674
+          ]
+        },
+        "circle": {
+          "field_velocity_error_p95_mps": 0.3052555290352274,
+          "physical_vs_encoder_velocity_p95_mps": 0.07000509800305882,
+          "azimuth_error_p95_rad": 0.07956117688302355,
+          "heading_error_max_rad": 0.0001179140752397272,
+          "pose_error_max_m": 0.056786757157647395,
+          "uncommanded_yaw_max_rad": 0.007420238556348797,
+          "truth_z_range_m": [
+            0.278199166059494,
+            0.27834391593933105
+          ]
+        },
+        "circle_with_yaw": {
+          "field_velocity_error_p95_mps": 0.19806946052370306,
+          "physical_vs_encoder_velocity_p95_mps": 0.07113516594154155,
+          "azimuth_error_p95_rad": 0.11024603647786346,
+          "heading_error_max_rad": 0.02391794898153554,
+          "pose_error_max_m": 0.05022462407624005,
+          "uncommanded_yaw_max_rad": null,
+          "truth_z_range_m": [
+            0.27820348739624023,
+            0.27834391593933105
+          ]
+        }
+      },
+      "trace": "artifacts/drivetrain-simulation/fixed-patterns.json.gz",
+      "sha256": "e2f736bcb918e78c1a2f49d2c61c46462bab851e410ba9148051df697ff0a22c"
+    },
+    "cold_smoke": {
+      "passed": true,
+      "checks": {
+        "initial_disabled_stationary": true,
+        "small_input_speed_tracks_deadband": true,
+        "small_input_peak_speed_bounded": true,
+        "small_input_truth_stays_above_floor": true,
+        "small_turn_rate_tracks_deadband": true,
+        "small_turn_rate_bounded": true,
+        "forward_velocity": true,
+        "forward_speed_tracking": true,
+        "reverse_speed_tracking": true,
+        "turn_speed_tracking": true,
+        "joystick_module_azimuth_bounded": true,
+        "joystick_module_azimuth_tracks_target": true,
+        "pose_changes_on_drive": true,
+        "reverse_velocity": true,
+        "turn_velocity": true,
+        "final_disabled_stationary": true
+      }
+    },
+    "warm_smoke": {
+      "passed": true,
+      "checks": {
+        "initial_disabled_stationary": true,
+        "small_input_speed_tracks_deadband": true,
+        "small_input_peak_speed_bounded": true,
+        "small_input_truth_stays_above_floor": true,
+        "small_turn_rate_tracks_deadband": true,
+        "small_turn_rate_bounded": true,
+        "forward_velocity": true,
+        "forward_speed_tracking": true,
+        "reverse_speed_tracking": true,
+        "turn_speed_tracking": true,
+        "joystick_module_azimuth_bounded": true,
+        "joystick_module_azimuth_tracks_target": true,
+        "pose_changes_on_drive": true,
+        "reverse_velocity": true,
+        "turn_velocity": true,
+        "final_disabled_stationary": true
+      }
+    },
+    "auto": {
+      "passed": true,
+      "checks": {
+        "chooser_selected_choreo": true,
+        "trajectory_endpoint_tracking": true,
+        "autonomous_pose_reset": true
+      }
+    }
+  },
+  "smoke_measurements": {
+    "speed_frames": "Requested translation and speed tracking use the field frame; stored speeds retain robot frame, fieldSpeeds is explicit.",
+    "small_input_peak": "Physical chassis position differences at requested 20 ms telemetry. Encoder peak remains diagnostic and can include slip/coupling.",
+    "azimuth_travel": "Targets use rolling direction independent of equivalent pi flips; physical travel must stay below one full revolution and within the larger of pi or observed raw target travel plus 0.75 rad.",
+    "reference_sampling": "20 ms module/pose/velocity subscriptions avoid the old 100 ms sampling gaps."
+  },
+  "exploration": {
+    "single_physics_P_only": {
+      "square": {
+        "field_velocity_error_p95_mps": 1.1184620200428932,
+        "physical_vs_encoder_velocity_p95_mps": 0.5147178607518794,
+        "azimuth_error_p95_rad": 0.6703830825151078,
+        "heading_error_max_rad": 0.01679469293147892,
+        "pose_error_max_m": 0.12057207622946865,
+        "truth_z_range_m": [
+          0.27819183468818665,
+          0.30224189162254333
+        ]
+      },
+      "circle": {
+        "field_velocity_error_p95_mps": 0.2857069179625887,
+        "physical_vs_encoder_velocity_p95_mps": 0.7389640362207042,
+        "azimuth_error_p95_rad": 0.06429739703359884,
+        "heading_error_max_rad": 0.40125749059739907,
+        "pose_error_max_m": 14.486311484989772,
+        "truth_z_range_m": [
+          0.27818965911865234,
+          0.27834391593933105
+        ]
+      },
+      "circle_with_yaw": {
+        "field_velocity_error_p95_mps": 0.1625408811969322,
+        "physical_vs_encoder_velocity_p95_mps": 0.11687470666186615,
+        "azimuth_error_p95_rad": 0.08915393153921958,
+        "heading_error_max_rad": 0.008191984885074166,
+        "pose_error_max_m": 20.25969273529258,
+        "truth_z_range_m": [
+          0.27824530005455017,
+          0.27834388613700867
+        ]
+      }
+    },
+    "slower_P_only": {
+      "square": {
+        "field_velocity_error_p95_mps": 0.23992254777233987,
+        "physical_vs_encoder_velocity_p95_mps": 0.060476859767077604,
+        "azimuth_error_p95_rad": 0.20992230901788222,
+        "heading_error_max_rad": 0.015051064889257726,
+        "pose_error_max_m": 0.14714259247242353,
+        "uncommanded_yaw_max_rad": 1.679105347528027,
+        "truth_z_range_m": [
+          0.2781834900379181,
+          0.29212686419487
+        ]
+      },
+      "circle": {
+        "field_velocity_error_p95_mps": 0.36412171265892246,
+        "physical_vs_encoder_velocity_p95_mps": 0.07074510083607762,
+        "azimuth_error_p95_rad": 0.12037697607120967,
+        "heading_error_max_rad": 0.00013429543734299492,
+        "pose_error_max_m": 0.12366055410048385,
+        "uncommanded_yaw_max_rad": 0.008600416813749,
+        "truth_z_range_m": [
+          0.2781911790370941,
+          0.27834391593933105
+        ]
+      },
+      "circle_with_yaw": {
+        "field_velocity_error_p95_mps": 0.2747008741395584,
+        "physical_vs_encoder_velocity_p95_mps": 0.07133499563070336,
+        "azimuth_error_p95_rad": 0.1596923292465533,
+        "heading_error_max_rad": 0.046360065906423165,
+        "pose_error_max_m": 0.048978812997806855,
+        "uncommanded_yaw_max_rad": null,
+        "truth_z_range_m": [
+          0.2782002389431,
+          0.27834391593933105
+        ]
+      }
+    },
+    "half_period_lead": {
+      "square": {
+        "field_velocity_error_p95_mps": 0.07508953249684405,
+        "physical_vs_encoder_velocity_p95_mps": 0.025198752604220196,
+        "azimuth_error_p95_rad": 0.04706800913330644,
+        "heading_error_max_rad": 0.002074342239467404,
+        "pose_error_max_m": 0.1063001759486687,
+        "uncommanded_yaw_max_rad": 0.3747603620025007,
+        "truth_z_range_m": [
+          0.27818408608436584,
+          0.2933884263038635
+        ]
+      },
+      "circle": {
+        "field_velocity_error_p95_mps": 0.2881410468811441,
+        "physical_vs_encoder_velocity_p95_mps": 0.07123950160216883,
+        "azimuth_error_p95_rad": 0.07168906730407398,
+        "heading_error_max_rad": 0.0003578223609204301,
+        "pose_error_max_m": 0.06488802535736385,
+        "uncommanded_yaw_max_rad": 0.023564129179061727,
+        "truth_z_range_m": [
+          0.27820807695388794,
+          0.27993229031562805
+        ]
+      },
+      "circle_with_yaw": {
+        "field_velocity_error_p95_mps": 0.18014198293151415,
+        "physical_vs_encoder_velocity_p95_mps": 0.07689883265011271,
+        "azimuth_error_p95_rad": 0.09898250236456452,
+        "heading_error_max_rad": 0.02396050516700332,
+        "pose_error_max_m": 0.05109653625201092,
+        "uncommanded_yaw_max_rad": null,
+        "truth_z_range_m": [
+          0.2782036364078522,
+          0.27834391593933105
+        ]
+      }
+    },
+    "two_period_lead": {
+      "square": {
+        "field_velocity_error_p95_mps": 0.34735293530036415,
+        "physical_vs_encoder_velocity_p95_mps": 0.08812140505706696,
+        "azimuth_error_p95_rad": 0.1508722576362711,
+        "heading_error_max_rad": 0.009026477077321737,
+        "pose_error_max_m": 0.09613170583400867,
+        "uncommanded_yaw_max_rad": 0.594180283474495,
+        "truth_z_range_m": [
+          0.2781902551651001,
+          0.29196348786354065
+        ]
+      },
+      "circle": {
+        "field_velocity_error_p95_mps": 0.3203743971243759,
+        "physical_vs_encoder_velocity_p95_mps": 0.08206322710221543,
+        "azimuth_error_p95_rad": 0.09569434848556346,
+        "heading_error_max_rad": 0.00015535333697867196,
+        "pose_error_max_m": 0.057872834368329726,
+        "uncommanded_yaw_max_rad": 0.010636797523109014,
+        "truth_z_range_m": [
+          0.2781842052936554,
+          0.27834388613700867
+        ]
+      },
+      "circle_with_yaw": {
+        "field_velocity_error_p95_mps": 0.23151996102307387,
+        "physical_vs_encoder_velocity_p95_mps": 0.07210088753846453,
+        "azimuth_error_p95_rad": 0.1338416209796467,
+        "heading_error_max_rad": 0.023818532571925122,
+        "pose_error_max_m": 0.05026675516455396,
+        "uncommanded_yaw_max_rad": null,
+        "truth_z_range_m": [
+          0.27819737792015076,
+          0.27834391593933105
+        ]
+      }
+    },
+    "coupling_stiffness": {
+      "square": {
+        "field_velocity_error_p95_mps": 2.616075448375508,
+        "physical_vs_encoder_velocity_p95_mps": 1.1660139731697226,
+        "azimuth_error_p95_rad": 1.4535425619877316,
+        "heading_error_max_rad": 0.00929405537800479,
+        "pose_error_max_m": 0.14577731724425513,
+        "uncommanded_yaw_max_rad": 0.21723559404706208,
+        "truth_z_range_m": [
+          0.2781822979450226,
+          0.28641387820243835
+        ]
+      },
+      "circle": {
+        "field_velocity_error_p95_mps": 0.23560993927122667,
+        "physical_vs_encoder_velocity_p95_mps": 0.08585257897963224,
+        "azimuth_error_p95_rad": 0.033316681121689506,
+        "heading_error_max_rad": 0.00012780961622156986,
+        "pose_error_max_m": 0.05613963412932747,
+        "uncommanded_yaw_max_rad": 0.006174613030625762,
+        "truth_z_range_m": [
+          0.27818840742111206,
+          0.27834391593933105
+        ]
+      },
+      "circle_with_yaw": {
+        "field_velocity_error_p95_mps": 0.13394679263665357,
+        "physical_vs_encoder_velocity_p95_mps": 0.09925230049098765,
+        "azimuth_error_p95_rad": 0.047845132992785366,
+        "heading_error_max_rad": 0.024298862273507082,
+        "pose_error_max_m": 0.05225522130046067,
+        "uncommanded_yaw_max_rad": null,
+        "truth_z_range_m": [
+          0.2782549262046814,
+          0.27834391593933105
+        ]
+      }
+    }
+  },
+  "build": {
+    "command": "TMPDIR=/home/brian/.cache/rebuilt-sim-tmp JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --max-workers=2 --console=plain",
+    "result": "PASS",
+    "targets": "Linux desktop and roboRIO Debug/Release",
+    "tests": "21 season tests passed in Debug and Release",
+    "log": "artifacts/drivetrain-simulation/build.log"
+  },
+  "simulation_tuning": {
+    "steer_kp_approx": 30.61,
+    "steer_kd_approx": 0.6122,
+    "feedback_lead_s": 0.02,
+    "reset_feedback_delay_robot_loops": 5,
+    "reset_note": "Preserves a new autonomous pose seed and physical motion in that frame; reconciliation occurs only once after scene reset."
+  },
+  "limits": [
+    "Numerical Linux desktop validation; no hardware calibration or deployment.",
+    "Windows runtime was not tested.",
+    "Source bridge overrides the pinned 2026.0.8 archive object until a fixed upstream package is adopted.",
+    "Phoenix asynchronous transport makes captures timing-dependent; thresholds allow settling and telemetry delay."
+  ]
+}
