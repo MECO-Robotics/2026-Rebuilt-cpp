@@ -18,17 +18,19 @@
 #include <frc/geometry/struct/Pose3dStruct.h>
 #endif
 #include <vector>
-class RobotContainer {
- public:
+class RobotContainer
+{
+public:
   RobotContainer();
-  frc2::Command* GetAutonomousCommand();
+  frc2::Command *GetAutonomousCommand();
   void CancelChecks();
   void SimulationPeriodic();
   void ResetSimulation();
- private:
+
+private:
   base::Drive drive_;
-  base::PositionJoint rack_,hood_;
-  base::Flywheel intake_,conveyor_,bottom_,top_,shooter_;
+  base::PositionJoint rack_, hood_;
+  base::Flywheel intake_, conveyor_, bottom_, top_, shooter_;
   frc::AprilTagFieldLayout layout_;
   season::FieldGeometry field_;
   double lastAcceptedVision_ = -1e9;
@@ -36,7 +38,7 @@ class RobotContainer {
   season::SystemCheck checks_;
   std::unique_ptr<season::FuelSimulation> simulation_;
 #ifndef __FRC_ROBORIO__
-  meco::sim::DriveSimulationSession* simulationSession_{}; // Non-owning; drive_ owns it.
+  meco::sim::DriveSimulationSession *simulationSession_{}; // Non-owning; drive_ owns it.
   nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
   nt::StructPublisher<frc::Pose3d> simulationBodyPosePublisher_;
   units::meter_t simulationGroundedBodyHeight_{};
@@ -45,10 +47,10 @@ class RobotContainer {
   frc::Pose2d simulationResetPhysicalOrigin_{};
   bool simulationFieldCollidersEnabled_{true};
 #endif
-  frc2::CommandXboxController controller_{0},copilot_{1};
-  frc::SendableChooser<frc2::Command*> autoChooser_;
+  frc2::CommandXboxController controller_{0}, copilot_{1};
+  frc::SendableChooser<frc2::Command *> autoChooser_;
   std::vector<frc2::CommandPtr> seasonAutos_;
   season::Mechanisms Mechanisms();
   season::ShotTarget SelectTarget();
-  frc2::CommandPtr HubShot(bool ownDrive=true,bool requireVision=false);
+  frc2::CommandPtr HubShot(bool ownDrive = true, bool requireVision = false);
 };

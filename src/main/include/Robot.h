@@ -1,8 +1,9 @@
 #pragma once
 #include <frc/TimedRobot.h>
 #include "RobotContainer.h"
-class Robot : public frc::TimedRobot {
- public:
+class Robot : public frc::TimedRobot
+{
+public:
   Robot();
   void RobotPeriodic() override;
   void AutonomousInit() override;
@@ -10,7 +11,8 @@ class Robot : public frc::TimedRobot {
   void TestInit() override;
   void SimulationPeriodic() override;
   void DisabledInit() override;
- private:
+
+private:
   RobotContainer container_;
-  frc2::Command* autonomous_ = nullptr;
+  frc2::Command *autonomous_ = nullptr;
 };

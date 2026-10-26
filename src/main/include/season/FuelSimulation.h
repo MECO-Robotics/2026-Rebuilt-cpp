@@ -2,52 +2,64 @@
 #include "season/SeasonCommands.h"
 #include <random>
 #include <vector>
-namespace season {
-struct FuelPoint {double x{},y{},z{};};
-struct FuelParticle {FuelPoint position,velocity;};
-struct FuelInputs {
-  Pose robot;
-  // Field relative chassis velocity, including launch inheritance.
-  double vx{},vy{},omega{},rackMetres{},hoodRotations{},flywheelRps{};
-  bool collecting=false,feeding=false;
-  Alliance alliance=Alliance::Blue;
-};
-// Ideal gravity-only balls: no rigid-body robot/structure collisions, drag,
-// backspin, funnel capture, or flywheel load. Seeded randomness is repeatable.
-class FuelModel {
- public:
-  explicit FuelModel(unsigned seed=3737);
-  void Reset();
-  void Step(double dt,const FuelInputs& input);
-  void AddFloorFuel(Point point);
-  void SetStoredFuel(int count);
-  int StoredFuel() const{return stored_;}
-  int SuccessfulScores() const{return scored_;}
-  int LaunchedFuel() const{return launched_;}
-  int PendingBurstShots() const{return pending_;}
-  const std::vector<FuelParticle>& FloorFuel() const{return floor_;}
-  const std::vector<FuelParticle>& Projectiles() const{return airborne_;}
-  static std::vector<FuelPoint> HopperCenters(int count,double extension,Pose robot={});
-  static double LaunchPitch(double hoodRotations);
- private:
-  void Launch(const FuelInputs& input,int index);
-  double Random(double amplitude);
-  std::mt19937 random_;
-  std::vector<FuelParticle> floor_,airborne_;
-  int stored_=0,scored_=0,launched_=0,pending_=0,burstIndex_=0;
-  double time_=0,lastBurst_=-1e9,nextShot_=-1e9;
-};
-// Call only from Robot::SimulationPeriodic. Actuator voltages select collection
-// and feeding, so command cancellation immediately stops simulated launching.
-class FuelSimulation {
- public:
-  FuelSimulation(Mechanisms mechanisms,base::Drive& drive);
-  void Periodic(double dt=.02);
-  void Reset();
-  FuelModel& Model(){return model_;}
- private:
-  Mechanisms mechanisms_;
-  base::Drive& drive_;
-  FuelModel model_;
-};
+namespace season
+{
+  struct FuelPoint
+  {
+    double x{}, y{}, z{};
+  };
+  struct FuelParticle
+  {
+    FuelPoint position, velocity;
+  };
+  struct FuelInputs
+  {
+    Pose robot;
+    // Field relative chassis velocity, including launch inheritance.
+    double vx{}, vy{}, omega{}, rackMetres{}, hoodRotations{}, flywheelRps{};
+    bool collecting = false, feeding = false;
+    Alliance alliance = Alliance::Blue;
+  };
+  // Ideal gravity-only balls: no rigid-body robot/structure collisions, drag,
+  // backspin, funnel capture, or flywheel load. Seeded randomness is repeatable.
+  class FuelModel
+  {
+  public:
+    explicit FuelModel(unsigned seed = 3737);
+    void Reset();
+    void Step(double dt, const FuelInputs &input);
+    void AddFloorFuel(Point point);
+    void SetStoredFuel(int count);
+    int StoredFuel() const { return stored_; }
+    int SuccessfulScores() const { return scored_; }
+    int LaunchedFuel() const { return launched_; }
+    int PendingBurstShots() const { return pending_; }
+    const std::vector<FuelParticle> &FloorFuel() const { return floor_; }
+    const std::vector<FuelParticle> &Projectiles() const { return airborne_; }
+    static std::vector<FuelPoint> HopperCenters(int count, double extension, Pose robot = {});
+    static double LaunchPitch(double hoodRotations);
+
+  private:
+    void Launch(const FuelInputs &input, int index);
+    double Random(double amplitude);
+    std::mt19937 random_;
+    std::vector<FuelParticle> floor_, airborne_;
+    int stored_ = 0, scored_ = 0, launched_ = 0, pending_ = 0, burstIndex_ = 0;
+    double time_ = 0, lastBurst_ = -1e9, nextShot_ = -1e9;
+  };
+  // Call only from Robot::SimulationPeriodic. Actuator voltages select collection
+  // and feeding, so command cancellation immediately stops simulated launching.
+  class FuelSimulation
+  {
+  public:
+    FuelSimulation(Mechanisms mechanisms, base::Drive &drive);
+    void Periodic(double dt = .02);
+    void Reset();
+    FuelModel &Model() { return model_; }
+
+  private:
+    Mechanisms mechanisms_;
+    base::Drive &drive_;
+    FuelModel model_;
+  };
 }
