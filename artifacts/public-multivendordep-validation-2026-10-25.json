@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-25",
+  "consumer": {
+    "repository": "2026-Rebuilt-cpp",
+    "revision": "9c498ec9ee18d1cc1ad9cfba63a5a197e6d2d124",
+    "worktreeHadExistingChanges": true,
+    "vendordeps": {
+      "MecoBase": {
+        "version": "2026.2.0",
+        "descriptor": "https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json",
+        "sourceDescriptor": "https://raw.githubusercontent.com/MECO-Robotics/MecoBase-cpp/v2026.2.0/vendor/MecoBase.json",
+        "descriptorMatchesBothSources": true,
+        "releaseTag": "v2026.2.0",
+        "releaseCommit": "fdfc09f7effd145d562d5b2a0b388f9bdf8ce042",
+        "workflowRun": "https://github.com/MECO-Robotics/MecoBase-cpp/actions/runs/40149530515",
+        "mavenPom": "https://meco-robotics.github.io/MecoBase-cpp/maven/com/mecorobotics/frc/meco-base-cpp/2026.2.0/meco-base-cpp-2026.2.0.pom",
+        "mavenPomHttpStatus": 200,
+        "releaseBuildsAndConsumerLinks": "passed: Linux, roboRIO, and Windows builds; six Debug/Release clean consumer links",
+        "pagesDescriptorAndMavenChecksums": "passed"
+      },
+      "MecoSimulation": {
+        "version": "2026.0.3",
+        "descriptor": "https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json",
+        "sourceDescriptor": "https://raw.githubusercontent.com/MECO-Robotics/MecoSimulation-cpp/v2026.0.3/vendordeps/MecoSimulation.json",
+        "descriptorMatchesBothSources": true,
+        "releaseTag": "v2026.0.3",
+        "releaseCommit": "2aa2b4c98234642892a92b99e763aa382749348f",
+        "workflowRun": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40151640981",
+        "mavenPom": "https://meco-robotics.github.io/MecoSimulation-cpp/maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.3/meco-simulation-wpilib-cpp-2026.0.3.pom",
+        "mavenPomHttpStatus": 200,
+        "releaseBuildsAndConsumerLinks": "passed: Linux and Windows builds; four staged and four deployed Debug/Release clean consumer links",
+        "pagesDescriptorAndMavenChecksums": "passed"
+      }
+    },
+    "publicResolutionBuild": {
+      "command": "./gradlew -Dmaven.repo.local=/tmp/meco-rebuilt-public-empty-m2 --refresh-dependencies build --max-workers=2 --console=plain",
+      "result": "BUILD SUCCESSFUL",
+      "scope": "Linux desktop and roboRIO Debug/Release robot and test targets; mavenLocal pointed to a newly created empty repository"
+    },
+    "tests": {
+      "debug": {
+        "command": "./gradlew -Dmaven.repo.local=/tmp/meco-rebuilt-public-empty-m2 --rerun-tasks runFrcUserProgramTestLinuxx86-64DebugGoogleTestExe runFrcUserProgramTestLinuxx86-64ReleaseGoogleTestExe --max-workers=2 --console=plain",
+        "result": "20 passed"
+      },
+      "release": {
+        "command": "./gradlew -Dmaven.repo.local=/tmp/meco-rebuilt-public-empty-m2 --rerun-tasks runFrcUserProgramTestLinuxx86-64ReleaseGoogleTestExe --max-workers=2 --console=plain",
+        "result": "20 passed"
+      }
+    },
+    "desktopDriveSmoke": {
+      "result": "passed",
+      "transport": "localhost HAL websocket and NT4",
+      "checksPassed": 9,
+      "observedMedianSpeeds": {
+        "forwardMetersPerSecond": 2.4138665853634143,
+        "reverseMetersPerSecond": -2.4195582447802177,
+        "turnRadiansPerSecond": 3.23616550109835
+      },
+      "evidenceFile": "artifacts/public-multivendordep-drive-smoke-2026-10-25.json",
+      "limits": "Desktop numerical simulation only; no physical calibration or robot commissioning"
+    }
+  },
+  "notValidated": [
+    "roboRIO deployment or physical commissioning",
+    "2027/SystemCore compatibility"
+  ]
+}

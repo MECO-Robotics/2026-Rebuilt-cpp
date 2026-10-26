@@ -1,0 +1,149 @@
+{
+  "date": "2026-10-23",
+  "consumer": "2026-Rebuilt-cpp",
+  "baseVendordep": {
+    "version": "2026.2.0",
+    "source": "current local MecoBase-cpp build",
+    "repository": "MecoBase-cpp",
+    "revision": "d8d5ccd8892cdc53f6af857ef40aff3385f16fb6",
+    "worktreeDirty": true,
+    "packageFilesSha256": {
+      "meco-base-cpp-2026.2.0-headers.zip": "d489984ac8bbdfe61240259a91892a4ac5164c31fcbcd17fb4a8d700b015dfda",
+      "meco-base-cpp-2026.2.0-linuxathenastatic.zip": "472b23f6bc6769513ece64077a9fbe2c94ea30646f510163c04f16f0ec90ba62",
+      "meco-base-cpp-2026.2.0-linuxathenastaticdebug.zip": "57359cdde78513281554b5e958aa4139cee5662163fa2f6435a438625d58c974",
+      "meco-base-cpp-2026.2.0-linuxx86-64static.zip": "9d766a6b136f457444b7b72b48ad4385ade11c8da689d1f224b922fc0e1e54b5",
+      "meco-base-cpp-2026.2.0-linuxx86-64staticdebug.zip": "4a3491c0ee05eb9e82ca0416592e5b47bf24f1db12fd1e6122f905e323af95d0",
+      "meco-base-cpp-2026.2.0-sources.zip": "e1de5006fe15e5600e8d9669d2e4ead9c8880771494bd0dbc8f2599ed79db2ca",
+      "meco-base-cpp-2026.2.0.pom": "bc0934ce09e32ccbac0d8fef29a55d79a9f07500f641f58ffc097c6ed816f341"
+    }
+  },
+  "simulationVendordep": {
+    "version": "2026.0.1",
+    "source": "current local MecoSimulation-cpp package",
+    "repository": "MecoSimulation-cpp",
+    "revision": "72077c14713738c65ff3e1c2689c58d19f6166d3",
+    "worktreeDirty": true,
+    "packageFilesSha256": {
+      "meco-simulation-wpilib-cpp-2026.0.1-headers.zip": "ff194d497cdc139779da8f2b052f5efebd5b6bc7b2bfd1104d066858f5b472f4",
+      "meco-simulation-wpilib-cpp-2026.0.1-linuxx86-64static.zip": "5741d7a90d403a41034ac30f88b1630e24a0cdd43f1f686a8fe539041a3bad31",
+      "meco-simulation-wpilib-cpp-2026.0.1-linuxx86-64staticdebug.zip": "683a15f2bade38c43b286df436553ce619f73bab57fea33ba1d46ba669b5e7a2",
+      "meco-simulation-wpilib-cpp-2026.0.1-sources.zip": "bf84e0c2f1014bc0438e2fae40ff3759b712bbf291a2d3d246fe0867a12a09a2",
+      "meco-simulation-wpilib-cpp-2026.0.1.pom": "4f79e3f576ed5f47686de6deda6392908460f2adc288a29474e710bf53649520"
+    }
+  },
+  "mavenResolution": "ephemeral local Maven repository assembled from freshly built Base 2026.2.0 Linux desktop and roboRIO archives plus Simulation 2026.0.1 Linux desktop archives; public Maven deployment was not tested",
+  "build": {
+    "command": "./gradlew build --refresh-dependencies --max-workers=2 --console=plain",
+    "passed": true,
+    "targets": [
+      "linuxx86-64Debug",
+      "linuxx86-64Release",
+      "linuxathenaDebug",
+      "linuxathenaRelease"
+    ],
+    "seasonTestsDebug": {
+      "passed": 20,
+      "failed": 0
+    },
+    "seasonTestsRelease": {
+      "passed": 20,
+      "failed": 0
+    },
+    "consumerRevision": "9c498ec9ee18d1cc1ad9cfba63a5a197e6d2d124",
+    "consumerWorktreeDirty": true
+  },
+  "runtimeDriveSmoke": {
+    "command": "/tmp/frc-cpp-sim-venv/bin/python scripts/sim_smoke.py --max-speed 5.24 --reset-button 8 --reset-enabled",
+    "passed": true,
+    "checks": 9,
+    "evidence": "artifacts/season-drive-smoke-multivendordep.json",
+    "revision": "current local 2026-Rebuilt-cpp worktree after Base 2026.2.0 integration"
+  },
+  "simulationPackage": {
+    "linuxArchiveCombination": "Adapter + frc_jolt + Jolt merged into one static archive to satisfy link order",
+    "reproducibleFromSameInputs": true,
+    "reproducibilityScope": "Linux x86-64 Debug and Release inputs; two local Maven package trees were byte-identical",
+    "preflight": "Passed local descriptor, artifact path, archive content, and SHA256 manifest verification for Linux x86-64",
+    "tests": {
+      "debugCmake": {
+        "passed": 3,
+        "failed": 0
+      },
+      "releaseCmake": {
+        "passed": 3,
+        "failed": 0
+      }
+    },
+    "localConsumerMavenMerge": {
+      "passed": true,
+      "source": "local Base 2026.2.0 packageVendorMaven staging output; Linux desktop and roboRIO artifacts were present, Windows artifacts were absent",
+      "mergedFiles": 12,
+      "sha256ManifestCoversMergedBaseAndSimulationFiles": true,
+      "fullCrossPlatformMergeGate": "Unit-tested with Linux, roboRIO, and Windows artifact fixture; not run against full native package because Windows Base archives are unavailable on this host"
+    },
+    "unitTests": {
+      "passed": 8,
+      "failed": 0,
+      "coverage": [
+        "combined Maven merge checksums",
+        "reject conflicting or incomplete coordinates",
+        "preserve prior releases",
+        "benchmark reporting contracts"
+      ]
+    },
+    "releaseChecks": "cmake --build build/Release --parallel 2 && ctest --test-dir build/Release --output-on-failure"
+  },
+  "notValidated": [
+    "Windows consumer/build and archive packaging",
+    "public Maven deployment and resolution",
+    "2027/SystemCore"
+  ],
+  "cleanConsumerLinks": {
+    "source": "Simulation 2026.0.1 and freshly built Base 2026.2.0 packages in ephemeral local Maven repository",
+    "target": "Linux desktop",
+    "debug": {
+      "passed": true,
+      "linkTask": "consumerDebugExecutable"
+    },
+    "release": {
+      "passed": true,
+      "linkTask": "consumerReleaseExecutable"
+    },
+    "stagedRepositoryComposition": "Simulation package merged with Base 2026.2.0 packageVendorMaven output; merge refreshed checksums for both coordinates",
+    "commands": [
+      "python3 scripts/consumer_smoke.py --target desktop --configuration Debug --maven-repo /tmp/sim-package-pass-a/maven --meco-base-root /home/brian/Documents/FRC/MecoBase-cpp",
+      "python3 scripts/consumer_smoke.py --target desktop --configuration Release --maven-repo /tmp/sim-package-pass-a/maven --meco-base-root /home/brian/Documents/FRC/MecoBase-cpp"
+    ],
+    "postMergeDebug": {
+      "passed": true,
+      "linkTask": "consumerDebugExecutable"
+    },
+    "postMergeRelease": {
+      "passed": true,
+      "linkTask": "consumerReleaseExecutable"
+    }
+  },
+  "localMavenRepository": "Ephemeral staging used for the successful build; paths were under /tmp/meco-multivendor-v2/maven",
+  "publicInstallability": {
+    "checkedAt": "2026-10-23",
+    "baseDescriptor": "HTTP 200, still 2026.1.0 and still includes Jolt",
+    "simulationDescriptor": "HTTP 404",
+    "simulationMavenArtifacts": "HTTP 404"
+  },
+  "ciConsumerGate": {
+    "workflow": "MecoSimulation .github/workflows/simulation.yml",
+    "stagesMatchingBaseAndSimulationForLinuxAndWindows": true,
+    "executedRemotely": false,
+    "reason": "local workflow edits are not pushed; Base 2026.2.0 is not public",
+    "simulationReleaseArtifactRemainsBaseFree": true,
+    "remoteRun": false,
+    "windowsBaseBuildUsesPinnedStudicaCache": true,
+    "combinedTemporaryRepositoryVerifiedAfterMerge": true,
+    "publishedSimulationCoordinateContainsBaseArtifacts": false,
+    "windowsBaseBuildUsesOptionalRoboRioToolchain": true,
+    "baseRefResolvedOnceToCommit": true,
+    "actionlint": "passed with actionlint v1.7.7",
+    "combinedRepositoryChecksumVerification": "configured after merge; unit-tested locally",
+    "publishedPackageRemainsSimulationOnly": true
+  }
+}

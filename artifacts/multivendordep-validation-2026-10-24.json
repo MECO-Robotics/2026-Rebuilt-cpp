@@ -1,0 +1,206 @@
+{
+  "date": "2026-10-24",
+  "consumer": {
+    "repository": "2026-Rebuilt-cpp",
+    "revision": "9c498ec9ee18d1cc1ad9cfba63a5a197e6d2d124",
+    "worktreeWasDirty": true,
+    "validatedSnapshot": "Current worktree copied to a temporary directory; only vendordep Maven URLs changed there to use the local candidate repository.",
+    "vendordeps": {
+      "MecoBase": "2026.2.0",
+      "MecoSimulation": "2026.0.1"
+    }
+  },
+  "packageProvenance": {
+    "base": {
+      "workflowRun": 40118990407,
+      "workflowUrl": "https://github.com/MECO-Robotics/MecoBase-cpp/actions/runs/40118990407",
+      "sourceCommit": "8c02abd4bf4f5c685acf96f435153aff7a0ceb24",
+      "descriptorVersion": "2026.2.0",
+      "sha256Manifest": "ccf62bb5f49b1b2254c44d9adb9a9b0cfaab7d1ca62a4dd636ab55ddc50db495"
+    },
+    "simulation": {
+      "workflowRun": 40121855834,
+      "workflowUrl": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40121855834",
+      "sourceCommit": "7bd1e3a91139cb557bd1093a811b7818975e968d",
+      "baseCommit": "8c02abd4bf4f5c685acf96f435153aff7a0ceb24",
+      "descriptorVersion": "2026.0.1",
+      "sha256Manifest": "ce576f8c5f3d6fdf90406cd67bddda6f97b4bbd35408ebff6d364ad151847db7"
+    }
+  },
+  "localMavenRepository": {
+    "composition": "Simulation package from its CI run plus Base package from its CI run, merged by scripts/merge_base_maven.py",
+    "fileCount": 16,
+    "checksumManifestMatchesEveryMavenFile": true,
+    "selectedArtifactSha256": {
+      "maven/com/mecorobotics/frc/meco-base-cpp/2026.2.0/meco-base-cpp-2026.2.0-linuxx86-64static.zip": "973218b7917c9f3eab33121da501a2dbdaca18023f66659da89270d29f907960",
+      "maven/com/mecorobotics/frc/meco-base-cpp/2026.2.0/meco-base-cpp-2026.2.0-linuxx86-64staticdebug.zip": "f71bfaddf39f926c5ca2b4a84e8b2601b27be64f83240d7aeee7b2937c1591d7",
+      "maven/com/mecorobotics/frc/meco-base-cpp/2026.2.0/meco-base-cpp-2026.2.0-linuxathenastatic.zip": "c6825078a51dabc1910ecbdd85c5e194dfe678e80bd02761be4b580c97fe0f60",
+      "maven/com/mecorobotics/frc/meco-base-cpp/2026.2.0/meco-base-cpp-2026.2.0-windowsx86-64static.zip": "81b235f74ed38bfcb315b93b51a5993660d74458587ba78f40aa58e3bfaba504",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.1/meco-simulation-wpilib-cpp-2026.0.1-linuxx86-64static.zip": "e7eb23df232cbd888ba8c567b90ceddccbe39859b431d38ede9851b90e6ef7bb",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.1/meco-simulation-wpilib-cpp-2026.0.1-linuxx86-64staticdebug.zip": "bbada67ca316ae52f1ed73fc9979aa28da9552b7b408208d4c639dab1d0e74be",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.1/meco-simulation-wpilib-cpp-2026.0.1-windowsx86-64static.zip": "fd4d96e2db461eda3d4cbb05e0f628a6d4d43bdfe170e0eea2d09d820d7a3261"
+    },
+    "publicMavenDeploymentUsed": false
+  },
+  "ciConsumerGates": {
+    "baseRun": {
+      "passed": true,
+      "cleanConsumerJobsPassed": 6,
+      "cleanConsumerJobsFailed": 0,
+      "targets": [
+        "linux desktop Debug/Release",
+        "linux roboRIO Debug/Release",
+        "Windows desktop Debug/Release"
+      ],
+      "linuxDesktopDebugRetry": "Initial attempt timed out connecting to dev.studica.com while fetching Phoenix sim; retry passed."
+    },
+    "simulationRun": {
+      "passed": true,
+      "baseCommit": "8c02abd4bf4f5c685acf96f435153aff7a0ceb24",
+      "cleanConsumerJobsPassed": 4,
+      "cleanConsumerJobsFailed": 0,
+      "targets": [
+        "Linux desktop Debug/Release",
+        "Windows desktop Debug/Release"
+      ],
+      "publishPages": "skipped",
+      "deployedResolution": "skipped"
+    }
+  },
+  "consumerBuild": {
+    "command": "./gradlew build --max-workers=2 --console=plain",
+    "passed": true,
+    "targets": [
+      "linuxathena Debug/Release",
+      "linuxx86-64 Debug/Release"
+    ],
+    "seasonTests": {
+      "Debug": {
+        "passed": 20,
+        "failed": 0
+      },
+      "Release": {
+        "passed": 20,
+        "failed": 0
+      }
+    },
+    "duration": "2m32s on the revision-matched package run"
+  },
+  "desktopSimulation": {
+    "launchCommand": "./scripts/sim_headless.sh",
+    "smokeCommand": "/tmp/frc-cpp-sim-venv/bin/python scripts/sim_smoke.py --max-speed 5.24 --max-angular-rate 7 --reset-button 8 --reset-enabled",
+    "transport": "localhost HAL websocket + NT4",
+    "scope": "Native simulator direction, steady speed tracking, pose change, and disable behavior; excludes physical calibration",
+    "samples": {
+      "disabled_initial": {
+        "speeds": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "pose": [
+          0.012127251098369193,
+          -3.992047201751516e-05,
+          0.0
+        ],
+        "count": 48
+      },
+      "forward": {
+        "speeds": [
+          2.4199479623846436,
+          -0.010207773096060382,
+          0.00046472499856082937
+        ],
+        "pose": [
+          4.383861529958752,
+          0.005894985121684408,
+          0.0
+        ],
+        "count": 94
+      },
+      "reverse": {
+        "speeds": [
+          -2.413775146719245,
+          -0.012033855280095169,
+          0.0008349208715002478
+        ],
+        "pose": [
+          0.9738709169975024,
+          -0.0013271403476555659,
+          0.0
+        ],
+        "count": 95
+      },
+      "turn": {
+        "speeds": [
+          -0.0003080742980210993,
+          0.0035396734790072992,
+          3.3001215253141356
+        ],
+        "pose": [
+          0.5203839317493252,
+          -0.03519870110674871,
+          0.0
+        ],
+        "count": 95
+      },
+      "disabled_final": {
+        "speeds": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "pose": [
+          0.5143922017453886,
+          -0.030634093392870848,
+          0.0
+        ],
+        "count": 95
+      }
+    },
+    "checks": {
+      "initial_disabled_stationary": true,
+      "forward_velocity": true,
+      "forward_speed_tracking": true,
+      "reverse_speed_tracking": true,
+      "turn_speed_tracking": true,
+      "pose_changes_on_drive": true,
+      "reverse_velocity": true,
+      "turn_velocity": true,
+      "final_disabled_stationary": true
+    },
+    "driverStationSchema": [
+      ">new_data"
+    ],
+    "passed": true,
+    "observedMedianSpeeds": {
+      "forwardMetersPerSecond": 2.4199479623846436,
+      "reverseMetersPerSecond": -2.413775146719245,
+      "turnRadiansPerSecond": 3.3001215253141356
+    },
+    "note": "The simulator logged missing joystick button/POV warnings; these acceptance checks exercise drive axes, pose feedback, and disabled stopping, not button bindings."
+  },
+  "publicAvailabilityChecked": {
+    "date": "2026-10-24",
+    "baseDescriptor": {
+      "http": 200,
+      "version": "2026.1.0",
+      "containsJoltDependencies": true
+    },
+    "simulationDescriptor": {
+      "http": 404
+    },
+    "base2026_2_0Pom": {
+      "http": 404
+    },
+    "simulation2026_0_1Pom": {
+      "http": 404
+    }
+  },
+  "notValidated": [
+    "Public install of the candidate versions (neither release has been published).",
+    "Full season robot build on Windows.",
+    "roboRIO deployment or physical commissioning.",
+    "2027/SystemCore compatibility."
+  ]
+}

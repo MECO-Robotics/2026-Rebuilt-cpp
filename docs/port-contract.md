@@ -2,7 +2,7 @@
 
 | Requirement | Owner | Acceptance |
 |---|---|---|
-| C++ base is independent of game behavior | base repo | Review source boundaries; build native targets |
+| Shared C++ base is independent of game behavior | `MecoBase` vendordep | Pin descriptor; build desktop and roboRIO targets |
 | Season repo derives from completed base commit | season fork | GitHub parent metadata and Git ancestor check |
 | Preserve Java originals | migration | Source working trees unchanged |
 | WPILib and vendor APIs match 2026 pinned versions | build.gradle/vendordeps | Desktop and roboRIO native compilation/link |

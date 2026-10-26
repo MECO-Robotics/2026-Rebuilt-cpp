@@ -5,10 +5,18 @@
 #include "season/SeasonCommands.h"
 #include "season/SystemCheck.h"
 #include "season/FuelSimulation.h"
+#ifndef __FRC_ROBORIO__
+#include "meco/sim/DriveSimulationAdapter.h"
+#endif
 #include <frc2/command/button/CommandXboxController.h>
 #include <frc/smartdashboard/SendableChooser.h>
 #include <frc/apriltag/AprilTagFieldLayout.h>
 #include <networktables/NetworkTable.h>
+#include <networktables/StructTopic.h>
+#ifndef __FRC_ROBORIO__
+#include <frc/geometry/Pose3d.h>
+#include <frc/geometry/struct/Pose3dStruct.h>
+#endif
 #include <vector>
 class RobotContainer {
  public:
@@ -27,6 +35,9 @@ class RobotContainer {
   base::Vision vision_;
   season::SystemCheck checks_;
   std::unique_ptr<season::FuelSimulation> simulation_;
+#ifndef __FRC_ROBORIO__
+  nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
+#endif
   frc2::CommandXboxController controller_{0},copilot_{1};
   frc::SendableChooser<frc2::Command*> autoChooser_;
   std::vector<frc2::CommandPtr> seasonAutos_;

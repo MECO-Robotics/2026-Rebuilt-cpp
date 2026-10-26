@@ -1,6 +1,7 @@
 #include "RobotContainer.h"
 #include "season/HardwareAdapter.h"
 #include "season/ChoreoAuto.h"
+#include "season/SimulationTuning.h"
 #include "season/SystemCheckSetup.h"
 #include <frc/RobotBase.h>
 #include <frc/Timer.h>
@@ -11,6 +12,7 @@
 #include <pathplanner/lib/auto/AutoBuilder.h>
 #include <pathplanner/lib/auto/NamedCommands.h>
 #include <networktables/NetworkTableInstance.h>
+#include <array>
 #include <numbers>
 #include <algorithm>
 #include <cmath>
@@ -21,13 +23,41 @@ base::DriveConfig DriveConfig(){
  base::DriveConfig c;c.bus="MECO CANIvore";c.pigeon=13;
  c.driveRatio=5.8909090909090915;c.steerRatio=12.1;c.couplingRatio=4.909090909090909;
  c.maxSpeed=5.24;c.maxAngularRate=7;c.driveKP=.15;c.driveKS=.1;c.driveKV=.124;
- c.steerKP=100;c.steerKD=.5;c.steerKS=.2;c.steerKV=1.5;c.driveCurrent=55;c.steerCurrent=30;
- c.massKg=53;c.speedAt12Volts=5.5;c.driveInertia=.01;c.steerInertia=.01;
- c.fusedEncoder=true;c.autoConfigFromGUI=true;c.autoTranslationKP=15;c.autoRotationKP=10;
+ const bool simulation=frc::RobotBase::IsSimulation();
+ c.steerKP=100;c.steerKD=.5;
+ c.steerKS=.2;c.steerKV=1.5;c.driveCurrent=55;c.steerCurrent=30;
+ // Match the 2026 simulation chassis inputs. The yaw MOI is the existing
+ // PathPlanner estimate; replace it when a measured or CAD value is available.
+ c.massKg=53;c.moi=6.883;c.cof=2.9;c.simulation.wheelInertia=.01;c.simulation.steerInertia=.01;
+ c.autoConfigFromGUI=true;c.autoTranslationKP=15;c.autoRotationKP=10;
  c.modules={{{2,1,9,.3076171875,.2794,.2794,false,true,false},
  {8,3,10,.304931640625,.2794,-.2794,true,true,false},
  {6,5,11,-.083740234375,-.2794,.2794,false,true,false},
- {4,7,12,-.346435546875,-.2794,-.2794,true,true,false}}};return c;
+ {4,7,12,-.346435546875,-.2794,-.2794,true,true,false}}};
+ // Physical mounting directions measured from the current module geometry.
+ // These describe the simulated rotor/encoder axes, independently of the
+ // Phoenix electrical inversion settings above.
+ using Orientation=base::SimulationDeviceOrientation;
+ c.simulation.modules={{{Orientation::CounterClockwisePositive,Orientation::ClockwisePositive,Orientation::CounterClockwisePositive},
+                        {Orientation::ClockwisePositive,Orientation::ClockwisePositive,Orientation::CounterClockwisePositive},
+                        {Orientation::CounterClockwisePositive,Orientation::ClockwisePositive,Orientation::CounterClockwisePositive},
+                        {Orientation::ClockwisePositive,Orientation::ClockwisePositive,Orientation::CounterClockwisePositive}}};
+ if(simulation){
+   // These motor constants match the Phoenix/ Kraken model defaults in
+   // MecoSimulation's DrivePhysicsConfig. The Jolt plant uses SI output inertia.
+   constexpr double motorResistance=12.0/366.0;
+   constexpr double motorTorqueConstant=7.09/366.0;
+   constexpr double motorVelocityConstant=55.0;
+   std::array<season::simulation::ModuleLocation,4> locations{};
+   for(std::size_t i=0;i<locations.size();++i)
+     locations[i]={c.modules[i].xMeters,c.modules[i].yMeters};
+   const auto tuned=season::simulation::DeriveSimulationTuning({
+       c.massKg,c.moi,c.cof,c.wheelRadius,c.driveRatio,c.steerRatio,c.simulation.steerInertia,
+       c.driveCurrent,c.steerCurrent,motorResistance,motorTorqueConstant,motorVelocityConstant,12.0,locations});
+   c.steerKP=tuned.steerKP;c.steerKD=tuned.steerKD;
+   c.autoTranslationKP=tuned.autoTranslationKP;c.autoRotationKP=tuned.autoRotationKP;
+ }
+ return c;
 }
 std::unique_ptr<base::MotorIO> Motor(const season::hardware::FlywheelConfig& c,base::Vendor vendor){return base::MakeMotorIO(Mode(),vendor,season::MotorConfigFor(c),c.inertiaKgMetersSquared);}
 season::FieldGeometry Geometry(const frc::AprilTagFieldLayout& layout){
@@ -52,6 +82,18 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
  vision_(VisionConfig(layout_),[this](const auto& obs){drive_.AddVision(obs.pose,obs.timestamp,obs.stdDevs);lastAcceptedVision_=frc::Timer::GetFPGATimestamp().value();},[this]{return drive_.Pose().Rotation();}),
  checks_([this]{drive_.Stop();rack_.Stop();hood_.Stop();intake_.Stop();conveyor_.Stop();bottom_.Stop();top_.Stop();shooter_.Stop();},frc::RobotBase::IsReal()?"/home/lvuser/systemcheck-latest.json":"systemcheck-latest.json") {
  drive_.ConfigureAuto();
+#ifndef __FRC_ROBORIO__
+ if(frc::RobotBase::IsSimulation()){
+   frc::SmartDashboard::PutNumber("SimulationTuning/SteerKP",drive_.Config().steerKP);
+   frc::SmartDashboard::PutNumber("SimulationTuning/SteerKD",drive_.Config().steerKD);
+   frc::SmartDashboard::PutNumber("SimulationTuning/AutoTranslationKP",drive_.Config().autoTranslationKP);
+   frc::SmartDashboard::PutNumber("SimulationTuning/AutoRotationKP",drive_.Config().autoRotationKP);
+   simulationPosePublisher_ = nt::NetworkTableInstance::GetDefault()
+       .GetStructTopic<frc::Pose3d>("/Simulation/RobotTruth").Publish();
+   auto simulation=meco::sim::CreateDriveSimulationAdapter(drive_.Config());
+   drive_.SetSimulationAdapter(std::move(simulation));
+ }
+#endif
  drive_.SetDefaultCommand(drive_.Joystick([this]{return -controller_.GetLeftY();},[this]{return -controller_.GetLeftX();},[this]{return -controller_.GetRightX();}));
  auto m=Mechanisms();
  if(frc::RobotBase::IsSimulation())simulation_=std::make_unique<season::FuelSimulation>(m,drive_);
@@ -113,5 +155,19 @@ frc2::CommandPtr RobotContainer::HubShot(bool ownDrive,bool requireVision){seaso
 frc2::Command* RobotContainer::GetAutonomousCommand(){return autoChooser_.GetSelected();}
 void RobotContainer::CancelChecks(){checks_.Cancel("Robot mode changed");}
 
-void RobotContainer::SimulationPeriodic(){if(simulation_)simulation_->Periodic();}
-void RobotContainer::ResetSimulation(){if(simulation_)simulation_->Reset();}
+void RobotContainer::SimulationPeriodic(){
+ if(simulation_)simulation_->Periodic();
+#ifndef __FRC_ROBORIO__
+ if(auto truth=drive_.SimulationTruth()){
+   simulationPosePublisher_.Set(frc::Pose3d{
+       units::meter_t{truth->x}, units::meter_t{truth->y}, units::meter_t{truth->z},
+       frc::Rotation3d{0_rad, 0_rad, units::radian_t{truth->yaw}}});
+ }
+#endif
+}
+void RobotContainer::ResetSimulation(){
+#ifndef __FRC_ROBORIO__
+ drive_.ResetSimulation(frc::Pose2d{});
+#endif
+ if(simulation_)simulation_->Reset();
+}

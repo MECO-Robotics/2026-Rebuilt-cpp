@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-25",
+  "consumer": {
+    "repository": "2026-Rebuilt-cpp",
+    "revision": "9c498ec9ee18d1cc1ad9cfba63a5a197e6d2d124",
+    "worktreeHadExistingChanges": true,
+    "vendordeps": {
+      "MecoBase": {
+        "version": "2026.2.0",
+        "descriptor": "https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json"
+      },
+      "MecoSimulation": {
+        "version": "2026.0.6",
+        "descriptor": "https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json",
+        "sourceDescriptor": "https://raw.githubusercontent.com/MECO-Robotics/MecoSimulation-cpp/v2026.0.6/vendordeps/MecoSimulation.json",
+        "descriptorMatchesLocalAndSource": true,
+        "releaseTag": "v2026.0.6",
+        "releaseCommit": "7a18afba7ef9ce24423b7066e39381465586e7a4",
+        "workflowRun": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40164718045",
+        "mavenPom": "https://meco-robotics.github.io/MecoSimulation-cpp/maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.6/meco-simulation-wpilib-cpp-2026.0.6.pom",
+        "mavenPomHttpStatus": 200,
+        "releaseBuildsAndConsumerLinks": "passed: Linux and Windows builds; four staged and four deployed Debug/Release clean consumer links",
+        "pagesDescriptorAndMavenChecksums": "passed"
+      }
+    },
+    "publicResolutionBuild": {
+      "command": "./gradlew --refresh-dependencies build --max-workers=2",
+      "result": "BUILD SUCCESSFUL",
+      "scope": "Linux desktop and roboRIO Debug/Release robot executables and tests; Maven metadata refreshed from published vendordep URLs"
+    },
+    "tests": {
+      "debug": {
+        "result": "20 passed"
+      },
+      "release": {
+        "result": "20 passed"
+      }
+    },
+    "desktopDriveSmoke": {
+      "command": "/tmp/frc-cpp-sim-venv/bin/python scripts/sim_smoke.py --max-speed 5.24 --max-angular-rate 7 --reset-button 8 --reset-enabled --small-input 0.15 --output artifacts/season-drive-smoke-public-2026.0.6.json",
+      "result": "passed",
+      "transport": "localhost HAL websocket and NT4",
+      "checksPassed": 12,
+      "smallInputMps": 0.30260710181107736,
+      "smallInputPeakSpeedMps": 0.3090111237606677,
+      "smallInputTruthZRangeMeters": [
+        0.2783329486846924,
+        0.27834391593933105
+      ],
+      "evidenceFile": "artifacts/season-drive-smoke-public-2026.0.6.json",
+      "limits": "Desktop numerical simulation only; no physical calibration or robot commissioning"
+    }
+  },
+  "notValidated": [
+    "roboRIO deployment or physical commissioning",
+    "2027/SystemCore compatibility"
+  ]
+}

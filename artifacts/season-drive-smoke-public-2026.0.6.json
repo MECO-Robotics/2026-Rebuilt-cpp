@@ -1,0 +1,150 @@
+{
+  "transport": "localhost HAL websocket + NT4",
+  "scope": "Native simulator small-stick response, 3D floor support, direction, speed tracking, pose change, and disable behavior; excludes physical calibration",
+  "samples": {
+    "disabled_initial": {
+      "speeds": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "pose": [
+        0.012127251098369193,
+        -3.992047201751516e-05,
+        0.0
+      ],
+      "count": 48,
+      "truthZRange": [
+        0.27834391593933105,
+        0.27834391593933105
+      ],
+      "peakSpeed": 0.0
+    },
+    "small_forward": {
+      "speeds": [
+        0.30260710181107736,
+        0.0006915431527284568,
+        0.000997360181695587
+      ],
+      "pose": [
+        0.41761447010500097,
+        0.0019935135033697865,
+        0.0012464276352564623
+      ],
+      "count": 73,
+      "truthZRange": [
+        0.2783329486846924,
+        0.27834391593933105
+      ],
+      "peakSpeed": 0.3090111237606677
+    },
+    "small_input_release": {
+      "speeds": [
+        0.043046793091803995,
+        -0.00257828064910401,
+        7.124153481345768e-05
+      ],
+      "pose": [
+        0.47353118670479133,
+        0.0010370395909123698,
+        0.0012463593901570836
+      ],
+      "count": 24,
+      "truthZRange": [
+        0.2783358097076416,
+        0.2783433794975281
+      ],
+      "peakSpeed": 0.30213377575142397
+    },
+    "forward": {
+      "speeds": [
+        2.4165405716620683,
+        -0.03338077582993355,
+        -0.0021395147173597865
+      ],
+      "pose": [
+        4.387335767122232,
+        0.02574685799545329,
+        0.012992155207290903
+      ],
+      "count": 96,
+      "truthZRange": [
+        0.2781490981578827,
+        0.2783433794975281
+      ],
+      "peakSpeed": 2.4923311739053307
+    },
+    "reverse": {
+      "speeds": [
+        -2.420962063360966,
+        0.01763951776593179,
+        -0.003913271556150042
+      ],
+      "pose": [
+        3.092468287682958,
+        0.021958471079455373,
+        0.01203222180066952
+      ],
+      "count": 96,
+      "truthZRange": [
+        0.2781513035297394,
+        0.2783433794975281
+      ],
+      "peakSpeed": 2.487355629931251
+    },
+    "turn": {
+      "speeds": [
+        -0.0017116149706459804,
+        -0.0012783086331185078,
+        3.225291169408317
+      ],
+      "pose": [
+        2.44921349026526,
+        0.12884178402441587,
+        -1.505304047145554
+      ],
+      "count": 96,
+      "truthZRange": [
+        0.2781163454055786,
+        0.2784155607223511
+      ],
+      "peakSpeed": 3.3000902175092826
+    },
+    "disabled_final": {
+      "speeds": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "pose": [
+        2.425744994246559,
+        0.10569436892269912,
+        -0.6794576152340962
+      ],
+      "count": 96,
+      "truthZRange": [
+        0.2783414125442505,
+        0.2783433794975281
+      ],
+      "peakSpeed": 3.227455470877871
+    }
+  },
+  "checks": {
+    "initial_disabled_stationary": true,
+    "small_input_speed_tracks_deadband": true,
+    "small_input_peak_speed_bounded": true,
+    "small_input_truth_stays_above_floor": true,
+    "forward_velocity": true,
+    "forward_speed_tracking": true,
+    "reverse_speed_tracking": true,
+    "turn_speed_tracking": true,
+    "pose_changes_on_drive": true,
+    "reverse_velocity": true,
+    "turn_velocity": true,
+    "final_disabled_stationary": true
+  },
+  "driverStationSchema": [
+    ">new_data"
+  ],
+  "passed": true
+}

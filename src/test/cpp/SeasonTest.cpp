@@ -62,7 +62,7 @@ TEST(SeasonAlgorithms, MatchesJavaShootingAndReadinessCases) {
 namespace {
 struct TestRig {
   std::vector<base::InjectedMotorIO*> observed;
-  std::unique_ptr<base::MotorIO> IO(){auto io=std::make_unique<base::InjectedMotorIO>();observed.push_back(io.get());return io;}
+  std::unique_ptr<base::MotorIO> IO(){auto io=std::make_unique<base::InjectedMotorIO>();io->inputs.connected=true;observed.push_back(io.get());return io;}
   base::PositionJoint rack{"Rack",IO(),GainsFor(hardware::kRackGains)};
   base::Flywheel intake{"Intake",IO(),GainsFor(hardware::kIntakeGains)};
   base::Flywheel conveyor{"Conveyor",IO(),GainsFor(hardware::kConveyorGains)};
