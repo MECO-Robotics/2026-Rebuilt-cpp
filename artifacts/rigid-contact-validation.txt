@@ -1,0 +1,11 @@
+Upstream physics source: MecoSimulation-cpp a8bea08.
+Upstream: cmake --build build --parallel 2; ctest --test-dir build --output-on-failure; 3/3 passed.
+Regression: 53 kg and 106 kg fixed ground height and normal reactions; original spring implementation fails height assertion.
+Season source bridge verified byte-for-byte against upstream source inside desktop guard.
+Season build: TMPDIR=/home/brian/.cache/rebuilt-sim-tmp JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --max-workers=2 --console=plain
+Result: BUILD SUCCESSFUL; desktop and roboRIO Debug/Release; 25 tests passed in each desktop configuration.
+Running release binary verified equal to final build SHA256: 15dab9e182f6ba63ff3b579690f74c74d95d897123681195c5e311fc509043fb
+Runtime script: scripts/field_collision_smoke.py; all 9 checks passed.
+Startup body/model height: 0.29999202489852905 / -7.975089263534407e-06 m.
+Bump body height maximum / final: 0.3918065130710602 / 0.29994961619377136 m.
+Published vendordep not changed or republished; desktop compatibility source supplies the fix.
