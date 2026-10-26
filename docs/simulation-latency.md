@@ -4,6 +4,48 @@ The reported symptom was a green requested-chassis-speed arrow updating slowly
 in AdvantageScope while SimGUI's joystick axes appeared current. Frame rate and
 measured chassis acceleration are separate from this requested-speed signal.
 
+## Physical-controller result and working fix
+
+The packet-clock change below did **not** resolve the user's physical-controller
+symptom. A passive 30-second capture while the stick continuously rotated showed
+raw HAL, cached DS and command-read values changing about once per second
+(median interval 1000 ms). The robot still produced 1496 loop probes, and maximum
+scheduler execution was 1.579 ms. Requested speeds changed only 31 times.
+
+Restarting the same simulator with `vblank_mode=0` resolved the symptom; the user
+confirmed prompt requested-arrow updates with AdvantageScope covering SimGUI.
+The subsequent physical-controller capture had a 20 ms median raw-HAL change
+interval, 1028 requested-speed samples, and maximum scheduler execution of
+1.491 ms. The recording includes an initial stationary interval; its longest
+unchanged interval is not a latency measurement. These are observed input-change
+intervals, not USB-to-display latency measurements.
+
+WPILib 2026.2.1 polls physical controllers and copies them into HAL in
+`DriverStationExecute()`, an early GUI-frame callback. Its
+[OpenGL renderer](https://github.com/wpilibsuite/allwpilib/blob/v2026.2.1/wpigui/src/main/native/opengl3/wpigui_opengl3.cpp)
+enables vsync and swaps buffers on that thread. Disabling Mesa swap synchronization
+removes the observed covered-window input stall on this Linux/Xwayland host.
+This is a SimGUI input/render-thread coupling, not AdvantageScope polling or
+scheduler starvation. An attached native stack trace was unavailable, so the
+exact driver-internal wait was not measured.
+
+Both `./gradlew simulateNative` on Linux and `FRC_SIM_GUI=1
+./scripts/sim_headless.sh` now default `vblank_mode` to `0`. An explicitly supplied
+value overrides this default. The GUI's configured frame limiter remains in
+place; the change does not alter the 20 ms robot period or roboRIO settings.
+
+Evidence: `artifacts/physical-stick-{packet-clock,no-vsync}.json` and
+`artifacts/physical-stick-cadence-summary.json`. To passively repeat a physical
+stick capture, enable Teleop and run:
+
+```sh
+python scripts/sim_observe_input.py --duration 30 --output artifacts/physical-repeat.json
+```
+
+This observer sends no joystick or DS-state writes. The automated websocket
+experiments below bypass physical-controller polling and therefore did not
+establish a fix for this symptom.
+
 ## Measured boundaries
 
 Thirty-six alternating stick steps were measured in each configuration, with

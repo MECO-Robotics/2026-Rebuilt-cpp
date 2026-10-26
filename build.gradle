@@ -45,6 +45,11 @@ wpi.cpp.debugSimulation = false
 
 // Default enable simgui
 wpi.sim.addGui().defaultEnabled = true
+// SimGUI polls joysticks on its render thread; avoid covered-window vsync
+// throttling on Linux/Mesa. An explicit environment value remains an override.
+if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+    wpi.sim.environment.put("vblank_mode", System.getenv("vblank_mode") ?: "0")
+}
 // Enable DS but not by default
 wpi.sim.addDriverstation()
 

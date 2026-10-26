@@ -106,3 +106,8 @@ enables raw-HAL, cached-DS, command and publisher timing probes. Desktop simulat
 emits DS packet notifications once per loop so fresh raw joystick values do not
 wait for a GUI-driven packet refresh.
 Set `FRC_SIM_DS_PACKET_CLOCK=0` to compare the original producer-driven packet cadence.
+Linux GUI simulation defaults `vblank_mode=0` in both launch paths: SimGUI polls
+physical controllers on its render thread, and covered-window swap synchronization
+was observed to reduce input updates to 1 Hz. An explicit `vblank_mode` overrides
+the default. `scripts/sim_observe_input.py` records physical-stick cadence without
+injecting input; see the investigation for measured before/after results.

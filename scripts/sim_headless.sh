@@ -24,6 +24,9 @@ cp --reflink=auto -- "$sim_binary" "$sim_extension_dir/frcUserProgram"
 export LD_LIBRARY_PATH="$sim_extension_dir/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export HALSIM_EXTENSIONS="$sim_extension_dir/linux/x86-64/shared/libhalsim_ws_server.so"
 if [[ "${FRC_SIM_GUI:-0}" == 1 ]]; then
+  # SimGUI polls physical joysticks on its render thread. Mesa vsync can
+  # throttle covered Xwayland windows to 1 Hz, starving input updates.
+  export vblank_mode="${vblank_mode:-0}"
   gui_zip="$wpilib_root/maven/edu/wpi/first/halsim/halsim_gui/2026.2.1/halsim_gui-2026.2.1-linuxx86-64.zip"
   unzip -q "$gui_zip" -d "$sim_extension_dir/gui"
   export HALSIM_EXTENSIONS="$HALSIM_EXTENSIONS:$sim_extension_dir/gui/linux/x86-64/shared/libhalsim_gui.so"
