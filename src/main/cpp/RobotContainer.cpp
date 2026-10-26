@@ -37,7 +37,7 @@ base::DriveConfig DriveConfig(){
  // Simulation ready-to-drive maximum: robot, bumpers and battery (67.6 kg).
  // The real configuration remains unchanged. The yaw MOI is the existing
  // PathPlanner estimate; replace it when a measured or CAD value is available.
- c.massKg=simulation?67.6:53;c.moi=6.883;c.cof=2.9;c.simulation.wheelInertia=.01;c.simulation.steerInertia=.01;
+ c.massKg=simulation?67.6:53;c.moi=6.883;c.cof=simulation?2.1:2.9;c.simulation.wheelInertia=.01;c.simulation.steerInertia=.01;
  if(simulation){
    // Estimated bumper envelope: 0.25 inch floor gap, 5.5 inch height.
    // Move the body origin to bumper centre; preserve the assumed world CoM at .30 m.

@@ -93,7 +93,8 @@ the corrected model passes all three modes.
 
 These are desktop measurements, not hardware calibration. Battery sag and
 regenerative battery charging are not modeled by this run (nominal 12 V supply).
-Tire friction 2.9, wheel/steer inertia 0.01 kg m², yaw MOI 6.883 kg m² and body
+Current desktop tire friction is user-selected 2.1 (the historical runs below
+used 2.9; neither is a measured WCP-1728 coefficient). Wheel/steer inertia 0.01 kg m², yaw MOI 6.883 kg m² and body
 principal-axis/CoM estimates remain unmeasured configuration assumptions. Payload
 mass is not dynamically added. Disabled brake/coast and firmware protection
 behavior are approximated by the voltage-driven, current-clamped plant; do not

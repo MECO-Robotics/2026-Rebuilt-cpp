@@ -8,6 +8,12 @@ the chassis. Wheel support rays remain separate and exclude the robot itself.
 
 ## Geometry and material assumptions
 
+Desktop tire/carpet CoF is **2.1**, selected by the user as a simulation estimate
+for WCP spiked tread. This is distinct from the bumper material coefficient below.
+It is informed by [Spectrum's related SLS-wheel test](https://www.chiefdelphi.com/t/spectrum-3847-build-blog-2024/447471/217),
+not a published WCP-1728 measurement. Real-robot PathPlanner configuration is
+unchanged. Earlier bumper artifacts used tire CoF 2.9; current validation uses 2.1.
+
 The outer footprint remains 0.86 m square. Per the requested setting, the floor
 gap is **0.25 inch (0.00635 m)**. The estimated bumper height is **5.5 inches
 (0.1397 m)**, putting the top at 5.75 inches (0.14605 m). FIRST's
