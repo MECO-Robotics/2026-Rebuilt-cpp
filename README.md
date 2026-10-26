@@ -111,3 +111,10 @@ physical controllers on its render thread, and covered-window swap synchronizati
 was observed to reduce input updates to 1 Hz. An explicit `vblank_mode` overrides
 the default. `scripts/sim_observe_input.py` records physical-stick cadence without
 injecting input; see the investigation for measured before/after results.
+
+In desktop Teleop, **Back/View** resets the simulation scene (body upright,
+pose, wheel state and fuel). **Start/Menu** still only resets driver heading.
+`/Simulation/RobotTruth` now includes actual roll/pitch; use that `Pose3d` in
+AdvantageScope's 3D view to see tipping. The 2D drive pose cannot show it.
+See [the rotation investigation](docs/simulation-rotation.md) for the observed
+wheel-speed/heading mismatch and strengthened physical-turn check.

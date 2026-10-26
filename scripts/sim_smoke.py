@@ -80,7 +80,9 @@ async def exercise(args):
                     if all(math.isfinite(v) for v in coordinates[:3]):
                         heights.append(coordinates[2])
                         if truth_atomic.time and (not truth_samples or truth_atomic.time != truth_samples[-1][0]):
-                            truth_samples.append((truth_atomic.time, coordinates[0], coordinates[1]))
+                            w, qx, qy, qz = coordinates[3:]
+                            yaw = math.atan2(2*(w*qz+qx*qy), 1-2*(qy*qy+qz*qz))
+                            truth_samples.append((truth_atomic.time, coordinates[0], coordinates[1], yaw))
                 states = module_states.get()
                 if len(states) == 4:
                     module_state_samples += 1
@@ -140,6 +142,8 @@ async def exercise(args):
                 "peakSpeed": max(math.hypot(row[0], row[1]) for row in readings),
                 "peakPhysicalSpeed": max(physical_speeds) if physical_speeds else None,
                 "peakAngularRate": max(abs(row[2]) for row in readings),
+                "truthYawChange": sum(math.remainder(b[3]-a[3], 2*math.pi)
+                                      for a,b in zip(truth_samples,truth_samples[1:])),
                 "moduleStateSamples": module_state_samples,
                 "moduleAzimuthTravel": module_travel,
                 "moduleTargetSamples": module_target_samples,
@@ -188,6 +192,7 @@ async def exercise(args):
                 "forward_velocity": forward[0]>.2,
                 "forward_speed_tracking": abs(forward[0]-args.max_speed*4/9)<args.max_speed*4/9*.10,
                 "reverse_speed_tracking": abs(reverse[0]+args.max_speed*4/9)<args.max_speed*4/9*.10,
+                "turn_truth_rotates": evidence["samples"]["turn"]["truthYawChange"] > args.max_angular_rate*4/9*2.5*.5,
                 "turn_speed_tracking": abs(turn[2]-args.max_angular_rate*4/9)<args.max_angular_rate*4/9*.10,
                 "joystick_module_azimuth_bounded": all(
                     evidence["samples"][name]["moduleStateSamples"] > 0

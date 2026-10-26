@@ -2,6 +2,7 @@
 // Compatibility fix for MecoSimulation 2026.0.8: Jolt is the only physics owner.
 // This translation unit replaces the adapter archive object containing these methods.
 #include "base/Drive.h"
+#include "season/SimulationAttitude.h"
 #include "base/PortableSwerve.h"
 
 #include <ctre/phoenix6/sim/ChassisReference.hpp>
@@ -54,6 +55,8 @@ std::array<std::array<double, 2>, 4> Drive::SimulationVoltages(double dt, double
 
 void Drive::ApplySimulationFeedback(const DriveSimulationFeedback &feedback)
 {
+    season::simulation::chassisAttitude = frc::Rotation3d{units::radian_t{feedback.roll},
+        units::radian_t{feedback.pitch}, units::radian_t{feedback.yaw}};
     if (portable_)
     {
         for (size_t i = 0; i < feedback.modules.size(); ++i)

@@ -1,4 +1,5 @@
 #include "season/SimulationLatency.h"
+#include "season/SimulationAttitude.h"
 #include "RobotContainer.h"
 #include "season/HardwareAdapter.h"
 #include "season/ChoreoAuto.h"
@@ -99,6 +100,11 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
  }
 #endif
  drive_.SetDefaultCommand(drive_.Joystick([this]{return season::simulation::ObserveJoystick(-controller_.GetLeftY());},[this]{return -controller_.GetLeftX();},[this]{return -controller_.GetRightX();}));
+#ifndef __FRC_ROBORIO__
+ // Full scene recovery (including an overturned body), separate from Start's
+ // driver heading reset. This binding never exists on the physical robot.
+ controller_.Back().OnTrue(frc2::cmd::RunOnce([this]{ResetSimulation();}));
+#endif
  auto m=Mechanisms();
  if(frc::RobotBase::IsSimulation())simulation_=std::make_unique<season::FuelSimulation>(m,drive_);
  // Presets latch between button presses. No idle default overwrites their setpoints.
@@ -172,7 +178,7 @@ void RobotContainer::SimulationPeriodic(){
                                   frc::Rotation2d{units::radian_t{truth->yaw}}}}));
    simulationPosePublisher_.Set(frc::Pose3d{
        units::meter_t{truth->x}, units::meter_t{truth->y}, units::meter_t{truth->z},
-       frc::Rotation3d{0_rad, 0_rad, units::radian_t{truth->yaw}}});
+       season::simulation::chassisAttitude});
  }
 #endif
 }
