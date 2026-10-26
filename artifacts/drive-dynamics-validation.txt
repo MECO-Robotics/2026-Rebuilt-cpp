@@ -1,0 +1,29 @@
+2026-10-26 desktop dynamics validation
+
+Reusable adapter correction: MecoSimulation-cpp 7001f22.
+Season implementation: 20bfea7; follow-up explicitly spells out the existing
+50 A slip/stator limit (same value as the pinned DriveConfig default).
+
+Full Gradle build: passed desktop Debug/Release and roboRIO Debug/Release.
+25 season GoogleTests passed in each desktop configuration.
+Upstream CMake build and ctest: 3/3 passed (portable physics; not adapter coverage).
+The corrected adapter itself was compiled, linked and exercised in the season binary.
+
+Original source configuration was temporarily rebuilt from season HEAD 303c59f
+with only the passive MotorElectrical probe added. The original and corrected
+runtime binaries were snapshotted by the launcher; running-binary SHA256 values
+are in their corresponding dynamics JSON artifacts. The original source was
+restored after that build; no diagnostic source rollback remains in the tree.
+
+Same localhost HAL input procedure and physical-body-position measurement:
+- Original dynamics: FAIL release and reversal; PASS disabled brake.
+- Corrected dynamics: PASS all 3 modes.
+- Corrected field integration at 67.6 kg: PASS all 9 checks.
+- Original/corrected circle and circle-with-yaw: PASS.
+- Original/corrected square: FAIL existing 0.15 rad uncommanded yaw bound.
+  Original peak 0.175 rad; corrected peak 0.237 rad. All other square metrics pass.
+  This unresolved steering/control drift is documented, not hidden or retoleranced.
+
+Measurements use nominal 12 V and configured/unmeasured tire and inertia values.
+They establish the electrical-model regression and simulated braking behavior,
+not physical robot commissioning or measured real stopping distances.

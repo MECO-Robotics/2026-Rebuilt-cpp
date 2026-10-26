@@ -33,7 +33,7 @@ base::DriveConfig DriveConfig(){
  c.maxSpeed=5.24;c.maxAngularRate=7;c.driveKP=.15;c.driveKS=.1;c.driveKV=.124;
  const bool simulation=frc::RobotBase::IsSimulation();
  c.steerKP=100;c.steerKD=.5;
- c.steerKS=.2;c.steerKV=1.5;c.driveCurrent=55;c.steerCurrent=30;
+ c.steerKS=.2;c.steerKV=1.5;c.driveCurrent=55;c.slipCurrent=50;c.steerCurrent=30;
  // Simulation ready-to-drive maximum: robot, bumpers and battery (67.6 kg).
  // The real configuration remains unchanged. The yaw MOI is the existing
  // PathPlanner estimate; replace it when a measured or CAD value is available.
