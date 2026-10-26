@@ -215,12 +215,23 @@
   "cross_platform_ci": {
     "run_id": 40390243913,
     "url": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40390243913",
-    "status": "pending"
+    "status": "passed",
+    "clean_consumers": {
+      "linux_debug": "passed",
+      "linux_release": "passed",
+      "windows_debug": "passed",
+      "windows_release": "passed"
+    }
   },
   "public_maven": "pending",
   "raw_capture_directory": "/home/brian/.cache/rebuilt-sim-tmp",
   "remaining_model_limits": [
     "Existing square and azimuth-travel tracking failures are not resolved by packaging.",
     "Battery and contact parameters remain estimates."
-  ]
+  ],
+  "release_ci": {
+    "run_id": 40392031244,
+    "url": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40392031244",
+    "status": "in_progress"
+  }
 }

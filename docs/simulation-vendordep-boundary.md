@@ -32,3 +32,8 @@ and telemetry server belong to the same process; results mixing two simulators
 are invalid. The evidence helper checks listening socket owners and rejects
 mismatched endpoints before sending input. This option does not alter or stop
 another simulator.
+
+The [validation record](../artifacts/vendordep-compartmentalization-2026.0.9.json)
+records all four clean Linux/Windows consumer runs, the robot's 28 tests per desktop
+configuration, nine field checks, and the shared battery smoke. Public-package
+verification is recorded separately from staged local-Maven checks.
