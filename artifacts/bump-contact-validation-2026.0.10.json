@@ -73,7 +73,23 @@
   ],
   "publication": {
     "ci_run": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40405979050",
-    "status": "in_progress"
+    "status": "completed",
+    "conclusion": "success",
+    "linux_windows_debug_release_builds": true,
+    "staged_consumer_runs_passed": 4,
+    "public_consumer_runs_passed": 4,
+    "public_descriptor_version": "2026.0.10",
+    "source_commit": "84daa281ffdb982ba0803fb2cfe488bf546993be",
+    "clean_build_provenance": true,
+    "current_artifact_sha256": {
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.10/meco-simulation-wpilib-cpp-2026.0.10-headers.zip": "8c130d0cdce96a115f44c662caf1ecb1414ddea6f3775c4e4ae3abfbad5d0273",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.10/meco-simulation-wpilib-cpp-2026.0.10-linuxx86-64static.zip": "8c8a3face60b532f4341ad1128cd63cc60634e9e1a7e6a97523b9e9b45a0a925",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.10/meco-simulation-wpilib-cpp-2026.0.10-linuxx86-64staticdebug.zip": "6fd85ad390118856780a8a0d245d8ce9cd99be4cb7e6dc3e96809d20152b1963",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.10/meco-simulation-wpilib-cpp-2026.0.10-sources.zip": "5ec61005bcaac09fddf56e410f87f7265d704cfdc75703cf00e92332404095a2",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.10/meco-simulation-wpilib-cpp-2026.0.10-windowsx86-64static.zip": "a2b6cf9b1b7556c53f20747adc33dcc22d38e7981f04c62b6e12de407793427d",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.10/meco-simulation-wpilib-cpp-2026.0.10-windowsx86-64staticdebug.zip": "46195713e6b6f2e6bb7ed741e488fda68a6e2f7d02df9ff763e81a4985c7a82b",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.10/meco-simulation-wpilib-cpp-2026.0.10.pom": "eee40649a487083a6afc2229ac3200135b980d0ae1fa81ad6260672683cdf0c7"
+    }
   },
   "staged_joystick_patterns": {
     "checks": {
@@ -121,5 +137,35 @@
     },
     "raw_record_sha256": "83b3d4302eacbd4aa7de01d74345c1dce1cb944c3b5139cb4667f730a4e88561",
     "scope": "Both circle checks pass; square fails its existing uncommanded-yaw limit (0.15 rad); thresholds unchanged."
+  },
+  "main_public_build": {
+    "robot_revision": "d971aec",
+    "command": "JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --refresh-dependencies --max-workers=2 --console=plain",
+    "passed": true,
+    "all_four_native_targets": true,
+    "tests_passed_per_desktop_configuration": 28,
+    "public_headers_and_linux_debug_release_cache_sha256_verified": true
+  },
+  "main_public_field": {
+    "checks": {
+      "grounded_model_height_is_zero": true,
+      "hard_mounted_body_has_no_static_sag": true,
+      "startup_clear_blue_spawn": true,
+      "blue_reset_matches_truth_and_odometry": true,
+      "red_reset_matches_truth_and_odometry": true,
+      "can_turn_at_default_spawn": true,
+      "actual_wall_contact_blocks_motion": true,
+      "field_installed": true,
+      "bumper_slides_up_and_lifts_chassis": true
+    },
+    "metrics": {
+      "peak_body_height_m": 0.2917349338531494,
+      "lifted_samples": 243,
+      "final_x_m": 5.075742721557617,
+      "cleared_entire_bump": false
+    },
+    "binary_sha256": "f8c1d2bacf22ef812826a96ff9a13cbbe8089a7b079e440e8cc896b674772389",
+    "raw_record_sha256": "85dcf6b639d5476b41fb1e98eb579654168be693d42c685bb9280991cada40af",
+    "scope": "All nine field checks pass; body climbs and wheels unload, entire crossing not claimed."
   }
 }
