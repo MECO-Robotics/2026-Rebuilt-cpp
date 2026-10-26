@@ -63,34 +63,35 @@ installed scene.
 
 `/Simulation/RobotTruth` is the visualization/model pose, with its local origin
 at floor level when grounded. `/Simulation/PhysicsBodyTruth` retains the raw
-body-origin pose. The latter is about 0.278344 m high on flat ground: the 0.30 m
-suspension rest length minus static spring compression,
-`53 kg * 9.80665 m/s² / (4 * 6000 N/m)`.
+body-origin pose. Its flat-ground Z is the fixed `rideHeight` geometry, currently
+0.300 m. Hard-mounted modules have no modeled vertical suspension, and changing
+mass does not change that geometric height.
 
 A fixed local transform maps the body frame to the model's floor reference.
 It rotates with the chassis, so pitch/roll, bump traversal, jumping and overturning
-remain visible. It does not clamp Z, change the collision body or move physics
-onto the carpet. Planar physics uses its configured fixed ride height as the
-offset because vertical motion is constrained. During initial suspension settling,
-the model can briefly sit above zero before reaching its equilibrium.
+remain visible. It does not clamp Z or change collision bodies. The same geometric
+offset applies in planar mode. Numerical contact tolerances are not suspension
+travel. See [the rigid wheel-contact model](rigid-wheel-contact.md).
 
-The drive, pattern and field runtime checks now subscribe to the raw body topic
-for suspension/traction diagnostics. Earlier artifacts predate this split and
-recorded body height on the old `RobotTruth` topic.
+The drive, pattern and field runtime checks subscribe to the raw body topic
+for physical contact/traction diagnostics. Earlier artifacts using 0.278 m body
+height came from the now-replaced spring model. That model was not representative
+of the robot's hard-mounted swerve modules.
 
 ## Validation and free-space mode
 
 The final Gradle build passed desktop and roboRIO Debug/Release targets, with
-24 tests in each desktop configuration. The field regressions cover clear
+25 tests in each desktop configuration. The field regressions cover rigid support height under different loads, clear
 blue/red starts (and rejected invalid starts) and actual powered-body contact
 with a hub, using the Jolt solver.
 
-The running robot executable additionally passed all seven field-runtime checks:
+The running robot executable additionally passed the field-runtime checks:
 clear initial spawn, blue/red physics-and-odometry resets, real south-wall
 contact blocking lateral motion, actual turning at the default spawn, a zero grounded
-model height, and an installed scene. Evidence:
-`artifacts/ground-origin-runtime.json` (the earlier six-check run is retained in
-`artifacts/field-collision-runtime.json`). Repeat after a build with:
+model height, an installed scene, fixed hard-mount body height, and traversal of
+a bump followed by a return to that height. Evidence:
+`artifacts/rigid-contact-runtime.json` (earlier runs are retained in
+`artifacts/ground-origin-runtime.json` and `artifacts/field-collision-runtime.json`). Repeat after a build with:
 
 ```sh
 ./scripts/sim_headless.sh

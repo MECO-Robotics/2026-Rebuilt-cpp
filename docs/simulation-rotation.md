@@ -36,7 +36,9 @@ The body heights above refer to the raw physics origin, now published at
 `/Simulation/PhysicsBodyTruth`. `/Simulation/RobotTruth` subsequently gained a
 floor-level model origin: upright ground is approximately Z=0, while an inverted
 body still shows its rotated attitude and elevated model-floor anchor. The
-physics/suspension heights themselves have not changed.
+rigid-body physics itself was not changed by that display-frame correction.
+The later [hard-mounted contact correction](rigid-wheel-contact.md) replaces the
+spring model used for the historical height measurements above.
 
 ## Recovery and regression
 

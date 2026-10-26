@@ -101,11 +101,8 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
        .GetStructTopic<frc::Pose3d>("/Simulation/PhysicsBodyTruth").Publish();
    const auto backend=base::sim::BackendFromEnvironment();
    const auto& physics=drive_.Config().simulation;
-   // Four equally loaded springs on level ground. This is a frame offset,
-   // not a change to gravity, suspension, collision bodies or plant stepping.
-   simulationGroundedBodyHeight_=units::meter_t{backend==base::sim::Backend::Planar?
-       physics.rideHeight:physics.suspensionRestLength-
-       drive_.Config().massKg*9.80665/(4*physics.suspensionStiffness)};
+   // Hard-mounted wheels have a fixed geometric body-to-floor offset.
+   simulationGroundedBodyHeight_=units::meter_t{physics.rideHeight};
    auto simulation=meco::sim::CreateDriveSimulationAdapter(drive_.Config(),backend);
    const char* fieldMode=std::getenv("FRC_SIM_FIELD_COLLIDERS");
    simulationFieldCollidersEnabled_=!fieldMode || std::string_view{fieldMode}!="0";

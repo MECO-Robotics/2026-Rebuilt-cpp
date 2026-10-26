@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check legal field spawns, deferred odometry reset and live wall contact.
+"""Check hard-mounted support, legal spawns, turning and field contacts.
 
 Local HAL/NT only. Requires pyntcore, robotpy-wpimath and websockets. Disables on
 exit and restores the blue scene spawn. Intended for the field-enabled simulator.
@@ -32,14 +32,14 @@ async def exercise():
             async for _ in websocket:
                 pass
         reader = asyncio.create_task(drain())
-        async def hold(duration, enabled=False, lateral=0., reset=False, red=False, turn=0.):
+        async def hold(duration, enabled=False, lateral=0., reset=False, red=False, turn=0., forward=0.):
             end = time.monotonic() + duration
             rows = []
             while time.monotonic() < end:
                 buttons = [False]*10
                 buttons[6] = reset
                 await websocket.send(json.dumps({'type': 'Joystick', 'device': '0', 'data': {
-                    '>axes': [-lateral, 0, 0, 0, -turn, 0], '>buttons': buttons, '>povs': [-1]}}))
+                    '>axes': [-lateral, -forward, 0, 0, -turn, 0], '>buttons': buttons, '>povs': [-1]}}))
                 await websocket.send(json.dumps({'type': 'DriverStation', 'device': '', 'data': {
                     '>enabled': enabled, '>autonomous': False, '>test': False, '>ds': True,
                     '>station': 'red1' if red else 'blue1', '>new_data': True}}))
@@ -58,6 +58,7 @@ async def exercise():
             result['samples']['startup'] = [initial.X(), initial.Y(), initial.Z()]
             result['samples']['startup_model_pose'] = [model.get().X(),model.get().Y(),model.get().Z()]
             result['checks']['grounded_model_height_is_zero'] = model.getAtomic().time>0 and abs(model.get().Z())<.003 and math.hypot(model.get().X()-initial.X(),model.get().Y()-initial.Y())<.08
+            result['checks']['hard_mounted_body_has_no_static_sag'] = abs(initial.Z()-.30)<.001
             result['collider_count'] = count.get()
             result['checks']['startup_clear_blue_spawn'] = math.hypot(initial.X()-3.65, initial.Y()-.639318)<.08 and .25<initial.Z()<.35
             for red in (False, True):
@@ -80,6 +81,24 @@ async def exercise():
             result['samples']['south_wall'] = wall
             result['checks']['actual_wall_contact_blocks_motion'] = .35<wall[-1]['truth'][1]<.52 and min(r['truth'][1] for r in wall)>.30
             result['checks']['field_installed'] = count.get()>0
+            await reset_scene(False)
+            # Approach the blue lower bump through clear alliance-zone space.
+            def stick(velocity):
+                return 0. if abs(velocity)<.03 else math.copysign(.1+.9*min(.7,abs(velocity))/5.24,velocity)
+            deadline=time.monotonic()+8
+            while time.monotonic()<deadline:
+                current=truth.get()
+                dx,dy=2.8-current.X(),2.5106376-current.Y()
+                if math.hypot(dx,dy)<.04:
+                    break
+                await hold(.04,enabled=True,forward=stick(1.5*dx),lateral=stick(1.5*dy))
+            await hold(.4,enabled=True)
+            bump=await hold(8.,enabled=True,forward=.18)
+            result['samples']['rigid_bump_crossing']=bump
+            result['checks']['rigid_wheels_cross_bump_and_return_to_fixed_height'] = (
+                max(r['truth'][2] for r in bump)>.34 and bump[-1]['truth'][0]>5.7 and
+                abs(bump[-1]['truth'][2]-.30)<.01 and
+                max(abs(bump[-1]['truth'][i]) for i in (3,4))<.1)
         finally:
             await reset_scene(False)
             await hold(.2)

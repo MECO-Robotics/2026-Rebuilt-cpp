@@ -38,3 +38,18 @@ TEST(SimulationField, HubStopsPoweredChassisWhileWheelsMaySlip) {
     EXPECT_LT(std::abs(truth.body.linearVelocity.x),.1);
 }
 #endif
+
+#ifndef __FRC_ROBORIO__
+TEST(SimulationField, LinkedDriveModelKeepsRigidModuleHeightUnderLoad) {
+    using namespace base::sim;
+    for (double mass : {53.,106.}) {
+        SimulationWorld world(Backend::Full3D);
+        BodySpec floor;floor.mass=0;floor.halfExtents={100,100,.05};floor.pose.position.z=-.05;
+        world.CreateBody(floor);
+        DrivePhysicsConfig config;config.mass=mass;
+        DrivePhysics drive(world,config);
+        for(int i=0;i<300;++i){drive.BeforePhysics(.004);world.Step(.004);drive.AfterPhysics(.004);}
+        EXPECT_NEAR(drive.Truth().body.pose.position.z,config.rideHeight,.001);
+    }
+}
+#endif
