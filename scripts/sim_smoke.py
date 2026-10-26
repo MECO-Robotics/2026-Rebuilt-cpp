@@ -32,7 +32,7 @@ async def exercise(args):
     pose = instance.getStructTopic("/AdvantageScope/Drive/Pose", Pose2d).subscribe(Pose2d(), ntcore.PubSubOptions(periodic=.02))
     module_states = instance.getStructArrayTopic("/AdvantageScope/Drive/ModuleStates", SwerveModuleState).subscribe([], ntcore.PubSubOptions(periodic=.02))
     module_targets = instance.getStructArrayTopic("/AdvantageScope/Drive/ModuleTargets", SwerveModuleState).subscribe([], ntcore.PubSubOptions(periodic=.02))
-    truth = instance.getRawTopic("/Simulation/RobotTruth").subscribe("struct:Pose3d", b"", ntcore.PubSubOptions(periodic=.02))
+    truth = instance.getRawTopic("/Simulation/PhysicsBodyTruth").subscribe("struct:Pose3d", b"", ntcore.PubSubOptions(periodic=.02))
     async with connect(f"ws://127.0.0.1:{args.hal_port}/wpilibws", max_size=None) as websocket:
         async def drain():
             async for packet in websocket:

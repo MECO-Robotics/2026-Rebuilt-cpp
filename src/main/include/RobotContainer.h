@@ -37,6 +37,8 @@ class RobotContainer {
   std::unique_ptr<season::FuelSimulation> simulation_;
 #ifndef __FRC_ROBORIO__
   nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
+  nt::StructPublisher<frc::Pose3d> simulationBodyPosePublisher_;
+  units::meter_t simulationGroundedBodyHeight_{};
   int simulationResetFeedbackLoops_{};
   frc::Pose2d simulationResetPose_{};
   frc::Pose2d simulationResetPhysicalOrigin_{};

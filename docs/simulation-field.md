@@ -57,19 +57,40 @@ routines must be aligned with physical field coordinates before collision-aware
 trajectory acceptance. This change validates driving/reset, not all season autos.
 
 `/SmartDashboard/FieldSimulation/CollidersEnabled` and `ColliderCount` report the
-installed scene. `/Simulation/RobotTruth` remains the actual 3D body pose.
+installed scene.
+
+### Ground-level model origin
+
+`/Simulation/RobotTruth` is the visualization/model pose, with its local origin
+at floor level when grounded. `/Simulation/PhysicsBodyTruth` retains the raw
+body-origin pose. The latter is about 0.278344 m high on flat ground: the 0.30 m
+suspension rest length minus static spring compression,
+`53 kg * 9.80665 m/s² / (4 * 6000 N/m)`.
+
+A fixed local transform maps the body frame to the model's floor reference.
+It rotates with the chassis, so pitch/roll, bump traversal, jumping and overturning
+remain visible. It does not clamp Z, change the collision body or move physics
+onto the carpet. Planar physics uses its configured fixed ride height as the
+offset because vertical motion is constrained. During initial suspension settling,
+the model can briefly sit above zero before reaching its equilibrium.
+
+The drive, pattern and field runtime checks now subscribe to the raw body topic
+for suspension/traction diagnostics. Earlier artifacts predate this split and
+recorded body height on the old `RobotTruth` topic.
 
 ## Validation and free-space mode
 
 The final Gradle build passed desktop and roboRIO Debug/Release targets, with
-23 tests in each desktop configuration. The two added regressions cover clear
+24 tests in each desktop configuration. The field regressions cover clear
 blue/red starts (and rejected invalid starts) and actual powered-body contact
 with a hub, using the Jolt solver.
 
-The running robot executable additionally passed all six field-runtime checks:
+The running robot executable additionally passed all seven field-runtime checks:
 clear initial spawn, blue/red physics-and-odometry resets, real south-wall
-contact blocking lateral motion, actual turning at the default spawn, and an installed scene. Evidence:
-`artifacts/field-collision-runtime.json`. Repeat after a build with:
+contact blocking lateral motion, actual turning at the default spawn, a zero grounded
+model height, and an installed scene. Evidence:
+`artifacts/ground-origin-runtime.json` (the earlier six-check run is retained in
+`artifacts/field-collision-runtime.json`). Repeat after a build with:
 
 ```sh
 ./scripts/sim_headless.sh

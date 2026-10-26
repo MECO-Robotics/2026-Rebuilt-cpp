@@ -125,7 +125,12 @@ injecting input; see the investigation for measured before/after results.
 
 In desktop Teleop, **Back/View** resets the simulation scene (body upright,
 pose, wheel state and fuel). **Start/Menu** still only resets driver heading.
-`/Simulation/RobotTruth` now includes actual roll/pitch; use that `Pose3d` in
+`/Simulation/RobotTruth` reports the robot model’s floor-level origin (settled
+Z approximately zero) and actual roll/pitch; use that `Pose3d` in
 AdvantageScope's 3D view to see tipping. The 2D drive pose cannot show it.
 See [the rotation investigation](docs/simulation-rotation.md) for the observed
 wheel-speed/heading mismatch and strengthened physical-turn check.
+The unshifted physics body pose is published separately at
+`/Simulation/PhysicsBodyTruth` (about 0.278 m high on flat ground with this
+suspension). Physics validation scripts use that raw pose. The model-origin
+offset follows chassis rotation and preserves bump/airborne height changes.

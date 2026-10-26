@@ -23,7 +23,8 @@ async def exercise():
     client.setServer('127.0.0.1', 5810)
     options = ntcore.PubSubOptions(periodic=.02, sendAll=True)
     pose = client.getStructTopic('/AdvantageScope/Drive/Pose', Pose2d).subscribe(Pose2d(), options)
-    truth = client.getStructTopic('/Simulation/RobotTruth', Pose3d).subscribe(Pose3d(), options)
+    truth = client.getStructTopic('/Simulation/PhysicsBodyTruth', Pose3d).subscribe(Pose3d(), options)
+    model = client.getStructTopic('/Simulation/RobotTruth', Pose3d).subscribe(Pose3d(), options)
     count = client.getDoubleTopic('/SmartDashboard/FieldSimulation/ColliderCount').subscribe(0)
     result = {'transport': 'localhost HAL websocket + NT4', 'samples': {}, 'checks': {}}
     async with connect('ws://127.0.0.1:3300/wpilibws', max_size=None) as websocket:
@@ -55,6 +56,8 @@ async def exercise():
             await hold(1.)
             initial = truth.get()
             result['samples']['startup'] = [initial.X(), initial.Y(), initial.Z()]
+            result['samples']['startup_model_pose'] = [model.get().X(),model.get().Y(),model.get().Z()]
+            result['checks']['grounded_model_height_is_zero'] = model.getAtomic().time>0 and abs(model.get().Z())<.003 and math.hypot(model.get().X()-initial.X(),model.get().Y()-initial.Y())<.08
             result['collider_count'] = count.get()
             result['checks']['startup_clear_blue_spawn'] = math.hypot(initial.X()-3.65, initial.Y()-.639318)<.08 and .25<initial.Z()<.35
             for red in (False, True):

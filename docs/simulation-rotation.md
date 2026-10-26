@@ -32,6 +32,12 @@ in 3D visualization. It now retains actual attitude from external-plant feedback
 on the existing simulation owner thread. No public vendordep ABI changes or
 extra physics steps are introduced. `/AdvantageScope/Drive/Pose` remains 2D.
 
+The body heights above refer to the raw physics origin, now published at
+`/Simulation/PhysicsBodyTruth`. `/Simulation/RobotTruth` subsequently gained a
+floor-level model origin: upright ground is approximately Z=0, while an inverted
+body still shows its rotated attitude and elevated model-floor anchor. The
+physics/suspension heights themselves have not changed.
+
 ## Recovery and regression
 
 In desktop **Teleop**, press **Back/View** to call the existing full scene reset:

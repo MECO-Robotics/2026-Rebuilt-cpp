@@ -86,7 +86,7 @@ async def exercise(args):
     chooser = nt.getStringTopic('/SmartDashboard/Auto Choices/selected').publish()
     active_auto = nt.getStringTopic('/SmartDashboard/Auto Choices/active').subscribe('')
     previous_auto = ''
-    truth = nt.getRawTopic('/Simulation/RobotTruth').subscribe('struct:Pose3d', b'')
+    truth = nt.getRawTopic('/Simulation/PhysicsBodyTruth').subscribe('struct:Pose3d', b'')
     binary = Path('build/exe/frcUserProgram/linuxx86-64/release/frcUserProgram')
     evidence = {'revision': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
                 'worktree_dirty': bool(subprocess.check_output(['git','status','--porcelain'], text=True).strip()),
