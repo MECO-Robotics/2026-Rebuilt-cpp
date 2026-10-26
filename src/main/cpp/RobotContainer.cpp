@@ -1,3 +1,4 @@
+#include "season/SimulationLatency.h"
 #include "RobotContainer.h"
 #include "season/HardwareAdapter.h"
 #include "season/ChoreoAuto.h"
@@ -97,7 +98,7 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
    });
  }
 #endif
- drive_.SetDefaultCommand(drive_.Joystick([this]{return -controller_.GetLeftY();},[this]{return -controller_.GetLeftX();},[this]{return -controller_.GetRightX();}));
+ drive_.SetDefaultCommand(drive_.Joystick([this]{return season::simulation::ObserveJoystick(-controller_.GetLeftY());},[this]{return -controller_.GetLeftX();},[this]{return -controller_.GetRightX();}));
  auto m=Mechanisms();
  if(frc::RobotBase::IsSimulation())simulation_=std::make_unique<season::FuelSimulation>(m,drive_);
  // Presets latch between button presses. No idle default overwrites their setpoints.

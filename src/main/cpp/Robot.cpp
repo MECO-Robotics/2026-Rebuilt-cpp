@@ -1,4 +1,5 @@
 #include "Robot.h"
+#include "season/SimulationLatency.h"
 #include "season/HubShift.h"
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <fmt/format.h>
@@ -12,7 +13,9 @@ Robot::Robot() {
   frc::RobotController::SetBrownoutVoltage(units::volt_t{6});
 }
 void Robot::RobotPeriodic() {
+ season::simulation::BeginLatencyProbe();
  frc2::CommandScheduler::GetInstance().Run();
+ season::simulation::EndLatencyProbe();
  auto alliance=frc::DriverStation::GetAlliance();
  std::optional<season::Alliance> own;
  if(alliance)own=*alliance==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;
