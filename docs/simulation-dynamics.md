@@ -106,3 +106,39 @@ both versions (original 0.175 rad; corrected 0.237 rad), although velocity,
 azimuth, encoder-versus-truth and estimated heading checks pass. This remains a
 steering/control limitation; the dynamics fix does not claim to resolve it and
 the threshold is unchanged.
+
+## Flat-carpet tipping diagnosis
+
+Full-stick, abrupt 90-degree square inputs reproduce severe tipping on an empty
+flat field: about 70 degrees at the first corner with the configured friction
+2.9. Straight full acceleration/release/reversal stays below 0.18 degrees in this
+run; disabled braking peaks at 1.84 degrees. This distinguishes lateral scrub
+from the current-limited straight-line acceleration/braking problem.
+
+The simulated CoM is **assumed 0.30 m above the floor**: body ride height 0.30 m
+plus the default zero body-relative CoM offset. It is not a measured CoM. Module
+centres are 0.5588 m apart. A centred, level body's static edge-unloading threshold
+is therefore `g * 0.2794 / 0.30`, approximately **9.13 m/s² (0.93 g)**. This is a
+quasistatic reference, not a guarantee against transient tipping.
+
+The 50 A motor limit does not bound sideways scrub to the motor acceleration
+ceiling. Redirecting rolling wheels at speed generates lateral tire forces, capped
+by friction times normal reaction. Friction 2.9 permits much larger lateral forces
+than this assumed geometry can support without unloading wheels. A temporary
+friction-only ablation to 1.2 still overturned at the first corner; that value also
+permits lateral acceleration above the static threshold. Thus friction alone was
+not established as the sole cause, and no arbitrary lower-friction fix was kept.
+
+[MapleSim's configuration API](https://shenzhen-robotics-alliance.github.io/maple-sim/javadocs/org/ironmaple/simulation/drivesims/configs/SwerveModuleSimulationConfig.html)
+gives around 1.2 as a usual starting friction value, but its
+[COTS wheel references](https://github.com/Shenzhen-Robotics-Alliance/maple-sim/blob/main/project/src/main/java/org/ironmaple/simulation/drivesims/COTS.java)
+include a range of tire-dependent values. They do not measure this robot's grip,
+CoM or 3D tipping behavior. Roll/pitch inertia is also still the unmeasured default
+4 kg m². These tests establish the simulated trigger, not realistic hardware tip
+limits or the absence of contact-solver error. Correct calibration requires the
+robot's ready-to-drive CoM and tire/carpet traction, rather than changing mass or
+adding fictitious suspension to hide the symptom.
+
+Compact observations are in `artifacts/tipping-diagnosis.json`. The temporary
+friction change was reverted and the original production binary/field-collider
+GUI restored. No production physics or control parameters changed in this diagnosis.
