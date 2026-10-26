@@ -1,0 +1,61 @@
+{
+  "packet-clock": {
+    "capture_seconds": 29.900241,
+    "probe_samples": 1496,
+    "requested_samples": 31,
+    "signals": {
+      "cached": {
+        "change_count": 30,
+        "whole_capture_change_rate_hz": 1.003336394512673,
+        "median_change_interval_ms": 999.9818801879883,
+        "max_interval_ms_including_still_stick": 1000.3509521484375,
+        "median_interval_ms_excluding_pauses_over_200ms": null
+      },
+      "command": {
+        "change_count": 30,
+        "whole_capture_change_rate_hz": 1.003336394512673,
+        "median_change_interval_ms": 999.9818801879883,
+        "max_interval_ms_including_still_stick": 1000.3509521484375,
+        "median_interval_ms_excluding_pauses_over_200ms": null
+      },
+      "raw_HAL": {
+        "change_count": 30,
+        "whole_capture_change_rate_hz": 1.003336394512673,
+        "median_change_interval_ms": 999.981164932251,
+        "max_interval_ms_including_still_stick": 1020.2219486236572,
+        "median_interval_ms_excluding_pauses_over_200ms": null
+      }
+    },
+    "max_scheduler_ms": 1.579
+  },
+  "no-vsync": {
+    "capture_seconds": 29.880005,
+    "probe_samples": 1495,
+    "requested_samples": 1028,
+    "signals": {
+      "cached": {
+        "change_count": 780,
+        "whole_capture_change_rate_hz": 26.104413302474345,
+        "median_change_interval_ms": 20.030975341796875,
+        "max_interval_ms_including_still_stick": 8579.977989196777,
+        "median_interval_ms_excluding_pauses_over_200ms": 20.030975341796875
+      },
+      "command": {
+        "change_count": 780,
+        "whole_capture_change_rate_hz": 26.104413302474345,
+        "median_change_interval_ms": 20.030975341796875,
+        "max_interval_ms_including_still_stick": 8579.977989196777,
+        "median_interval_ms_excluding_pauses_over_200ms": 20.030975341796875
+      },
+      "raw_HAL": {
+        "change_count": 969,
+        "whole_capture_change_rate_hz": 32.42971344884313,
+        "median_change_interval_ms": 19.999980926513672,
+        "max_interval_ms_including_still_stick": 8579.960823059082,
+        "median_interval_ms_excluding_pauses_over_200ms": 19.999980926513672
+      }
+    },
+    "max_scheduler_ms": 1.491
+  },
+  "user_confirmation": "Physical controller still slow with packet clock alone; follows promptly after vblank_mode=0, with AdvantageScope covering SimGUI."
+}
