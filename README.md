@@ -99,3 +99,10 @@ The telemetry subscription requests 20 ms samples so optimizer retargeting is
 less likely to be missed between snapshots. Azimuth checks distinguish a native optimizer's
 180-degree target/speed reversal from additional physical hunting; a full module
 revolution remains a failure. These are software simulation tolerances.
+
+For input/update-rate diagnosis, see [the simulation latency investigation](docs/simulation-latency.md).
+`FRC_SIM_GUI=1` adds SimGUI to the websocket launcher. `FRC_SIM_LATENCY_PROBE=1`
+enables raw-HAL, cached-DS, command and publisher timing probes. Desktop simulation
+emits DS packet notifications once per loop so fresh raw joystick values do not
+wait for a GUI-driven packet refresh.
+Set `FRC_SIM_DS_PACKET_CLOCK=0` to compare the original producer-driven packet cadence.

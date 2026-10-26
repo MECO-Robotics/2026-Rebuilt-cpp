@@ -7,6 +7,7 @@
 #include "base/Telemetry.h"
 #include <cstdlib>
 #include <frc/DriverStation.h>
+#include <hal/simulation/DriverStationData.h>
 #include <frc/RobotController.h>
 #include <networktables/DoubleArrayTopic.h>
 #include <networktables/NetworkTableInstance.h>
@@ -16,7 +17,7 @@ inline bool LatencyProbeEnabled() {
   static const bool enabled = std::getenv("FRC_SIM_LATENCY_PROBE") != nullptr;
   return enabled;
 }
-inline std::array<double, 6> latencySample{};
+inline std::array<double, 9> latencySample{};
 inline double ObserveJoystick(double value) {
   if (LatencyProbeEnabled()) {
     latencySample[3]=value;
@@ -28,6 +29,11 @@ inline void BeginLatencyProbe() {
   if (!LatencyProbeEnabled()) return;
   latencySample[0]=nt::Now();
   latencySample[2]=-frc::DriverStation::GetStickAxis(0,1);
+  HAL_JoystickAxes raw{};
+  HALSIM_GetJoystickAxes(0,&raw);
+  latencySample[6]=raw.count>1?-raw.axes[1]:0;
+  latencySample[7]=frc::DriverStation::IsDSAttached();
+  latencySample[8]=frc::DriverStation::IsEnabled();
 }
 inline void EndLatencyProbe() {
   if (!LatencyProbeEnabled()) return;
@@ -38,9 +44,9 @@ inline void EndLatencyProbe() {
   publisher.Set(latencySample);
   auto captured=latencySample;
   base::telemetry::Post("LatencyProbe", [captured] {
-    std::array<double,7> queued{};
+    std::array<double,10> queued{};
     std::copy(captured.begin(),captured.end(),queued.begin());
-    queued[6]=nt::Now();
+    queued[9]=nt::Now();
     static auto background=nt::NetworkTableInstance::GetDefault()
         .GetDoubleArrayTopic("/Diagnostics/Latency/Background").Publish();
     background.Set(queued);

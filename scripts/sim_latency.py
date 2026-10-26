@@ -34,9 +34,9 @@ async def run(args):
         async def drain():
             async for _ in ws:pass
         reader=asyncio.create_task(drain())
-        async def control(enabled,value):
+        async def control(enabled,value,notify=True):
             await ws.send(json.dumps({'type':'Joystick','device':'0','data':{'>axes':[0.,-value,0.,0.,0.,0.],'>buttons':[False]*10,'>povs':[-1]}}))
-            await ws.send(json.dumps({'type':'DriverStation','device':'','data':{'>enabled':enabled,'>autonomous':False,'>test':False,'>estop':False,'>fms':False,'>ds':True,'>new_data':True}}))
+            if notify or not enabled:await ws.send(json.dumps({'type':'DriverStation','device':'','data':{'>enabled':enabled,'>autonomous':False,'>test':False,'>estop':False,'>fms':False,'>ds':True,'>new_data':True}}))
         def collect(trial=None):
             nonlocal previous_loop
             for label,subs in subscriptions.items():
@@ -46,7 +46,7 @@ async def run(args):
                         arrived=ntcore._now(); value=e.value
                         if trial and e.time>=trial["sent_us"]:
                             age[label].append((arrived-e.time)/1000)
-                        if kind=='probe' and len(value)==6:
+                        if kind=='probe' and len(value)>=9:
                             offset=e.time-e.serverTime
                             if label=='fast':
                                 scheduler.append((value[1]-value[0])/1000)
@@ -58,8 +58,8 @@ async def run(args):
                                 if abs(value[3]-trial['input'])<1e-6:
                                     trial.setdefault(label+'_command_sample_ms',(value[4]+offset-trial['sent_us'])/1000)
                                     trial.setdefault('nt_minus_fpga_us',value[1]-value[5])
-                        elif kind=='background' and len(value)==7 and label=='fast':
-                            dispatch.append((value[6]-value[1])/1000)
+                        elif kind=='background' and len(value)>=10 and label=='fast':
+                            dispatch.append((value[9]-value[1])/1000)
                         elif trial and e.time>=trial['sent_us'] and kind in ('request','speed'):
                             fieldx=value.vx*math.cos(heading)-value.vy*math.sin(heading)
                             if kind=='request' and abs(fieldx-trial['expected_mps'])<.15:
@@ -86,9 +86,13 @@ async def run(args):
                 heading=subscriptions['fast']['pose'].get().rotation().radians()
                 previous=measured.vx*math.cos(heading)-measured.vy*math.sin(heading)
                 trial={'input':value,'expected_mps':target,'previous_mps':previous,'sent_us':ntcore._now()}
-                await control(True,value)
+                await control(True,value,notify=not args.raw_only)
                 end=time.monotonic()+1.15+(i%5)*.013
+                next_raw_send=0.
                 while time.monotonic()<end:
+                    if args.raw_only and time.monotonic()>=next_raw_send:
+                        await control(True,value,notify=False)
+                        next_raw_send=time.monotonic()+.01
                     collect(trial);await asyncio.sleep(.001)
                 trials.append(trial);previous=target
         finally:
@@ -97,7 +101,7 @@ async def run(args):
             for c in clients:c.stopClient()
     keys=sorted({k for t in trials for k in t if k.endswith('_ms')})
     result={'scope':'Local native simulator; send timestamps precede websocket send; NT clock-synchronized source times. No display/pixel latency measurement.',
-            'trials':trials,'latency':{k:summary([t[k] for t in trials if k in t]) for k in keys},
+            'raw_only':args.raw_only,'trials':trials,'latency':{k:summary([t[k] for t in trials if k in t]) for k in keys},
             'scheduler_duration':summary(scheduler),'robot_loop_interval':summary(cadence),
             'background_publish_wait':summary(dispatch),'NT_source_age_on_arrival':{k:summary(v) for k,v in age.items()},
             'binary_sha256':hashlib.sha256(Path('build/exe/frcUserProgram/linuxx86-64/release/frcUserProgram').read_bytes()).hexdigest()}
@@ -106,7 +110,7 @@ async def run(args):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--steps',type=int,default=36);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--steps',type=int,default=36);p.add_argument('--raw-only',action='store_true',help='Do not notify DS after raw joystick writes; exposes producer/cache latency');p.add_argument('--output',type=Path,required=True);a=p.parse_args()
     if a.steps<1:p.error('--steps must be positive')
     r=asyncio.run(run(a));a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(r,indent=2)+'\n')
     print(json.dumps({k:v for k,v in r.items() if k!='trials'},indent=2))

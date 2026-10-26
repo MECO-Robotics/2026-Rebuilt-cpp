@@ -1,4 +1,5 @@
 #include "Robot.h"
+#include <string_view>
 #include "season/SimulationLatency.h"
 #include "season/HubShift.h"
 #include <frc/smartdashboard/SmartDashboard.h>
@@ -36,5 +37,18 @@ void Robot::TestInit() { container_.CancelChecks(); frc2::CommandScheduler::GetI
 int main() { return frc::StartRobot<Robot>(); }
 #endif
 
-void Robot::SimulationPeriodic(){container_.SimulationPeriodic();}
+void Robot::SimulationPeriodic(){
+ container_.SimulationPeriodic();
+#ifndef __FRC_ROBORIO__
+ // Raw HAL joystick writes are not DS packets. Publish the current desktop
+ // inputs for the next loop's normal DriverStation::RefreshData(), independently
+ // of GUI redraws or a websocket client's notification cadence. This is a
+ // synchronous cache update; it does not wait or change the scheduler period.
+ static const bool emitPackets=[] {
+   const char* value=std::getenv("FRC_SIM_DS_PACKET_CLOCK");
+   return !value || std::string_view{value}!="0";
+ }();
+ if(emitPackets)HALSIM_NotifyDriverStationNewData();
+#endif
+}
 void Robot::DisabledInit(){container_.CancelChecks();}
