@@ -1,0 +1,2 @@
+upright z=0.278343 yaw-rate=5.87886 avg-wheel-speed=2.79807 total-normal-force=519.752
+upside-down z=0.12 yaw-rate=2.32628e-10 avg-wheel-speed=2.79831 total-normal-force=0
