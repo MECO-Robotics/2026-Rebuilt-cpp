@@ -1,0 +1,73 @@
+{
+  "source_revision": "e9dc63fc585b0ab523990bd6c6dfa3ea1169dfbb",
+  "binary_sha256": "b51f791b2e5259155257f199b44c7ee8a490a3114b78cd0aa5620abc78422a21",
+  "desktop_tire_cof": 2.1,
+  "basis": "User-selected estimate informed by related spiked TPU data; not a measured WCP-1728 coefficient",
+  "build": "Full Gradle build passed desktop and roboRIO Debug/Release; 25 GoogleTests passed in each desktop configuration",
+  "dynamics": {
+    "passed": true,
+    "checks": {
+      "release": true,
+      "reverse": true,
+      "disabled_brake": true
+    },
+    "metrics": {
+      "release": {
+        "peak_speed_mps": 5.2399714236716335,
+        "accel_0p5_to_4_s": 1.00014,
+        "brake_4_to_0p5_s": 0.8393600000000001,
+        "stop_after_command_s": 1.300623,
+        "stop_distance_m": 3.336304187774658
+      },
+      "reverse": {
+        "peak_speed_mps": 5.231721974973596,
+        "accel_0p5_to_4_s": 1.00019,
+        "brake_4_to_0p5_s": 0.8200489999999999,
+        "stop_after_command_s": 1.299476,
+        "stop_distance_m": 3.483452320098877
+      },
+      "disabled_brake": {
+        "peak_speed_mps": 5.196056000184677,
+        "accel_0p5_to_4_s": 0.979954,
+        "brake_4_to_0p5_s": 0.379581,
+        "stop_after_command_s": 0.999925,
+        "stop_distance_m": 2.271566867828369
+      }
+    }
+  },
+  "bumper_ground_stress": {
+    "passed": true,
+    "metrics": {
+      "max_tilt_deg": 5.256061983225381,
+      "minimum_bumper_corner_height_m": -0.004141008916730943,
+      "approach_physical_speed_mps": 4.41528597497848
+    },
+    "qualification": "Ground-contact acceptance only, not square tracking acceptance"
+  },
+  "field": {
+    "passed": true,
+    "checks": {
+      "grounded_model_height_is_zero": true,
+      "hard_mounted_body_has_no_static_sag": true,
+      "startup_clear_blue_spawn": true,
+      "blue_reset_matches_truth_and_odometry": true,
+      "red_reset_matches_truth_and_odometry": true,
+      "can_turn_at_default_spawn": true,
+      "actual_wall_contact_blocks_motion": true,
+      "field_installed": true,
+      "low_bumper_contacts_bump_before_wheels_climb": true
+    },
+    "collider_count": 40.0,
+    "grounded_body_height_m": 0.07619999999999999,
+    "bump_approach_final_truth": [
+      3.6300857067108154,
+      2.4848365783691406,
+      0.07612094283103943,
+      2.27943215429085e-06,
+      -0.00015285005880122688,
+      2.422494484552063e-07
+    ]
+  },
+  "raw_captures": "/home/brian/.cache/rebuilt-sim-tmp/cof21-{dynamics,ground,field}.json",
+  "scope": "Local desktop numerical simulation. Real-robot friction configuration unchanged. Existing square yaw drift remains outside this change."
+}

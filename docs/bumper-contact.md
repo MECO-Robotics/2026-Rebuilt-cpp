@@ -102,3 +102,9 @@ The post-integration [drive dynamics run](../artifacts/bumper-drive-dynamics.jso
 also passes release, reversal and disabled-braking regression bands. The full
 validation scope and remaining limitations are recorded in
 [bumper-validation.txt](../artifacts/bumper-validation.txt).
+
+Current tire-CoF 2.1 validation is summarized in
+[tire-cof-2p1-validation.json](../artifacts/tire-cof-2p1-validation.json): all three
+dynamics modes, bumper-ground stress and all nine field checks pass. The ground
+stress peak is 5.26 degrees; release stopping distance is 3.34 m. This check does
+not claim to resolve the separate square yaw-drift limitation.
