@@ -7,6 +7,13 @@
 #include <frc/DataLogManager.h>
 #include <frc/DriverStation.h>
 #include <frc/RobotController.h>
+#ifndef __FRC_ROBORIO__
+#include "base/SimulationRuntime.h"
+#include "meco/sim/BatterySupply.h"
+#include <networktables/DoubleArrayTopic.h>
+#include <networktables/NetworkTableInstance.h>
+#include <array>
+#endif
 #include <frc2/command/CommandScheduler.h>
 Robot::Robot() {
   frc::DataLogManager::Start();
@@ -40,6 +47,13 @@ int main() { return frc::StartRobot<Robot>(); }
 void Robot::SimulationPeriodic(){
  container_.SimulationPeriodic();
 #ifndef __FRC_ROBORIO__
+ auto& runtime=base::simulation::GetSimulationRuntime();
+ const double batteryVoltage=meco::sim::UpdateBatterySupply(runtime);
+ frc::SmartDashboard::PutNumber("SimulationPower/SupplyCurrentAmps",runtime.SupplyCurrent());
+ frc::SmartDashboard::PutNumber("SimulationPower/BusVoltage",batteryVoltage);
+ static auto powerPublisher=nt::NetworkTableInstance::GetDefault()
+     .GetDoubleArrayTopic("/Simulation/PowerSamples").Publish();
+ powerPublisher.Set(std::array<double,3>{static_cast<double>(nt::Now()),runtime.SupplyCurrent(),batteryVoltage});
  // Raw HAL joystick writes are not DS packets. Publish the current desktop
  // inputs for the next loop's normal DriverStation::RefreshData(), independently
  // of GUI redraws or a websocket client's notification cadence. This is a
