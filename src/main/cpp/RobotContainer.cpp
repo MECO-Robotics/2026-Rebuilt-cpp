@@ -38,6 +38,13 @@ base::DriveConfig DriveConfig(){
  // The real configuration remains unchanged. The yaw MOI is the existing
  // PathPlanner estimate; replace it when a measured or CAD value is available.
  c.massKg=simulation?67.6:53;c.moi=6.883;c.cof=2.9;c.simulation.wheelInertia=.01;c.simulation.steerInertia=.01;
+ if(simulation){
+   // Estimated bumper envelope: 0.25 inch floor gap, 5.5 inch height.
+   // Move the body origin to bumper centre; preserve the assumed world CoM at .30 m.
+   c.simulation.bumperHalfHeight=.1397/2;
+   c.simulation.rideHeight=.00635+c.simulation.bumperHalfHeight;
+   c.simulation.centerOfMassZ=.30-c.simulation.rideHeight;
+ }
  c.autoConfigFromGUI=true;c.autoTranslationKP=15;c.autoRotationKP=10;
  c.modules={{{2,1,9,.3076171875,.2794,.2794,false,true,false},
  {8,3,10,.304931640625,.2794,-.2794,true,true,false},
@@ -106,6 +113,9 @@ RobotContainer::RobotContainer():drive_(DriveConfig()),
    const auto& physics=drive_.Config().simulation;
    // Hard-mounted wheels have a fixed geometric body-to-floor offset.
    simulationGroundedBodyHeight_=units::meter_t{physics.rideHeight};
+   frc::SmartDashboard::PutNumber("FieldSimulation/GroundedBodyHeight",physics.rideHeight);
+   frc::SmartDashboard::PutNumber("FieldSimulation/BumperBottomHeight",physics.rideHeight-physics.bumperHalfHeight);
+   frc::SmartDashboard::PutNumber("FieldSimulation/BumperTopHeight",physics.rideHeight+physics.bumperHalfHeight);
    auto simulation=meco::sim::CreateDriveSimulationAdapter(drive_.Config(),backend);
    const char* fieldMode=std::getenv("FRC_SIM_FIELD_COLLIDERS");
    simulationFieldCollidersEnabled_=!fieldMode || std::string_view{fieldMode}!="0";

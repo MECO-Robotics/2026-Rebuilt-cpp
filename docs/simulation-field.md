@@ -64,7 +64,7 @@ installed scene.
 `/Simulation/RobotTruth` is the visualization/model pose, with its local origin
 at floor level when grounded. `/Simulation/PhysicsBodyTruth` retains the raw
 body-origin pose. Its flat-ground Z is the fixed `rideHeight` geometry, currently
-0.300 m. Hard-mounted modules have no modeled vertical suspension, and changing
+0.0762 m at the bumper centre (see [bumper contact](bumper-contact.md)). Hard-mounted modules have no modeled vertical suspension, and changing
 mass does not change that geometric height.
 
 A fixed local transform maps the body frame to the model's floor reference.
@@ -109,3 +109,5 @@ preserves the ground, and restores `(0,0)` as the free-space reset pose. The fla
 is read at construction and requires restarting; the dashboard fields are status,
 not runtime enable controls. All geometry and spawn changes are excluded from
 roboRIO builds.
+
+The earlier bump-crossing evidence below predates the low bumper shell. With the requested 0.25-inch gap, the updated runtime check verifies bumper contact at the bump approach instead; see [bumper contact](bumper-contact.md).

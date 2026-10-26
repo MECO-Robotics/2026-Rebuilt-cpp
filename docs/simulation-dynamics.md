@@ -115,8 +115,9 @@ flat field: about 70 degrees at the first corner with the configured friction
 run; disabled braking peaks at 1.84 degrees. This distinguishes lateral scrub
 from the current-limited straight-line acceleration/braking problem.
 
-The simulated CoM is **assumed 0.30 m above the floor**: body ride height 0.30 m
-plus the default zero body-relative CoM offset. It is not a measured CoM. Module
+The simulated CoM remains **assumed 0.30 m above the floor**. That diagnosis used
+a 0.30 m body origin and zero CoM offset. The [bumper model](bumper-contact.md)
+now uses a 0.0762 m body origin plus 0.2238 m relative CoM offset. It is not a measured CoM. Module
 centres are 0.5588 m apart. A centred, level body's static edge-unloading threshold
 is therefore `g * 0.2794 / 0.30`, approximately **9.13 m/s² (0.93 g)**. This is a
 quasistatic reference, not a guarantee against transient tipping.
@@ -142,3 +143,5 @@ adding fictitious suspension to hide the symptom.
 Compact observations are in `artifacts/tipping-diagnosis.json`. The temporary
 friction change was reverted and the original production binary/field-collider
 GUI restored. No production physics or control parameters changed in this diagnosis.
+
+The numerical tables and tipping diagnosis above predate the low bumper collision shell. They are retained as historical evidence; floor contact with the new bumper can change the tipping response. See [bumper contact](bumper-contact.md) for current geometry and checks.

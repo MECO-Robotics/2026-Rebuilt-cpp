@@ -133,13 +133,15 @@ AdvantageScope's 3D view to see tipping. The 2D drive pose cannot show it.
 See [the rotation investigation](docs/simulation-rotation.md) for the observed
 wheel-speed/heading mismatch and strengthened physical-turn check.
 The unshifted physics body pose is published separately at
-`/Simulation/PhysicsBodyTruth` (0.300 m at the configured fixed module/body
+`/Simulation/PhysicsBodyTruth` (0.0762 m at the configured fixed module/body
 geometry on flat ground). Physics validation scripts use that raw pose. The model-origin
 offset follows chassis rotation and preserves bump/airborne height changes.
 
 The swerve modules are hard mounted. The rigid wheel-contact model has no
 vertical springs, dampers, suspension travel or load-dependent sag. A temporary
 `RigidWheelContactPhysics.cpp` compatibility replacement integrates upstream
-MecoSimulation commit `a8bea08` while the pinned 2026.0.8 package still contains
+MecoSimulation commit `d3f125e` (rigid support plus bumper shell) while the pinned 2026.0.8 package still contains
 the old spring model. Legacy suspension fields in its headers are unused by
 this replacement. See [the rigid-contact correction](docs/rigid-wheel-contact.md).
+
+The [bumper contact model](docs/bumper-contact.md) uses a hollow perimeter with a 0.25-inch floor gap. It contacts carpet, bumps and field structures; the requested low gap catches the leading bump plate. The body origin moved to bumper centre while the assumed physical CoM remains 0.30 m. First desktop builds fetch hash-verified, pinned Jolt headers for the compatibility implementation.

@@ -8,7 +8,7 @@ The earlier display-frame correction did not address that modeling error.
 ## Corrected physical model
 
 The wheel contact points are fixed relative to the chassis by the module locations
-and geometric `rideHeight` (0.300 m body-origin height here). Full3D contact queries
+and geometric `rideHeight` (now 0.0762 m at bumper centre; see [bumper contact](bumper-contact.md)). Full3D contact queries
 find supporting terrain. A unilateral normal-impulse solve shares ground reactions
 among contacting wheels, accounting for mass, inertia, center of mass, orientation,
 contact lever arms and gravity. Reactions can push but cannot pull a wheel onto the
@@ -38,8 +38,8 @@ same way as the existing Phoenix hardware-feedback compatibility bridge. All
 methods must remain together to avoid pulling in the old plant. Remove this file
 when updating to a published Simulation version containing the rigid-contact fix.
 
-`/Simulation/PhysicsBodyTruth` now settles at its fixed 0.300 m geometric height,
-independent of robot load. `/Simulation/RobotTruth` applies a rigid local -0.300 m
+`/Simulation/PhysicsBodyTruth` now settles at its fixed 0.0762 m geometric height,
+independent of robot load. `/Simulation/RobotTruth` applies a rigid local -0.0762 m
 model-origin offset and therefore reads approximately zero on level carpet. The
 offset rotates with the chassis; bump height, pitch, roll and overturning remain
 visible. The previous mass/spring-compression offset has been removed.
@@ -62,3 +62,5 @@ visible. The previous mass/spring-compression offset has been removed.
 Evidence is in `artifacts/rigid-contact-runtime.json` and
 `artifacts/rigid-contact-validation.txt`. These are numerical desktop simulation
 checks; they do not establish physical tip limits or tire calibration.
+
+Historical 0.300 m body-origin and bump-crossing results above predate the [low bumper shell](bumper-contact.md). The fixed contact model is unchanged; its body origin is now at bumper centre with an offset CoM.

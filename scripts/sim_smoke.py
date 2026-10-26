@@ -32,6 +32,7 @@ async def exercise(args):
     pose = instance.getStructTopic("/AdvantageScope/Drive/Pose", Pose2d).subscribe(Pose2d(), ntcore.PubSubOptions(periodic=.02))
     module_states = instance.getStructArrayTopic("/AdvantageScope/Drive/ModuleStates", SwerveModuleState).subscribe([], ntcore.PubSubOptions(periodic=.02))
     module_targets = instance.getStructArrayTopic("/AdvantageScope/Drive/ModuleTargets", SwerveModuleState).subscribe([], ntcore.PubSubOptions(periodic=.02))
+    grounded = instance.getDoubleTopic("/SmartDashboard/FieldSimulation/GroundedBodyHeight").subscribe(.30)
     truth = instance.getRawTopic("/Simulation/PhysicsBodyTruth").subscribe("struct:Pose3d", b"", ntcore.PubSubOptions(periodic=.02))
     async with connect(f"ws://127.0.0.1:{args.hal_port}/wpilibws", max_size=None) as websocket:
         async def drain():
@@ -186,7 +187,7 @@ async def exercise(args):
                 # Wheel encoders include tire slip and steering/drive coupling during
                 # reorientation. Bound actual chassis motion using Jolt truth.
                 "small_input_peak_speed_bounded": evidence["samples"]["small_forward"]["peakPhysicalSpeed"] is not None and evidence["samples"]["small_forward"]["peakPhysicalSpeed"]<max(.35,args.max_speed*max(0.,(args.small_input-.1)/.9)*1.5),
-                "small_input_truth_stays_above_floor": bool(evidence["samples"]["small_forward"]["truthZRange"] and min(evidence["samples"]["small_forward"]["truthZRange"])>.20 and max(evidence["samples"]["small_forward"]["truthZRange"])<.40),
+                "small_input_truth_stays_above_floor": bool(evidence["samples"]["small_forward"]["truthZRange"] and min(evidence["samples"]["small_forward"]["truthZRange"])>grounded.get()-.01 and max(evidence["samples"]["small_forward"]["truthZRange"])<grounded.get()+.10),
                 "small_turn_rate_tracks_deadband": abs(small_turn[2]-args.max_angular_rate*max(0.,(args.small_input-.1)/.9))<max(.15,args.max_angular_rate*max(0.,(args.small_input-.1)/.9)*.50),
                 "small_turn_rate_bounded": evidence["samples"]["small_turn"]["peakAngularRate"]<max(.65,args.max_angular_rate*max(0.,(args.small_input-.1)/.9)*1.5),
                 "forward_velocity": forward[0]>.2,

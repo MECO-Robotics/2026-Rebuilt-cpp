@@ -25,6 +25,7 @@ async def exercise():
     pose = client.getStructTopic('/AdvantageScope/Drive/Pose', Pose2d).subscribe(Pose2d(), options)
     truth = client.getStructTopic('/Simulation/PhysicsBodyTruth', Pose3d).subscribe(Pose3d(), options)
     model = client.getStructTopic('/Simulation/RobotTruth', Pose3d).subscribe(Pose3d(), options)
+    grounded = client.getDoubleTopic('/SmartDashboard/FieldSimulation/GroundedBodyHeight').subscribe(.30)
     count = client.getDoubleTopic('/SmartDashboard/FieldSimulation/ColliderCount').subscribe(0)
     result = {'transport': 'localhost HAL websocket + NT4', 'samples': {}, 'checks': {}}
     async with connect('ws://127.0.0.1:3300/wpilibws', max_size=None) as websocket:
@@ -58,9 +59,10 @@ async def exercise():
             result['samples']['startup'] = [initial.X(), initial.Y(), initial.Z()]
             result['samples']['startup_model_pose'] = [model.get().X(),model.get().Y(),model.get().Z()]
             result['checks']['grounded_model_height_is_zero'] = model.getAtomic().time>0 and abs(model.get().Z())<.003 and math.hypot(model.get().X()-initial.X(),model.get().Y()-initial.Y())<.08
-            result['checks']['hard_mounted_body_has_no_static_sag'] = abs(initial.Z()-.30)<.001
+            result['checks']['hard_mounted_body_has_no_static_sag'] = abs(initial.Z()-grounded.get())<.001
             result['collider_count'] = count.get()
-            result['checks']['startup_clear_blue_spawn'] = math.hypot(initial.X()-3.65, initial.Y()-.639318)<.08 and .25<initial.Z()<.35
+            result['grounded_body_height_m'] = grounded.get()
+            result['checks']['startup_clear_blue_spawn'] = math.hypot(initial.X()-3.65, initial.Y()-.639318)<.08 and abs(initial.Z()-grounded.get())<.01
             for red in (False, True):
                 label = 'red_reset' if red else 'blue_reset'
                 rows = await reset_scene(red)
@@ -75,7 +77,7 @@ async def exercise():
             result['samples']['turn_at_spawn'] = rotation
             yaw_change = sum(math.remainder(b['truth'][-1]-a['truth'][-1], 2*math.pi)
                              for a,b in zip(rotation,rotation[1:]))
-            result['checks']['can_turn_at_default_spawn'] = yaw_change>1.5 and min(r['truth'][2] for r in rotation)>.20
+            result['checks']['can_turn_at_default_spawn'] = yaw_change>1.5 and min(r['truth'][2] for r in rotation)>grounded.get()-.01
             await reset_scene(False)
             wall = await hold(2., enabled=True, lateral=-.35)
             result['samples']['south_wall'] = wall
@@ -94,10 +96,12 @@ async def exercise():
                 await hold(.04,enabled=True,forward=stick(1.5*dx),lateral=stick(1.5*dy))
             await hold(.4,enabled=True)
             bump=await hold(8.,enabled=True,forward=.18)
-            result['samples']['rigid_bump_crossing']=bump
-            result['checks']['rigid_wheels_cross_bump_and_return_to_fixed_height'] = (
-                max(r['truth'][2] for r in bump)>.34 and bump[-1]['truth'][0]>5.7 and
-                abs(bump[-1]['truth'][2]-.30)<.01 and
+            result['samples']['bumper_bump_approach']=bump
+            # At a 0.25-inch floor gap, the bumper meets the bump's leading
+            # plate before the wheels. The physical shell must block penetration.
+            result['checks']['low_bumper_contacts_bump_before_wheels_climb'] = (
+                3.55<bump[-1]['truth'][0]<3.72 and max(r['truth'][0] for r in bump)<3.75 and
+                abs(bump[-1]['truth'][2]-grounded.get())<.01 and
                 max(abs(bump[-1]['truth'][i]) for i in (3,4))<.1)
         finally:
             await reset_scene(False)

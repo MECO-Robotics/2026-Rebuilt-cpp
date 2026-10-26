@@ -1,0 +1,4 @@
+Original world implementation, new bumper shell regression
+Exit: -6
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Bumper contact contract at line 31
