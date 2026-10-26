@@ -223,7 +223,21 @@
       "windows_release": "passed"
     }
   },
-  "public_maven": "pending",
+  "public_maven": {
+    "status": "published_and_checksums_verified_by_release_ci",
+    "descriptor_url": "https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json",
+    "manifest_sha256": "f909fd6486b909aa9d9b0ecda69577c104ded956584271e3b336d932b29ddbab",
+    "source_commit": "de0b1a541907b0d7ad0f3526c660ea41e770f31e",
+    "current_artifacts": {
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-headers.zip": "800c2b0d271ce16f718fe8a0f8b4a19f0a353117663aaf55755250bd3c36126c",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-linuxx86-64static.zip": "61cda62f69d8a66950b8e2ba8d068cb0fe8105cccadeb499e6477951da586ace",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-linuxx86-64staticdebug.zip": "5ae0cc716b8e77059666262ba48f728151d2eec40fd9b943a4d6bb9db5e458ad",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-sources.zip": "e3d6494412f41fca6dc4c8ba90819db68965eca5f21661d47308c59a4bb8ebc7",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-windowsx86-64static.zip": "2be420f0ba62fe55450207d1ea25428fad684bf80044d2311e20e569756ff74a",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9-windowsx86-64staticdebug.zip": "0cc21ac2da501f1a9c83ea7e467119f3c556397e7b959dc4f9a1683ec8578e25",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.9/meco-simulation-wpilib-cpp-2026.0.9.pom": "06addb108d5c04abe3a1a783ccfe3b62045774eafa0a3ee88dfa362df6ba3eda"
+    }
+  },
   "raw_capture_directory": "/home/brian/.cache/rebuilt-sim-tmp",
   "remaining_model_limits": [
     "Existing square and azimuth-travel tracking failures are not resolved by packaging.",
@@ -232,6 +246,6 @@
   "release_ci": {
     "run_id": 40392031244,
     "url": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40392031244",
-    "status": "in_progress"
+    "status": "public_deployed_consumer_checks_running"
   }
 }
