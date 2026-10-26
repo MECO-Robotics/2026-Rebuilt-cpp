@@ -107,6 +107,23 @@ halves its deflection. With 2 m/s rolling it travels about 44.7 degrees over the
 one-second steering interval. These are numerical model observations, not robot
 measurements.
 
+The recorded desktop run is summarized in
+[`azimuth-load-validation.json`](../artifacts/azimuth-load-validation.json), with
+the measured contact envelope in
+[`azimuth-load-envelope.png`](../artifacts/azimuth-load-envelope.png).
+All four native build targets, 26 GoogleTests per desktop configuration, five
+portable physics suites, all nine field checks, and the braking and bumper-ground
+checks passed. The wall check uses a bounded eight-second approach and projects
+the bumper corners onto the wall normal before assessing contact.
+
+Both circle joystick patterns passed. The abrupt square pattern **failed** the
+unchanged limits: velocity error p95 was 0.824 m/s (limit 0.5), azimuth error p95
+was 0.325 rad (limit 0.25), and uncommanded yaw was 0.169 rad (limit 0.15).
+This remains a tracking limitation; the model is not fully tuned for square
+corners. During the contact telemetry capture, all 130 unloaded module samples
+had zero ground torque and zero stored twist; steering plant current stayed at
+or below 30 A. Robot-loop period p95 was 20.026 ms, maximum 20.602 ms.
+
 The patch length, elastic travel, CoF, inertia and pressure shape remain unmeasured.
 There is no resolved spike geometry, pressure-area growth with load, tire trail,
 camber model or temperature/wear dependence. Sideways slip consumes the shared

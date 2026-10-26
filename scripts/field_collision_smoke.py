@@ -79,9 +79,28 @@ async def exercise():
                              for a,b in zip(rotation,rotation[1:]))
             result['checks']['can_turn_at_default_spawn'] = yaw_change>1.5 and min(r['truth'][2] for r in rotation)>grounded.get()-.01
             await reset_scene(False)
-            wall = await hold(2., enabled=True, lateral=-.35)
+            def bumper_south_clearance(row):
+                # Project the actual shell's outer corners onto the wall normal.
+                _, y, _, roll, pitch, yaw = row['truth']
+                ryx=math.sin(yaw)*math.cos(pitch)
+                ryy=math.sin(yaw)*math.sin(pitch)*math.sin(roll)+math.cos(yaw)*math.cos(roll)
+                ryz=math.sin(yaw)*math.sin(pitch)*math.cos(roll)-math.cos(yaw)*math.sin(roll)
+                return y-.43*(abs(ryx)+abs(ryy))-.06985*abs(ryz)
+            # Contact acceptance waits for a bounded physical approach instead
+            # of assuming an unloaded 90-degree azimuth step finishes in 2 s.
+            wall=[]
+            approach=time.monotonic()
+            while time.monotonic()-approach<8.:
+                wall.extend(await hold(.1, enabled=True, lateral=-.35))
+                if bumper_south_clearance(wall[-1])<.025:
+                    break
+            wall.extend(await hold(.5, enabled=True, lateral=-.35))
             result['samples']['south_wall'] = wall
-            result['checks']['actual_wall_contact_blocks_motion'] = .35<wall[-1]['truth'][1]<.52 and min(r['truth'][1] for r in wall)>.30
+            result['wall_approach_s']=time.monotonic()-approach
+            clearances=[bumper_south_clearance(row) for row in wall]
+            result['wall_bumper_clearance_m']={'final':clearances[-1], 'minimum':min(clearances)}
+            result['checks']['actual_wall_contact_blocks_motion'] = (
+                -.01<clearances[-1]<.025 and min(clearances)>-.01)
             result['checks']['field_installed'] = count.get()>0
             await reset_scene(False)
             # Approach the blue lower bump through clear alliance-zone space.

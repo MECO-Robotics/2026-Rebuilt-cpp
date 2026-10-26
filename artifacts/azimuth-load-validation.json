@@ -1,0 +1,150 @@
+{
+  "physics_model_commit": "8eff394",
+  "physics_tests_commit": "2f29177",
+  "season_commit": "f08fffbdea3f8687046bc51581cf8b0446e1e743",
+  "configuration": {
+    "mass_kg": 67.6,
+    "tire_cof": 2.1,
+    "wheel_width_m": 0.0508,
+    "patch_length_m": 0.02,
+    "shear_travel_m": 0.001,
+    "steering_kp": 100,
+    "steering_kd": 0.5,
+    "drive_stator_a": 50,
+    "steer_stator_a": 30
+  },
+  "build": {
+    "all_four_native_targets": "passed",
+    "desktop_google_tests_each_configuration": 26,
+    "portable_ctest_suites_passed": 5
+  },
+  "patterns": {
+    "passed": false,
+    "checks": {
+      "square": false,
+      "circle": true,
+      "circle_with_yaw": true
+    },
+    "metrics": {
+      "square": {
+        "field_velocity_error_p95_mps": 0.8241109008548605,
+        "physical_vs_encoder_velocity_p95_mps": 0.2553031953258554,
+        "azimuth_error_p95_rad": 0.3254251117214295,
+        "heading_error_max_rad": 0.008905896299370247,
+        "pose_error_max_m": 0.10457086513891684,
+        "uncommanded_yaw_max_rad": 0.1690822640361582,
+        "truth_z_range_m": [
+          0.07592962682247162,
+          0.07620000839233398
+        ]
+      },
+      "circle": {
+        "field_velocity_error_p95_mps": 0.13113755199967045,
+        "physical_vs_encoder_velocity_p95_mps": 0.08466057672430023,
+        "azimuth_error_p95_rad": 0.03629487383733432,
+        "heading_error_max_rad": 0.00121464905888901,
+        "pose_error_max_m": 0.08048251909156849,
+        "uncommanded_yaw_max_rad": 0.04219621134308178,
+        "truth_z_range_m": [
+          0.07596327364444733,
+          0.07614961266517639
+        ]
+      },
+      "circle_with_yaw": {
+        "field_velocity_error_p95_mps": 0.09922150429242386,
+        "physical_vs_encoder_velocity_p95_mps": 0.08307397534173777,
+        "azimuth_error_p95_rad": 0.03858072611580665,
+        "heading_error_max_rad": 0.02440206771314335,
+        "pose_error_max_m": 0.06706311847929505,
+        "uncommanded_yaw_max_rad": null,
+        "truth_z_range_m": [
+          0.07598128914833069,
+          0.07615578174591064
+        ]
+      }
+    },
+    "binary_sha256": "4f2049ccfe99ea3e3f023247af2494995c0e439ca8936f052e3d4b231554fed6"
+  },
+  "dynamics": {
+    "passed": true,
+    "checks": {
+      "release": true,
+      "reverse": true,
+      "disabled_brake": true
+    },
+    "metrics": {
+      "release": {
+        "peak_speed_mps": 5.229015107497238,
+        "accel_0p5_to_4_s": 0.8802449999999999,
+        "brake_4_to_0p5_s": 0.83938,
+        "stop_after_command_s": 1.32018,
+        "stop_distance_m": 3.42645263671875
+      },
+      "reverse": {
+        "peak_speed_mps": 5.222158791209442,
+        "accel_0p5_to_4_s": 0.8602980000000001,
+        "brake_4_to_0p5_s": 0.8597889999999999,
+        "stop_after_command_s": 1.299939,
+        "stop_distance_m": 3.6026573181152344
+      },
+      "disabled_brake": {
+        "peak_speed_mps": 5.242485959627503,
+        "accel_0p5_to_4_s": 0.8603900000000001,
+        "brake_4_to_0p5_s": 0.559667,
+        "stop_after_command_s": 1.000126,
+        "stop_distance_m": 2.635122776031494
+      }
+    },
+    "binary_sha256": "4f2049ccfe99ea3e3f023247af2494995c0e439ca8936f052e3d4b231554fed6"
+  },
+  "bumper_ground_stress": {
+    "passed": true,
+    "metrics": {
+      "max_tilt_deg": 4.765218425491688,
+      "minimum_bumper_corner_height_m": -0.004037183121199744,
+      "approach_physical_speed_mps": 4.893944247126101
+    },
+    "binary_sha256": "4f2049ccfe99ea3e3f023247af2494995c0e439ca8936f052e3d4b231554fed6",
+    "scope": "Bumper-ground catch, not tracking acceptance"
+  },
+  "field": {
+    "passed": true,
+    "checks": {
+      "grounded_model_height_is_zero": true,
+      "hard_mounted_body_has_no_static_sag": true,
+      "startup_clear_blue_spawn": true,
+      "blue_reset_matches_truth_and_odometry": true,
+      "red_reset_matches_truth_and_odometry": true,
+      "can_turn_at_default_spawn": true,
+      "actual_wall_contact_blocks_motion": true,
+      "field_installed": true,
+      "low_bumper_contacts_bump_before_wheels_climb": true
+    },
+    "wall_approach_s": 1.1476456460004556,
+    "wall_bumper_clearance_m": {
+      "final": -0.0005554389850480084,
+      "minimum": -0.0006348449684194368
+    },
+    "binary_sha256": "d921edd85811d46d8bf459216da5701eec893196523b81f6f9ee05da976edcf3"
+  },
+  "telemetry": {
+    "samples": 2077,
+    "max_ground_torque_nm": 11.00307457530475,
+    "ground_torque_p95_nm": 4.2144436146720565,
+    "plant_steer_current_p95_a": 25.180860799242126,
+    "plant_steer_current_max_a": 30.0,
+    "unloaded_module_samples": 130,
+    "unloaded_max_ground_torque_nm": 0.0,
+    "unloaded_max_twist_rad": 0.0,
+    "max_torsion_budget_fraction": 0.9999882834592431,
+    "robot_loop_period_p95_ms": 20.026,
+    "robot_loop_period_max_ms": 20.602,
+    "scope": "Plant diagnostic fields, not native Phoenix current measurements; loop periods include physics and any host load"
+  },
+  "limits": [
+    "Square remains outside existing azimuth/corner-speed/yaw tracking limits; both circle checks pass.",
+    "Patch dimensions and elastic travel are estimates, not measured WCP tire parameters.",
+    "Plant currents include the legacy friction-voltage approximation; they are not native Phoenix current measurements."
+  ],
+  "raw_capture_directory": "/home/brian/.cache/rebuilt-sim-tmp"
+}
