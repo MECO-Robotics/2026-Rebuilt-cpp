@@ -115,3 +115,9 @@ Current tire-CoF 2.1 validation is summarized in
 dynamics modes, bumper-ground stress and all nine field checks pass. The ground
 stress peak is 5.26 degrees; release stopping distance is 3.34 m. This check does
 not claim to resolve the separate square yaw-drift limitation.
+
+The 2026.0.10 square/circle repeat is recorded in
+[bump-contact-validation-2026.0.10.json](../artifacts/bump-contact-validation-2026.0.10.json).
+Both circle checks pass. The square again fails its unchanged yaw-drift limit;
+this run reaches 1.10 rad. Ground stress remains a separate passing contact check
+(4.33 degrees peak, 1.31 mm actual-surface penetration).

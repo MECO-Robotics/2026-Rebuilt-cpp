@@ -33,7 +33,10 @@ are invalid. The evidence helper checks listening socket owners and rejects
 mismatched endpoints before sending input. This option does not alter or stop
 another simulator.
 
-The [validation record](../artifacts/vendordep-compartmentalization-2026.0.9.json)
+The historical 2026.0.9 [validation record](../artifacts/vendordep-compartmentalization-2026.0.9.json)
 records all four clean Linux/Windows consumer runs, the robot's 28 tests per desktop
 configuration, nine field checks, and the shared battery smoke. Public-package
 verification is recorded separately from staged local-Maven checks.
+
+The 2026.0.10 bump contact release and joystick checks are recorded in
+[bump-contact-validation-2026.0.10.json](../artifacts/bump-contact-validation-2026.0.10.json).
