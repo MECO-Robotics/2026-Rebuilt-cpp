@@ -30,7 +30,7 @@ physics libraries. Choreo remains a separate season dependency.
 ./gradlew simulateNative
 ```
 
-The build includes desktop and roboRIO debug/release executables and GoogleTest regressions. The current native suite retains six focused regressions: battery convergence, hood stability, physical-pose projectile launching, lifted-wheel contact load, disabled system-check refusal, and system-check ownership cancellation. Historical validation counts below describe earlier suites; Python simulator smoke scripts remain separate integration checks. Deployment is `./gradlew deploy` and writes to team 8324's roboRIO. This port has not been deployed or commissioned on hardware.
+The build includes desktop and roboRIO debug/release executables and GoogleTest regressions. The native suite includes focused regressions for battery convergence, hood stability, physical-pose projectile launching, fuel contacts, lifted-wheel contact load, disabled system-check refusal, and system-check ownership cancellation. Historical validation counts below describe earlier suites; Python simulator smoke scripts remain separate integration checks. Deployment is `./gradlew deploy` and writes to team 8324's roboRIO. This port has not been deployed or commissioned on hardware.
 
 Desktop simulation now enables the REBUILT field colliders by default. Startup
 and Back/View reset use a clear alliance start, not `(0,0)`. See
@@ -186,8 +186,14 @@ ComponentPoses remain robot-relative transforms for AdvantageScope's component
 child; hopper and projectile topics are field-relative game pieces.
 
 The Java MapleSim runtime is replaced by this project's existing native
-MecoSimulation drive/field physics and ideal fuel model. This port does not add
-MapleSim's rigid-body fuel contacts or Java rack wall-contact compliance.
+MecoSimulation drive/field physics and a particle fuel model. Free fuel uses
+5 ms substeps with sphere-to-sphere impulses and a four-sided bumper ring,
+transformed by the full physics pose and contact-point velocity. Contacts use
+estimated restitution (0.25 for bumpers, 0.30 for fuel); bumper dimensions match
+the current robot configuration. Bumpers push fuel without applying reaction
+forces to the drivetrain. Fuel can lift off the floor after contact; stored hopper
+fuel remains a visualization. Field-structure fuel contacts and Java rack
+wall-contact compliance are not modeled. These estimates are not hardware calibration.
 
 With the headless simulator running, verify animation through the actual
 controller/measurement/NT path using the same Python dependencies as above:
