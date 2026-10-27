@@ -30,7 +30,7 @@ physics libraries. Choreo remains a separate season dependency.
 ./gradlew simulateNative
 ```
 
-The build includes desktop and roboRIO debug/release executables and GoogleTest regressions. Deployment is `./gradlew deploy` and writes to team 8324's roboRIO. This port has not been deployed or commissioned on hardware.
+The build includes desktop and roboRIO debug/release executables and GoogleTest regressions. The current native suite retains six focused regressions: battery convergence, hood stability, physical-pose projectile launching, lifted-wheel contact load, disabled system-check refusal, and system-check ownership cancellation. Historical validation counts below describe earlier suites; Python simulator smoke scripts remain separate integration checks. Deployment is `./gradlew deploy` and writes to team 8324's roboRIO. This port has not been deployed or commissioned on hardware.
 
 Desktop simulation now enables the REBUILT field colliders by default. Startup
 and Back/View reset use a clear alliance start, not `(0,0)`. See

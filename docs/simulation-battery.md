@@ -36,7 +36,7 @@ voltage; it does not implement independent brownout motor-output suppression.
 This remains a delayed approximation, not an implicit electrical circuit solver.
 Extreme loads and brownout recovery require separate validation.
 
-Validation uses the native shared-runtime load/sag/recovery regression and the
+Historical validation used the native shared-runtime load/sag/recovery regression and the
 actual HAL joystick/mechanism path:
 
 ```bash
