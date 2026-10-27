@@ -31,3 +31,37 @@ TEST(FuelSimulation,LaunchUsesPhysicsPoseAndFullMotionInsteadOfOdometry){
  EXPECT_NEAR(actual.position.y,muzzle.Y().value()+initialVelocity.Y().value()*dt,1e-9);
  EXPECT_NEAR(actual.position.z,muzzle.Z().value()+initialVelocity.Z().value()*dt-.5*g*dt*dt,1e-9);
 }
+TEST(FuelSimulation,BumperPushUsesPhysicsPoseAndSurfaceVelocity){
+ FuelModel model;
+ // Robot faces +Y; the front bumper pushes fuel along field +Y.
+ model.AddFloorFuel({2,3.48});
+ FuelInputs input;input.robot={20,20,0};
+ input.physics=FuelRobotState{{units::meter_t{2},units::meter_t{3},units::meter_t{0},frc::Rotation3d{units::radian_t{0},units::radian_t{0},units::radian_t{kPi/2}}},{0,1,0},{},{}};
+ model.Step(.02,input);
+ ASSERT_EQ(model.FloorFuel().size(),1u);
+ const auto& ball=model.FloorFuel()[0];
+ EXPECT_GT(ball.position.y,3.49);
+ EXPECT_GT(ball.velocity.y,1);
+ EXPECT_NEAR(ball.position.x,2,1e-9);
+ // Raising the chassis leaves floor fuel below the bumper, with no phantom hit.
+ model.Reset();model.AddFloorFuel({2,3.48});
+ input.physics->pose=frc::Pose3d{units::meter_t{2},units::meter_t{3},units::meter_t{.4},input.physics->pose.Rotation()};
+ model.Step(.02,input);
+ ASSERT_EQ(model.FloorFuel().size(),1u);
+ EXPECT_NEAR(model.FloorFuel()[0].position.y,3.48,1e-9);
+ EXPECT_NEAR(model.FloorFuel()[0].velocity.y,0,1e-9);
+}
+TEST(FuelSimulation,FuelTransfersMotionAndSeparatesOverlaps){
+ FuelModel model;model.AddFloorFuel({.48,0});model.AddFloorFuel({.62,0});
+ FuelInputs input;input.vx=1;
+ for(int i=0;i<5;++i)model.Step(.02,input);
+ ASSERT_EQ(model.FloorFuel().size(),2u);
+ const auto& balls=model.FloorFuel();
+ EXPECT_GT(balls[1].position.x,.62);
+ EXPECT_GT(balls[1].velocity.x,0);
+ EXPECT_GE(balls[1].position.x-balls[0].position.x,5.5*.0254-1e-6);
+ // Coincident centres must resolve without a divide-by-zero.
+ model.Reset();model.AddFloorFuel({2,2});model.AddFloorFuel({2,2});model.Step(.02,{});
+ ASSERT_EQ(model.FloorFuel().size(),2u);
+ EXPECT_NEAR(model.FloorFuel()[1].position.x-model.FloorFuel()[0].position.x,5.5*.0254,1e-9);
+}

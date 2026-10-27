@@ -32,8 +32,10 @@ namespace season
     Alliance alliance = Alliance::Blue;
     std::optional<FuelRobotState> physics;
   };
-  // Ideal gravity-only balls: no rigid-body robot/structure collisions, drag,
-  // backspin, funnel capture, or flywheel load. Seeded randomness is repeatable.
+  // Gravity-driven balls with estimated bumper and equal-mass fuel contacts.
+  // Robot motion is prescribed (no fuel reaction force on the drivetrain).
+  // No field-structure contacts, drag, spin forces, or flywheel load.
+  // Seeded launch randomness is repeatable.
   class FuelModel
   {
   public:
