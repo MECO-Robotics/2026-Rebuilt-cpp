@@ -1,6 +1,10 @@
 #pragma once
 #include "season/SeasonCommands.h"
 #include <random>
+#include <optional>
+#include <frc/geometry/struct/Pose3dStruct.h>
+#include <networktables/StructArrayTopic.h>
+#include <networktables/StructTopic.h>
 #include <vector>
 namespace season
 {
@@ -12,6 +16,13 @@ namespace season
   {
     FuelPoint position, velocity;
   };
+  struct FuelRobotState
+  {
+    // Same floor-referenced pose as the Remy visualization. Velocities are
+    // field relative, measured at the COM; COM offset is in this local frame.
+    frc::Pose3d pose;
+    FuelPoint velocity, angularVelocity, centerOfMass;
+  };
   struct FuelInputs
   {
     Pose robot;
@@ -19,6 +30,7 @@ namespace season
     double vx{}, vy{}, omega{}, rackMetres{}, hoodRotations{}, flywheelRps{};
     bool collecting = false, feeding = false;
     Alliance alliance = Alliance::Blue;
+    std::optional<FuelRobotState> physics;
   };
   // Ideal gravity-only balls: no rigid-body robot/structure collisions, drag,
   // backspin, funnel capture, or flywheel load. Seeded randomness is repeatable.
@@ -37,6 +49,7 @@ namespace season
     const std::vector<FuelParticle> &FloorFuel() const { return floor_; }
     const std::vector<FuelParticle> &Projectiles() const { return airborne_; }
     static std::vector<FuelPoint> HopperCenters(int count, double extension, Pose robot = {});
+    static std::vector<FuelPoint> HopperCenters3d(int count, double extension, const frc::Pose3d &robot);
     static double LaunchPitch(double hoodRotations);
 
   private:
@@ -53,7 +66,7 @@ namespace season
   {
   public:
     FuelSimulation(Mechanisms mechanisms, base::Drive &drive);
-    void Periodic(double dt = .02);
+    void Periodic(double dt = .02, std::optional<FuelRobotState> physics = std::nullopt);
     void Reset();
     FuelModel &Model() { return model_; }
 
@@ -61,5 +74,8 @@ namespace season
     Mechanisms mechanisms_;
     base::Drive &drive_;
     FuelModel model_;
+    nt::StructPublisher<frc::Pose3d> robotPosePublisher_;
+    nt::StructArrayPublisher<frc::Pose3d> componentsPublisher_;
+    nt::StructArrayPublisher<frc::Pose3d> fuelPublisher_, hopperPublisher_, projectilesPublisher_;
   };
 }

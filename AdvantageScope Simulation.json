@@ -1,0 +1,147 @@
+{
+  "version": "26.0.0",
+  "hubs": [
+    {
+      "x": 80,
+      "y": 60,
+      "width": 1320,
+      "height": 900,
+      "state": {
+        "sidebar": {
+          "width": 330,
+          "expanded": [
+            "/Visualization",
+            "/FieldSimulation",
+            "/AdvantageScope/Drive"
+          ]
+        },
+        "tabs": {
+          "selected": 1,
+          "tabs": [
+            {
+              "type": 0,
+              "title": "",
+              "controller": null,
+              "controllerUUID": "mecoCombinedRobotLayout00",
+              "renderer": "",
+              "controlsHeight": 0
+            },
+            {
+              "type": 3,
+              "title": "REBUILT C++ | Remy 3D",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "robot",
+                    "logKey": "NT:/Visualization/RobotRemy/RobotPose",
+                    "logType": "Pose3d",
+                    "visible": true,
+                    "options": {
+                      "model": "Remy"
+                    }
+                  },
+                  {
+                    "type": "component",
+                    "logKey": "NT:/Visualization/RobotRemy/ComponentPoses",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {}
+                  },
+                  {
+                    "type": "gamePiece",
+                    "logKey": "NT:/FieldSimulation/FuelPositions",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {
+                      "variant": "Fuel"
+                    }
+                  },
+                  {
+                    "type": "gamePiece",
+                    "logKey": "NT:/FieldSimulation/FuelProjectilePositions",
+                    "logType": "Pose3d[]",
+                    "visible": true,
+                    "options": {
+                      "variant": "Fuel"
+                    }
+                  }
+                ],
+                "game": "FRC:2026 Field"
+              },
+              "controllerUUID": "mecoCombinedRobotLayout01",
+              "renderer": {
+                "cameraIndex": -1,
+                "orbitFov": 50,
+                "cameraPosition": [
+                  8.77,
+                  8.5,
+                  16.0
+                ],
+                "cameraTarget": [
+                  8.77,
+                  0.75,
+                  4.0
+                ]
+              },
+              "controlsHeight": 285
+            },
+            {
+              "type": 9,
+              "title": "REBUILT C++ | Swerve Drive",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "states",
+                    "logKey": "NT:/AdvantageScope/Drive/ModuleStates",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "states",
+                    "logKey": "NT:/AdvantageScope/Drive/ModuleTargets",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ffff",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "chassisSpeeds",
+                    "logKey": "NT:/AdvantageScope/Drive/ChassisSpeeds",
+                    "logType": "ChassisSpeeds",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000"
+                    }
+                  },
+                  {
+                    "type": "chassisSpeeds",
+                    "logKey": "NT:/AdvantageScope/Drive/RequestedChassisSpeeds",
+                    "logType": "ChassisSpeeds",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ffff"
+                    }
+                  }
+                ],
+                "maxSpeed": 5,
+                "sizeX": 0.65,
+                "sizeY": 0.65,
+                "orientation": 1
+              },
+              "controllerUUID": "mecoCombinedRobotLayout02",
+              "renderer": null,
+              "controlsHeight": 200
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "satellites": []
+}

@@ -1,0 +1,13 @@
+{
+  "component_count": 6,
+  "rack_metres": 0.2999999999999985,
+  "rack_component_x": 0.29743345841214164,
+  "rack_component_z": -0.039157857666015275,
+  "floor_and_hopper_fuel_poses": 297,
+  "robot_xyz": [
+    3.6500000953674316,
+    0.6393179893493652,
+    -1.07765197737697e-08
+  ],
+  "passed": true
+}

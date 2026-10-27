@@ -1,0 +1,22 @@
+{
+  "stored": 15.0,
+  "first_hopper_local_xyz": [
+    -0.26015,
+    -0.27015,
+    0.24985000000000004
+  ],
+  "fuel_xyz_max_error_m": 0.0,
+  "hopper_xyz_max_error_m": 0.0,
+  "launched": 15.0,
+  "saw_projectiles": true,
+  "passed": true,
+  "binary_sha256": "f45d15d63c92931660bcc4c06e3f7014fcbeb898ef2ccb868919a1adc688c769",
+  "revision": "59b8c8fa3432f0629fd5fcb1799b29653bc697b9",
+  "working_tree_modified": true,
+  "runtime": "localhost desktop HAL websocket and NT4; field colliders disabled for free-space collection",
+  "native_checks": {
+    "passed": 9,
+    "new_regressions_failed_with_old_coordinate_behavior": 2
+  },
+  "limits": "Numerical transform and NT checks; no visual AdvantageScope acceptance or hardware calibration."
+}

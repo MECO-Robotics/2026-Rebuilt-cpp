@@ -372,8 +372,7 @@ void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 
 void RobotContainer::SimulationPeriodic()
 {
-  if (simulation_)
-    simulation_->Periodic();
+  std::optional<season::FuelRobotState> fuelRobotState;
 #ifndef __FRC_ROBORIO__
   if (auto truth = drive_.SimulationTruth())
   {
@@ -384,14 +383,24 @@ void RobotContainer::SimulationPeriodic()
       drive_.ResetPose(simulationResetPose_.TransformBy(frc::Transform2d{
           simulationResetPhysicalOrigin_, frc::Pose2d{units::meter_t{truth->x}, units::meter_t{truth->y},
                                                       frc::Rotation2d{units::radian_t{truth->yaw}}}}));
-    const auto q = simulationSession_->PhysicsTruth().body.pose.rotation;
+    const auto body = simulationSession_->PhysicsTruth().body;
+    const auto q = body.pose.rotation;
     const frc::Pose3d bodyPose{
-        units::meter_t{truth->x}, units::meter_t{truth->y}, units::meter_t{truth->z},
+        units::meter_t{body.pose.position.x}, units::meter_t{body.pose.position.y}, units::meter_t{body.pose.position.z},
         frc::Rotation3d{frc::Quaternion{q.w, q.x, q.y, q.z}}};
     simulationBodyPosePublisher_.Set(bodyPose);
-    simulationPosePublisher_.Set(season::simulation::FloorReferencedRobotPose(bodyPose, simulationGroundedBodyHeight_));
+    const auto visualPose = season::simulation::FloorReferencedRobotPose(bodyPose, simulationGroundedBodyHeight_);
+    simulationPosePublisher_.Set(visualPose);
+    const auto& config = drive_.Config().simulation;
+    fuelRobotState = season::FuelRobotState{
+        visualPose,
+        {body.linearVelocity.x, body.linearVelocity.y, body.linearVelocity.z},
+        {body.angularVelocity.x, body.angularVelocity.y, body.angularVelocity.z},
+        {config.centerOfMassX, config.centerOfMassY, config.centerOfMassZ + simulationGroundedBodyHeight_.value()}};
   }
 #endif
+  if (simulation_)
+    simulation_->Periodic(.02, fuelRobotState);
 }
 void RobotContainer::ResetSimulation()
 {

@@ -159,3 +159,45 @@ unused. See [the rigid-contact model](docs/rigid-wheel-contact.md),
 [azimuth load](docs/simulation-azimuth-load.md). Jolt headers, compilation and
 Debug/Release ABI settings belong entirely to the Simulation package; robot builds
 do not fetch or compile Jolt source.
+
+## Custom simulation assets
+
+The sibling Java project's `sim/Robot_Remy`, `sim/Robot_16thNote`, and
+`sim/Robot_16thNoteDetailed` assets are copied here unchanged. Install the desired
+folders in AdvantageScope's custom assets folder. Import
+`AdvantageScope Simulation.json` and connect to localhost (`127.0.0.1`) with the
+C++ desktop simulator running. The layout uses C++ NT topics, without the Java
+AdvantageKit prefix. The 16th Note models are included as reference assets;
+this robot publishes Remy animation only.
+
+`/Visualization/RobotRemy/RobotPose` uses the floor-referenced physics pose,
+including roll/pitch. `/Visualization/RobotRemy/ComponentPoses` animates the
+flywheel, hood, intake rack, kicker bar, hopper, and a stationary climber (no
+climber subsystem is configured). Transforms retain Java's CAD pivots and
+7.5 degree rack angle and use measured mechanism positions.
+`/FieldSimulation/FuelPositions`, `HopperFuelPositions`, and
+`FuelProjectilePositions` are typed `Pose3d[]` topics; the existing dashboard
+XYZ arrays remain available. FuelPositions includes floor and hopper balls.
+Each XYZ array contains the same field-relative positions as its corresponding
+typed topic. Hopper positions and projectile release transforms use the same
+full physics pose as RobotPose, including elevation, roll and pitch; launched
+fuel inherits the physics COM velocity and angular motion at the muzzle.
+ComponentPoses remain robot-relative transforms for AdvantageScope's component
+child; hopper and projectile topics are field-relative game pieces.
+
+The Java MapleSim runtime is replaced by this project's existing native
+MecoSimulation drive/field physics and ideal fuel model. This port does not add
+MapleSim's rigid-body fuel contacts or Java rack wall-contact compliance.
+
+With the headless simulator running, verify animation through the actual
+controller/measurement/NT path using the same Python dependencies as above:
+`python scripts/remy_visualization_smoke.py`. It deploys the rack, checks its
+component transform, and disables simulation inputs in cleanup. Results go to
+`artifacts/remy-visualization-validation.json`. Asset configs and GLBs were copied
+from Java source commit `e336f10169757882cf966979121be507ce4ec8b9`.
+
+Validation: desktop and roboRIO Debug/Release builds and all 31 tests in each
+desktop configuration passed. The local HAL/NT animation smoke passed at
+0.300 m rack extension. AdvantageScope GUI rendering remains unverified.
+The older `season_mechanism_smoke.py` is blocked with the current vendordep
+because its expected mechanism `/Voltage` dashboard topics are absent.
