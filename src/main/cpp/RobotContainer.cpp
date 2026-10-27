@@ -195,10 +195,9 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
      if(simulationResetFeedbackLoops_>0)simulationResetPose_=pose; });
   }
 #endif
-  drive_.SetDefaultCommand(drive_.Joystick([this]
-                                           { return season::simulation::ObserveJoystick(-controller_.GetLeftY()); }, [this]
-                                           { return -controller_.GetLeftX(); }, [this]
-                                           { return -controller_.GetRightX(); }));
+  drive_.SetDefaultCommand(frc2::cmd::RunEnd([this]
+                                           { DriveTeleop(false); }, [this]
+                                           { drive_.Stop(); }, {&drive_}));
 #ifndef __FRC_ROBORIO__
   // Full scene recovery (including an overturned body), separate from Start's
   // driver heading reset. This binding never exists on the physical robot.
@@ -212,7 +211,11 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   (controller_.Start() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
       .OnTrue(frc2::cmd::RunOnce([this]
-                                 { drive_.ResetPose(frc::Pose2d{drive_.Pose().Translation(), frc::Rotation2d{}}); }, {&drive_}));
+                                 {
+    // Driver forward is an operator frame, never a new field/vision pose.
+    const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
+    driverHeadingOffset_ = drive_.Pose().Rotation() - frc::Rotation2d{units::radian_t{red ? std::numbers::pi : 0}};
+  }, {&drive_}));
   (controller_.RightTrigger() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
       .WhileTrue(season::Acquire(m));
@@ -247,10 +250,9 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
                                  { rack_.SetPosition(0); }, {&rack_}));
   (controller_.A() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
-      .WhileTrue(drive_.Aim([this]
-                            { return -controller_.GetLeftY(); }, [this]
-                            { return -controller_.GetLeftX(); }, [this]
-                            {auto p=drive_.Pose();auto s=season::CalculateShot({p.X().value(),p.Y().value(),p.Rotation().Radians().value()},SelectTarget(),field_,frc::RobotBase::IsSimulation());return frc::Rotation2d{units::radian_t{s.headingRadians}}; }));
+      .WhileTrue(frc2::cmd::RunEnd([this]
+                            { DriveTeleop(true); }, [this]
+                            { drive_.Stop(); hood_.Stop(); shooter_.Stop(); }, {&drive_, &hood_, &shooter_}));
   (controller_.X() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
       .OnTrue(season::DriverHubPreset(m));
@@ -298,10 +300,10 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   pathplanner::NamedCommands::registerCommand("AutoAim", frc2::cmd::RunEnd([this]
                                                                            {
    auto p=drive_.Pose();auto target=SelectTarget();auto shot=season::CalculateShot({p.X().value(),p.Y().value(),p.Rotation().Radians().value()},target,field_,frc::RobotBase::IsSimulation());
+   hood_.SetPosition(shot.hoodRotations);shooter_.SetVelocity(shot.flywheelRps);
    double error=std::remainder(shot.headingRadians-p.Rotation().Radians().value(),2*std::numbers::pi);
    drive_.RunVelocity(frc::ChassisSpeeds{0_mps,0_mps,units::radians_per_second_t{std::clamp(7*error,-7.,7.)}}); }, [this]
-                                                                           { drive_.Stop(); }, {&drive_})
-                                                             .AlongWith(calculatedSpinUp()));
+                                                                           { drive_.Stop();hood_.Stop();shooter_.Stop(); }, {&drive_, &hood_, &shooter_}));
   autoChooser_ = pathplanner::AutoBuilder::buildAutoChooser();
   seasonAutos_.emplace_back(HubShot(true, true));
   seasonAutos_.emplace_back(season::Auto(drive_, "LeftBlueBump").AndThen(HubShot()));
@@ -315,6 +317,29 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
                                 { return vision_.Connected(); });
   if (frc::RobotBase::IsSimulation())
     ResetSimulation();
+}
+void RobotContainer::DriveTeleop(bool aim)
+{
+  // Preserve MecoBase 2026.2.1's per-axis shaping before rotating the driver
+  // translation frame. FieldDrive still owns alliance perspective and gating.
+  const auto deadband = [](double value) {
+    return std::abs(value) < .1 ? 0. : std::copysign((std::abs(value) - .1) / .9, value);
+  };
+  const double x = deadband(season::simulation::ObserveJoystick(-controller_.GetLeftY())) * drive_.Config().maxSpeed;
+  const double y = deadband(-controller_.GetLeftX()) * drive_.Config().maxSpeed;
+  double omega = deadband(-controller_.GetRightX()) * drive_.Config().maxAngularRate;
+  if (aim)
+  {
+    const auto p = drive_.Pose();
+    const auto shot = season::CalculateShot({p.X().value(), p.Y().value(), p.Rotation().Radians().value()},
+                                           SelectTarget(), field_, frc::RobotBase::IsSimulation());
+    hood_.SetPosition(shot.hoodRotations);
+    shooter_.SetVelocity(shot.flywheelRps);
+    const double error = std::remainder(shot.headingRadians - p.Rotation().Radians().value(), 2 * std::numbers::pi);
+    omega = std::clamp(5 * error, -drive_.Config().maxAngularRate, drive_.Config().maxAngularRate);
+  }
+  drive_.FieldDrive(x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin(),
+                   x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos(), omega);
 }
 season::ShotTarget RobotContainer::SelectTarget()
 {
@@ -370,6 +395,7 @@ void RobotContainer::SimulationPeriodic()
 }
 void RobotContainer::ResetSimulation()
 {
+  driverHeadingOffset_ = frc::Rotation2d{};
 #ifndef __FRC_ROBORIO__
   const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
   simulationResetPhysicalOrigin_ = simulationFieldCollidersEnabled_ ? season::simulation::DefaultSpawn(red) : frc::Pose2d{};

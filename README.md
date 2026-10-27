@@ -85,11 +85,20 @@ are in [the drivetrain validation record](artifacts/drivetrain-simulation-valida
 
 The season container supplies the Java robot's CAN IDs, bus names, gear ratios, encoder offsets, camera transform and mechanism presets. Linear rack positions are metres; hood positions are rotations; flywheel rates are rotations/second. The rack's Java motor-rotations-per-metre conversion is preserved through a physical 9:1 output ratio and drum circumference.
 
-Pilot controls: left stick drives translation, right X rotates, Start resets heading, A aims while retaining translation, right trigger acquires, left trigger ejects, right bumper agitates and feeds after flywheel readiness. X selects hub/calibration, Y ferry and B idle. Copilot X/Y/B share presets; A selects trench; POV controls the intake. Actions are gated to enabled teleop. Presets latch until replaced; feed stops on cancellation.
+Pilot controls: left stick drives translation, right X rotates, Start resets driver forward without changing field localization, A aims and continuously applies interpolated hood/flywheel setpoints while retaining translation (release stops hood and shooter), right trigger acquires, left trigger ejects, right bumper agitates and feeds after flywheel readiness. X selects hub/calibration, Y ferry and B idle. Copilot X/Y/B share presets; A selects trench; POV controls the intake. Actions are gated to enabled teleop. Presets latch until replaced; feed stops on cancellation.
 
 Shooting calculations preserve all eight calibration rows, shooter exit/yaw, alliance/tag target selection, ferry trajectory exclusion, readiness ordering and volley latch/debounce. Calibration dashboard values are bounded. Autonomous includes copied PathPlanner assets, named mechanism commands, a stationary vision-initialized shot and native Choreo `LeftBlueBump` followed by a shot. Marker shots do not claim drivetrain ownership; they check the path's current heading rather than overriding the path follower.
 
 Absolute vision comes from Limelight; PhotonVision is available as a reusable base adapter. Stationary autonomous shooting requires a recently accepted field pose; camera heartbeat alone is insufficient. Path-following autos seed their own field pose.
+
+To check hub aiming, run the field-enabled headless simulator and then
+`python scripts/autoaim_smoke.py` with the Python dependencies above. This checks
+both alliances before and after Start, interpolated hood/flywheel targets and
+shooter cleanup on release, plus driver-relative translation command vectors with
+and without A held, and disables simulation inputs on exit. The original Start
+binding reset absolute odometry heading and caused large physical aiming errors;
+Start now stores a separate driver frame. Numerical results are saved in
+`artifacts/autoaim-validation.json`; this does not establish hardware alignment.
 
 ## Diagnostics
 
@@ -126,7 +135,8 @@ the default. `scripts/sim_observe_input.py` records physical-stick cadence witho
 injecting input; see the investigation for measured before/after results.
 
 In desktop Teleop, **Back/View** resets the simulation scene (body upright,
-pose, wheel state and fuel). **Start/Menu** still only resets driver heading.
+pose, wheel state and fuel). **Start/Menu** resets only the driver translation frame; it preserves the absolute
+field pose used by hub aiming, vision and autonomous paths.
 `/Simulation/RobotTruth` reports the robot model’s floor-level origin (settled
 Z approximately zero) and actual roll/pitch; use that `Pose3d` in
 AdvantageScope's 3D view to see tipping. The 2D drive pose cannot show it.

@@ -1,0 +1,286 @@
+{
+  "binary_sha256": "1af5c13323314366253858734995a1f7c9e84e85bec589a22737ff623651d57f",
+  "samples": [
+    {
+      "label": "blue_reset",
+      "pose": [
+        3.6496548888920417,
+        0.6393048655468074,
+        0.002828607667020762
+      ],
+      "truth": [
+        3.649526834487915,
+        0.639401912689209,
+        0.0026864528236216793
+      ],
+      "hub_bearing": 1.2400576727056,
+      "error": 1.2373712198819784,
+      "requested_field_translation": [
+        0.0,
+        0.0
+      ],
+      "hood_target_rotations": 0.019552444493076103,
+      "shooter_target_rps": 39.06013343545982
+    },
+    {
+      "label": "blue_aim",
+      "pose": [
+        3.519165201658638,
+        0.636845888496257,
+        1.247989648078348
+      ],
+      "truth": [
+        3.5603115558624268,
+        0.7234048843383789,
+        1.247868507950218
+      ],
+      "hub_bearing": 1.2589667231311044,
+      "error": 0.011098215180886273,
+      "requested_field_translation": [
+        -5.474087123043011e-19,
+        1.0977142026711118e-18
+      ],
+      "hood_target_rotations": 0.02,
+      "shooter_target_rps": 40.39434758417974
+    },
+    {
+      "label": "blue_start_reset",
+      "pose": [
+        3.519157555276474,
+        0.636825898956523,
+        1.243574817350412
+      ],
+      "truth": [
+        3.56032133102417,
+        0.7234801650047302,
+        1.2426998234217947
+      ],
+      "hub_bearing": 1.2586952730128518,
+      "error": 0.01599544959105703,
+      "requested_field_translation": [
+        0.0,
+        0.0
+      ],
+      "hood_target_rotations": 0.02,
+      "shooter_target_rps": 40.39430692285473
+    },
+    {
+      "label": "blue_aim_after_start",
+      "pose": [
+        3.519083497275766,
+        0.6369822462553117,
+        1.2507700609329895
+      ],
+      "truth": [
+        3.560182571411133,
+        0.7235274314880371,
+        1.2506650117095557
+      ],
+      "hub_bearing": 1.2590678466672132,
+      "error": 0.008402834957657479,
+      "requested_field_translation": [
+        -2.7522934556397377e-19,
+        5.480939696836289e-19
+      ],
+      "hood_target_rotations": 0.02,
+      "shooter_target_rps": 40.39380417790359
+    },
+    {
+      "label": "blue_release",
+      "before_rps": 40.77166755331328,
+      "after_rps": 9.360591753314569e-05
+    },
+    {
+      "label": "blue_translation_manual",
+      "pose": [
+        3.5202229933118785,
+        0.7087451678381572,
+        1.2979138401264816
+      ],
+      "truth": [
+        3.5442023277282715,
+        0.7842184901237488,
+        1.310331495224096
+      ],
+      "hub_bearing": 1.252846380861415,
+      "error": -0.05748511436268111,
+      "requested_field_translation": [
+        0.2669137741278134,
+        0.8315456381293557
+      ],
+      "hood_target_rotations": 0.02,
+      "shooter_target_rps": 40.39385756146879
+    },
+    {
+      "label": "blue_translation_aim",
+      "pose": [
+        3.5454010522274295,
+        0.8580979858233799,
+        1.324901046386568
+      ],
+      "truth": [
+        3.5620028972625732,
+        0.9228635430335999,
+        1.3175000068675822
+      ],
+      "hub_bearing": 1.2456365805240075,
+      "error": -0.07186342634357468,
+      "requested_field_translation": [
+        0.2791354840543062,
+        0.827525802541762
+      ],
+      "hood_target_rotations": 0.019829968771239145,
+      "shooter_target_rps": 39.642934419602206
+    },
+    {
+      "label": "red_reset",
+      "pose": [
+        12.891393101183063,
+        7.429625922930105,
+        -3.1386527585851427
+      ],
+      "truth": [
+        12.891551971435547,
+        7.429586887359619,
+        -3.1389881311689454
+      ],
+      "hub_bearing": -1.9015908244577593,
+      "error": 1.237397306711186,
+      "requested_field_translation": [
+        0.0,
+        -0.0
+      ],
+      "hood_target_rotations": 0.01973636319171933,
+      "shooter_target_rps": 39.44636270261059
+    },
+    {
+      "label": "red_aim",
+      "pose": [
+        13.016627223217986,
+        7.433883623126325,
+        -1.8923887603527954
+      ],
+      "truth": [
+        12.978748321533203,
+        7.342776298522949,
+        -1.892686354824594
+      ],
+      "hub_bearing": -1.8823346500149873,
+      "error": 0.010351704809606677,
+      "requested_field_translation": [
+        5.487412025856679e-19,
+        -1.0970487052256901e-18
+      ],
+      "hood_target_rotations": 0.02,
+      "shooter_target_rps": 40.39310834056547
+    },
+    {
+      "label": "red_start_reset",
+      "pose": [
+        13.016642848437083,
+        7.433892833532033,
+        -1.8969480506194314
+      ],
+      "truth": [
+        12.978714942932129,
+        7.342705726623535,
+        -1.8980510790976275
+      ],
+      "hub_bearing": -1.882610000506094,
+      "error": 0.015441078591533541,
+      "requested_field_translation": [
+        0.0,
+        -0.0
+      ],
+      "hood_target_rotations": 0.02,
+      "shooter_target_rps": 40.39312969651391
+    },
+    {
+      "label": "red_aim_after_start",
+      "pose": [
+        13.016588330675699,
+        7.433770522714044,
+        -1.889369177463121
+      ],
+      "truth": [
+        12.97871208190918,
+        7.342703342437744,
+        -1.8896726200279257
+      ],
+      "hub_bearing": -1.8821750950441205,
+      "error": 0.007497524983805182,
+      "requested_field_translation": [
+        2.76025662687269e-19,
+        -5.476933684108162e-19
+      ],
+      "hood_target_rotations": 0.02,
+      "shooter_target_rps": 40.39262710285808
+    },
+    {
+      "label": "red_release",
+      "before_rps": 40.771474381896795,
+      "after_rps": 6.810202580362752e-05
+    },
+    {
+      "label": "red_translation_manual",
+      "pose": [
+        13.011843516073336,
+        7.374597483569958,
+        -1.854667753077874
+      ],
+      "truth": [
+        12.99193286895752,
+        7.292557716369629,
+        -1.8437263236928303
+      ],
+      "hub_bearing": -1.8874832239733483,
+      "error": -0.04375690028051804,
+      "requested_field_translation": [
+        -0.26622067863220766,
+        -0.8317677929444721
+      ],
+      "hood_target_rotations": 0.02,
+      "shooter_target_rps": 40.39261536450478
+    },
+    {
+      "label": "red_translation_aim",
+      "pose": [
+        12.988362269466897,
+        7.24388283942891,
+        -1.8276962344690526
+      ],
+      "truth": [
+        12.973783493041992,
+        7.172558784484863,
+        -1.8344296134115883
+      ],
+      "hub_bearing": -1.8927268515591662,
+      "error": -0.05829723814757792,
+      "requested_field_translation": [
+        -0.2781152977377582,
+        -0.8278682983256797
+      ],
+      "hood_target_rotations": 0.019863229908330424,
+      "shooter_target_rps": 39.712782807493895
+    }
+  ],
+  "checks": {
+    "blue_aim_interpolated_setpoints": true,
+    "blue_aim_after_start_interpolated_setpoints": true,
+    "blue_release_stops_shooter": true,
+    "blue_initial_hub_aim": true,
+    "blue_start_preserves_field_heading": true,
+    "blue_hub_aim_after_start": true,
+    "blue_manual_driver_forward_targets": true,
+    "blue_aim_driver_forward_targets": true,
+    "red_aim_interpolated_setpoints": true,
+    "red_aim_after_start_interpolated_setpoints": true,
+    "red_release_stops_shooter": true,
+    "red_initial_hub_aim": true,
+    "red_start_preserves_field_heading": true,
+    "red_hub_aim_after_start": true,
+    "red_manual_driver_forward_targets": true,
+    "red_aim_driver_forward_targets": true
+  },
+  "passed": true
+}

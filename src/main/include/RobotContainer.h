@@ -33,6 +33,7 @@ private:
   base::Flywheel intake_, conveyor_, bottom_, top_, shooter_;
   frc::AprilTagFieldLayout layout_;
   season::FieldGeometry field_;
+  frc::Rotation2d driverHeadingOffset_{};
   double lastAcceptedVision_ = -1e9;
   base::Vision vision_;
   season::SystemCheck checks_;
@@ -53,4 +54,5 @@ private:
   season::Mechanisms Mechanisms();
   season::ShotTarget SelectTarget();
   frc2::CommandPtr HubShot(bool ownDrive = true, bool requireVision = false);
+  void DriveTeleop(bool aim);
 };
