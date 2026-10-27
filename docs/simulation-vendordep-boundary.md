@@ -42,3 +42,11 @@ The 2026.0.10 bump contact release and joystick checks are recorded in
 [bump-contact-validation-2026.0.10.json](../artifacts/bump-contact-validation-2026.0.10.json).
 
 Current development-package setup is documented in [contact configuration](compliant-bumper-contact.md). Linux local-package validation does not establish Windows or public-release acceptance.
+
+Localization uses MecoBase's public `VisionSystem`, `InjectedVisionIO`, Limelight
+and QuestNav factories. Season code composes these sources and supplies the
+installed camera transforms and an ideal truth/visibility model; it copies no
+vendor protocol, driver, private header or estimator implementation. MecoSimulation
+remains the sole physics owner. No vendordep versions or upstream sources are
+changed for this integration. A reusable camera/noise/protocol simulator would
+belong in the simulation package rather than grow this season model.

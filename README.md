@@ -89,7 +89,7 @@ Pilot controls: left stick drives translation, right X rotates, Start resets dri
 
 Shooting calculations preserve all eight calibration rows, shooter exit/yaw, alliance/tag target selection, ferry trajectory exclusion, readiness ordering and volley latch/debounce. Calibration dashboard values are bounded. Autonomous includes copied PathPlanner assets, named mechanism commands, a stationary vision-initialized shot and native Choreo `LeftBlueBump` followed by a shot. Marker shots do not claim drivetrain ownership; they check the path's current heading rather than overriding the path follower.
 
-Absolute vision comes from Limelight; PhotonVision is available as a reusable base adapter. Stationary autonomous shooting requires a recently accepted field pose; camera heartbeat alone is insufficient. Path-following autos seed their own field pose.
+Localization combines Limelight field observations with the pinned MecoBase QuestNav VIO receiver. Limelight anchors QuestNav after tracking starts or reconnects; PhotonVision remains available as a reusable base adapter. Stationary autonomous shooting requires a recently accepted field pose; camera heartbeat alone is insufficient. Path-following autos seed their own field pose.
 
 To check hub aiming, run the field-enabled headless simulator and then
 `python scripts/autoaim_smoke.py` with the Python dependencies above. This checks
@@ -201,3 +201,27 @@ desktop configuration passed. The local HAL/NT animation smoke passed at
 0.300 m rack extension. AdvantageScope GUI rendering remains unverified.
 The older `season_mechanism_smoke.py` is blocked with the current vendordep
 because its expected mechanism `/Voltage` dashboard topics are absent.
+
+Desktop localization uses the public MecoBase `InjectedVisionIO` boundary with
+robot-specific ideal Limelight 3 and Quest 3S models. Observations follow the
+floor-referenced physics pose, never the estimated drive pose. Limelight requires
+a front-facing tag inside its modeled 62.5 by 48.9 degree frustum and 6 m range.
+Quest initializes from two visible tags (approximate 90 degree frustum), or a
+Limelight field observation, and then tracks through tag loss. Scene reset clears
+alignment and pending observations. `Localization/` dashboard values report
+connection, alignment, visible tag count and translation error against truth.
+These ideal 50 Hz models omit image noise, occlusion, latency and VIO drift;
+they are not camera performance validation or a Quest wire-protocol simulation.
+
+QuestNav's [experimental AprilTag branch](https://questnav.gg/docs/next/apriltag-tracking/apriltag-overview/)
+provides on-headset absolute alignment. The pinned MecoBase receiver decodes the
+2026-2.2.0 VIO frame protocol and does not expose that branch's alignment status.
+Real operation therefore still uses Limelight alignment; the simulation models
+tag-assisted alignment without claiming experimental firmware compatibility.
+
+With the field-enabled headless simulator running, run
+`python scripts/localization_smoke.py` using the simulation Python environment.
+It checks both source statuses, observes Limelight tags while turning, then
+translates and requires less than 0.2 m final estimated-versus-physical position
+error. It writes `artifacts/localization-smoke.json` and disables inputs on exit.
+The tolerance is a numerical integration check, not measured sensor accuracy.

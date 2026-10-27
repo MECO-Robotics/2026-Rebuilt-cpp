@@ -127,6 +127,15 @@ namespace
     {auto p=layout.GetTagPose(a).value(),q=layout.GetTagPose(b).value();return season::Point{(p.X().value()+q.X().value())/2,(p.Y().value()+q.Y().value())/2}; };
     return {layout.GetFieldLength().value(), layout.GetFieldWidth().value(), midpoint(22, 23), midpoint(6, 7)};
   }
+  base::QuestNavConfig QuestConfig(const frc::AprilTagFieldLayout &layout)
+  {
+    base::QuestNavConfig c;
+    c.fieldLength = layout.GetFieldLength().value();
+    c.fieldWidth = layout.GetFieldWidth().value();
+    c.robotToQuest = frc::Transform3d{units::meter_t{-13.5 * .0254}, 0_m,
+        units::meter_t{8.5 * .0254}, frc::Rotation3d{180_deg, 0_deg, 180_deg}};
+    return c;
+  }
   base::VisionConfig VisionConfig(const frc::AprilTagFieldLayout &layout)
   {
     base::VisionConfig c;
@@ -136,6 +145,35 @@ namespace
     c.robotToCamera = frc::Transform3d{0_m, 0_m, units::meter_t{21.25 * .0254}, frc::Rotation3d{0_deg, -30_deg, 0_deg}};
     return c;
   }
+}
+std::vector<std::unique_ptr<base::VisionIO>> RobotContainer::LocalizationSources()
+{
+  std::vector<std::unique_ptr<base::VisionIO>> sources;
+#ifndef __FRC_ROBORIO__
+  if (frc::RobotBase::IsSimulation())
+  {
+    sources.push_back(std::make_unique<base::InjectedVisionIO>([this](auto &inputs) {
+      inputs = std::move(simulatedLocalization_.limelight);
+      simulatedLocalization_.limelight.observations.clear();
+    }));
+    sources.push_back(std::make_unique<base::InjectedVisionIO>([this](auto &inputs) {
+      inputs = std::move(simulatedLocalization_.quest);
+      simulatedLocalization_.quest.observations.clear();
+    }));
+    return sources;
+  }
+#endif
+  sources.push_back(base::MakeLimelightVisionIO(VisionConfig(layout_), [this] { return drive_.Pose().Rotation(); }));
+  sources.push_back(base::MakeQuestNavVisionIO(QuestConfig(layout_)));
+  return sources;
+}
+void RobotContainer::AcceptVision(const base::VisionObservation &observation)
+{
+  drive_.AddVision(observation.pose, observation.timestamp, observation.stdDevs);
+  lastAcceptedVision_ = frc::Timer::GetFPGATimestamp().value();
+  // Limelight supplies a field anchor for the pinned VIO-only Quest receiver.
+  if (vision_->Inputs(1).tracking && !vision_->Inputs(1).aligned)
+    vision_->AlignToField(1, observation.pose);
 }
 season::Mechanisms RobotContainer::Mechanisms() { return {rack_, intake_, conveyor_, bottom_, top_, hood_, shooter_}; }
 RobotContainer::RobotContainer() : drive_(DriveConfig()),
@@ -147,9 +185,8 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
                                    top_("TopIndexer", Motor(season::hardware::kTopIndexer, base::Vendor::SparkMax), season::GainsFor(season::hardware::kIndexerGains)),
                                    shooter_("ShooterFlywheel", Motor(season::hardware::kShooter, base::Vendor::TalonFX), season::GainsFor(season::hardware::kShooterGains)),
                                    layout_(frc::AprilTagFieldLayout::LoadField(frc::AprilTagField::kDefaultField)), field_(Geometry(layout_)),
-                                   vision_(VisionConfig(layout_), [this](const auto &obs)
-                                           {drive_.AddVision(obs.pose,obs.timestamp,obs.stdDevs);lastAcceptedVision_=frc::Timer::GetFPGATimestamp().value(); }, [this]
-                                           { return drive_.Pose().Rotation(); }),
+                                   vision_(std::make_unique<base::VisionSystem>(LocalizationSources(), [this](const auto &obs)
+                                           { AcceptVision(obs); })),
                                    checks_([this]
                                            {drive_.Stop();rack_.Stop();hood_.Stop();intake_.Stop();conveyor_.Stop();bottom_.Stop();top_.Stop();shooter_.Stop(); }, frc::RobotBase::IsReal() ? "/home/lvuser/systemcheck-latest.json" : "systemcheck-latest.json")
 {
@@ -314,7 +351,7 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   frc::SmartDashboard::PutData("Auto Choices", &autoChooser_);
   checks_.ConfigureRequirements({&drive_, &rack_, &hood_, &shooter_, &intake_, &conveyor_, &bottom_, &top_});
   season::ConfigureSystemChecks(checks_, drive_, rack_, hood_, shooter_, {{"intake", &intake_}, {"conveyor", &conveyor_}, {"bottom-indexer", &bottom_}, {"top-indexer", &top_}}, [this]
-                                { return vision_.Connected(); });
+                                { return vision_->Inputs().connected; });
   if (frc::RobotBase::IsSimulation())
     ResetSimulation();
 }
@@ -350,8 +387,12 @@ season::ShotTarget RobotContainer::SelectTarget()
   auto p = drive_.Pose();
   std::vector<int> ids;
   auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+#ifndef __FRC_ROBORIO__
+  if (frc::RobotBase::IsSimulation())
+    return season::SelectTarget(alliance, {p.X().value(), p.Y().value(), p.Rotation().Radians().value()}, simulatedLocalization_.tagIds, field_);
+#endif
   auto raw = table->GetNumberArray("rawfiducials", {});
-  if (vision_.Connected())
+  if (vision_->Inputs().connected)
     for (size_t i = 0; i + 6 < raw.size(); i += 7)
       ids.push_back(static_cast<int>(raw[i]));
   return season::SelectTarget(alliance, {p.X().value(), p.Y().value(), p.Rotation().Radians().value()}, ids, field_);
@@ -391,6 +432,15 @@ void RobotContainer::SimulationPeriodic()
     simulationBodyPosePublisher_.Set(bodyPose);
     const auto visualPose = season::simulation::FloorReferencedRobotPose(bodyPose, simulationGroundedBodyHeight_);
     simulationPosePublisher_.Set(visualPose);
+    if (simulationResetFeedbackLoops_ == 0)
+      simulatedLocalization_.Update(visualPose, frc::Timer::GetFPGATimestamp(), layout_,
+                                    VisionConfig(layout_).robotToCamera, QuestConfig(layout_).robotToQuest);
+    frc::SmartDashboard::PutBoolean("Localization/LimelightConnected", vision_->Inputs().connected);
+    frc::SmartDashboard::PutBoolean("Localization/QuestTracking", vision_->Inputs(1).tracking);
+    frc::SmartDashboard::PutBoolean("Localization/QuestAligned", vision_->Inputs(1).aligned);
+    frc::SmartDashboard::PutNumber("Localization/LimelightTagCount", simulatedLocalization_.tagIds.size());
+    frc::SmartDashboard::PutNumber("Localization/TruthErrorMetres",
+        drive_.Pose().Translation().Distance(visualPose.ToPose2d().Translation()).value());
     const auto& config = drive_.Config().simulation;
     fuelRobotState = season::FuelRobotState{
         visualPose,
@@ -410,6 +460,8 @@ void RobotContainer::ResetSimulation()
   simulationResetPhysicalOrigin_ = simulationFieldCollidersEnabled_ ? season::simulation::DefaultSpawn(red) : frc::Pose2d{};
   if (simulationFieldCollidersEnabled_ && !season::simulation::IsClearStartingPose(simulationResetPhysicalOrigin_))
     throw std::logic_error("Simulation spawn intersects field geometry");
+  simulatedLocalization_.Reset();
+  lastAcceptedVision_ = -1e9;
   simulationResetFeedbackLoops_ = 5;
   drive_.ResetSimulation(simulationResetPhysicalOrigin_);
 #endif

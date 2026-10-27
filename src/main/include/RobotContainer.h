@@ -2,6 +2,8 @@
 #include "base/Drive.h"
 #include "base/Mechanism.h"
 #include "base/Vision.h"
+#include "base/QuestNav.h"
+#include "season/SimulatedLocalization.h"
 #include "season/SeasonCommands.h"
 #include "season/SystemCheck.h"
 #include "season/FuelSimulation.h"
@@ -35,7 +37,12 @@ private:
   season::FieldGeometry field_;
   frc::Rotation2d driverHeadingOffset_{};
   double lastAcceptedVision_ = -1e9;
-  base::Vision vision_;
+#ifndef __FRC_ROBORIO__
+  season::simulation::SimulatedLocalization simulatedLocalization_;
+#endif
+  std::unique_ptr<base::VisionSystem> vision_;
+  std::vector<std::unique_ptr<base::VisionIO>> LocalizationSources();
+  void AcceptVision(const base::VisionObservation &observation);
   season::SystemCheck checks_;
   std::unique_ptr<season::FuelSimulation> simulation_;
 #ifndef __FRC_ROBORIO__
