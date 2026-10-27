@@ -137,9 +137,11 @@ The unshifted physics body pose is published separately at
 geometry on flat ground). Physics validation scripts use that raw pose. The model-origin
 offset follows chassis rotation and preserves bump/airborne height changes.
 
+The desktop Full3D robot now uses [configurable chassis clearance and compressible pool-noodle bumpers](docs/compliant-bumper-contact.md) through a local, unpublished development package.
+
 The swerve modules are hard mounted. The rigid wheel-contact model has no
 vertical springs, dampers, suspension travel or load-dependent sag.
-MecoSimulation 2026.0.10 provides rigid hard-mounted wheel contact, hollow bumper
+The previous MecoSimulation 2026.0.10 release provides rigid hard-mounted wheel contact, hollow bumper
 contacts and load-dependent azimuth dynamics. Legacy suspension fields remain
 unused. See [the rigid-contact model](docs/rigid-wheel-contact.md),
 [bumper contact](docs/bumper-contact.md) and its

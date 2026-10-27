@@ -1,0 +1,256 @@
+{
+  "date": "2026-10-26",
+  "scope": "Numerical desktop simulation; not measured robot or hardware acceptance",
+  "package": "2026.0.11-dev.2 (local Linux Debug/Release, unpublished)",
+  "geometry": {
+    "chassis_clearance_m": 0.0508,
+    "pan_thickness_m": 0.003175,
+    "flush_foam_and_plywood_floor_gap_m": 0.0127,
+    "gap_source": "user selected 0.5 inch and no foam below plywood",
+    "outer_footprint_m": [
+      0.86,
+      0.86
+    ],
+    "noodle_diameter_m": 0.06985,
+    "backing_thickness_m": 0.01905,
+    "backing_height_m": 0.127,
+    "wheel_diameter_width_m": [
+      0.1016,
+      0.0508
+    ],
+    "assumed_world_com_height_m": 0.3
+  },
+  "material": {
+    "strain": [
+      0,
+      0.25,
+      0.5,
+      0.7,
+      0.8
+    ],
+    "stress_pa": [
+      0,
+      10000,
+      35000,
+      100000,
+      250000
+    ],
+    "damping_ratio": 0.8,
+    "estimated_shear_modulus_over_tangent_modulus": 0.5,
+    "foam_friction": 0.65,
+    "tire_friction": 2.1,
+    "note": "Unmeasured engineering estimates; friction, ramp, motor limits unchanged"
+  },
+  "fixes": [
+    "finite-cylinder wheel lip support",
+    "1mm Jolt speculative distance, 0.1mm penetration slop, linear-cast robot CCD",
+    "opposite chassis wheel-inertia reaction torque",
+    "implicit elastic foam shear with existing Coulomb limit, reset and separation clear history"
+  ],
+  "full_stick_runs": [
+    {
+      "record": "bump-full-stick-1.json.gz",
+      "passed": true,
+      "command_mps": 5.24,
+      "binary_sha256": "b0ad948bdaba48c77b1dbbd49f5a1b0274453e50053e1e8a15f25c137aed6bf9",
+      "checks": {
+        "grounded_model_height_is_zero": true,
+        "hard_mounted_body_has_no_static_sag": true,
+        "startup_clear_blue_spawn": true,
+        "blue_reset_matches_truth_and_odometry": true,
+        "red_reset_matches_truth_and_odometry": true,
+        "can_turn_at_default_spawn": true,
+        "actual_wall_contact_blocks_motion": true,
+        "field_installed": true,
+        "complete_upright_bump_crossing": true,
+        "compliant_bump_contact_is_finite_and_unilateral": true
+      },
+      "metrics": {
+        "peak_body_height_m": 0.29669544100761414,
+        "lifted_samples": 10,
+        "final_x_m": 8.743158340454102,
+        "cleared_entire_bump": true,
+        "maximum_foam_compression_m": 0.010186119936406612,
+        "maximum_foam_force_n": 2135.6649761393105,
+        "pan_contact_samples": 0,
+        "backing_contact_samples": 2,
+        "maximum_tilt_deg": 15.07690400815237
+      },
+      "final_wheel_normal_loads_n": [
+        158.35288260173633,
+        172.13934857546988,
+        142.16948256517472,
+        190.29393577584932
+      ],
+      "maximum_lane_deviation_m": 0.19042388719787606
+    },
+    {
+      "record": "bump-full-stick-2.json.gz",
+      "passed": true,
+      "command_mps": 5.24,
+      "binary_sha256": "b0ad948bdaba48c77b1dbbd49f5a1b0274453e50053e1e8a15f25c137aed6bf9",
+      "checks": {
+        "grounded_model_height_is_zero": true,
+        "hard_mounted_body_has_no_static_sag": true,
+        "startup_clear_blue_spawn": true,
+        "blue_reset_matches_truth_and_odometry": true,
+        "red_reset_matches_truth_and_odometry": true,
+        "can_turn_at_default_spawn": true,
+        "actual_wall_contact_blocks_motion": true,
+        "field_installed": true,
+        "complete_upright_bump_crossing": true,
+        "compliant_bump_contact_is_finite_and_unilateral": true
+      },
+      "metrics": {
+        "peak_body_height_m": 0.3034113347530365,
+        "lifted_samples": 10,
+        "final_x_m": 9.008498191833496,
+        "cleared_entire_bump": true,
+        "maximum_foam_compression_m": 0.010684075765311718,
+        "maximum_foam_force_n": 324.66434857803483,
+        "pan_contact_samples": 0,
+        "backing_contact_samples": 5,
+        "maximum_tilt_deg": 15.066732652260878
+      },
+      "final_wheel_normal_loads_n": [
+        181.40309877655295,
+        146.02187520626515,
+        117.69558175620496,
+        218.05228981339678
+      ],
+      "maximum_lane_deviation_m": 0.0838767699645997
+    },
+    {
+      "record": "bump-full-stick-3.json.gz",
+      "passed": true,
+      "command_mps": 5.24,
+      "binary_sha256": "b0ad948bdaba48c77b1dbbd49f5a1b0274453e50053e1e8a15f25c137aed6bf9",
+      "checks": {
+        "grounded_model_height_is_zero": true,
+        "hard_mounted_body_has_no_static_sag": true,
+        "startup_clear_blue_spawn": true,
+        "blue_reset_matches_truth_and_odometry": true,
+        "red_reset_matches_truth_and_odometry": true,
+        "can_turn_at_default_spawn": true,
+        "actual_wall_contact_blocks_motion": true,
+        "field_installed": true,
+        "complete_upright_bump_crossing": true,
+        "compliant_bump_contact_is_finite_and_unilateral": true
+      },
+      "metrics": {
+        "peak_body_height_m": 0.2916052043437958,
+        "lifted_samples": 16,
+        "final_x_m": 8.354507446289062,
+        "cleared_entire_bump": true,
+        "maximum_foam_compression_m": 0.006953045725822449,
+        "maximum_foam_force_n": 1443.8458726074996,
+        "pan_contact_samples": 0,
+        "backing_contact_samples": 1,
+        "maximum_tilt_deg": 14.978664969193645
+      },
+      "final_wheel_normal_loads_n": [
+        170.73963419602907,
+        164.97280840737884,
+        168.79313225782684,
+        158.64699350934148
+      ],
+      "maximum_lane_deviation_m": 0.10645024103393563
+    }
+  ],
+  "failure_comparisons": [
+    {
+      "record": "bump-before-contact-fixes.json.gz",
+      "metrics": {
+        "peak_body_height_m": 0.4424782693386078,
+        "lifted_samples": 261,
+        "final_x_m": 4.307125568389893,
+        "cleared_entire_bump": false,
+        "maximum_foam_compression_m": 0.024221548810601234,
+        "maximum_foam_force_n": 4389.098742773874,
+        "pan_contact_samples": 0,
+        "backing_contact_samples": 291,
+        "maximum_tilt_deg": 167.98117980409356
+      },
+      "checks": {
+        "grounded_model_height_is_zero": true,
+        "hard_mounted_body_has_no_static_sag": true,
+        "startup_clear_blue_spawn": true,
+        "blue_reset_matches_truth_and_odometry": true,
+        "red_reset_matches_truth_and_odometry": true,
+        "can_turn_at_default_spawn": true,
+        "actual_wall_contact_blocks_motion": true,
+        "field_installed": true,
+        "complete_upright_bump_crossing": false,
+        "compliant_bump_contact_is_finite_and_unilateral": true
+      }
+    },
+    {
+      "record": "bump-before-shear-fix.json.gz",
+      "metrics": {
+        "peak_body_height_m": 0.42402201890945435,
+        "lifted_samples": 21,
+        "final_x_m": 6.748082637786865,
+        "cleared_entire_bump": true,
+        "maximum_foam_compression_m": 0.020373566076159477,
+        "maximum_foam_force_n": 2419.5612332575797,
+        "pan_contact_samples": 0,
+        "backing_contact_samples": 13,
+        "maximum_tilt_deg": 179.9938877841366
+      },
+      "checks": {
+        "grounded_model_height_is_zero": true,
+        "hard_mounted_body_has_no_static_sag": true,
+        "startup_clear_blue_spawn": true,
+        "blue_reset_matches_truth_and_odometry": true,
+        "red_reset_matches_truth_and_odometry": true,
+        "can_turn_at_default_spawn": true,
+        "actual_wall_contact_blocks_motion": true,
+        "field_installed": true,
+        "complete_upright_bump_crossing": false,
+        "compliant_bump_contact_is_finite_and_unilateral": true
+      }
+    }
+  ],
+  "native_checks": {
+    "release": "12/12 passed",
+    "debug": "12/12 passed",
+    "package_python": "14/14 passed",
+    "full_speed_bump_stdout": "scenario=0 max_tilt_deg=14.9096 compliant=0 max_compression=0 max_foam_force=0 pan_contacts=0 backing_contacts=0 cleared=1 final_x=6.20891 rode_bump=1 max_body_height=0.310576 bumper_supported_unloaded_steps=16\nscenario=1 max_tilt_deg=15.0576 compliant=1 max_compression=0.0158473 max_foam_force=1907.63 pan_contacts=0 backing_contacts=48 cleared=1 final_x=6.20803 rode_bump=1 max_body_height=0.307201 bumper_supported_unloaded_steps=27\nscenario=2 max_tilt_deg=16.5071 compliant=1 max_compression=0.013059 max_foam_force=2018.53 pan_contacts=0 backing_contacts=86 cleared=1 final_x=6.39443 rode_bump=1 max_body_height=0.285464 bumper_supported_unloaded_steps=7\n",
+    "old_shear_regression": "exit=-6\nterminate called after throwing an instance of 'std::runtime_error'\n  what():  Foam instantaneously sticks instead of deforming in shear\n",
+    "old_shear_bump": "exit=-6\nscenario=0 max_tilt_deg=14.9096 compliant=0 max_compression=0 max_foam_force=0 pan_contacts=0 backing_contacts=0 cleared=1 final_x=6.20891 rode_bump=1 max_body_height=0.310576 bumper_supported_unloaded_steps=16\nscenario=1 max_tilt_deg=15.0012 compliant=1 max_compression=0.0158473 max_foam_force=1907.61 pan_contacts=0 backing_contacts=44 cleared=1 final_x=6.2025 rode_bump=1 max_body_height=0.317619 bumper_supported_unloaded_steps=24\nscenario=2 max_tilt_deg=176.455 compliant=1 max_compression=0.0205018 max_foam_force=2327.59 pan_contacts=0 backing_contacts=33 cleared=1 final_x=6.84886 rode_bump=1 max_body_height=0.283996 bumper_supported_unloaded_steps=11\nterminate called after throwing an instance of 'std::runtime_error'\n  what():  Drive from rest must clear entire bump upright with 1/2-inch flush bumper clearance\n"
+  },
+  "benchmark": {
+    "mode": "Release sustained bumper contact, matched same-host runs",
+    "stdout": "compliant=0 p99_seconds=8.6604e-05 added_p99_seconds=0 budget_pass=1\ncompliant=1 p99_seconds=0.000101532 added_p99_seconds=1.4928e-05 budget_pass=1\n",
+    "total_target_seconds": 0.004,
+    "added_target_seconds": 0.0004
+  },
+  "boundary": "Season consumes Gradle-cached public headers and libmecoSimAdapter.a; no upstream source/header overrides; Base code untouched by this task",
+  "source_sha256": {
+    "src/main/cpp/RobotContainer.cpp": "71a49b3927f64f027d137d3f250c24a642b716dbbe6642b3926cbc5b9a5913ad",
+    "../MecoSimulation-cpp/src/DrivePhysics.cpp": "5eac97c1ef21f97ee2a59cb3764a355397e47d1ecff6171c8f55994373338434",
+    "../MecoSimulation-cpp/src/SimulationWorld.cpp": "9ec86dd256a0c1ce7feeaf825607f93c8de13bbd0daab3644995b134a64de0a3",
+    "../MecoSimulation-cpp/include/base/sim/RobotContactConfig.h": "c471c773de069aa375029aafc0dd6f03d05dd3f2c7847775fd5ed7b985f4636c"
+  },
+  "limits": [
+    "Three consecutive full-stick runs establish bounded repeatability, not universal statistical reliability.",
+    "50 Hz recorded contact diagnostics can miss 4 ms peaks; native tests inspect each step.",
+    "No Windows artifact, public release, physical calibration or deployment."
+  ],
+  "consumer_checks": {
+    "gradle_build": "Passed all four robot native targets (Linux desktop and roboRIO Debug/Release)",
+    "desktop_tests": "28 passed per Debug and Release configuration; final unchanged tests up-to-date",
+    "final_build_binary_matches_all_three_runtime_records": true,
+    "compile_headers": "Gradle-cached meco-simulation-wpilib-cpp-2026.0.11-dev.2-headers",
+    "linked_library": "Gradle-cached meco-simulation-wpilib-cpp-2026.0.11-dev.2-linuxx86-64static/libmecoSimAdapter.a",
+    "linux_package_verification": "5 Maven files verified",
+    "published": false
+  },
+  "package_sha256": {
+    "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.2/meco-simulation-wpilib-cpp-2026.0.11-dev.2.pom": "d21d565f792beb8db2e04f1f6e6c59bd8e89b1babd9c48ceea03c85ac6569419",
+    "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.2/meco-simulation-wpilib-cpp-2026.0.11-dev.2-sources.zip": "3a272f1f0725af95df1bff36b523ff1fe7d74d07d29a16ad52d09126e92d1670",
+    "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.2/meco-simulation-wpilib-cpp-2026.0.11-dev.2-linuxx86-64static.zip": "510cd4162a4d5cf694371b94811c1b46231795f8cdbf38f410329e6c8d979ad6",
+    "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.2/meco-simulation-wpilib-cpp-2026.0.11-dev.2-headers.zip": "03a422756925c86180b552e7edd74407db22dc28b51d0624fbbf0ca817d8b87a",
+    "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.2/meco-simulation-wpilib-cpp-2026.0.11-dev.2-linuxx86-64staticdebug.zip": "375588c84daaf51f6ed32b048c5f0f56b3fc5391b981c081f374ca7c160b26cd"
+  }
+}

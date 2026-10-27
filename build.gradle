@@ -5,6 +5,23 @@ plugins {
     id "edu.wpi.first.GradleRIO" version "2026.2.1"
 }
 
+// Unpublished Simulation development packages stay local; no release is implied.
+// Override when the upstream checkout is elsewhere: -PmecoSimulationMaven=/path/to/maven
+def simulationMaven = findProperty('mecoSimulationMaven') ?: '../MecoSimulation-cpp/build/contact-package/maven'
+if (file(simulationMaven).isDirectory()) {
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    url = uri(file(simulationMaven))
+                    metadataSources { mavenPom(); artifact() }
+                }
+            }
+            filter { includeModule('com.mecorobotics.sim', 'meco-simulation-wpilib-cpp') }
+        }
+    }
+}
+
 // Define my targets (RoboRIO) and artifacts (deployable files)
 // This is added by GradleRIO's backing project DeployUtils.
 deploy {

@@ -3,7 +3,7 @@
 | Owner | Responsibilities |
 | --- | --- |
 | MecoBase 2026.2.1 | Commands, motor IO, hardware configuration and Jolt-free shared motor runtime |
-| MecoSimulation 2026.0.10 | Jolt/world, rigid wheel and bumper contact, load-dependent azimuth, Phoenix feedback bridge, shared battery helper, simulation diagnostics and reusable 2026 field collider geometry |
+| MecoSimulation 2026.0.11-dev.2 (local, unpublished) | Jolt/world, rigid wheel, configurable rigid pan/backing and compliant bumper contact, load-dependent azimuth, Phoenix feedback bridge, shared battery helper, simulation diagnostics and reusable 2026 field collider geometry |
 | This robot | Hardware dimensions/mass/current settings, controls, commands, robot-specific fuel behavior, legal starting-pose policy and telemetry presentation |
 
 The robot consumes Simulation public headers and its combined static archive.
@@ -40,3 +40,5 @@ verification is recorded separately from staged local-Maven checks.
 
 The 2026.0.10 bump contact release and joystick checks are recorded in
 [bump-contact-validation-2026.0.10.json](../artifacts/bump-contact-validation-2026.0.10.json).
+
+Current development-package setup is documented in [contact configuration](compliant-bumper-contact.md). Linux local-package validation does not establish Windows or public-release acceptance.

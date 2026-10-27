@@ -27,6 +27,27 @@ using namespace units::literals;
 namespace
 {
   base::Mode Mode() { return frc::RobotBase::IsReal() ? base::Mode::Real : base::Mode::Sim; }
+#ifndef __FRC_ROBORIO__
+  meco::sim::RobotContactConfig RobotContacts()
+  {
+    constexpr double inchesToMetres = .0254;
+    meco::sim::RobotContactConfig c;
+    // Unmeasured construction/material estimates: replace with loaded measurements.
+    c.chassisClearance = 2.0 * inchesToMetres;
+    c.panThickness = .125 * inchesToMetres;
+    c.panHalfLength = c.panHalfWidth = .43 - 3.5 * inchesToMetres;
+    c.bumperFloorGap = .5 * inchesToMetres; // User-confirmed flush foam/plywood floor gap.
+    c.noodleDiameter = 2.75 * inchesToMetres;
+    c.backingThickness = .75 * inchesToMetres;
+    c.backingHeight = 5.0 * inchesToMetres;
+    c.backingFloorGap = c.bumperFloorGap; // Selected flush plywood bottom is rigid.
+    c.compressionStrain = {0, .25, .5, .7, .8};
+    c.compressionStressPa = {0, 10000, 35000, 100000, 250000};
+    // Overdamped foam dissipates more impact energy and reduces rebound.
+    c.dampingRatio = 1.2;
+    return c;
+  }
+#endif
   base::DriveConfig DriveConfig()
   {
     base::DriveConfig c;
@@ -58,10 +79,13 @@ namespace
     c.simulation.steerInertia = .01;
     if (simulation)
     {
-      // Estimated bumper envelope: 0.25 inch floor gap, 5.5 inch height.
+      // Bumper envelope: user-confirmed 0.5 inch floor gap, estimated 5.5 inch height.
       // Move the body origin to bumper centre; preserve the assumed world CoM at .30 m.
-      c.simulation.bumperHalfHeight = .1397 / 2;
-      c.simulation.rideHeight = .00635 + c.simulation.bumperHalfHeight;
+#ifndef __FRC_ROBORIO__
+      const auto contact = RobotContacts();
+      c.simulation.bumperHalfHeight = contact.noodleDiameter;
+      c.simulation.rideHeight = contact.bumperFloorGap + c.simulation.bumperHalfHeight;
+#endif
       c.simulation.centerOfMassZ = .30 - c.simulation.rideHeight;
     }
     c.autoConfigFromGUI = true;
@@ -148,10 +172,13 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
     // Hard-mounted wheels have a fixed geometric body-to-floor offset.
     simulationGroundedBodyHeight_ = units::meter_t{physics.rideHeight};
     frc::SmartDashboard::PutNumber("FieldSimulation/GroundedBodyHeight", physics.rideHeight);
-    frc::SmartDashboard::PutNumber("FieldSimulation/BumperCornerRadius", base::sim::kBumperCornerRadius);
+    frc::SmartDashboard::PutNumber("FieldSimulation/BumperCornerRadius",
+        backend == base::sim::Backend::Full3D ? RobotContacts().noodleDiameter / 2 : base::sim::kBumperCornerRadius);
     frc::SmartDashboard::PutNumber("FieldSimulation/BumperBottomHeight", physics.rideHeight - physics.bumperHalfHeight);
     frc::SmartDashboard::PutNumber("FieldSimulation/BumperTopHeight", physics.rideHeight + physics.bumperHalfHeight);
-    auto simulation = meco::sim::CreateDriveSimulationAdapter(drive_.Config(), backend);
+    auto simulation = backend == base::sim::Backend::Full3D
+        ? meco::sim::CreateDriveSimulationAdapter(drive_.Config(), backend, RobotContacts())
+        : meco::sim::CreateDriveSimulationAdapter(drive_.Config(), backend);
     const char *fieldMode = std::getenv("FRC_SIM_FIELD_COLLIDERS");
     simulationFieldCollidersEnabled_ = !fieldMode || std::string_view{fieldMode} != "0";
     if (simulationFieldCollidersEnabled_)

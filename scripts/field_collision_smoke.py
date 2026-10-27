@@ -30,11 +30,16 @@ async def exercise(args):
     model = client.getStructTopic('/Simulation/RobotTruth', Pose3d).subscribe(Pose3d(), options)
     grounded = client.getDoubleTopic('/SmartDashboard/FieldSimulation/GroundedBodyHeight').subscribe(.30)
     rounding = client.getDoubleTopic('/SmartDashboard/FieldSimulation/BumperCornerRadius').subscribe(.005)
+    compliant = client.getBooleanTopic('/SmartDashboard/FieldSimulation/CompliantBumpers').subscribe(False)
+    noodle = client.getDoubleTopic('/SmartDashboard/FieldSimulation/NoodleDiameter').subscribe(0.)
+    foam_compression = client.getDoubleArrayTopic('/Simulation/Contact/FoamCompressionM').subscribe([],options)
+    foam_forces = client.getDoubleArrayTopic('/Simulation/Contact/FoamNormalForcesN').subscribe([],options)
+    rigid_contacts = client.getDoubleArrayTopic('/Simulation/Contact/RigidContactsPanBacking').subscribe([],options)
     loads = client.getDoubleArrayTopic('/Diagnostics/Drive/AzimuthLoad').subscribe([],options)
     count = client.getDoubleTopic('/SmartDashboard/FieldSimulation/ColliderCount').subscribe(0)
     result = {'transport': 'localhost HAL websocket + NT4', 'running_binary': str(binary),
               'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
-              'samples': {}, 'checks': {}}
+              'samples': {}, 'checks': {}, 'bump_command_speed_mps': args.bump_speed}
     async with connect('ws://127.0.0.1:3300/wpilibws', max_size=None) as websocket:
         async def drain():
             async for _ in websocket:
@@ -59,7 +64,8 @@ async def exercise(args):
                 p, t = pose.get(), sample.value
                 rows.append({'time': ntcore._now(), 'pose': [p.X(), p.Y(), p.rotation().radians()],
                              'truth': [t.X(), t.Y(), t.Z(), t.rotation().X(), t.rotation().Y(), t.rotation().Z()],
-                             'loads': list(loads.get())})
+                             'loads': list(loads.get()), 'foam_compression': list(foam_compression.get()),
+                             'foam_forces': list(foam_forces.get()), 'rigid_contacts': list(rigid_contacts.get())})
                 await asyncio.sleep(.02)
             return rows
         async def reset_scene(red):
@@ -79,6 +85,7 @@ async def exercise(args):
             result['checks']['hard_mounted_body_has_no_static_sag'] = abs(initial.Z()-grounded.get())<.001
             result['collider_count'] = count.get()
             result['grounded_body_height_m'] = grounded.get()
+            result['compliant_bumpers'] = compliant.get()
             result['checks']['startup_clear_blue_spawn'] = math.hypot(initial.X()-3.65, initial.Y()-.639318)<.08 and abs(initial.Z()-grounded.get())<.01
             for red in (False, True):
                 label = 'red_reset' if red else 'blue_reset'
@@ -113,12 +120,27 @@ async def exercise(args):
                 if bumper_south_clearance(wall[-1])<.025:
                     break
             wall.extend(await hold(.5, enabled=True, lateral=-.35))
+            if compliant.get():
+                settling_deadline=time.monotonic()+3.
+                while time.monotonic()<settling_deadline:
+                    recent=wall[-min(10,len(wall)):]
+                    contacted=any(max(row['foam_forces'],default=0)>10 or sum(row['rigid_contacts'])>0 for row in recent)
+                    if contacted and abs(recent[-1]['truth'][1]-recent[0]['truth'][1])<.005:
+                        break
+                    wall.extend(await hold(.1,enabled=True,lateral=-.35))
             result['samples']['south_wall'] = wall
             result['wall_approach_s']=time.monotonic()-approach
             clearances=[bumper_south_clearance(row) for row in wall]
             result['wall_bumper_clearance_m']={'final':clearances[-1], 'minimum':min(clearances)}
             result['checks']['actual_wall_contact_blocks_motion'] = (
                 -.01<clearances[-1]<.025 and min(clearances)>-.01)
+            if compliant.get():
+                contacted=any(max(row['foam_forces'],default=0)>10 or sum(row['rigid_contacts'])>0 for row in wall)
+                # Foam may compress; use backing depth as the penetration bound.
+                # The final half-second must show bounded motion against contact.
+                result['checks']['actual_wall_contact_blocks_motion'] = (
+                    contacted and min(clearances)>-noodle.get()-.01 and
+                    abs(wall[-1]['truth'][1]-wall[-min(10,len(wall))]['truth'][1])<.025)
             result['checks']['field_installed'] = count.get()>0
             await reset_scene(False)
             # Approach the blue lower bump through clear alliance-zone space.
@@ -136,14 +158,25 @@ async def exercise(args):
                 await hold(.04,enabled=True,forward=stick(1.5*dx),lateral=stick(1.5*dy),turn=turn)
             await hold(.4,enabled=True)
             if len(loads.get())!=25:
-                raise RuntimeError('Bump validation requires FRC_SIM_LATENCY_PROBE=1')
+                raise RuntimeError('Bump validation requires current module-load diagnostics')
             bump=[]
             deadline=time.monotonic()+6
             while time.monotonic()<deadline:
-                bump.extend(await hold(.04,enabled=True,forward=1.0))
+                bump.extend(await hold(.04,enabled=True,forward=.1+.9*args.bump_speed/5.24))
                 if bump[-1]['truth'][0]>6.2:
                     break
             bump.extend(await hold(.8,enabled=True))
+            # A full-speed release takes longer than 0.8 s to brake. Confirm
+            # landing after bounded physical settling, not during load transfer.
+            settling_deadline=time.monotonic()+3.
+            while time.monotonic()<settling_deadline:
+                recent=bump[-min(10,len(bump)):]
+                last=recent[-1]['truth']
+                tilt=math.acos(max(-1.,min(1.,math.cos(last[3])*math.cos(last[4]))))
+                if (abs(last[2]-grounded.get())<.003 and tilt<math.radians(5) and
+                    math.hypot(last[0]-recent[0]['truth'][0],last[1]-recent[0]['truth'][1])<.005):
+                    break
+                bump.extend(await hold(.1,enabled=True))
             result['samples']['bumper_bump_approach']=bump
             lifted=[row for row in bump if 3.6<row['truth'][0]<5.7 and
                     row['truth'][2]>grounded.get()+.03 and len(row['loads'])==25 and
@@ -151,13 +184,35 @@ async def exercise(args):
             result['bump_metrics']={'peak_body_height_m':max(row['truth'][2] for row in bump),
                                     'lifted_samples':len(lifted),'final_x_m':bump[-1]['truth'][0],
                                     'cleared_entire_bump':bump[-1]['truth'][0]>5.8 and abs(bump[-1]['truth'][2]-grounded.get())<.02}
+            result['bump_metrics'].update({
+                'maximum_foam_compression_m':max((max(row['foam_compression'],default=0) for row in bump),default=0),
+                'maximum_foam_force_n':max((max(row['foam_forces'],default=0) for row in bump),default=0),
+                'pan_contact_samples':sum(bool(row['rigid_contacts']) and row['rigid_contacts'][0]>0 for row in bump),
+                'backing_contact_samples':sum(len(row['rigid_contacts'])==2 and row['rigid_contacts'][1]>0 for row in bump)})
             # Bumper collision lifts the chassis; a running approach carries it
             # onto the ramp while wheel traction correctly disappears when unloaded.
-            # Full clearance is reported separately: the .25-inch shell can
-            # high-center between the far ramp and carpet with no tire contact.
+            # Lift/contact and complete upright crossing have separate checks.
+            # A lift alone is not traversal acceptance.
             result['checks']['bumper_slides_up_and_lifts_chassis'] = (
                 bool(lifted) and max(row['truth'][0] for row in lifted)>4.0 and
                 grounded.get()+.08<max(row['truth'][2] for row in bump)<.35 and len(lifted)>=3)
+            maximum_tilt=max(math.acos(max(-1.,min(1.,math.cos(row['truth'][3])*math.cos(row['truth'][4])))) for row in bump)
+            result['bump_metrics']['maximum_tilt_deg']=math.degrees(maximum_tilt)
+            final_loads=bump[-1]['loads'][1::6]
+            result['checks']['complete_upright_bump_crossing']=(
+                result['bump_metrics']['cleared_entire_bump'] and maximum_tilt<math.radians(45) and
+                result['bump_metrics']['peak_body_height_m']>grounded.get()+.08 and
+                max(abs(row['truth'][1]-2.5106376) for row in bump)<.45 and
+                len(final_loads)==4 and sum(v>1 for v in final_loads)>=3 and
+                .8*67.6*9.80665<sum(final_loads)<1.2*67.6*9.80665 and
+                math.acos(max(-1.,min(1.,math.cos(bump[-1]['truth'][3])*math.cos(bump[-1]['truth'][4]))))<math.radians(5))
+            if compliant.get():
+                del result['checks']['bumper_slides_up_and_lifts_chassis']
+                # Complete upright crossing is required by its own check above.
+                result['checks']['compliant_bump_contact_is_finite_and_unilateral'] = (
+                    result['bump_metrics']['maximum_foam_compression_m']>0 and
+                    all(len(row['foam_forces'])==8 and all(math.isfinite(v) and v>=0 for v in row['foam_forces'])
+                        and all(math.isfinite(v) for v in row['truth']) and -.02<row['truth'][2]<2 for row in bump))
         finally:
             try:
                 if client.isConnected():
@@ -181,7 +236,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--nt-port', type=int, default=5810)
+    parser.add_argument('--bump-speed', type=float, default=5.24, help='Joystick-requested approach speed in m/s, (0,5.24]')
     args = parser.parse_args()
+    if not 0<args.bump_speed<=5.24:
+        parser.error('--bump-speed must be in (0,5.24] m/s')
     result = asyncio.run(exercise(args))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2)+'\n')

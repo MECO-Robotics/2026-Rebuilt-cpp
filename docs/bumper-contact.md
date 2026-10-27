@@ -1,3 +1,5 @@
+> Current Full3D configuration uses [compressible noodles with rigid plywood and a solid pan](compliant-bumper-contact.md). The rigid shell and numerical results below describe the historical 2026.0.10 release.
+
 # Bumper contact with terrain and obstacles
 
 The robot now has a hollow, four-sided bumper collision shell, rigidly attached

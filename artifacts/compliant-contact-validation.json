@@ -1,0 +1,289 @@
+{
+  "version": "2026.0.11-dev.1",
+  "scope": "Uncalibrated numerical desktop simulation; no hardware deployment, calibration or release publication",
+  "configuration": {
+    "chassis_clearance_m": 0.0508,
+    "pan_thickness_m": 0.003175,
+    "pan_half_length_m": 0.3411,
+    "pan_half_width_m": 0.3411,
+    "bumper_floor_gap_m": 0.00635,
+    "noodle_diameter_m": 0.06985,
+    "backing_thickness_m": 0.01905,
+    "backing_height_m": 0.127,
+    "backing_floor_gap_m": 0.00635,
+    "compression_strain": [
+      0,
+      0.25,
+      0.5,
+      0.7,
+      0.8
+    ],
+    "compression_stress_pa": [
+      0,
+      10000,
+      35000,
+      100000,
+      250000
+    ],
+    "damping_ratio": 0.8,
+    "tire_cof": 2.1,
+    "bumper_cof": 0.65
+  },
+  "upstream": {
+    "revision": "84daa281ffdb982ba0803fb2cfe488bf546993be",
+    "working_tree_clean": false,
+    "changed_source_sha256": {
+      "CMakeLists.txt": "d6dc59995df506c6895a479273142d5a78378d470fff71ccbe987c7e851df1fa",
+      "README.md": "5f36902acae80c2bb46c678c55138cedfec96adda4d2321773557c494f2d8c74",
+      "adapters/wpilib-2026/include/meco/sim/DriveSimulationAdapter.h": "addb90241759f9257e42e2fe56c9d87d1937628ed879e892230981396f4e8b17",
+      "adapters/wpilib-2026/src/DriveSimulationAdapter.cpp": "879946d1550bb4b86e4f9fc2a531bd96fd6ce0945faed88933003b689510a7c8",
+      "docs/compliant-bumper-contact.md": "a19cb8e178234a153376a8f7e86b6796a5cae632d342fa4160a2741810d41e01",
+      "include/base/sim/DrivePhysics.h": "618374fd4f024d89f2c68ab6f681bd92b798b970c64cefbb9253ddceaa593d78",
+      "include/base/sim/RobotContactConfig.h": "c471c773de069aa375029aafc0dd6f03d05dd3f2c7847775fd5ed7b985f4636c",
+      "include/base/sim/SimulationWorld.h": "13dcd614b1cb7eadace7cae3376d54c87a67d29dedd58ddc776a250064986a15",
+      "scripts/build_local_contact_package.sh": "cde72ccdb2372c42cac0433faec2cec5168398237c5e60ea8f20fd283fd658c5",
+      "scripts/package_vendordep.py": "0ecae48299e3af1e474729d2c6ea7af6c2b3b7400e2c89d7523a16a646fa3864",
+      "scripts/simulation_headers.py": "b4222555cb1300213a09d913507caad1705f5a56379fbcd531ce766b5bdc1503",
+      "scripts/tests/test_simulation_headers.py": "3ffcae1468421b187eccaf190094b2d17d0077aeaf21f33a67df66afd2e2374a",
+      "scripts/verify_vendordep.py": "ac7a12804045b7e1408f3d018d0a8af9ceeae7d69080f9e992be2bd93e546cc3",
+      "src/DrivePhysics.cpp": "f07863806e336cf83d6aa782ceea9b414859c2bc764aea138bab768c5813a8c9",
+      "src/RobotContactConfig.cpp": "036f09928ed95c7c52e6edafd1f796414ffd20e2bf23538e192fa66f726b66a8",
+      "src/SimulationWorld.cpp": "901ae4bdd5a05945dcee7bc0bd76c14612e6a206482bc60ae9bba3b9a30e58cc",
+      "tests/BumpTraversalTest.cpp": "53215f28b0a34eca51a4736f56ac9d835b55b6bae6e782a6d03c0703c0b3a075",
+      "tests/RobotContactTest.cpp": "28a77806c831f9124bf7dec26cb9b726c337ff2a94d7d6d63f771a8488d6f3db",
+      "tests/SimulationBenchmark.cpp": "afacbc050d02b666f2be5349c48182bbfd48d6b26e84fc34f795c586996a2ae1",
+      "vendordeps/MecoSimulation.json": "ecff9ff53ae6369048c371ef17e0594e857c1c2cca60872687f8ab43671ca23a"
+    }
+  },
+  "season": {
+    "revision": "59b8c8fa3432f0629fd5fcb1799b29653bc697b9",
+    "working_tree_clean": false,
+    "changed_source_sha256": {
+      "README.md": "b204fa3bb8d5b1a4d044a48b003e364d985f480cf1d5baff62f50046af607862",
+      "build.gradle": "c5c6eebdd1ba303122b4b78cbaace19ba01db6d075bdf6c8487df6590f4f154a",
+      "docs/bumper-contact.md": "b0fff0a3030a01d18cb6c8aa8cc5d646be26e6ffc247fbacb95d01a6570e862d",
+      "docs/compliant-bumper-contact.md": "002ef084d3eb6da2bd1781cb67fbde996b6e33e1cffec52121550019d7d5d993",
+      "docs/simulation-vendordep-boundary.md": "ca926664f3269897aaf8406acad3ef6c968ae4592672eb1c73e88c87d7ce96d4",
+      "scripts/field_collision_smoke.py": "8d2059ed77a56c787798b994655f33df0db4b7ad3f4dd4e934676432b0af7488",
+      "src/main/cpp/RobotContainer.cpp": "e6f9588dbf53f7983cba06bf902f6d6e7923c9d58cd96aceeaa688052c5033e0",
+      "vendordeps/MecoSimulation.json": "ecff9ff53ae6369048c371ef17e0594e857c1c2cca60872687f8ab43671ca23a"
+    }
+  },
+  "validation": {
+    "upstream_debug": {
+      "passed": true,
+      "ctest_cases": 9
+    },
+    "upstream_release": {
+      "passed": true,
+      "ctest_cases": 9
+    },
+    "package_python_tests": {
+      "passed": true,
+      "tests": 14
+    },
+    "linux_maven_package": {
+      "passed": true,
+      "configurations": [
+        "Debug",
+        "Release"
+      ],
+      "verified_maven_files": 5
+    },
+    "season_build": {
+      "passed": true,
+      "native_targets": [
+        "linuxathenaDebug",
+        "linuxathenaRelease",
+        "linuxx86-64Debug",
+        "linuxx86-64Release"
+      ],
+      "desktop_tests_per_configuration": 28,
+      "output_directory": "/tmp/rebuilt-contact-build"
+    },
+    "sustained_contact_benchmark": {
+      "passed": true,
+      "per_step_budget_seconds": 0.004,
+      "added_p99_budget_seconds": 0.0004,
+      "measurements": [
+        {
+          "compliant": 0.0,
+          "p99_seconds": 6.4502e-05,
+          "added_p99_seconds": 0.0,
+          "budget_pass": 1.0
+        },
+        {
+          "compliant": 1.0,
+          "p99_seconds": 7.5232e-05,
+          "added_p99_seconds": 1.073e-05,
+          "budget_pass": 1.0
+        }
+      ]
+    },
+    "native_bump_comparison": [
+      "compliant=0 max_compression=0 max_foam_force=0 pan_contacts=0 backing_contacts=0 cleared=0 final_x=4.95288 rode_bump=1 max_body_height=0.253388 bumper_supported_unloaded_steps=756",
+      "compliant=1 max_compression=0.0274575 max_foam_force=4496.4 pan_contacts=0 backing_contacts=801 cleared=0 final_x=4.32418 rode_bump=0 max_body_height=0.437282 bumper_supported_unloaded_steps=711"
+    ],
+    "desktop_field": {
+      "passed": true,
+      "checks": {
+        "grounded_model_height_is_zero": true,
+        "hard_mounted_body_has_no_static_sag": true,
+        "startup_clear_blue_spawn": true,
+        "blue_reset_matches_truth_and_odometry": true,
+        "red_reset_matches_truth_and_odometry": true,
+        "can_turn_at_default_spawn": true,
+        "actual_wall_contact_blocks_motion": true,
+        "field_installed": true,
+        "compliant_bump_contact_is_finite_and_unilateral": true
+      },
+      "metrics": {
+        "peak_body_height_m": 0.43511033058166504,
+        "lifted_samples": 259,
+        "final_x_m": 4.321534633636475,
+        "cleared_entire_bump": false,
+        "maximum_foam_compression_m": 0.028180643916130066,
+        "maximum_foam_force_n": 4574.032039100851,
+        "pan_contact_samples": 0,
+        "backing_contact_samples": 283
+      },
+      "binary_sha256": "a8cab79bd6df487e70231e02d0921abb32e42eec51be440bb7a1dc0132e1832b",
+      "nt_port": 5811,
+      "latency_probe_enabled": false,
+      "flat_ground_wheel_loads_n": [
+        165.7323850014371,
+        165.73238500089568,
+        165.73238499892588,
+        165.73238499946734
+      ],
+      "raw_record": "compliant-contact-field-runtime.json.gz",
+      "raw_sha256": "dbd78ec57b98c987b6ef0d400263c7fdad6deff25e8664ff2244aacffd5b163a"
+    },
+    "initial_wall_check": {
+      "passed": false,
+      "reason": "Half-second approach observation ended before contact had settled; bounded 3-second contact settling added without relaxing motion or penetration limits.",
+      "raw_record": "compliant-contact-field-initial.json.gz",
+      "raw_sha256": "a637dd7436b53a17afcb89786fe84becde58a3e487aef81c40a071bfbe981d99"
+    }
+  },
+  "package_manifest": {
+    "artifacts": {
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.1/meco-simulation-wpilib-cpp-2026.0.11-dev.1-headers.zip": "7bed795b52bed8773e73f8bfe2b8fb102fb7e681327cba300bc2d1338e0217fc",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.1/meco-simulation-wpilib-cpp-2026.0.11-dev.1-linuxx86-64static.zip": "be2fd8096d17df67cbe9891a8be9242fce951de2d43f2a7aaf2d7e1bb3acefe0",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.1/meco-simulation-wpilib-cpp-2026.0.11-dev.1-linuxx86-64staticdebug.zip": "96a8dc8520fd3f6f5ed49fb5708f4f1509f92929d66a0141e8d0baa69a9b51a0",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.1/meco-simulation-wpilib-cpp-2026.0.11-dev.1-sources.zip": "59fbd5673f02872e709df83090d8209709e0764f93673c7a30d98c2acde38406",
+      "maven/com/mecorobotics/sim/meco-simulation-wpilib-cpp/2026.0.11-dev.1/meco-simulation-wpilib-cpp-2026.0.11-dev.1.pom": "5760978040fee80387ef44a2d62c5e780df5a28eae3495e30b837b1bf5daa308"
+    },
+    "buildProvenance": {
+      "linuxx86-64": {
+        "baseCommit": "58f7462702282517f239e12a76af1cf32f6a8050",
+        "baseTrackedPatchSha256": "334c0382ef20fb50c250803bfb9c454e75ad9a9f7f02dd8a87deeed1a4f97d1a",
+        "baseVendordepVersion": "2026.2.1",
+        "baseWorkingTreeClean": false,
+        "cmakeVersion": "cmake version 4.4.4",
+        "gradleRioVersion": "2026.2.1",
+        "gradleVersion": "8.11",
+        "javaRuntime": "openjdk version \"21.0.12.1\" 2026-08-18 LTS",
+        "platform": "linuxx86-64",
+        "simulationCommit": "84daa281ffdb982ba0803fb2cfe488bf546993be",
+        "simulationTrackedPatchSha256": "e4554682b8f80a4f95ce3e5d782309c6f73ac2347bc980fa872d43c55555e798",
+        "simulationWorkingTreeClean": false,
+        "vendorDependencies": [
+          [
+            "com.ctre.phoenix6",
+            "tools",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6",
+            "wpiapi-cpp",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simPigeonIMU",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProCANcoder",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProCANdi",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProCANdle",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProCANrange",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProPigeon2",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProTalonFX",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simProTalonFXS",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simTalonSRX",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "simVictorSPX",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "tools-sim",
+            "26.1.2"
+          ],
+          [
+            "com.ctre.phoenix6.sim",
+            "wpiapi-cpp-sim",
+            "26.1.2"
+          ],
+          [
+            "com.pathplanner.lib",
+            "PathplannerLib-cpp",
+            "2026.1.2"
+          ],
+          [
+            "edu.wpi.first.wpilibNewCommands",
+            "wpilibNewCommands-cpp",
+            "wpilib"
+          ]
+        ],
+        "wpilibYear": "2026"
+      }
+    },
+    "cmakeVersion": "cmake version 4.4.4",
+    "sourceCommit": "84daa281ffdb982ba0803fb2cfe488bf546993be",
+    "version": "2026.0.11-dev.1"
+  },
+  "limitations": [
+    "Complete bump crossing remains false with flush-bottom rigid plywood.",
+    "Foam properties, chassis clearance and construction are estimates.",
+    "Rigid pan/backing and compliant wheel/foam solve use split integration.",
+    "Displayed robot mesh is not deformed. Tire deformation and dynamic-piece foam contact are excluded.",
+    "Windows packages and public release acceptance were not run."
+  ],
+  "published": false,
+  "deployed": false
+}
