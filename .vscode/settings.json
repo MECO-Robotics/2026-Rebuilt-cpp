@@ -3,5 +3,6 @@
     "*.h": "cpp",
     "array": "cpp"
   },
-  "C_Cpp.default.configurationProvider": "wpilibsuite.vscode-wpilib"
+  "C_Cpp.default.configurationProvider": "",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/TargetedCompileCommands/linuxx86-64debug/compile_commands.json"
 }
