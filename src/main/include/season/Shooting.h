@@ -54,10 +54,18 @@ namespace season
   inline constexpr double kHoodMin = 0, kHoodMax = .049;
   inline constexpr double kMinDistance = 46.003 * .0254, kMaxDistance = 236 * .0254;
   inline constexpr double kReleaseHeight = .45;
-  inline constexpr double kProjectileSpeedPerRps = 4 * kPi * .0254 * (1 + (48.0 / 54) * (1.5 / 4)) / 2 * (28.5 / 30);
+  inline constexpr double kMainWheelSpeedPerRps = 4 * kPi * .0254;
+  // Counter-wheel surface speed / main-wheel surface speed (gearing and diameters).
+  inline constexpr double kCounterWheelSurfaceSpeedRatio = (48.0 / 54) * (1.5 / 4);
+  // Unequal contact speeds create backspin and reduce translational exit speed.
+  // This is a speed ratio, not an energy-efficiency factor; do not apply it twice.
+  inline constexpr double kBackspinTranslationSpeedScale = (1 + kCounterWheelSurfaceSpeedRatio) / 2;
+  inline constexpr double kShooterSurfaceEfficiencyScale = 28.5 / 30;
+  inline constexpr double kProjectileSpeedPerRps = kMainWheelSpeedPerRps * kBackspinTranslationSpeedScale * kShooterSurfaceEfficiencyScale;
   inline constexpr double kDebounceSeconds = .15;
   inline constexpr std::array<double, 8> kDistanceInches{46.003, 123.24, 144.60, 153.64, 191.86, 202.78, 210.47, 236};
   inline constexpr std::array<double, 8> kHoodTable{0, .019, .020, .020, .020, .020, .020, .049};
+  // Table entries are wheel-RPS targets, not ball speeds; do not scale them again.
   inline constexpr std::array<double, 8> kFlywheelTable{30, 37.9, 40, 41, 46, 47, 47, 53.7};
   Point HubPosition(Alliance alliance);
   double AllianceBoundary(Alliance alliance, const FieldGeometry &field);
