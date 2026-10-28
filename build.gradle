@@ -5,10 +5,10 @@ plugins {
     id "edu.wpi.first.GradleRIO" version "2026.2.1"
 }
 
-// Unpublished Simulation development packages stay local; no release is implied.
-// Override when the upstream checkout is elsewhere: -PmecoSimulationMaven=/path/to/maven
-def simulationMaven = findProperty('mecoSimulationMaven') ?: '../MecoSimulation-cpp/build/contact-package/maven'
-if (file(simulationMaven).isDirectory()) {
+// Public Maven is the default. Opt in to a local development package with
+// -PmecoSimulationMaven=/path/to/maven
+def simulationMaven = findProperty('mecoSimulationMaven')
+if (simulationMaven && file(simulationMaven).isDirectory()) {
     repositories {
         exclusiveContent {
             forRepository {
@@ -18,6 +18,39 @@ if (file(simulationMaven).isDirectory()) {
                 }
             }
             filter { includeModule('com.mecorobotics.sim', 'meco-simulation-wpilib-cpp') }
+        }
+    }
+}
+
+// Opt in to a local Base development package with -PmecoBaseMaven=/path/to/maven.
+def baseMaven = findProperty('mecoBaseMaven')
+if (baseMaven && file(baseMaven).isDirectory()) {
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    url = uri(file(baseMaven))
+                    metadataSources { mavenPom(); artifact() }
+                }
+            }
+            filter { includeModule('com.mecorobotics.frc', 'meco-base-cpp') }
+        }
+    }
+}
+
+// Optional version overrides pair a local development Maven package with the
+// checked-in descriptors without changing their public coordinates.
+def baseDevVersion = findProperty('mecoBaseVersion')
+def simulationDevVersion = findProperty('mecoSimulationVersion')
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (baseMaven && baseDevVersion && details.requested.group == 'com.mecorobotics.frc' &&
+            details.requested.name == 'meco-base-cpp') {
+            details.useVersion(baseDevVersion.toString())
+        }
+        if (simulationMaven && simulationDevVersion && details.requested.group == 'com.mecorobotics.sim' &&
+            details.requested.name == 'meco-simulation-wpilib-cpp') {
+            details.useVersion(simulationDevVersion.toString())
         }
     }
 }

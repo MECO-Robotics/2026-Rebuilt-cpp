@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 using namespace season;
 TEST(FuelSimulation,LaunchUsesPhysicsPoseAndFullMotionInsteadOfOdometry){
  FuelModel flat,physical;flat.SetStoredFuel(1);physical.SetStoredFuel(1);
@@ -64,4 +65,21 @@ TEST(FuelSimulation,FuelTransfersMotionAndSeparatesOverlaps){
  model.Reset();model.AddFloorFuel({2,2});model.AddFloorFuel({2,2});model.Step(.02,{});
  ASSERT_EQ(model.FloorFuel().size(),2u);
  EXPECT_NEAR(model.FloorFuel()[1].position.x-model.FloorFuel()[0].position.x,5.5*.0254,1e-9);
+}
+
+TEST(ParticleContacts, RejectsInvalidGeometryAndNonfiniteParticles) {
+ std::vector<meco::sim::Particle> floor{{{std::numeric_limits<double>::quiet_NaN(),0,0},{}}}, airborne;
+ const meco::sim::ContactBody body{};
+ EXPECT_THROW(meco::sim::ResolveParticleContacts(floor,airborne,body,.1,.25,.3,{}), std::invalid_argument);
+ floor.clear();
+ const std::vector<meco::sim::ContactBox> boxes{{{}, {-1,1,1}}};
+ EXPECT_THROW(meco::sim::ResolveParticleContacts(floor,airborne,body,.1,.25,.3,boxes), std::invalid_argument);
+}
+TEST(ParticleContacts, RejectsAliasedGroupsWithoutChangingParticles) {
+ std::vector<meco::sim::Particle> particles{{{1,2,3},{4,5,6}}};
+ const meco::sim::ContactBody body{};
+ EXPECT_THROW(meco::sim::ResolveParticleContacts(particles,particles,body,.1,.25,.3,{}), std::invalid_argument);
+ ASSERT_EQ(particles.size(),1u);
+ EXPECT_DOUBLE_EQ(particles[0].position.x,1);
+ EXPECT_DOUBLE_EQ(particles[0].velocity.x,4);
 }

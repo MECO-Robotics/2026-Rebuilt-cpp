@@ -5,7 +5,7 @@
 #include "base/QuestNav.h"
 #include "season/SimulatedLocalization.h"
 #include "season/SeasonCommands.h"
-#include "season/SystemCheck.h"
+#include "base/SystemCheck.h"
 #include "season/FuelSimulation.h"
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/DriveSimulationAdapter.h"
@@ -43,9 +43,10 @@ private:
   std::unique_ptr<base::VisionSystem> vision_;
   std::vector<std::unique_ptr<base::VisionIO>> LocalizationSources();
   void AcceptVision(const base::VisionObservation &observation);
-  season::SystemCheck checks_;
-  std::unique_ptr<season::FuelSimulation> simulation_;
+  base::SystemCheck checks_;
+
 #ifndef __FRC_ROBORIO__
+  std::unique_ptr<season::FuelSimulation> simulation_;
   meco::sim::DriveSimulationSession *simulationSession_{}; // Non-owning; drive_ owns it.
   nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
   nt::StructPublisher<frc::Pose3d> simulationBodyPosePublisher_;

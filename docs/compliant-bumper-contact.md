@@ -1,6 +1,6 @@
 # Season contact configuration
 
-The robot now uses the MecoSimulation `2026.0.11-dev.2` development package in
+The robot now uses the MecoSimulation `2026.0.13` vendordep in
 Full3D. `RobotContacts()` in `RobotContainer.cpp` owns the construction estimates:
 2-inch belly-pan clearance, 1/8-inch pan, two 2.75-inch noodles per side and
 3/4-inch by 5-inch plywood with its bottom flush at the user-selected 1/2 inch above carpet.
@@ -16,21 +16,19 @@ for the solver, assumptions and telemetry. `FieldSimulation/*` reports effective
 settings at startup. Contact loads and compression are published at 50 Hz without
 `FRC_SIM_LATENCY_PROBE`; legacy planar mode retains rigid contact.
 
-## Local package setup
+## Package setup
 
-No release has been published. The normal build discovers the local Maven staging
-repository at `../MecoSimulation-cpp/build/contact-package/maven`. Set
-`-PmecoSimulationMaven=/absolute/path/to/maven` when using another location.
-The season still links packaged public headers and one combined archive; it does
-not compile upstream sources or override headers. Both Linux configurations are
-required. A checkout without that local package cannot resolve this development
-version from public Maven.
+The normal build resolves version `2026.0.13` from public Maven. The season links
+packaged public headers and one combined archive; it does not compile upstream
+sources or override headers.
 
-Rebuild and verify the complete local package, then resolve it in the season:
+For local upstream development, rebuild both Linux configurations and explicitly
+select the local package. If its version differs from the checked-in descriptor,
+provide its version explicitly with `-PmecoSimulationVersion`:
 
 ```sh
 ../MecoSimulation-cpp/scripts/build_local_contact_package.sh
-JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --refresh-dependencies --max-workers=2
+./gradlew build -PmecoSimulationMaven=../MecoSimulation-cpp/build/contact-package/maven --max-workers=2
 ```
 
 The helper builds both CMake physics configurations and both Gradle adapter

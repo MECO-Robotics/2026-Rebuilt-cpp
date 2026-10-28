@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-27",
+  "simulationVersion": "2026.0.11",
+  "baseVersion": "2026.2.1",
+  "releaseCommit": "bc71b3cc1bb2aba453952cd938af54b89b49dd44",
+  "workflow": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40560588327",
+  "releaseChecks": {
+    "linuxWindowsDebugReleaseBuilds": "passed",
+    "stagedConsumers": 4,
+    "publishedConsumers": 4,
+    "checksummedMavenFiles": 49,
+    "previous2026_0_10PomPreserved": true
+  },
+  "robotBuild": {
+    "checkout": "/tmp/rebuilt-public-consumer-2026-0-11",
+    "command": "./gradlew build --max-workers=2 --console=plain",
+    "localSimulationOverride": false,
+    "initialBuildDirectory": "absent",
+    "result": "passed",
+    "executables": [
+      "linuxathena Debug",
+      "linuxathena Release",
+      "linuxx86-64 Debug",
+      "linuxx86-64 Release"
+    ],
+    "desktopDebugTests": 8,
+    "desktopReleaseTests": 8,
+    "log": "/tmp/rebuilt-public-end-to-end.log"
+  },
+  "artifactVerification": "Downloaded headers and Linux Debug/Release archives in Gradle cache match public Maven SHA256 hashes",
+  "hardwareValidation": false
+}

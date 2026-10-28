@@ -1,5 +1,5 @@
 #include "base/Mechanism.h"
-#include "season/HardwareAdapter.h"
+#include "season/MechanismConstants.h"
 #include <cmath>
 #include <numbers>
 #include <gtest/gtest.h>
@@ -20,7 +20,7 @@ TEST(SeasonSimulation, HoodHighReductionTracksSmallPositionWithoutNumericalInsta
   EnableSim(true);
   auto io=base::MakeMotorIO(base::Mode::Sim,base::Vendor::SparkMax,{{33},{false},105,40,""},.01);
   auto* plant=io.get();
-  base::PositionJoint hood("HoodStability",std::move(io),season::SimulationGainsFor(season::hardware::kHoodGains),1,base::Gravity::Cosine);
+  base::PositionJoint hood("HoodStability",std::move(io),season::hardware::SimulationGainsFor(season::hardware::kHoodGains),1,base::Gravity::Cosine);
   hood.SetPosition(.020);
   double maxPosition=0;
   for(int step=0;step<1000;++step) {

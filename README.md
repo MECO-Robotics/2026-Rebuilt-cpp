@@ -14,12 +14,15 @@ For device configuration, commissioning, and diagnosis, use [`frc-hardware`](.ag
 ## Build and simulate
 
 Install WPILib 2026.2.1 with its C++ toolchains. This project uses the published
-[MecoBase 2026.2.1 vendordep](https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json)
-and the matching-year [MecoSimulation 2026.0.10 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
+[MecoBase 2026.2.4 vendordep](https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json)
+and the matching-year [MecoSimulation 2026.0.13 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
 The current checkout resolves both from their public Maven URLs; the build,
 Debug/Release tests, and localhost desktop drive smoke against MecoSimulation
 2026.0.6 are recorded in the [public-package validation record](artifacts/public-multivendordep-validation-2026.0.6.json)
 and the [drive smoke output](artifacts/season-drive-smoke-public-2026.0.6.json).
+Version 2026.0.11 passed a clean robot build against public Maven for desktop and
+roboRIO Debug/Release, plus 8 tests in each desktop configuration. See the
+[release validation record](artifacts/public-multivendordep-validation-2026.0.11.json).
 For a clean project, install MecoBase and then MecoSimulation through
 **WPILib → Manage Vendor Libraries → Install new libraries (online)**. MecoBase
 alone supports roboRIO builds. MecoSimulation adds Linux and Windows desktop
@@ -89,6 +92,14 @@ Pilot controls: left stick drives translation, right X rotates, Start resets dri
 
 Shooting calculations preserve all eight calibration rows, shooter exit/yaw, alliance/tag target selection, ferry trajectory exclusion, readiness ordering and volley latch/debounce. Calibration dashboard values are bounded. Autonomous includes copied PathPlanner assets, named mechanism commands, a stationary vision-initialized shot and native Choreo `LeftBlueBump` followed by a shot. Marker shots do not claim drivetrain ownership; they check the path's current heading rather than overriding the path follower.
 
+Ferry planning, ferry clearance checks and simulated launches share the same
+wheel-to-ball speed conversion. The counter-wheel surface speed is one third of
+the main wheel's; their average gives a backspin translation-speed factor of
+2/3, followed by the existing 0.95 tape-efficiency factor. At 30 wheel RPS the
+nominal exit speed is 6.065 m/s. Hub table entries are wheel-RPS calibration
+targets and receive no additional loss multiplier. This models reduced exit
+speed, not spin-induced flight forces or shot-induced flywheel slowdown.
+
 Localization combines Limelight field observations with the pinned MecoBase QuestNav VIO receiver. Limelight anchors QuestNav after tracking starts or reconnects; PhotonVision remains available as a reusable base adapter. Stationary autonomous shooting requires a recently accepted field pose; camera heartbeat alone is insufficient. Path-following autos seed their own field pose.
 
 To check hub aiming, run the field-enabled headless simulator and then
@@ -147,7 +158,7 @@ The unshifted physics body pose is published separately at
 geometry on flat ground). Physics validation scripts use that raw pose. The model-origin
 offset follows chassis rotation and preserves bump/airborne height changes.
 
-The desktop Full3D robot now uses [configurable chassis clearance and compressible pool-noodle bumpers](docs/compliant-bumper-contact.md) through a local, unpublished development package.
+The desktop Full3D robot now uses [configurable chassis clearance and compressible pool-noodle bumpers](docs/compliant-bumper-contact.md) through the MecoSimulation 2026.0.13 vendordep.
 
 The swerve modules are hard mounted. The rigid wheel-contact model has no
 vertical springs, dampers, suspension travel or load-dependent sag.
@@ -231,3 +242,9 @@ It checks both source statuses, observes Limelight tags while turning, then
 translates and requires less than 0.2 m final estimated-versus-physical position
 error. It writes `artifacts/localization-smoke.json` and disables inputs on exit.
 The tolerance is a numerical integration check, not measured sensor accuracy.
+
+Reusable floor-reference transforms and AprilTag visibility geometry come from
+MecoSimulation (`meco/sim/SimulationPose.h` and `meco/sim/SimulatedVision.h`).
+The season owns camera settings, Quest alignment policy and observation generation.
+Public Maven is the default; local package testing requires an explicit
+`-PmecoSimulationMaven=/path/to/maven` override.

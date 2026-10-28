@@ -1,3 +1,4 @@
+#ifndef __FRC_ROBORIO__
 #include "season/FuelSimulation.h"
 #include "season/RobotVisualization.h"
 #include <networktables/NetworkTableInstance.h>
@@ -14,63 +15,17 @@ FuelPoint Point3d(const frc::Translation3d& p){return {p.X().value(),p.Y().value
 frc::Pose3d Pose3d(Pose p){return {units::meter_t{p.x},units::meter_t{p.y},units::meter_t{0},frc::Rotation3d{units::radian_t{0},units::radian_t{0},units::radian_t{p.heading}}};}
 FuelPoint World(FuelPoint local,const frc::Pose3d& robot){return Point3d(robot.Translation()+Translation(local).RotateBy(robot.Rotation()));}
 FuelRobotState RobotState(const FuelInputs& in){return in.physics.value_or(FuelRobotState{Pose3d(in.robot),{in.vx,in.vy,0},{0,0,in.omega},{}});}
-// Estimated foam contacts. The drivetrain remains the owner of robot motion.
-void BumperContact(FuelParticle& ball, const FuelRobotState& robot) {
- auto local=Point3d((Translation(ball.position)-robot.pose.Translation()).RotateBy(-robot.pose.Rotation()));
+// Four prescribed bumper boxes retain the open center of this robot.
+const std::vector<meco::sim::ContactBox> kBumpers = [] {
  constexpr double half=.43, depth=.0889, bottom=.0127, top=bottom+2*.06985;
- // Four boxes preserve the open centre and allow elevated fuel to pass above.
- for(int side=0;side<4;++side){
+ std::vector<meco::sim::ContactBox> boxes;
+ for(int side=0;side<4;++side) {
   const bool alongX=side<2; const double sign=side%2?1:-1;
-  FuelPoint center{alongX?sign*(half-depth/2):0,alongX?0:sign*(half-depth/2),(bottom+top)/2};
-  FuelPoint extent{alongX?depth/2:half,alongX?half:depth/2,(top-bottom)/2};
-  FuelPoint delta{local.x-center.x,local.y-center.y,local.z-center.z};
-  FuelPoint nearest{std::clamp(delta.x,-extent.x,extent.x),std::clamp(delta.y,-extent.y,extent.y),std::clamp(delta.z,-extent.z,extent.z)};
-  FuelPoint normal{delta.x-nearest.x,delta.y-nearest.y,delta.z-nearest.z};
-  double distance=std::sqrt(normal.x*normal.x+normal.y*normal.y+normal.z*normal.z);
-  if(distance>=radius)continue;
-  if(distance<1e-12){
-   const double dx=extent.x-std::abs(delta.x),dy=extent.y-std::abs(delta.y),dz=extent.z-std::abs(delta.z);
-   normal={};
-   if(dx<=dy&&dx<=dz){normal.x=delta.x>=0?1:-1;distance=-dx;}
-   else if(dy<=dz){normal.y=delta.y>=0?1:-1;distance=-dy;}
-   else{normal.z=delta.z>=0?1:-1;distance=-dz;}
-  }else{normal.x/=distance;normal.y/=distance;normal.z/=distance;}
-  local.x+=normal.x*(radius-distance);local.y+=normal.y*(radius-distance);local.z+=normal.z*(radius-distance);
-  ball.position=World(local,robot.pose);
-  const auto n=Point3d(Translation(normal).RotateBy(robot.pose.Rotation()));
-  const auto com=World(robot.centerOfMass,robot.pose);
-  const FuelPoint r{ball.position.x-radius*n.x-com.x,ball.position.y-radius*n.y-com.y,ball.position.z-radius*n.z-com.z};
-  const auto w=robot.angularVelocity;
-  const FuelPoint surface{robot.velocity.x+w.y*r.z-w.z*r.y,robot.velocity.y+w.z*r.x-w.x*r.z,robot.velocity.z+w.x*r.y-w.y*r.x};
-  const double speed=(ball.velocity.x-surface.x)*n.x+(ball.velocity.y-surface.y)*n.y+(ball.velocity.z-surface.z)*n.z;
-  if(speed<0){ball.velocity.x-=1.25*speed*n.x;ball.velocity.y-=1.25*speed*n.y;ball.velocity.z-=1.25*speed*n.z;}
+  boxes.push_back({{alongX?sign*(half-depth/2):0,alongX?0:sign*(half-depth/2),(bottom+top)/2},
+                   {alongX?depth/2:half,alongX?half:depth/2,(top-bottom)/2}});
  }
-}
-void FuelContacts(std::vector<FuelParticle>& floor,std::vector<FuelParticle>& airborne,const FuelRobotState& robot){
- std::vector<FuelParticle*> balls;balls.reserve(floor.size()+airborne.size());
- for(auto& p:floor)balls.push_back(&p);
- for(auto& p:airborne)balls.push_back(&p);
- for(auto* p:balls)BumperContact(*p,robot);
- // Sweep broad phase avoids all-pairs work for the initial neutral-zone grid.
- std::sort(balls.begin(),balls.end(),[](auto* a,auto* b){return a->position.x<b->position.x;});
- std::vector<double> sweepX; sweepX.reserve(balls.size());
- for(auto* p:balls)sweepX.push_back(p->position.x);
- for(size_t i=0;i<balls.size();++i)for(size_t j=i+1;j<balls.size();++j){
-  auto& a=*balls[i];auto& b=*balls[j];
-  if(sweepX[j]-sweepX[i]>diameter)break;
-  FuelPoint n{b.position.x-a.position.x,b.position.y-a.position.y,b.position.z-a.position.z};
-  double d=std::sqrt(n.x*n.x+n.y*n.y+n.z*n.z);if(d>=diameter)continue;
-  if(d<1e-12){n={1,0,0};d=0;}else{n.x/=d;n.y/=d;n.z/=d;}
-  const double correction=(diameter-d)/2;
-  a.position.x-=n.x*correction;a.position.y-=n.y*correction;a.position.z-=n.z*correction;
-  b.position.x+=n.x*correction;b.position.y+=n.y*correction;b.position.z+=n.z*correction;
-  const double closing=(b.velocity.x-a.velocity.x)*n.x+(b.velocity.y-a.velocity.y)*n.y+(b.velocity.z-a.velocity.z)*n.z;
-  if(closing<0){const double impulse=-.65*closing;
-   a.velocity.x-=impulse*n.x;a.velocity.y-=impulse*n.y;a.velocity.z-=impulse*n.z;
-   b.velocity.x+=impulse*n.x;b.velocity.y+=impulse*n.y;b.velocity.z+=impulse*n.z;
-  }
- }
-}
+ return boxes;
+}();
 std::vector<double> Positions(const std::vector<FuelParticle>& particles){std::vector<double> values;for(auto& p:particles){values.push_back(p.position.x);values.push_back(p.position.y);values.push_back(p.position.z);}return values;}
 std::vector<double> Positions(const std::vector<FuelPoint>& particles){std::vector<double> values;for(auto& p:particles){values.push_back(p.x);values.push_back(p.y);values.push_back(p.z);}return values;}
 }
@@ -115,7 +70,7 @@ void FuelModel::Step(double dt,const FuelInputs& in){
    else if(it->position.z<=radius){floor_.push_back({{it->position.x,it->position.y,radius},{it->velocity.x*.15,it->velocity.y*.15,0}});it=airborne_.erase(it);}else ++it;
   }
   for(auto& p:floor_){p.position.x+=p.velocity.x*h;p.position.y+=p.velocity.y*h;double attenuation=std::exp(-2*h);p.velocity.x*=attenuation;p.velocity.y*=attenuation;}
-  FuelContacts(floor_,airborne_,RobotState(in));
+  meco::sim::ResolveParticleContacts(floor_,airborne_,RobotState(in),radius,.25,.30,kBumpers);
   // A bumper or ball may lift resting fuel back into ballistic motion.
   for(auto it=floor_.begin();it!=floor_.end();){if(it->position.z>radius+1e-6||it->velocity.z>1e-6){airborne_.push_back(*it);it=floor_.erase(it);}else{it->position.z=radius;it->velocity.z=0;++it;}}
  }
@@ -152,3 +107,5 @@ void FuelSimulation::Periodic(double dt, std::optional<FuelRobotState> physics){
  frc::SmartDashboard::PutNumber("FieldSimulation/SuccessfulScoreCount",model_.SuccessfulScores());frc::SmartDashboard::PutNumber("FieldSimulation/LaunchedFuelCount",model_.LaunchedFuel());frc::SmartDashboard::PutNumber("FieldSimulation/FuelProjectileCount",model_.Projectiles().size());frc::SmartDashboard::PutNumberArray("FieldSimulation/FuelPositionsXYZ",fuelPositions);frc::SmartDashboard::PutNumberArray("FieldSimulation/HopperFuelPositionsXYZ",hopperPositions);frc::SmartDashboard::PutNumberArray("FieldSimulation/FuelProjectilePositionsXYZ",Positions(model_.Projectiles()));
 }
 }
+
+#endif

@@ -18,7 +18,7 @@ Phoenix native swerve replaces the Java base's custom module/odometry/setpoint i
 
 The season container now consumes MecoBase's QuestNav 2026-2.2.0 receiver alongside Limelight. Accepted Limelight observations establish QuestNav field alignment after tracking starts or reconnects. Desktop simulation supplies ideal, visibility-gated Limelight observations and tag-assisted Quest tracking through public injected IO. Experimental QuestNav AprilTag firmware status/automatic alignment is not supported by the pinned receiver; the full Java initialization/relocalization state machine remains unported. Java's MegaTag1/multi-tag plus MegaTag2 single-tag fallback and reference-pose single-tag filter are not identical to this native adapter. Camera mounting values are copied from source and remain hardware calibration inputs.
 
-The desktop drive simulator consumes MecoSimulation 2026.0.9 with robot-specific
+The desktop drive simulator consumes MecoSimulation 2026.0.11 with robot-specific
 configuration: 67.6 kg ready-to-drive simulation mass, 6.883 kg m² estimated yaw
 MOI, tire CoF 2.1, 2 inch wheel radius, 5.8909 drive ratio, 50 A stator/slip and
 55 A supply limits. The real configuration retains 53 kg and CoF 2.9. The yaw
@@ -28,7 +28,9 @@ there are no local library-source or public-header replacements. See the
 [ownership boundary and packaged validation](simulation-vendordep-boundary.md).
 These numerical checks do not establish physical calibration. The robot-specific
 fuel model uses a deterministic neutral-zone grid and ideal gravity trajectories;
-it has no robot/structure contacts, drag, backspin or flywheel load coupling.
+exit speed includes the slower counter-wheel/backspin reduction and tape losses,
+but it has no robot/structure contacts, drag, spin-induced flight forces or
+flywheel load coupling.
 Rack wall-contact compliance/hysteresis from the Java intake has not been ported.
 
 The native diagnostic runner is a bounded replacement, not the Java seventeen-class system-check suite. It does not provide the original port5806 browser dashboard, per-device CAN topology audit, HTML/CSV reporting, detailed controller configuration-status or fault-injection matrix. No physical system checks have been run. Start controls must be used only after reviewing the configured stages and arranging the required unloaded setup.

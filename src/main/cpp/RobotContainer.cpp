@@ -2,9 +2,11 @@
 #include "season/SimulationField.h"
 #include "season/SimulationPose.h"
 #include "RobotContainer.h"
-#include "season/HardwareAdapter.h"
-#include "season/ChoreoAuto.h"
-#include "season/SimulationTuning.h"
+#include "season/MechanismConstants.h"
+#include "base/ChoreoAuto.h"
+#ifndef __FRC_ROBORIO__
+#include "base/sim/SimulationTuning.h"
+#endif
 #include "season/SystemCheckSetup.h"
 #include <frc/RobotBase.h>
 #include <frc/system/plant/DCMotor.h>
@@ -103,24 +105,26 @@ namespace
                              {Orientation::ClockwisePositive, Orientation::ClockwisePositive, Orientation::CounterClockwisePositive},
                              {Orientation::CounterClockwisePositive, Orientation::ClockwisePositive, Orientation::CounterClockwisePositive},
                              {Orientation::ClockwisePositive, Orientation::ClockwisePositive, Orientation::CounterClockwisePositive}}};
+#ifndef __FRC_ROBORIO__
     if (simulation)
     {
       // Native Phoenix swerve requests enable FOC. Use the same electrical
       // plant and stator torque limit as the simulation adapter, not supply amps.
       const auto motor = frc::DCMotor::KrakenX60FOC(1);
       const double motorTorqueConstant = motor.Kt.value();
-      std::array<season::simulation::ModuleLocation, 4> locations{};
+      std::array<base::sim::ModuleLocation, 4> locations{};
       for (std::size_t i = 0; i < locations.size(); ++i)
         locations[i] = {c.modules[i].xMeters, c.modules[i].yMeters};
-      const auto tuned = season::simulation::DeriveSimulationTuning({c.massKg, c.moi, c.cof, c.wheelRadius, c.driveRatio, c.slipCurrent, motorTorqueConstant, locations});
+      const auto tuned = base::sim::DeriveSimulationTuning({c.massKg, c.moi, c.cof, c.wheelRadius, c.driveRatio, c.slipCurrent, motorTorqueConstant, locations, .08, .50});
       // The contact-loaded plant uses the configured robot steering gains.
       // The old simulation-only pole estimate assumed an unloaded azimuth motor.
       c.autoTranslationKP = tuned.autoTranslationKP;
       c.autoRotationKP = tuned.autoRotationKP;
     }
+#endif
     return c;
   }
-  std::unique_ptr<base::MotorIO> Motor(const season::hardware::FlywheelConfig &c, base::Vendor vendor) { return base::MakeMotorIO(Mode(), vendor, season::MotorConfigFor(c), c.inertiaKgMetersSquared); }
+  std::unique_ptr<base::MotorIO> Motor(const season::hardware::FlywheelConfig &c, base::Vendor vendor) { return base::MakeMotorIO(Mode(), vendor, c.motor, c.inertiaKgMetersSquared); }
   season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
   {
     auto midpoint = [&](int a, int b)
@@ -177,18 +181,18 @@ void RobotContainer::AcceptVision(const base::VisionObservation &observation)
 }
 season::Mechanisms RobotContainer::Mechanisms() { return {rack_, intake_, conveyor_, bottom_, top_, hood_, shooter_}; }
 RobotContainer::RobotContainer() : drive_(DriveConfig()),
-                                   rack_("IntakeRack", base::MakeMotorIO(Mode(), base::Vendor::SparkMax, {{21}, {false}, season::hardware::kRackGearRatio * 2 * std::numbers::pi * season::hardware::kRackDrumRadius, 40, ""}, 15 * .45359237 * .0127 * .0127), (frc::RobotBase::IsSimulation() ? season::SimulationGainsFor(season::hardware::kRackGains) : season::GainsFor(season::hardware::kRackGains)), 2 * std::numbers::pi * season::hardware::kRackDrumRadius),
-                                   hood_("Hood", base::MakeMotorIO(Mode(), base::Vendor::SparkMax, {{33}, {false}, 105, 40, ""}, .01), (frc::RobotBase::IsSimulation() ? season::SimulationGainsFor(season::hardware::kHoodGains) : season::GainsFor(season::hardware::kHoodGains)), 1, base::Gravity::Cosine),
-                                   intake_("IntakeRoller", Motor(season::hardware::kIntake, base::Vendor::SparkMax), season::GainsFor(season::hardware::kIntakeGains)),
-                                   conveyor_("Conveyor", Motor(season::hardware::kConveyor, base::Vendor::SparkMax), season::GainsFor(season::hardware::kConveyorGains)),
-                                   bottom_("BottomIndexer", Motor(season::hardware::kBottomIndexer, base::Vendor::TalonFX), season::GainsFor(season::hardware::kIndexerGains)),
-                                   top_("TopIndexer", Motor(season::hardware::kTopIndexer, base::Vendor::SparkMax), season::GainsFor(season::hardware::kIndexerGains)),
-                                   shooter_("ShooterFlywheel", Motor(season::hardware::kShooter, base::Vendor::TalonFX), season::GainsFor(season::hardware::kShooterGains)),
+                                   rack_("IntakeRack", base::MakeMotorIO(Mode(), base::Vendor::SparkMax, {{21}, {false}, season::hardware::kRackGearRatio * 2 * std::numbers::pi * season::hardware::kRackDrumRadius, 40, ""}, 15 * .45359237 * .0127 * .0127), (frc::RobotBase::IsSimulation() ? season::hardware::SimulationGainsFor(season::hardware::kRackGains) : season::hardware::kRackGains), 2 * std::numbers::pi * season::hardware::kRackDrumRadius),
+                                   hood_("Hood", base::MakeMotorIO(Mode(), base::Vendor::SparkMax, {{33}, {false}, 105, 40, ""}, .01), (frc::RobotBase::IsSimulation() ? season::hardware::SimulationGainsFor(season::hardware::kHoodGains) : season::hardware::kHoodGains), 1, base::Gravity::Cosine),
+                                   intake_("IntakeRoller", Motor(season::hardware::kIntake, base::Vendor::SparkMax), season::hardware::kIntakeGains),
+                                   conveyor_("Conveyor", Motor(season::hardware::kConveyor, base::Vendor::SparkMax), season::hardware::kConveyorGains),
+                                   bottom_("BottomIndexer", Motor(season::hardware::kBottomIndexer, base::Vendor::TalonFX), season::hardware::kIndexerGains),
+                                   top_("TopIndexer", Motor(season::hardware::kTopIndexer, base::Vendor::SparkMax), season::hardware::kIndexerGains),
+                                   shooter_("ShooterFlywheel", Motor(season::hardware::kShooter, base::Vendor::TalonFX), season::hardware::kShooterGains),
                                    layout_(frc::AprilTagFieldLayout::LoadField(frc::AprilTagField::kDefaultField)), field_(Geometry(layout_)),
                                    vision_(std::make_unique<base::VisionSystem>(LocalizationSources(), [this](const auto &obs)
                                            { AcceptVision(obs); })),
                                    checks_([this]
-                                           {drive_.Stop();rack_.Stop();hood_.Stop();intake_.Stop();conveyor_.Stop();bottom_.Stop();top_.Stop();shooter_.Stop(); }, frc::RobotBase::IsReal() ? "/home/lvuser/systemcheck-latest.json" : "systemcheck-latest.json")
+                                           {drive_.Stop();rack_.Stop();hood_.Stop();intake_.Stop();conveyor_.Stop();bottom_.Stop();top_.Stop();shooter_.Stop(); }, frc::RobotBase::IsReal() ? "/home/lvuser/systemcheck-latest.json" : "systemcheck-latest.json", {.setupPrompt = "Confirm robot on blocks, no fuel, clear personnel and Disable operator ready"})
 {
   drive_.ConfigureAuto();
 #ifndef __FRC_ROBORIO__
@@ -242,8 +246,10 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
                                                { ResetSimulation(); }));
 #endif
   auto m = Mechanisms();
+#ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
     simulation_ = std::make_unique<season::FuelSimulation>(m, drive_);
+#endif
   // Presets latch between button presses. No idle default overwrites their setpoints.
   (controller_.Start() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
@@ -343,7 +349,7 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
                                                                            { drive_.Stop();hood_.Stop();shooter_.Stop(); }, {&drive_, &hood_, &shooter_}));
   autoChooser_ = pathplanner::AutoBuilder::buildAutoChooser();
   seasonAutos_.emplace_back(HubShot(true, true));
-  seasonAutos_.emplace_back(season::Auto(drive_, "LeftBlueBump").AndThen(HubShot()));
+  seasonAutos_.emplace_back(base::FollowChoreo<2026>(drive_, "LeftBlueBump", {10, 0, 0}, {7, 0, 0}, units::second_t{.02}).AndThen(HubShot()));
   seasonAutos_.emplace_back(frc2::cmd::None());
   autoChooser_.SetDefaultOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
   autoChooser_.AddOption("Choreo LeftBlueBump + Shoot", seasonAutos_[1].get());
@@ -413,8 +419,8 @@ void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 
 void RobotContainer::SimulationPeriodic()
 {
-  std::optional<season::FuelRobotState> fuelRobotState;
 #ifndef __FRC_ROBORIO__
+  std::optional<season::FuelRobotState> fuelRobotState;
   if (auto truth = drive_.SimulationTruth())
   {
     // Scene reset changes encoder and gyro raw inputs asynchronously. Reconcile
@@ -448,9 +454,9 @@ void RobotContainer::SimulationPeriodic()
         {body.angularVelocity.x, body.angularVelocity.y, body.angularVelocity.z},
         {config.centerOfMassX, config.centerOfMassY, config.centerOfMassZ + simulationGroundedBodyHeight_.value()}};
   }
-#endif
   if (simulation_)
     simulation_->Periodic(.02, fuelRobotState);
+#endif
 }
 void RobotContainer::ResetSimulation()
 {
@@ -465,6 +471,9 @@ void RobotContainer::ResetSimulation()
   simulationResetFeedbackLoops_ = 5;
   drive_.ResetSimulation(simulationResetPhysicalOrigin_);
 #endif
+
+#ifndef __FRC_ROBORIO__
   if (simulation_)
     simulation_->Reset();
+#endif
 }

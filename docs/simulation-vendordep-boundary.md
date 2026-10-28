@@ -2,8 +2,8 @@
 
 | Owner | Responsibilities |
 | --- | --- |
-| MecoBase 2026.2.1 | Commands, motor IO, hardware configuration and Jolt-free shared motor runtime |
-| MecoSimulation 2026.0.11-dev.2 (local, unpublished) | Jolt/world, rigid wheel, configurable rigid pan/backing and compliant bumper contact, load-dependent azimuth, Phoenix feedback bridge, shared battery helper, simulation diagnostics and reusable 2026 field collider geometry |
+| MecoBase | Commands, staged system checks, motor IO, hardware configuration and Jolt-free shared motor runtime |
+| MecoSimulation | Jolt/world, rigid wheel, configurable rigid pan/backing and compliant bumper contact, load-dependent azimuth, Phoenix feedback bridge, battery and diagnostics helpers, field geometry, footprint clearance, tuning, ideal vision observations and prescribed-body particle contacts |
 | This robot | Hardware dimensions/mass/current settings, controls, commands, robot-specific fuel behavior, legal starting-pose policy and telemetry presentation |
 
 The robot consumes Simulation public headers and its combined static archive.
@@ -15,8 +15,8 @@ module contact data; reading chassis tilt does not intercept vendor feedback.
 Battery and Driver Station packet helpers are explicitly called once by the
 application's simulation loop. Neither adds another physics owner. The latency
 probe wrapper supplies real-robot no-ops because Simulation is desktop-only.
-The shared field map belongs to the 2026 package; spawn and chassis-clearance
-policy remain specific to this robot.
+The shared field map belongs to the 2026 package; spawn and chassis dimensions remain specific to this robot. The shared clearance
+helper accepts these inputs and fails closed for unsupported collider geometry.
 
 A release requires matching public headers/archives, clean source provenance,
 Linux and Windows Debug/Release package consumers, and public Maven verification.
@@ -41,12 +41,12 @@ verification is recorded separately from staged local-Maven checks.
 The 2026.0.10 bump contact release and joystick checks are recorded in
 [bump-contact-validation-2026.0.10.json](../artifacts/bump-contact-validation-2026.0.10.json).
 
-Current development-package setup is documented in [contact configuration](compliant-bumper-contact.md). Linux local-package validation does not establish Windows or public-release acceptance.
+Local development-package setup is documented in [contact configuration](compliant-bumper-contact.md). Linux local-package validation does not establish Windows or public-release acceptance.
 
 Localization uses MecoBase's public `VisionSystem`, `InjectedVisionIO`, Limelight
 and QuestNav factories. Season code composes these sources and supplies the
 installed camera transforms and an ideal truth/visibility model; it copies no
 vendor protocol, driver, private header or estimator implementation. MecoSimulation
-remains the sole physics owner. No vendordep versions or upstream sources are
-changed for this integration. A reusable camera/noise/protocol simulator would
-belong in the simulation package rather than grow this season model.
+remains the sole physics owner. The shared ideal-observation helper applies field and height bounds; the season
+selects camera fix and alignment policy. Sensor noise, latency and wire protocol
+remain outside that ideal model.

@@ -1,4 +1,6 @@
 #pragma once
+#ifndef __FRC_ROBORIO__
+#include "meco/sim/ParticleContacts.h"
 #include "season/SeasonCommands.h"
 #include <random>
 #include <optional>
@@ -8,21 +10,9 @@
 #include <vector>
 namespace season
 {
-  struct FuelPoint
-  {
-    double x{}, y{}, z{};
-  };
-  struct FuelParticle
-  {
-    FuelPoint position, velocity;
-  };
-  struct FuelRobotState
-  {
-    // Same floor-referenced pose as the Remy visualization. Velocities are
-    // field relative, measured at the COM; COM offset is in this local frame.
-    frc::Pose3d pose;
-    FuelPoint velocity, angularVelocity, centerOfMass;
-  };
+  using FuelPoint = meco::sim::ParticlePoint;
+  using FuelParticle = meco::sim::Particle;
+  using FuelRobotState = meco::sim::ContactBody;
   struct FuelInputs
   {
     Pose robot;
@@ -81,3 +71,5 @@ namespace season
     nt::StructArrayPublisher<frc::Pose3d> fuelPublisher_, hopperPublisher_, projectilesPublisher_;
   };
 }
+
+#endif
