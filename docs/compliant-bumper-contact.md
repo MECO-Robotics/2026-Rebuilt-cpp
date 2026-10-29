@@ -1,6 +1,6 @@
 # Season contact configuration
 
-The robot now uses the MecoSimulation `2026.0.13` vendordep in
+The robot now uses the MecoSimulation `2026.0.14` vendordep in
 Full3D. `RobotContacts()` in `RobotContainer.cpp` owns the construction estimates:
 2-inch belly-pan clearance, 1/8-inch pan, two 2.75-inch noodles per side and
 3/4-inch by 5-inch plywood with its bottom flush at the user-selected 1/2 inch above carpet.
@@ -18,7 +18,7 @@ settings at startup. Contact loads and compression are published at 50 Hz withou
 
 ## Package setup
 
-The normal build resolves version `2026.0.13` from public Maven. The season links
+The normal build resolves version `2026.0.14` from public Maven. The season links
 packaged public headers and one combined archive; it does not compile upstream
 sources or override headers.
 

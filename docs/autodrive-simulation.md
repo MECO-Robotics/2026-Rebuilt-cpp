@@ -19,23 +19,17 @@ claimed as native parity.
 
 ## Build
 
-This worktree consumes unpublished development vendordeps:
-
-- MecoBase `2026.2.5-dev.1`: native command, validation, ownership and native AD* integration.
-- MecoSimulation `2026.0.14-dev.1`: physics and synthetic camera rays only, desktop-only.
+The project resolves MecoBase `2026.2.5` and MecoSimulation `2026.0.14`
+from public Maven. MecoBase provides native planning and perception; the desktop
+Simulation package supplies physics and synthetic camera rays.
 
 ```sh
-JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --max-workers=2 \
-  -PmecoBaseMaven=../MecoBase-cpp-integration/build/vendor-maven/maven \
-  -PmecoBaseVersion=2026.2.5-dev.1 \
-  -PmecoSimulationMaven=../MecoSimulation-cpp-integration/build/integration-package/maven \
-  -PmecoSimulationVersion=2026.0.14-dev.1
+JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --max-workers=2
 ./scripts/sim_headless.sh
 ```
 
-The same source builds the roboRIO executable. `./gradlew deploy` would require
-the same local-Maven properties until these versions are publicly released. No
-physical deployment or motion was performed during development.
+The same source builds the roboRIO executable. No physical deployment or motion
+was performed during development.
 
 ## Controls and real detections
 
