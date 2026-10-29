@@ -11,6 +11,7 @@
 #include <utility>
 #ifndef __FRC_ROBORIO__
 #include "season/SimulationField.h"
+#include <base/FootprintAutoDrive.h>
 #endif
 
 namespace season {
@@ -60,6 +61,9 @@ AutoDrive::AutoDrive(base::Drive& drive, std::function<double()> extension,
   frc::SmartDashboard::PutNumber("AutoDrive/TargetY",.65);
   frc::SmartDashboard::PutNumber("AutoDrive/TargetHeading",0.0);
   frc::SmartDashboard::PutBoolean("AutoDrive/FollowFuel",false);
+#ifndef __FRC_ROBORIO__
+  frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintSim",false);
+#endif
   nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(false);
   Status("idle-native");
 }
@@ -93,11 +97,38 @@ std::optional<frc::Pose2d> AutoDrive::Target() {
 }
 frc2::CommandPtr AutoDrive::Command() {
   auto sampled=std::make_shared<std::optional<frc::Pose2d>>();
-  return base::AutoDriveToPose(drive_,[this,sampled] {
+  auto target=[this,sampled] {
         auto goal=Target();
         if(!*sampled && goal) *sampled=goal;
         return goal;
-      })
+      };
+  return frc2::cmd::Defer([this,target]() -> frc2::CommandPtr {
+#ifndef __FRC_ROBORIO__
+        if(frc::RobotBase::IsSimulation() && frc::SmartDashboard::GetBoolean("AutoDrive/UseFootprintSim",false)) {
+          base::FootprintAutoDriveConfig config;
+          config.footprint={.86,.86};
+          config.field={0,0,simulation::kFieldLength,simulation::kFieldWidth};
+          auto obstacles=[] {
+            std::vector<base::FieldRectangle> boxes;
+            if (!frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled",true)) return boxes;
+            for (const auto& body:simulation::FieldColliders()) {
+              // Skip traversable inclined ramps and objects entirely above or
+              // below the modeled chassis contact volume. Remaining field
+              // boxes are axis aligned in this desktop model.
+              if (std::abs(body.pose.rotation.x)>1e-8 || std::abs(body.pose.rotation.y)>1e-8 ||
+                  std::abs(body.pose.rotation.z)>1e-8 ||
+                  body.pose.position.z+body.halfExtents.z<.05 ||
+                  body.pose.position.z-body.halfExtents.z>.45) continue;
+              boxes.push_back({body.pose.position.x-body.halfExtents.x,body.pose.position.y-body.halfExtents.y,
+                               body.pose.position.x+body.halfExtents.x,body.pose.position.y+body.halfExtents.y});
+            }
+            return boxes;
+          };
+          return base::AutoDriveFootprintToPose(drive_,target,std::move(obstacles),config);
+        }
+#endif
+        return base::AutoDriveToPose(drive_,target);
+      },{&drive_})
       .BeforeStarting([this,sampled] {
         sampled->reset();
         nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(true);Status("planning-native");

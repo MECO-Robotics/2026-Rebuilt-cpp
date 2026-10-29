@@ -31,6 +31,14 @@ JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --max-workers=2
 The same source builds the roboRIO executable. No physical deployment or motion
 was performed during development.
 
+An experimental desktop-only `AutoDrive/UseFootprintSim` toggle selects the
+development footprint command. It uses the modeled .86 m square chassis and
+axis-aligned field boxes intersecting its contact height; traversable pitched
+ramps are excluded. This is simulation geometry, not a measured hardware
+configuration. It requires a local development MecoBase package and is not the
+default driver behavior. `scripts/footprint_smoke.py` exercises the toggle through
+desktop HAL and NT on both alliances.
+
 ## Controls and real detections
 
 SmartDashboard `AutoDrive/TargetX`, `TargetY` and `TargetHeading` select an absolute
