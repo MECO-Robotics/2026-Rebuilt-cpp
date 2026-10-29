@@ -122,6 +122,8 @@ frc2::CommandPtr AutoDrive::Command() {
             config.follow.terrain=simulation::RampTerrain;
             config.follow.terrainBoundaries=simulation::RampBoundaries;
             config.follow.angularStopTolerance=.01;
+            config.follow.translationStallTimeout=3;
+            config.follow.translationStallRequest=.01;
             // Illustrative simulation-only capability, not a measured robot limit.
             config.follow.maxAcceleration=4;
           }

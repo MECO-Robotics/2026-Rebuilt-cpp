@@ -16,7 +16,7 @@ from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
 
-async def run(port, hal_port, profile=False, ramp=False):
+async def run(port, hal_port, profile=False, ramp=False, stall_check=False):
     binary=running_sim_binary(nt_port=port,hal_port=hal_port)
     client=ntcore.NetworkTableInstance.create()
     client.startClient4('footprint-sim-validation');client.setServer('127.0.0.1',port)
@@ -68,8 +68,8 @@ async def run(port, hal_port, profile=False, ramp=False):
                 if track_detour:
                     p=truth.get();detour_samples.append((p.X(),p.Y(),p.rotation().Z()))
                 if track_ramp:
-                    p=truth.get();v=requested.get();m=measured.get()
-                    ramp_samples.append((p.X(),p.Y(),p.Z(),p.rotation().Y(),v.vx,v.vy,v.omega,m.vx,m.vy,m.omega))
+                    p=truth.get();v=requested.get();m=measured.get();e=pose.get()
+                    ramp_samples.append((p.X(),p.Y(),p.Z(),p.rotation().Y(),v.vx,v.vy,v.omega,m.vx,m.vy,m.omega,e.X(),e.Y(),e.rotation().radians()))
                 if track_rotation:
                     p=truth.get();e=pose.get();v=requested.get();m=measured.get()
                     rotation_samples.append({'truth':p.rotation().Z(),'estimated':e.rotation().radians(),
@@ -123,13 +123,17 @@ async def run(port, hal_port, profile=False, ramp=False):
                 await hold(.2,enabled=False);track_ramp=True;await hold(.5,bumper=True)
                 ramp_start=time.monotonic()
                 for _ in range(45):
-                    if status.get()=='arrived' and not active.get():break
+                    if not active.get() and status.get() in ('arrived','stopped-before-goal','stopped-no-target'):break
                     await hold(1,bumper=True)
                 track_ramp=False;q=truth.get();error=math.hypot(q.X()-ramp_goal[0],q.Y()-ramp_goal[1])
                 result['cases'].append({'mode':'modeled_bump_crossing','goal':ramp_goal,
                     'truth':[q.X(),q.Y(),q.rotation().Z()],'error_m':error,'status':status.get(),
                     'elapsed_seconds':time.monotonic()-ramp_start,'samples':ramp_samples})
-                result['checks']['modeled_bump_crossing']=error<.1 and status.get()=='arrived' and not active.get()
+                if stall_check:
+                    v=requested.get()
+                    result['checks']['stall_stops']=status.get()=='stopped-before-goal' and not active.get() and math.hypot(v.vx,v.vy)<.01 and abs(v.omega)<.01
+                else:
+                    result['checks']['modeled_bump_crossing']=error<.1 and status.get()=='arrived' and not active.get()
                 result['passed']=all(result['checks'].values())
                 return result
             await hold(.3)
@@ -210,7 +214,8 @@ if __name__=='__main__':
     parser.add_argument('--output',type=Path)
     parser.add_argument('--profile',action='store_true')
     parser.add_argument('--ramp',action='store_true',help='exercise the modeled bump after the detour')
-    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp));text=json.dumps(result,indent=2)
+    parser.add_argument('--stall-check',action='store_true',help='expect the ramp command to stop before the goal')
+    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check));text=json.dumps(result,indent=2)
     print(text)
     if args.output:args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(text+'\n')
     raise SystemExit(0 if result.get('passed') else 1)
