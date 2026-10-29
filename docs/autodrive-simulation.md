@@ -19,7 +19,7 @@ claimed as native parity.
 
 ## Build
 
-The project resolves MecoBase `2026.2.5` and MecoSimulation `2026.0.14`
+The project resolves MecoBase `2026.2.6` and MecoSimulation `2026.0.14`
 from public Maven. MecoBase provides native planning and perception; the desktop
 Simulation package supplies physics and synthetic camera rays.
 
