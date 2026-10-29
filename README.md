@@ -13,6 +13,10 @@ For device configuration, commissioning, and diagnosis, use [`frc-hardware`](.ag
 
 ## Build and simulate
 
+This integration branch requires locally built development packages for native
+AutoDrive. See [AutoDrive build instructions](docs/autodrive-simulation.md);
+the published versions below do not yet contain the required APIs.
+
 Install WPILib 2026.2.1 with its C++ toolchains. This project uses the published
 [MecoBase 2026.2.4 vendordep](https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json)
 and the matching-year [MecoSimulation 2026.0.13 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
