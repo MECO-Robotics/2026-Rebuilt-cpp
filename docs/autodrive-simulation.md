@@ -355,3 +355,8 @@ against the development package with Base source `5fd8ffe`; desktop tests passed
 24 cases in each configuration. The [build record](../artifacts/autodrive-development-consumer-build.json)
 records matching linked-library and package hashes for all four targets. This is
 a local development package check, not public Maven, Windows, or hardware evidence.
+
+The [staged-package record](../artifacts/autodrive-staged-consumer-validation.json)
+adds clean desktop and roboRIO Release consumer links against the CI-built
+`2026.2.7` candidate, including the new reusable APIs. The candidate source
+predates the final test-only changes; this is not a public-package check.
