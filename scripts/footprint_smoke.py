@@ -6,6 +6,7 @@ import contextlib
 import hashlib
 import json
 import math
+import time
 from pathlib import Path
 
 import ntcore
@@ -33,6 +34,7 @@ async def run(port, hal_port):
     mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintSim').publish()
     follow=client.getBooleanTopic('/SmartDashboard/AutoDrive/FollowFuel').publish()
     injected=client.getDoubleArrayTopic('/Simulation/FootprintObstacle').publish()
+    follower_trace=client.getDoubleArrayTopic('/Simulation/FootprintFollowerTrace').subscribe([],opts)
     result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'cases':[],'checks':{}}
     red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[];track_dynamic=False;dynamic_samples=[]
     def rectangle_separation(xpos,ypos,yaw,cx,cy,hx,hy):
@@ -70,8 +72,9 @@ async def run(port, hal_port):
                                              'status':status.get(),'active':active.get(),'requested_omega':v.omega,
                                              'measured_omega':m.omega})
                 if track_dynamic:
-                    p=truth.get();v=requested.get()
-                    dynamic_samples.append((p.X(),p.Y(),p.rotation().Z(),math.hypot(v.vx,v.vy),active.get()))
+                    p=truth.get();v=requested.get();m=measured.get()
+                    dynamic_samples.append((p.X(),p.Y(),p.rotation().Z(),math.hypot(v.vx,v.vy),active.get(),
+                                            v.vx,v.vy,v.omega,m.vx,m.vy,m.omega,list(follower_trace.get())))
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
@@ -92,7 +95,12 @@ async def run(port, hal_port):
             await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
             start=truth.get();goal=(5.9,2.4)
             x.set(goal[0]);y.set(goal[1]);heading.set(0);client.flush()
-            await hold(.2,enabled=False);track_detour=True;await hold(25,bumper=True);track_detour=False
+            await hold(.2,enabled=False);track_detour=True
+            detour_start=time.monotonic();await hold(.5,bumper=True)
+            for _ in range(45):
+                if status.get()=='arrived' and not active.get():break
+                await hold(1,bumper=True)
+            detour_seconds=time.monotonic()-detour_start;track_detour=False
             q=truth.get();error=math.hypot(q.X()-goal[0],q.Y()-goal[1])
             direct_blocked=any(support_separation(start.X()+(goal[0]-start.X())*i/200,
                                                  start.Y()+(goal[1]-start.Y())*i/200,0)<=0
@@ -101,6 +109,7 @@ async def run(port, hal_port):
             result['cases'].append({'mode':'field_obstacle_detour','goal':goal,
                                     'truth':[q.X(),q.Y(),q.rotation().Z()],
                                     'error_m':error,'status':status.get(),
+                                    'elapsed_seconds':detour_seconds,
                                     'samples':len(detour_samples),'minimum_support_separation_m':min_separation})
             result['checks']['field_obstacle_detour']=direct_blocked and min_separation>0 and error<.1 and status.get()=='arrived' and not active.get()
             await hold(.3)
@@ -137,6 +146,8 @@ async def run(port, hal_port):
                                     'truth':[q.X(),q.Y(),q.rotation().Z()],'error_m':error,
                                     'status':status.get(),'started':dynamic_started,'stopped':stopped is not None,
                                     'resumed':resumed,'first_sample':dynamic_samples[0] if dynamic_samples else None,
+                                    'first_stopped_sample':dynamic_samples[stopped] if stopped is not None else None,
+                                    'last_sample':dynamic_samples[-1] if dynamic_samples else None,
                                     'minimum_sampled_separation_m':separation})
             result['checks']['dynamic_obstacle_replan']=dynamic_started and resumed and separation>0 and error<.1 and status.get()=='arrived' and not active.get()
             injected.set([]);client.flush()

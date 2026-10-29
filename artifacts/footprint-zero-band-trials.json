@@ -1,0 +1,393 @@
+{
+  "runs": [
+    {
+      "binary_sha256": "088fbad3a86c4752a455a4eb2bcd2748fdb9e0e96c3c1d130dc58ef74ced80b3",
+      "cases": [
+        {
+          "alliance": "blue",
+          "goal": [
+            4.650000095367432,
+            0.6393179893493652
+          ],
+          "truth": [
+            4.647665457894193,
+            0.6391849789428451,
+            -0.005503996986759633
+          ],
+          "error_m": 0.002338423379051378,
+          "status": "arrived"
+        },
+        {
+          "alliance": "red",
+          "goal": [
+            11.890180641788701,
+            7.4296582209454
+          ],
+          "truth": [
+            11.892450465091843,
+            7.429805102837305,
+            3.1308590073609563
+          ],
+          "error_m": 0.002274570754593693,
+          "status": "arrived"
+        },
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.899945380006763,
+            2.4008967012641698,
+            -0.00887763832232452
+          ],
+          "error_m": 0.0008983632343462698,
+          "status": "arrived",
+          "samples": 1250,
+          "minimum_support_separation_m": 0.06936750318390297
+        },
+        {
+          "mode": "rotate_in_place",
+          "goal": [
+            5.89994542952883,
+            2.4009026270929765
+          ],
+          "truth": [
+            5.899912101016957,
+            2.4010232231758,
+            1.55283950448307
+          ],
+          "estimated_pose": [
+            5.899910065462288,
+            2.4010065451686264,
+            1.5528395052361934
+          ],
+          "heading_readback": 1.5707963267948966,
+          "first_arrived": {
+            "truth": 1.5694203159774593,
+            "estimated": 1.5695612258860756,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": -0.00217025929986932
+          },
+          "one_second_after_arrival": {
+            "truth": 1.5630576402502618,
+            "estimated": 1.563160951385534,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": -0.002705733468136717
+          },
+          "last_sample": {
+            "truth": 1.55283950448307,
+            "estimated": 1.5528395052361934,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": -0.00203642557854675
+          },
+          "error_m": 0.00012511676504780097,
+          "heading_error_rad": 0.017956822311826492,
+          "status": "arrived"
+        },
+        {
+          "mode": "perceived_obstacle_replan",
+          "goal": [
+            8.6,
+            2.4
+          ],
+          "truth": [
+            8.6007203403833,
+            2.398927322455051,
+            0.016344579924875813
+          ],
+          "error_m": 0.00129210192448179,
+          "status": "arrived",
+          "started": true,
+          "stopped": true,
+          "resumed": true,
+          "first_sample": [
+            6.4207724978263885,
+            2.399320547599866,
+            0.9663007592326309,
+            1.0000166668610029,
+            true,
+            0.5439594294958933,
+            -0.8391313800962829,
+            -1.0,
+            0.5272629301639765,
+            -0.8594113956060037,
+            -0.9371846426500815,
+            [
+              1.0,
+              2.0,
+              8.6,
+              2.4,
+              0.0,
+              0.0,
+              -0.9672763506256411
+            ]
+          ],
+          "first_stopped_sample": [
+            6.458624359827671,
+            2.398142036421175,
+            0.927639551489911,
+            0.0,
+            true,
+            0.0,
+            0.0,
+            0.0,
+            0.5624441854806208,
+            -0.8369738946791085,
+            -0.9300945881839658,
+            [
+              1.0,
+              2.0,
+              8.6,
+              2.4,
+              0.0,
+              0.0,
+              -0.9672763506256411
+            ]
+          ],
+          "last_sample": [
+            8.6007203403833,
+            2.398927322455051,
+            0.016344579924875813,
+            0.0,
+            false,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -0.0,
+            -0.0,
+            [
+              16.0,
+              16.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.006351972134542129
+            ]
+          ],
+          "minimum_sampled_separation_m": 0.05782267585684675
+        }
+      ],
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "rotate_in_place": true,
+        "dynamic_obstacle_replan": true,
+        "release_stops": true,
+        "disable_stops": true,
+        "bounded_requests": true
+      },
+      "peak_requested_mps": 1.0000166668610029,
+      "peak_requested_radps": 1.0,
+      "passed": true
+    },
+    {
+      "binary_sha256": "088fbad3a86c4752a455a4eb2bcd2748fdb9e0e96c3c1d130dc58ef74ced80b3",
+      "cases": [
+        {
+          "alliance": "blue",
+          "goal": [
+            4.649990703476486,
+            0.6393179904885372
+          ],
+          "truth": [
+            4.647718766581581,
+            0.6391832059828507,
+            -0.0056522923465959895
+          ],
+          "error_m": 0.002275931483459968,
+          "status": "arrived"
+        },
+        {
+          "alliance": "red",
+          "goal": [
+            11.890171529022043,
+            7.429662536143783
+          ],
+          "truth": [
+            11.89274701562776,
+            7.429819460762368,
+            3.1325918277892373
+          ],
+          "error_m": 0.0025802628920614567,
+          "status": "arrived"
+        },
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.899963990523173,
+            2.2348912983481566,
+            -0.017116553846134197
+          ],
+          "error_m": 0.16510870557859703,
+          "status": "planning-native",
+          "samples": 1250,
+          "minimum_support_separation_m": 0.07633198027973481
+        },
+        {
+          "mode": "rotate_in_place",
+          "goal": [
+            5.89996483612998,
+            2.2460600787473903
+          ],
+          "truth": [
+            5.901043323841683,
+            2.2460515777964654,
+            1.5587095490366996
+          ],
+          "estimated_pose": [
+            5.901043323841683,
+            2.2460515777964654,
+            1.5587095490366996
+          ],
+          "heading_readback": 1.5707963267948966,
+          "first_arrived": {
+            "truth": 1.5586878006410883,
+            "estimated": 1.558685477153947,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": 0.00023961259042000347
+          },
+          "one_second_after_arrival": {
+            "truth": 1.558705503013174,
+            "estimated": 1.5587055121789475,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": -0.0008565490212230539
+          },
+          "last_sample": {
+            "truth": 1.5587095490366996,
+            "estimated": 1.5587095490366996,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": 0.0
+          },
+          "error_m": 0.0010785212146547625,
+          "heading_error_rad": 0.012086777758196998,
+          "status": "arrived"
+        },
+        {
+          "mode": "perceived_obstacle_replan",
+          "goal": [
+            8.6,
+            2.4
+          ],
+          "truth": [
+            8.599820769955729,
+            2.3999702339710653,
+            -0.040624259951527845
+          ],
+          "error_m": 0.0001816849615347408,
+          "status": "arrived",
+          "started": true,
+          "stopped": true,
+          "resumed": true,
+          "first_sample": [
+            6.509426521201018,
+            2.2499604733249896,
+            0.8565952673232453,
+            1.0000166668610029,
+            true,
+            0.6868430206206629,
+            -0.7268287274347882,
+            -1.0,
+            0.6590544882543863,
+            -0.7360120736852165,
+            -1.0527725499020657,
+            [
+              1.0,
+              2.0,
+              8.6,
+              2.4,
+              0.0,
+              0.0,
+              -1.047819864313723
+            ]
+          ],
+          "first_stopped_sample": [
+            6.567980391369512,
+            2.2523365710732337,
+            0.796186608899665,
+            0.0,
+            true,
+            0.0,
+            0.0,
+            0.0,
+            0.5755990276320753,
+            -0.6017210799602314,
+            -0.911777234746492,
+            [
+              1.0,
+              2.0,
+              8.6,
+              2.4,
+              0.0,
+              0.0,
+              -1.047819864313723
+            ]
+          ],
+          "last_sample": [
+            8.599820769955729,
+            2.3999702339710653,
+            -0.040624259951527845,
+            0.0,
+            false,
+            0.0,
+            0.0,
+            0.0,
+            -0.0,
+            0.0,
+            -0.0,
+            [
+              16.0,
+              16.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              -0.01101365582391128
+            ]
+          ],
+          "minimum_sampled_separation_m": 0.060167653595316284
+        }
+      ],
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": false,
+        "rotate_in_place": true,
+        "dynamic_obstacle_replan": true,
+        "release_stops": true,
+        "disable_stops": true,
+        "bounded_requests": true
+      },
+      "peak_requested_mps": 1.000016666861003,
+      "peak_requested_radps": 1.0,
+      "passed": false
+    }
+  ],
+  "evidence": {
+    "base_revision": "2264d46bd879dae0032d853472c04be040e67545",
+    "follower_cpp_sha256": "d3bade01b92478f451853442f3a50471df26a6829474cb32ff631e69df1a8415",
+    "trace_instrumentation": "temporary desktop-only waypoint telemetry",
+    "driver_sha256": "82304c1ed4eb23b9ac042f2279e3655bcba7e512715e14bbf8a468b3cfb3da4f",
+    "scope": "desktop simulation; virtual perceived obstacle; sampled clearance; no hardware validation"
+  }
+}

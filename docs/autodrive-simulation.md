@@ -58,6 +58,18 @@ the goal. The other remained active near an intermediate waypoint. A separate
 [earlier trial](../artifacts/footprint-dynamic-failure.json) injected the obstacle
 overlapping the chassis and stopped without reaching the goal. Dynamic recovery
 remains experimental and is not established by the passing trial.
+After the follower stopped angular correction inside its tolerance, [two more
+instrumented trials](../artifacts/footprint-zero-band-trials.json) both completed
+the perceived-obstacle replan, but one static detour was still active at its
+25-second cutoff. A [later run](../artifacts/footprint-adaptive-trial.json) with
+a 45-second bound completed that detour in 25.6 seconds and the replan with
+0.019 m minimum sampled separation from the virtual obstacle. These are limited
+desktop trials; they do not establish worst-case timing or continuous clearance.
+Two subsequent [non-instrumented runs](../artifacts/footprint-candidate-noninstrumented.json)
+passed the same checks. Their static detours took 25.6 and 26.6 seconds, and
+the minimum sampled virtual-obstacle separations were 0.060 and 0.058 m. The
+robot was still moving when the stop was requested, so these results do not
+establish a safe stopping distance or hardware readiness.
 
 ## Controls and real detections
 

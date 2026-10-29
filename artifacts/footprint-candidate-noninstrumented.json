@@ -1,0 +1,349 @@
+{
+  "scope": "Desktop simulation; obstacle injected through NetworkTables, sampled at about 20 ms; no physical obstacle or hardware validation.",
+  "mecobase_revision": "2264d46bd879dae0032d853472c04be040e67545",
+  "mecobase_coordinate": "2026.2.7-dev.1",
+  "robot_autodrive_source_sha256": "2426314b34821d60c8656f7f74f2f64f6bc9d2407ab7b3dd6a67e40e493bcbcd",
+  "smoke_script_sha256": "55126f8cf705efbbffc221b8d577a5bdb80f4808b2d9a62a50b695f818566e18",
+  "runs": [
+    {
+      "binary_sha256": "c9336b0a020a0d5c2d05d6c300bab31cd2a85398e6b1af290b9052c8f334984f",
+      "cases": [
+        {
+          "alliance": "blue",
+          "goal": [
+            4.650000095367432,
+            0.6393179893493652
+          ],
+          "truth": [
+            4.6475274514883305,
+            0.6391827134998816,
+            -0.001699624445576493
+          ],
+          "error_m": 0.002476341516897462,
+          "status": "arrived"
+        },
+        {
+          "alliance": "red",
+          "goal": [
+            11.89022017133311,
+            7.429664972220654
+          ],
+          "truth": [
+            11.892652047177485,
+            7.429813286466143,
+            3.1338452736300186
+          ],
+          "error_m": 0.002436394310834495,
+          "status": "arrived"
+        },
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.900085528591041,
+            2.3975770101883658,
+            -0.026397383236998646
+          ],
+          "error_m": 0.002424498869285819,
+          "status": "arrived",
+          "elapsed_seconds": 25.5912631780011,
+          "samples": 1225,
+          "minimum_support_separation_m": 0.07248222621884987
+        },
+        {
+          "mode": "rotate_in_place",
+          "goal": [
+            5.900085921693433,
+            2.397543845610156
+          ],
+          "truth": [
+            5.900189045765648,
+            2.3961475976611264,
+            1.5507724453266762
+          ],
+          "estimated_pose": [
+            5.900189043034156,
+            2.396147691139782,
+            1.5507724452264764
+          ],
+          "heading_readback": 1.5707963267948966,
+          "first_arrived": {
+            "truth": 1.5521196060559668,
+            "estimated": 1.5521367657154101,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": -0.00023212900459127313
+          },
+          "one_second_after_arrival": {
+            "truth": 1.5516812601588164,
+            "estimated": 1.5516986259012295,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": 0.0
+          },
+          "last_sample": {
+            "truth": 1.5507724453266762,
+            "estimated": 1.5507724452264764,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": 0.0
+          },
+          "error_m": 0.0014000510381551182,
+          "heading_error_rad": 0.020023881468220317,
+          "status": "arrived"
+        },
+        {
+          "mode": "perceived_obstacle_replan",
+          "goal": [
+            8.6,
+            2.4
+          ],
+          "truth": [
+            8.6015009751198,
+            2.398424869335365,
+            -0.05687485365210454
+          ],
+          "error_m": 0.0021757672028349735,
+          "status": "arrived",
+          "started": true,
+          "stopped": true,
+          "resumed": true,
+          "first_sample": [
+            6.445392153171213,
+            2.3931819390139357,
+            0.8779646182998565,
+            1.0000166668610027,
+            true,
+            0.6314927703477224,
+            -0.7754032596000279,
+            -1.0,
+            0.6033418761310329,
+            -0.7886604327821013,
+            -0.9581796846545669,
+            []
+          ],
+          "first_stopped_sample": [
+            6.445392153171213,
+            2.3931819390139357,
+            0.8779646182998565,
+            0.0,
+            true,
+            0.0,
+            0.0,
+            0.0,
+            0.6337429785851512,
+            -0.7748035405186154,
+            -0.9198464837118243,
+            []
+          ],
+          "last_sample": [
+            8.6015009751198,
+            2.398424869335365,
+            -0.05687485365210454,
+            0.0,
+            false,
+            0.0,
+            0.0,
+            0.0,
+            -0.00019416473382816081,
+            0.00017970510549156606,
+            -0.00024184053212321556,
+            []
+          ],
+          "minimum_sampled_separation_m": 0.05998648344850416
+        }
+      ],
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "rotate_in_place": true,
+        "dynamic_obstacle_replan": true,
+        "release_stops": true,
+        "disable_stops": true,
+        "bounded_requests": true
+      },
+      "peak_requested_mps": 1.000016666861003,
+      "peak_requested_radps": 1.0,
+      "passed": true
+    },
+    {
+      "binary_sha256": "c9336b0a020a0d5c2d05d6c300bab31cd2a85398e6b1af290b9052c8f334984f",
+      "cases": [
+        {
+          "alliance": "blue",
+          "goal": [
+            4.649954769341268,
+            0.6393176292977347
+          ],
+          "truth": [
+            4.647573840789062,
+            0.6391860730929666,
+            -0.0030157696589025083
+          ],
+          "error_m": 0.002384560296097398,
+          "status": "arrived"
+        },
+        {
+          "alliance": "red",
+          "goal": [
+            11.890109977397692,
+            7.429664843625872
+          ],
+          "truth": [
+            11.892712635224063,
+            7.429821355790693,
+            3.1345377923752324
+          ],
+          "error_m": 0.002607359549219422,
+          "status": "arrived"
+        },
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.899530833609828,
+            2.398717885297892,
+            -0.016690886095597855
+          ],
+          "error_m": 0.0013652601257742633,
+          "status": "arrived",
+          "elapsed_seconds": 26.612520620001305,
+          "samples": 1275,
+          "minimum_support_separation_m": 0.06963379836443456
+        },
+        {
+          "mode": "rotate_in_place",
+          "goal": [
+            5.899526833539385,
+            2.3987122445928013
+          ],
+          "truth": [
+            5.899644551020865,
+            2.3974865381765484,
+            1.5639943169573582
+          ],
+          "estimated_pose": [
+            5.899644893969171,
+            2.3974820961543264,
+            1.563994313551842
+          ],
+          "heading_readback": 1.5707963267948966,
+          "first_arrived": {
+            "truth": 1.557979045337678,
+            "estimated": 1.5579431920575477,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": 0.0032170102715709348
+          },
+          "one_second_after_arrival": {
+            "truth": 1.560676656835633,
+            "estimated": 1.5606730798964021,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": 0.00206232652734696
+          },
+          "last_sample": {
+            "truth": 1.5639943169573582,
+            "estimated": 1.563994313551842,
+            "status": "arrived",
+            "active": false,
+            "requested_omega": 0.0,
+            "measured_omega": -0.0002167186866395368
+          },
+          "error_m": 0.0012313462649837384,
+          "heading_error_rad": 0.006802009837538314,
+          "status": "arrived"
+        },
+        {
+          "mode": "perceived_obstacle_replan",
+          "goal": [
+            8.6,
+            2.4
+          ],
+          "truth": [
+            8.600337798038815,
+            2.400859385601773,
+            0.02691232617147681
+          ],
+          "error_m": 0.000923391102167533,
+          "status": "arrived",
+          "started": true,
+          "stopped": true,
+          "resumed": true,
+          "first_sample": [
+            6.3919390017975015,
+            2.3860319276861746,
+            0.8690845692732314,
+            1.0000166668610029,
+            true,
+            0.633184846412631,
+            -0.7740221471464513,
+            -1.0,
+            0.6192055038114783,
+            -0.798634049007041,
+            -0.9287230686484438,
+            []
+          ],
+          "first_stopped_sample": [
+            6.431018862763273,
+            2.3849423567037467,
+            0.8297908779961346,
+            0.0,
+            true,
+            0.0,
+            0.0,
+            0.0,
+            0.6431390232594367,
+            -0.7733639855792405,
+            -0.9491244590211673,
+            []
+          ],
+          "last_sample": [
+            8.600337798038815,
+            2.400859385601773,
+            0.02691232617147681,
+            0.0,
+            false,
+            0.0,
+            0.0,
+            0.0,
+            -4.8484325691985404e-05,
+            -9.406525731335384e-05,
+            0.0002528345219066904,
+            []
+          ],
+          "minimum_sampled_separation_m": 0.05818168045781574
+        }
+      ],
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "rotate_in_place": true,
+        "dynamic_obstacle_replan": true,
+        "release_stops": true,
+        "disable_stops": true,
+        "bounded_requests": true
+      },
+      "peak_requested_mps": 1.000016666861003,
+      "peak_requested_radps": 1.0,
+      "passed": true
+    }
+  ],
+  "linux_release_package_sha256": {
+    "meco-base-cpp-2026.2.7-dev.1-linuxx86-64static.zip": "8d62ff36aee3dcd222d52635ad3b998260600a65c8022f99dfe541773f122aa7",
+    "meco-base-cpp-2026.2.7-dev.1-linuxx86-64staticdebug.zip": "ee40a992e0f96aa7798f52a40d0b856ea3d58f5c57502db0dc2ba1e3efa4e3b8"
+  }
+}
