@@ -1,0 +1,78 @@
+{
+  "scenario": "practice-full-match-native-goal-driving",
+  "alliance": "blue",
+  "auto_result": "R",
+  "binary_sha256": "e030fe0beeeb622aab4b9c6a13e9a472147c28c19aa6fbc7016886acb25625fa",
+  "checks": {
+    "match_complete": false,
+    "auto_goal": true,
+    "all_hub_phases": false,
+    "hub_context": true,
+    "multiple_goal_legs": false,
+    "observed_fuel": true,
+    "collected_fuel": false,
+    "stopped_on_complete": true,
+    "fuel_follow_collected": false,
+    "shot_scored": false,
+    "repeated_scoring_and_collection": false,
+    "driving_late_in_match": false,
+    "bounded_requests": true,
+    "settled_without_retries": false
+  },
+  "legs": [
+    {
+      "target": 3.65,
+      "error_m": 1.8256749646378265,
+      "status": "stopped-before-goal",
+      "time_remaining": 136.040719,
+      "stored": 0.0,
+      "truth": [
+        5.471389340107012,
+        0.7249802085673173,
+        -0.43554654347724514
+      ],
+      "estimate": [
+        5.471371644356551,
+        0.7250355436351387,
+        -0.4355238000861467
+      ],
+      "command_finish": {
+        "truth": [
+          5.468152152181217,
+          0.7298730369570047,
+          -0.4323598844908816
+        ],
+        "estimate": [
+          5.436540815925499,
+          0.7290452395458352,
+          -0.43192146027916767
+        ],
+        "module_speed_max": 0.0,
+        "status": "stopped-before-goal"
+      },
+      "heading_error_rad": 0.43554654347724514,
+      "settled_speed_mps": 0.00023920551321455195
+    }
+  ],
+  "phase_seen": [
+    "disabled",
+    "transition"
+  ],
+  "auto": {
+    "active_seen": true,
+    "goal_error_m": 0.042232144338301005,
+    "status": "arrived"
+  },
+  "error": null,
+  "retries": [],
+  "shots": [],
+  "fuel_runs": [],
+  "hub_errors": [],
+  "peak_stored_fuel": 0,
+  "peak_clusters": 128.0,
+  "peak_requested_mps": 2.0000000000000004,
+  "peak_requested_radps": 3.0,
+  "final_scored": 0.0,
+  "final_launched": 0.0,
+  "passed": false
+}

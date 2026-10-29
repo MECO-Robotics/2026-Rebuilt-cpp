@@ -6,6 +6,12 @@ autonomous. The reusable command is supplied by MecoBase, using the pinned nativ
 PathPlanner AD* backend and the deployed `pathplanner/navgrid.json`. No separate
 Python script or external velocity-command stream is required.
 
+The integrated candidate passed a [red strict match](../artifacts/autodrive-integration-strict-red-final.json)
+and an [ownership and navigation smoke](../artifacts/autodrive-integration-smoke-final.json)
+with the non-instrumented binary. A [blue strict match](../artifacts/autodrive-integration-strict-blue-pass-instrumented.json)
+passed with temporary diagnostic telemetry enabled. These are desktop simulation
+results; they do not establish hardware performance.
+
 The earlier companion implementation and its validation records are historical
 prototypes. Native C++ replaces that runtime; there is no planner-source copy in
 this robot project. The additional Python SE(2)/terrain/training behaviors are not
