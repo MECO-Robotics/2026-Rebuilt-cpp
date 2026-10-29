@@ -1,0 +1,107 @@
+{
+  "scope": "Desktop simulation only; centerline plate grade, 4 m/s\u00b2 illustrative acceleration/braking, zero rolling resistance. No hardware or contact calibration.",
+  "mecobase_revision": "81cc76d",
+  "package_sha256": "7fbf9446b8041c0c9417bd4a09f25d4f144c6582fea2a192a6a3f2dfcbf5e31b",
+  "robot_source_sha256": "5ccb4f09aee8e97b3d3b5124d9409ab752e736be4ee08ea7ead4f00b1269bab6",
+  "field_source_sha256": "67d815cfc518685fbf1d15fa207d88c8ebfd60e8719e207a3890fdb722195a6b",
+  "runs": [
+    {
+      "trace": "footprint-ramp-trial-1.json.gz",
+      "passed": false,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "modeled_bump_crossing": false
+      },
+      "result": {
+        "mode": "modeled_bump_crossing",
+        "goal": [
+          3.5,
+          2.4
+        ],
+        "truth": [
+          5.127743756864462,
+          2.363447493671473,
+          0.11762210171642525
+        ],
+        "error_m": 1.6281541154725283,
+        "status": "planning-native",
+        "elapsed_seconds": 46.83753196700127
+      }
+    },
+    {
+      "trace": "footprint-ramp-trial-2.json.gz",
+      "passed": false,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "modeled_bump_crossing": false
+      },
+      "result": {
+        "mode": "modeled_bump_crossing",
+        "goal": [
+          3.5,
+          2.4
+        ],
+        "truth": [
+          5.037014715723645,
+          2.3702126663803194,
+          0.07852846398834491
+        ],
+        "error_m": 1.5373033277773152,
+        "status": "planning-native",
+        "elapsed_seconds": 46.965792379996856
+      },
+      "sample_count": 2275,
+      "max_pitch_rad": 0.23165832955055593,
+      "max_height_m": 0.07035277758380935
+    },
+    {
+      "trace": "footprint-ramp-trial-3.json.gz",
+      "passed": false,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "modeled_bump_crossing": false
+      },
+      "result": {
+        "mode": "modeled_bump_crossing",
+        "goal": [
+          3.5,
+          2.4
+        ],
+        "truth": [
+          5.1661396336909915,
+          2.400796505732275,
+          -0.043918307414416234
+        ],
+        "error_m": 1.666139824077599,
+        "status": "planning-native",
+        "elapsed_seconds": 46.917997693999496
+      },
+      "sample_count": 2275,
+      "max_pitch_rad": 0.1740722632876011,
+      "max_height_m": 0.049863864111315714,
+      "last_sample": [
+        5.1661396336909915,
+        2.400796505732275,
+        0.04985709936910471,
+        0.17405665590439381,
+        -0.9709629594179725,
+        -0.04635881795656492,
+        0.07757951919112716,
+        -0.7678907578112527,
+        -0.02874849956521354,
+        0.46457046679068936
+      ],
+      "last_100_requested_speed_min": 0.9720690348756292,
+      "last_100_x_range": [
+        5.166139487357724,
+        5.166165139724802
+      ]
+    }
+  ]
+}

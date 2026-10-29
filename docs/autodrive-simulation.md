@@ -92,6 +92,19 @@ passed all checks. Their detours took 22.4 seconds and their sampled virtual
 obstacle separations were 0.0645 and 0.0637 m. Final rotation errors were 0.0530
 and 0.0538 rad against a 0.06 rad test limit, leaving little margin. These
 flat-terrain simulation results do not validate slopes or physical stopping.
+The current profile experiment derives boundaries and directional grades from
+the modeled field ramp plates. It assumes 4 m/s² acceleration and braking for
+simulation, and zero rolling resistance; these are not robot measurements. A
+direct modeled bump-crossing trial using MecoBase `81cc76d` did not arrive and
+remained active near the first plate. This path is not ready for deployment.
+The repeat also failed, with simulated pitch reaching 0.232 rad and height
+0.070 m before stopping short. The terrain supplier describes the robot
+centerline, not the contact of the complete chassis footprint with the plates.
+A third [recorded run](../artifacts/footprint-ramp-summary.json) also failed:
+the requested translation stayed above 0.97 m/s while body position barely
+changed over its final 100 samples and wheel-derived speed remained nonzero.
+This observation does not isolate the contact or drivetrain cause. The summary
+links the compressed full traces.
 After the profile envelope was made to override request slew limiting, a
 [further run](../artifacts/footprint-profile-envelope.json) passed the same
 checks using MecoBase `26cdf21`. It took 21.4 seconds for the detour, ended the

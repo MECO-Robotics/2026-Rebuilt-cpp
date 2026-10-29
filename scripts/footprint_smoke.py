@@ -16,7 +16,7 @@ from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
 
-async def run(port, hal_port, profile=False):
+async def run(port, hal_port, profile=False, ramp=False):
     binary=running_sim_binary(nt_port=port,hal_port=hal_port)
     client=ntcore.NetworkTableInstance.create()
     client.startClient4('footprint-sim-validation');client.setServer('127.0.0.1',port)
@@ -37,7 +37,7 @@ async def run(port, hal_port, profile=False):
     injected=client.getDoubleArrayTopic('/Simulation/FootprintObstacle').publish()
     follower_trace=client.getDoubleArrayTopic('/Simulation/FootprintFollowerTrace').subscribe([],opts)
     result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'cases':[],'checks':{}}
-    red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[];track_dynamic=False;dynamic_samples=[]
+    red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[];track_dynamic=False;dynamic_samples=[];track_ramp=False;ramp_samples=[]
     def rectangle_separation(xpos,ypos,yaw,cx,cy,hx,hy):
         c,s=math.cos(yaw),math.sin(yaw);dx=xpos-cx;dy=ypos-cy
         half=.43
@@ -67,6 +67,9 @@ async def run(port, hal_port, profile=False):
                     velocity=requested.get();peak=max(peak,math.hypot(velocity.vx,velocity.vy));peak_omega=max(peak_omega,abs(velocity.omega))
                 if track_detour:
                     p=truth.get();detour_samples.append((p.X(),p.Y(),p.rotation().Z()))
+                if track_ramp:
+                    p=truth.get();v=requested.get();m=measured.get()
+                    ramp_samples.append((p.X(),p.Y(),p.Z(),p.rotation().Y(),v.vx,v.vy,v.omega,m.vx,m.vy,m.omega))
                 if track_rotation:
                     p=truth.get();e=pose.get();v=requested.get();m=measured.get()
                     rotation_samples.append({'truth':p.rotation().Z(),'estimated':e.rotation().radians(),
@@ -113,6 +116,22 @@ async def run(port, hal_port, profile=False):
                                     'elapsed_seconds':detour_seconds,
                                     'samples':len(detour_samples),'minimum_support_separation_m':min_separation})
             result['checks']['field_obstacle_detour']=direct_blocked and min_separation>0 and error<.1 and status.get()=='arrived' and not active.get()
+            if ramp:
+                await hold(.3,enabled=False)
+                ramp_goal=(3.5,2.4)
+                x.set(ramp_goal[0]);y.set(ramp_goal[1]);heading.set(0);client.flush()
+                await hold(.2,enabled=False);track_ramp=True;await hold(.5,bumper=True)
+                ramp_start=time.monotonic()
+                for _ in range(45):
+                    if status.get()=='arrived' and not active.get():break
+                    await hold(1,bumper=True)
+                track_ramp=False;q=truth.get();error=math.hypot(q.X()-ramp_goal[0],q.Y()-ramp_goal[1])
+                result['cases'].append({'mode':'modeled_bump_crossing','goal':ramp_goal,
+                    'truth':[q.X(),q.Y(),q.rotation().Z()],'error_m':error,'status':status.get(),
+                    'elapsed_seconds':time.monotonic()-ramp_start,'samples':ramp_samples})
+                result['checks']['modeled_bump_crossing']=error<.1 and status.get()=='arrived' and not active.get()
+                result['passed']=all(result['checks'].values())
+                return result
             await hold(.3)
             p=pose.get();rotation_goal=(p.X(),p.Y())
             x.set(rotation_goal[0]);y.set(rotation_goal[1]);heading.set(math.pi/2);client.flush()
@@ -190,7 +209,8 @@ if __name__=='__main__':
     parser.add_argument('--hal-port',type=int,default=3301)
     parser.add_argument('--output',type=Path)
     parser.add_argument('--profile',action='store_true')
-    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile));text=json.dumps(result,indent=2)
+    parser.add_argument('--ramp',action='store_true',help='exercise the modeled bump after the detour')
+    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp));text=json.dumps(result,indent=2)
     print(text)
     if args.output:args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(text+'\n')
     raise SystemExit(0 if result.get('passed') else 1)

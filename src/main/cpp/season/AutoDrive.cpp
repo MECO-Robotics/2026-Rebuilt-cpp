@@ -119,8 +119,11 @@ frc2::CommandPtr AutoDrive::Command() {
           config.follow.poseAngularDamping=.5;
           config.follow.usePoseRateForSettling=true;
           if (frc::SmartDashboard::GetBoolean("AutoDrive/UseFootprintProfileSim",false)) {
-            config.follow.terrain=[](base::FootprintPose,base::FootprintPose) {return base::FootprintTerrainSegment{};};
+            config.follow.terrain=simulation::RampTerrain;
+            config.follow.terrainBoundaries=simulation::RampBoundaries;
             config.follow.angularStopTolerance=.01;
+            // Illustrative simulation-only capability, not a measured robot limit.
+            config.follow.maxAcceleration=4;
           }
           auto obstacles=[] {
             std::vector<base::FieldRectangle> boxes;
