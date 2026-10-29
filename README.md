@@ -13,10 +13,10 @@ For device configuration, commissioning, and diagnosis, use [`frc-hardware`](.ag
 
 ## Build and simulate
 
-Install WPILib 2026.2.1 with its C++ toolchains. This draft targets the candidate
+Install WPILib 2026.2.1 with its C++ toolchains. This project uses the
 [MecoBase 2026.2.8 vendordep](https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json)
 and the matching-year [MecoSimulation 2026.0.14 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
-MecoBase 2026.2.8 must be published before this draft resolves from public Maven. Earlier builds,
+Earlier builds,
 Debug/Release tests, and localhost desktop drive smoke against MecoSimulation
 2026.0.6 are recorded in the [public-package validation record](artifacts/public-multivendordep-validation-2026.0.6.json)
 and the [drive smoke output](artifacts/season-drive-smoke-public-2026.0.6.json).

@@ -1,0 +1,42 @@
+{
+  "coordinate": "2026.2.8",
+  "source": "public Maven",
+  "release_workflow": "https://github.com/MECO-Robotics/MecoBase-cpp/actions/runs/40971039903",
+  "command": "JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew clean build --refresh-dependencies --max-workers=2",
+  "desktop_debug_tests_passed": 25,
+  "desktop_release_tests_passed": 25,
+  "artifacts": [
+    {
+      "target": "Linuxathena",
+      "configuration": "Debug",
+      "public_archive": "https://meco-robotics.github.io/MecoBase-cpp/maven/com/mecorobotics/frc/meco-base-cpp/2026.2.8/meco-base-cpp-2026.2.8-linuxathenastaticdebug.zip",
+      "archive_sha256": "030e7c62e5b7ca83f51c868e967c35c2221ed4289cfbe5d5705f79e6361ed677",
+      "library_sha256": "072872462532d76aeeefa899addd69254772fb74fc515525ff33ba354d38e273",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxathena",
+      "configuration": "Release",
+      "public_archive": "https://meco-robotics.github.io/MecoBase-cpp/maven/com/mecorobotics/frc/meco-base-cpp/2026.2.8/meco-base-cpp-2026.2.8-linuxathenastatic.zip",
+      "archive_sha256": "7a94e9455b880781c1f5d40829e23b7f35a4d1be91eeb9c3054960e71400b93c",
+      "library_sha256": "17e647b75d865b674e8bcc997d95faf695800a33bb9965854cf1e2ece8005e6e",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Debug",
+      "public_archive": "https://meco-robotics.github.io/MecoBase-cpp/maven/com/mecorobotics/frc/meco-base-cpp/2026.2.8/meco-base-cpp-2026.2.8-linuxx86-64staticdebug.zip",
+      "archive_sha256": "366061bc50dcc8560e76bdc947d9e46b138c70868f076efa831566b003da84fd",
+      "library_sha256": "b670043fe0eca49f999dc7014cebbe664e7eade587099e6a57542012fc0fa92a",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Release",
+      "public_archive": "https://meco-robotics.github.io/MecoBase-cpp/maven/com/mecorobotics/frc/meco-base-cpp/2026.2.8/meco-base-cpp-2026.2.8-linuxx86-64static.zip",
+      "archive_sha256": "74d5fa16ce6ac0bcbfe5ad5d4a30ce3f97f5e462c0ef277f9008082fc32757c9",
+      "library_sha256": "261625b79e24f9a5a432abde11b56ea2f5a667128a21d9ab8f89578edc4552fa",
+      "linked_library_matches": true
+    }
+  ]
+}

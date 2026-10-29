@@ -27,8 +27,8 @@ and end-to-end validation with the target robot's localization and sensing.
 
 ## Build
 
-This draft targets MecoBase `2026.2.8` and MecoSimulation `2026.0.14`
-from public Maven; Base 2026.2.8 is pending publication. MecoBase provides native planning and perception; the desktop
+This project uses MecoBase `2026.2.8` and MecoSimulation `2026.0.14`
+from public Maven. MecoBase provides native planning and perception; the desktop
 Simulation package supplies physics and synthetic camera rays.
 
 ```sh
@@ -448,8 +448,8 @@ stopping ([first](../artifacts/configured-terrain-simulation.json.gz),
 [repeat](../artifacts/configured-terrain-simulation-repeat.json.gz)); the repeat
 recorded 57 active samples in each virtual region. They do not validate ramp
 traversal. A [third run with unsplit-boundary rejection](../artifacts/configured-terrain-boundary-guard.json.gz)
-passed the same checks using MecoBase `2026.2.8-dev.2`. The public release
-is required before this configuration can be used without an override.
+passed the same checks using MecoBase `2026.2.8-dev.2`. The published
+`2026.2.8` release provides the same terrain API without an override.
 
 Two additional configured-profile trials used a [simulation-only bump fixture](../artifacts/configured-terrain-bump-fixture.json)
 derived from the published MecoSimulation `v2026.0.14` field-collider source
@@ -468,7 +468,8 @@ The [staged consumer record](../artifacts/configured-terrain-staged-robot-build.
 checks the full robot build against the CI-built `2026.2.8` candidate for desktop
 and roboRIO Debug/Release. Both desktop test configurations passed 25 tests,
 and each linked library matched its staged archive. This is not public Maven or
-hardware validation.
+hardware validation. The subsequent [public consumer record](../artifacts/configured-terrain-public-robot-build.json)
+confirms the clean robot build and linked library hashes against published Maven.
 A separate [missing-watchdog-field test](../artifacts/configured-terrain-missing-watchdog.json.gz)
 used an intentionally [invalid fixture](../artifacts/configured-terrain-missing-watchdog-fixture.json);
 selecting the mode rejected the configuration and kept requested motion at zero.
