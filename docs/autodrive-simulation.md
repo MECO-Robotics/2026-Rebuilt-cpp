@@ -442,5 +442,6 @@ virtual terrain over a flat physical lane passed blue/red goals and release
 stopping ([first](../artifacts/configured-terrain-simulation.json.gz),
 [repeat](../artifacts/configured-terrain-simulation-repeat.json.gz)); the repeat
 recorded 57 active samples in each virtual region. They do not validate ramp
-traversal. The robot build used local MecoBase `2026.2.8-dev.1`; the public
-release is required before this configuration can be used without an override.
+traversal. A [third run with unsplit-boundary rejection](../artifacts/configured-terrain-boundary-guard.json.gz)
+passed the same checks using MecoBase `2026.2.8-dev.2`. The public release
+is required before this configuration can be used without an override.
