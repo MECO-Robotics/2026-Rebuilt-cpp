@@ -27,8 +27,8 @@ and end-to-end validation with the target robot's localization and sensing.
 
 ## Build
 
-The project resolves MecoBase `2026.2.6` and MecoSimulation `2026.0.14`
-from public Maven. MecoBase provides native planning and perception; the desktop
+This draft targets MecoBase `2026.2.7` and MecoSimulation `2026.0.14`
+from public Maven; Base 2026.2.7 is pending publication. MecoBase provides native planning and perception; the desktop
 Simulation package supplies physics and synthetic camera rays.
 
 ```sh
@@ -43,8 +43,8 @@ An experimental desktop-only `AutoDrive/UseFootprintSim` toggle selects the
 development footprint command. It uses the modeled .86 m square chassis and
 axis-aligned field boxes intersecting its contact height; traversable pitched
 ramps are excluded. This is simulation geometry, not a measured hardware
-configuration. It requires a local development MecoBase package and is not the
-default driver behavior. `scripts/footprint_smoke.py` exercises the toggle through
+configuration. It requires MecoBase 2026.2.7 or a matching development package
+and is not the default driver behavior. `scripts/footprint_smoke.py` exercises the toggle through
 desktop HAL and NT on both alliances. The test can publish one perceived
 rectangle as `[minX,minY,maxX,maxY]` in metres on `/Simulation/FootprintObstacle`;
 this input is desktop-only and does not create a rigid physics body.
