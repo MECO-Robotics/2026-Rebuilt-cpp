@@ -16,7 +16,7 @@ from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
 
-async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False, moving_target=False, camera_fuel=False):
+async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False, moving_target=False, camera_fuel=False, native=False):
     binary=running_sim_binary(nt_port=port,hal_port=hal_port)
     client=ntcore.NetworkTableInstance.create()
     client.startClient4('footprint-sim-validation');client.setServer('127.0.0.1',port)
@@ -97,7 +97,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
-            mode.set(True);profile_mode.set(profile);avoid_mode.set(avoid_bumps);track_mode.set(moving_target);follow.set(False);injected.set([]);client.flush()
+            mode.set(not native);profile_mode.set(profile);avoid_mode.set(avoid_bumps);track_mode.set(moving_target);follow.set(False);injected.set([]);client.flush()
             for red in (False,True):
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
@@ -303,7 +303,8 @@ if __name__=='__main__':
     parser.add_argument('--avoid-bumps',action='store_true',help='treat modeled bumps as obstacles')
     parser.add_argument('--moving-target',action='store_true',help='move the supplied target during a command')
     parser.add_argument('--camera-fuel',action='store_true',help='exercise simulated camera fuel following and collection')
-    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps,args.moving_target,args.camera_fuel));text=json.dumps(result,indent=2)
+    parser.add_argument('--native',action='store_true',help='exercise native AutoDrive rather than footprint mode')
+    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps,args.moving_target,args.camera_fuel,args.native));text=json.dumps(result,indent=2)
     print(text)
     if args.output:args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(text+'\n')
     raise SystemExit(0 if result.get('passed') else 1)

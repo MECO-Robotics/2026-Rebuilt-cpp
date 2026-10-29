@@ -297,3 +297,21 @@ command. This prevents PathPlanner from sampling a pose or speed left over from
 the previous run. The physical-robot autonomous start remains immediate.
 The existing `autodrive_smoke.py` covers the repeated-goal regression, including
 a full reset after prior driving, with blue and red teleop checks.
+
+### Native moving-target experiment
+
+The development MecoBase tracking command is selected for `FollowFuel`, or for
+`TrackTargetSim` on desktop. It retains the ordinary fixed-goal command when
+those options are off. One desktop run changed the dashboard goal by 0.65 m;
+the command requested a stop, resumed and finished 0.028 m from the new goal
+([trace](../artifacts/native-moving-target-trial.json)). At the first zero
+request the simulated measured translational speed was approximately 0.61 m/s;
+this is not an instantaneous or physical stopping guarantee.
+
+A separate synthetic camera run detected a moving selection, stopped and
+resumed, collected three simulated pieces, and stopped when the driver released
+the command ([trace](../artifacts/native-camera-fuel-trial.json.gz)). The
+linked executable used local MecoBase development archive SHA-256
+`53f400d904c74b55b5e4dbfce0926587e826e1909646a806f51ebc1b608d9fca`;
+its Gradle link input matched that archive. These are single desktop trials,
+not evidence for real camera calibration or physical stopping distances.

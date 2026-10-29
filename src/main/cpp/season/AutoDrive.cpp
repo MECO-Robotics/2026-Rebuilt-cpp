@@ -193,6 +193,11 @@ frc2::CommandPtr AutoDrive::Command() {
               .FinallyDo([entry,outcome](bool) mutable {entry.SetString(FootprintOutcomeName(*outcome));});
         }
 #endif
+        bool track=frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel",false);
+#ifndef __FRC_ROBORIO__
+        track=track || frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim",false);
+#endif
+        if (track) return base::AutoDriveTrackTarget(drive_,target);
         return base::AutoDriveToPose(drive_,target);
       },{&drive_})
       .BeforeStarting([this,sampled] {
