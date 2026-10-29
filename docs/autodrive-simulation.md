@@ -463,3 +463,9 @@ staging goal, then ended with `stalled` and zero requested velocity before the
 bump goal, after approximately 7.3 and 8.4 seconds respectively. Neither
 crossed the bump. This establishes the configured watchdog path in desktop
 simulation, not the physical cause, braking distance, or hardware performance.
+
+The [staged consumer record](../artifacts/configured-terrain-staged-robot-build.json)
+checks the full robot build against the CI-built `2026.2.8` candidate for desktop
+and roboRIO Debug/Release. Both desktop test configurations passed 25 tests,
+and each linked library matched its staged archive. This is not public Maven or
+hardware validation.
