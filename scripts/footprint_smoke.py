@@ -16,7 +16,7 @@ from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
 
-async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False, moving_target=False, camera_fuel=False, native=False, fixed_rounds=0):
+async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False, moving_target=False, camera_fuel=False, native=False, fixed_rounds=0, configured=False, expect_missing=False, expect_loaded=False, release_check=False):
     binary=running_sim_binary(nt_port=port,hal_port=hal_port)
     client=ntcore.NetworkTableInstance.create()
     client.startClient4('footprint-sim-validation');client.setServer('127.0.0.1',port)
@@ -38,6 +38,8 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
     y=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetY').publish()
     heading=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').publish()
     heading_readback=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').subscribe(float('nan'))
+    configured_mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseConfiguredFootprint').publish()
+    configured_status=client.getStringTopic('/SmartDashboard/AutoDrive/ConfiguredFootprintStatus').subscribe('')
     mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintSim').publish()
     profile_mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintProfileSim').publish()
     avoid_mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/AvoidBumpsSim').publish()
@@ -46,6 +48,9 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
     injected=client.getDoubleArrayTopic('/Simulation/FootprintObstacle').publish()
     follower_trace=client.getDoubleArrayTopic('/Simulation/FootprintFollowerTrace').subscribe([],opts)
     result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'cases':[],'checks':{}}
+    configuration=Path('src/main/deploy/autodrive-footprint.json')
+    if configured:
+        result['configuration_sha256']=hashlib.sha256(configuration.read_bytes()).hexdigest() if configuration.exists() else None
     red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[];track_dynamic=False;dynamic_samples=[];track_ramp=False;ramp_samples=[];track_camera=False;camera_samples=[];track_fixed=False;fixed_samples=[]
     def rectangle_separation(xpos,ypos,yaw,cx,cy,hx,hy):
         c,s=math.cos(yaw),math.sin(yaw);dx=xpos-cx;dy=ypos-cy
@@ -103,7 +108,20 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
-            mode.set(not native);profile_mode.set(profile);avoid_mode.set(avoid_bumps);track_mode.set(moving_target);follow.set(False);injected.set([]);client.flush()
+            configured_mode.set(configured);mode.set(not native and not configured);profile_mode.set(profile);avoid_mode.set(avoid_bumps);track_mode.set(moving_target);follow.set(False);injected.set([]);client.flush()
+            if expect_missing:
+                await hold(.2,enabled=False)
+                before_status=configured_status.get()
+                if expect_loaded:
+                    result['checks']['over_limit_configuration_was_loaded']=before_status=='loaded'
+                await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
+                p=pose.get();x.set(p.X()+1);y.set(p.Y());heading.set(0);client.flush()
+                await hold(.2,enabled=False);track_fixed=True;await hold(1,bumper=True);track_fixed=False
+                result['checks']['missing_configuration_stops']=(bool(fixed_samples) and configured_status.get()=='missing-invalid-or-over-limit' and
+                    all(math.hypot(*s['request'][:2])<.01 and abs(s['request'][2])<.01 for s in fixed_samples))
+                result['cases'].append({'mode':'missing_configuration','configured_status':configured_status.get(),
+                    'initial_configured_status':before_status,'status':status.get(),'samples':fixed_samples})
+                result['passed']=all(result['checks'].values());return result
             for red in ((False, True)*fixed_rounds if fixed_rounds else (False,True)):
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
@@ -121,6 +139,18 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                 await hold(.2,enabled=False)
             red=False
             if fixed_rounds:
+                if configured:
+                    result['checks']['configured_mode_selected']=configured_status.get()=='ready'
+                if release_check:
+                    await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
+                    p=pose.get();x.set(p.X()-1);y.set(p.Y());heading.set(0);client.flush()
+                    await hold(.2,enabled=False);fixed_samples=[];track_fixed=True
+                    await hold(1.5,bumper=True)
+                    was_moving=any(s['active'] and math.hypot(*s['request'][:2])>.05 for s in fixed_samples)
+                    await hold(.4);track_fixed=False
+                    v=requested.get()
+                    result['checks']['configured_release_stops']=was_moving and not active.get() and status.get()=='interrupted' and math.hypot(v.vx,v.vy)<.01 and abs(v.omega)<.01
+                    result['cases'].append({'mode':'configured_release','status':status.get(),'samples':fixed_samples})
                 result['passed']=all(result['checks'].values());return result
             if camera_fuel:
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
@@ -300,7 +330,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
             result['passed']=all(result['checks'].values())
         finally:
             with contextlib.suppress(Exception):await hold(.2,enabled=False)
-            injected.set([]);mode.set(False);profile_mode.set(False);avoid_mode.set(False);track_mode.set(False);client.flush();reader.cancel()
+            injected.set([]);configured_mode.set(False);mode.set(False);profile_mode.set(False);avoid_mode.set(False);track_mode.set(False);client.flush();reader.cancel()
             with contextlib.suppress(asyncio.CancelledError,Exception):await reader
             client.stopClient()
     return result
@@ -318,8 +348,12 @@ if __name__=='__main__':
     parser.add_argument('--moving-target',action='store_true',help='move the supplied target during a command')
     parser.add_argument('--camera-fuel',action='store_true',help='exercise simulated camera fuel following and collection')
     parser.add_argument('--native',action='store_true',help='exercise native AutoDrive rather than footprint mode')
+    parser.add_argument('--configured',action='store_true',help='exercise the robot-configured footprint mode')
+    parser.add_argument('--expect-missing-config',action='store_true',help='require configured mode to stop for a missing config')
+    parser.add_argument('--expect-loaded',action='store_true',help='require the invalid-for-drive config to load first')
+    parser.add_argument('--release-check',action='store_true',help='check interruption while the configured command is moving')
     parser.add_argument('--fixed-rounds',type=int,default=0,help='run only this many pairs of blue/red fixed-goal trials')
-    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps,args.moving_target,args.camera_fuel,args.native,args.fixed_rounds));text=json.dumps(result,indent=2)
+    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps,args.moving_target,args.camera_fuel,args.native,args.fixed_rounds,args.configured,args.expect_missing_config,args.expect_loaded,args.release_check));text=json.dumps(result,indent=2)
     print(text)
     if args.output:args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(text+'\n')
     raise SystemExit(0 if result.get('passed') else 1)

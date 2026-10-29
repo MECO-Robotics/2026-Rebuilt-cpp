@@ -4,6 +4,9 @@
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
+#include <frc/Filesystem.h>
+#include <base/FootprintAutoDrive.h>
+#include <fstream>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
 #include <algorithm>
@@ -12,11 +15,9 @@
 #include <utility>
 #ifndef __FRC_ROBORIO__
 #include "season/SimulationField.h"
-#include <base/FootprintAutoDrive.h>
 #endif
 
 namespace season {
-#ifndef __FRC_ROBORIO__
 namespace {
 const char* FootprintOutcomeName(base::FootprintAutoDriveOutcome outcome) {
   using O=base::FootprintAutoDriveOutcome;
@@ -38,7 +39,6 @@ const char* FootprintOutcomeName(base::FootprintAutoDriveOutcome outcome) {
   return "unknown";
 }
 }
-#endif
 void AutoDrive::Status(const char* value) {
   nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Status").SetString(value);
 }
@@ -85,6 +85,20 @@ AutoDrive::AutoDrive(base::Drive& drive, std::function<double()> extension,
   frc::SmartDashboard::PutNumber("AutoDrive/TargetY",.65);
   frc::SmartDashboard::PutNumber("AutoDrive/TargetHeading",0.0);
   frc::SmartDashboard::PutBoolean("AutoDrive/FollowFuel",false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/UseConfiguredFootprint",false);
+  // Read once at startup; no file I/O occurs in a scheduler callback.
+  const std::string path=frc::filesystem::GetDeployDirectory()+"/autodrive-footprint.json";
+  std::ifstream file(path,std::ios::binary | std::ios::ate);
+  if (file) {
+    const auto size=file.tellg();
+    if (size>0 && size<=262144) {
+      std::string contents(static_cast<std::size_t>(size),'\0');
+      file.seekg(0);
+      if (file.read(contents.data(),size)) configuredFootprint_=ParseFootprintConfiguration(contents);
+    }
+  }
+  frc::SmartDashboard::PutString("AutoDrive/ConfiguredFootprintStatus",
+      configuredFootprint_ ? "loaded" : "missing-or-invalid");
 #ifndef __FRC_ROBORIO__
   frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintSim",false);
   frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintProfileSim",false);
@@ -134,6 +148,26 @@ frc2::CommandPtr AutoDrive::Command() {
         return goal;
       };
   return frc2::cmd::Defer([this,target]() -> frc2::CommandPtr {
+        if (frc::SmartDashboard::GetBoolean("AutoDrive/UseConfiguredFootprint",false)) {
+          if (!configuredFootprint_ || configuredFootprint_->drive.follow.maxSpeed>drive_.Config().maxSpeed ||
+              configuredFootprint_->drive.follow.maxOmega>drive_.Config().maxAngularRate) {
+            frc::SmartDashboard::PutString("AutoDrive/ConfiguredFootprintStatus","missing-invalid-or-over-limit");
+            return frc2::cmd::RunOnce([this] {drive_.Stop();},{&drive_});
+          }
+          auto config=configuredFootprint_->drive;
+          bool track=frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel",false);
+#ifndef __FRC_ROBORIO__
+          track=track || frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim",false);
+#endif
+          if (track) config.targetTranslationReplanThreshold=.3;
+          const auto obstacles=configuredFootprint_->obstacles;
+          auto outcome=std::make_shared<base::FootprintAutoDriveOutcome>();
+          auto entry=nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/FootprintOutcome");
+          entry.SetString("running");
+          frc::SmartDashboard::PutString("AutoDrive/ConfiguredFootprintStatus","ready");
+          return base::AutoDriveFootprintToPose(drive_,target,[obstacles] {return obstacles;},config,outcome)
+              .FinallyDo([entry,outcome](bool) mutable {entry.SetString(FootprintOutcomeName(*outcome));});
+        }
 #ifndef __FRC_ROBORIO__
         if(frc::RobotBase::IsSimulation() && frc::SmartDashboard::GetBoolean("AutoDrive/UseFootprintSim",false)) {
           base::FootprintAutoDriveConfig config;

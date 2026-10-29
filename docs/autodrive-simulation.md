@@ -379,3 +379,48 @@ using the public MecoBase `2026.2.7` binary passed all checks with 22 goal legs,
 no retries, bounded requests, simulated fuel following and collection, a scoring
 volley, and stop on completion. This is desktop simulation evidence, not a
 physical-camera, drivetrain, or scoring qualification.
+
+### Explicit robot footprint configuration
+
+`AutoDrive/UseConfiguredFootprint` is a separate, default-off mode available on
+both desktop and roboRIO. At robot startup it reads `autodrive-footprint.json`
+from the deploy directory. The file must supply a version, measured robot length
+and width, a nonnegative per-side margin, field bounds, at least one obstacle
+rectangle, planner resolution and expansion budget, and motion limits. Distances
+are metres, speed is m/s, acceleration m/s², angular speed rad/s, and angular
+acceleration rad/s². The selected speed and angular speed must not exceed the
+drive's configured limits. Missing, malformed, invalid, or over-limit input
+causes the selected command to stop; `AutoDrive/ConfiguredFootprintStatus`
+reports the load or rejection, and `/AutoDrive/FootprintOutcome` reports its
+terminal result. Restart the robot after changing the file.
+
+The shape below illustrates the schema, not a complete field map or validated
+robot configuration. Replace every value with robot-specific and field-specific
+measurements before use. Each obstacle is an axis-aligned field-frame rectangle;
+the configured mode has only this static obstacle snapshot and does not detect
+other robots or obstacles absent from the file. It does not use the simulation
+terrain profile. Do not infer hardware readiness from the example.
+
+```json
+{
+  "version": 1,
+  "footprint": {"length_m": 0.86, "width_m": 0.86, "margin_m": 0.05},
+  "field": {"min_x": 0, "min_y": 0, "max_x": 16.541, "max_y": 8.069},
+  "obstacles": [{"min_x": 7.9, "min_y": 3, "max_x": 8.6, "max_y": 5}],
+  "planner": {"resolution_m": 0.2, "expansion_budget": 30000},
+  "limits": {"max_speed_mps": 1, "max_omega_radps": 1,
+             "max_acceleration_mps2": 2, "max_alpha_radps2": 3}
+}
+```
+
+Desktop HAL/NT tests using an illustrative configuration checked
+[blue and red fixed goals](../artifacts/configured-footprint-valid.json), a
+[moving goal](../artifacts/configured-footprint-moving.json), and zero requests
+with [missing](../artifacts/configured-footprint-missing.json.gz) and
+[over-limit](../artifacts/configured-footprint-over-limit.json.gz) configurations,
+and [release while moving](../artifacts/configured-footprint-release.json.gz).
+In the moving test the first zero request occurred at approximately 1 m/s
+wheel-derived speed, and the first resumed request at approximately 0.055 m/s.
+These are simulation samples, not measured stopping distances or physical
+validation. The fixture used no margin and one illustrative obstacle, and is
+not deployed or suitable as a competition field map.
