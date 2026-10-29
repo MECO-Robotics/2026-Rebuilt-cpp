@@ -7,6 +7,7 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
 #include <algorithm>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #ifndef __FRC_ROBORIO__
@@ -114,10 +115,11 @@ frc2::CommandPtr AutoDrive::Command() {
           config.follow.angularSettleSpeed=.02;
           config.follow.settleSamples=10;
           config.follow.finalSettleSamples=50;
+          config.follow.poseAngularDamping=.5;
+          config.follow.usePoseRateForSettling=true;
           auto obstacles=[] {
             std::vector<base::FieldRectangle> boxes;
-            if (!frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled",true)) return boxes;
-            for (const auto& body:simulation::FieldColliders()) {
+            if (frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled",true)) for (const auto& body:simulation::FieldColliders()) {
               // Skip traversable inclined ramps and objects entirely above or
               // below the modeled chassis contact volume. Remaining field
               // boxes are axis aligned in this desktop model.
@@ -127,6 +129,13 @@ frc2::CommandPtr AutoDrive::Command() {
                   body.pose.position.z-body.halfExtents.z>.45) continue;
               boxes.push_back({body.pose.position.x-body.halfExtents.x,body.pose.position.y-body.halfExtents.y,
                                body.pose.position.x+body.halfExtents.x,body.pose.position.y+body.halfExtents.y});
+            }
+            // Desktop HAL/NT tests can inject one perceived obstacle. It is
+            // not a simulated rigid body or a hardware detection source.
+            const auto observed=nt::NetworkTableInstance::GetDefault().GetEntry("/Simulation/FootprintObstacle").GetDoubleArray({});
+            if (!observed.empty()) {
+              if (observed.size()!=4) throw std::runtime_error("invalid simulated footprint obstacle");
+              boxes.push_back({observed[0],observed[1],observed[2],observed[3]});
             }
             return boxes;
           };

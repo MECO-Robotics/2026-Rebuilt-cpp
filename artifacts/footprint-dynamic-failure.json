@@ -1,0 +1,125 @@
+{
+  "binary_sha256": "2627a5a6cba66c072fab7b7d8762c78ab19b105efac7405b07290136b4a24407",
+  "cases": [
+    {
+      "alliance": "blue",
+      "goal": [
+        4.650000095367432,
+        0.6393179893493652
+      ],
+      "truth": [
+        4.645736056403007,
+        0.6391193945474469,
+        -0.009460025910876062
+      ],
+      "error_m": 0.004268661170142269,
+      "status": "arrived"
+    },
+    {
+      "alliance": "red",
+      "goal": [
+        11.891237226746526,
+        7.42960479213668
+      ],
+      "truth": [
+        11.89446335192039,
+        7.429685852171024,
+        3.1360559306558056
+      ],
+      "error_m": 0.0032271433755887103,
+      "status": "arrived"
+    },
+    {
+      "mode": "field_obstacle_detour",
+      "goal": [
+        5.9,
+        2.4
+      ],
+      "truth": [
+        5.9000396368201695,
+        2.397454415358175,
+        -0.0027361326284906927
+      ],
+      "error_m": 0.0025458932118624226,
+      "status": "arrived",
+      "samples": 1250,
+      "minimum_support_separation_m": 0.06950546096801888
+    },
+    {
+      "mode": "rotate_in_place",
+      "goal": [
+        5.900039719253099,
+        2.397444808681222
+      ],
+      "truth": [
+        5.90005578152408,
+        2.397465489016517,
+        1.5583472467301143
+      ],
+      "estimated_pose": [
+        5.9000332824929265,
+        2.3974769402959706,
+        1.5583988175843688
+      ],
+      "heading_readback": 1.5707963267948966,
+      "first_arrived": null,
+      "one_second_after_arrival": null,
+      "last_sample": {
+        "truth": 1.5583472467301143,
+        "estimated": 1.5583988175843688,
+        "status": "planning-native",
+        "active": true,
+        "requested_omega": 0.024896462577487895,
+        "measured_omega": 0.013322437352730842
+      },
+      "error_m": 2.6185355009453157e-05,
+      "heading_error_rad": 0.012449080064782292,
+      "status": "planning-native"
+    },
+    {
+      "mode": "perceived_obstacle_replan",
+      "goal": [
+        7.9,
+        2.4
+      ],
+      "truth": [
+        6.6096914879019275,
+        2.3244607430728332,
+        0.6678624718593854
+      ],
+      "error_m": 1.2925177893281976,
+      "status": "stopped-before-goal",
+      "started": true,
+      "stopped": true,
+      "resumed": false,
+      "minimum_sampled_separation_m": -0.21672498360547976
+    }
+  ],
+  "checks": {
+    "blue_arrived": true,
+    "red_arrived": true,
+    "field_obstacle_detour": true,
+    "rotate_in_place": false,
+    "dynamic_obstacle_replan": false,
+    "release_stops": true,
+    "disable_stops": true,
+    "bounded_requests": true
+  },
+  "peak_requested_mps": 1.000016666861003,
+  "peak_requested_radps": 1.0,
+  "passed": false,
+  "evidence": {
+    "base_revision": "13496cc719dca4c778f2c5912f7cc5c7b7271035",
+    "base_coordinate": "2026.2.7-dev.1",
+    "linux_release_package_sha256": "33a4c21e7366e7e3adfe827f3f0c8740ff62c71f487bf367304525339ffbcc8f",
+    "simulation_coordinate": "2026.0.14",
+    "robot_autodrive_source_sha256": "8ba39a7de85d9cc1f8d8f03f318d1a2d8a0fd6bb9e4fb5c8f724816d360c5eb4",
+    "injected_rectangle": [
+      7.0,
+      1.8,
+      7.25,
+      3.0
+    ],
+    "scope": "desktop simulation; test injected a perceived obstacle already overlapping modeled chassis; rotation did not complete; no hardware validation"
+  }
+}

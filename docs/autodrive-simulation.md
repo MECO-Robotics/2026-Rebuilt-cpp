@@ -37,7 +37,9 @@ axis-aligned field boxes intersecting its contact height; traversable pitched
 ramps are excluded. This is simulation geometry, not a measured hardware
 configuration. It requires a local development MecoBase package and is not the
 default driver behavior. `scripts/footprint_smoke.py` exercises the toggle through
-desktop HAL and NT on both alliances.
+desktop HAL and NT on both alliances. The test can publish one perceived
+rectangle as `[minX,minY,maxX,maxY]` in metres on `/Simulation/FootprintObstacle`;
+this input is desktop-only and does not create a rigid physics body.
 The [development run](../artifacts/footprint-sim-validation.json) also checked a
 detour whose direct line intersects a modeled trench support. At 20 ms sampled
 poses, the chassis remained at least 0.067 m clear of that support and finished
@@ -50,6 +52,12 @@ sample. After reducing the simulated angular settling threshold and holding the
 final waypoint longer, [two subsequent runs](../artifacts/footprint-final-settling.json)
 ended within 0.06 rad and remained within that bound one second after arrival.
 These settings are simulation-only and do not establish hardware calibration.
+For a perceived obstacle injected ahead of the moving chassis, [two trials](../artifacts/footprint-dynamic-replan.json)
+both stopped and resumed with positive sampled clearance, but only one reached
+the goal. The other remained active near an intermediate waypoint. A separate
+[earlier trial](../artifacts/footprint-dynamic-failure.json) injected the obstacle
+overlapping the chassis and stopped without reaching the goal. Dynamic recovery
+remains experimental and is not established by the passing trial.
 
 ## Controls and real detections
 

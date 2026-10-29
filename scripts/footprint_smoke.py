@@ -32,18 +32,19 @@ async def run(port, hal_port):
     heading_readback=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').subscribe(float('nan'))
     mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintSim').publish()
     follow=client.getBooleanTopic('/SmartDashboard/AutoDrive/FollowFuel').publish()
+    injected=client.getDoubleArrayTopic('/Simulation/FootprintObstacle').publish()
     result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'cases':[],'checks':{}}
-    red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[]
-    def support_separation(xpos,ypos,yaw):
-        # The blue near-wall trench support in the simulation field model.
-        cx=4.6256194; hx=53*.0254/2
-        cy=(50.34+6)*.0254; hy=12*.0254/2
+    red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[];track_dynamic=False;dynamic_samples=[]
+    def rectangle_separation(xpos,ypos,yaw,cx,cy,hx,hy):
         c,s=math.cos(yaw),math.sin(yaw);dx=xpos-cx;dy=ypos-cy
         half=.43
         ex=half*(abs(c)+abs(s))
         return max(abs(dx)-hx-ex,abs(dy)-hy-ex,
                    abs(dx*c+dy*s)-half-hx*abs(c)-hy*abs(s),
                    abs(-dx*s+dy*c)-half-hx*abs(s)-hy*abs(c))
+    def support_separation(xpos,ypos,yaw):
+        # The blue near-wall trench support in the simulation field model.
+        return rectangle_separation(xpos,ypos,yaw,4.6256194,(50.34+6)*.0254,53*.0254/2,12*.0254/2)
     async with connect(f'ws://127.0.0.1:{hal_port}/wpilibws') as ws:
         async def drain():
             async for _ in ws: pass
@@ -68,10 +69,13 @@ async def run(port, hal_port):
                     rotation_samples.append({'truth':p.rotation().Z(),'estimated':e.rotation().radians(),
                                              'status':status.get(),'active':active.get(),'requested_omega':v.omega,
                                              'measured_omega':m.omega})
+                if track_dynamic:
+                    p=truth.get();v=requested.get()
+                    dynamic_samples.append((p.X(),p.Y(),p.rotation().Z(),math.hypot(v.vx,v.vy),active.get()))
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
-            mode.set(True);follow.set(False);client.flush()
+            mode.set(True);follow.set(False);injected.set([]);client.flush()
             for red in (False,True):
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
@@ -102,7 +106,7 @@ async def run(port, hal_port):
             await hold(.3)
             p=pose.get();rotation_goal=(p.X(),p.Y())
             x.set(rotation_goal[0]);y.set(rotation_goal[1]);heading.set(math.pi/2);client.flush()
-            await hold(.2,enabled=False);track_rotation=True;await hold(15,bumper=True);track_rotation=False
+            await hold(.2,enabled=False);track_rotation=True;await hold(25,bumper=True);track_rotation=False
             q=truth.get();estimate=pose.get();error=math.hypot(q.X()-rotation_goal[0],q.Y()-rotation_goal[1])
             heading_error=abs(math.remainder(q.rotation().Z()-math.pi/2,2*math.pi))
             rotation_start=next((i for i,sample in enumerate(rotation_samples) if sample['active']),len(rotation_samples))
@@ -117,6 +121,25 @@ async def run(port, hal_port):
                                     'error_m':error,'heading_error_rad':heading_error,'status':status.get()})
             settled=rotation_samples[arrival_index+50] if arrival_index is not None and arrival_index+50<len(rotation_samples) else None
             result['checks']['rotate_in_place']=error<.1 and heading_error<.06 and settled is not None and abs(math.remainder(settled['truth']-math.pi/2,2*math.pi))<.06 and status.get()=='arrived' and not active.get()
+            await hold(.3)
+            dynamic_goal=(8.6,2.4)
+            x.set(dynamic_goal[0]);y.set(dynamic_goal[1]);heading.set(0);client.flush()
+            await hold(.2,enabled=False);await hold(1,bumper=True)
+            v=requested.get();dynamic_started=active.get() and math.hypot(v.vx,v.vy)>.05
+            # This is a perceived obstacle injected through NT, not a Jolt body.
+            injected.set([7.5,1.9,7.8,2.9]);client.flush()
+            track_dynamic=True;await hold(35,bumper=True);track_dynamic=False
+            q=truth.get();error=math.hypot(q.X()-dynamic_goal[0],q.Y()-dynamic_goal[1])
+            stopped=next((i for i,s in enumerate(dynamic_samples) if s[4] and s[3]<.01),None)
+            resumed=stopped is not None and any(s[4] and s[3]>.05 for s in dynamic_samples[stopped+1:])
+            separation=min((rectangle_separation(s[0],s[1],s[2],7.65,2.4,.15,.5) for s in dynamic_samples),default=-1)
+            result['cases'].append({'mode':'perceived_obstacle_replan','goal':dynamic_goal,
+                                    'truth':[q.X(),q.Y(),q.rotation().Z()],'error_m':error,
+                                    'status':status.get(),'started':dynamic_started,'stopped':stopped is not None,
+                                    'resumed':resumed,'first_sample':dynamic_samples[0] if dynamic_samples else None,
+                                    'minimum_sampled_separation_m':separation})
+            result['checks']['dynamic_obstacle_replan']=dynamic_started and resumed and separation>0 and error<.1 and status.get()=='arrived' and not active.get()
+            injected.set([]);client.flush()
             await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
             p=pose.get();x.set(p.X()+1);y.set(p.Y());heading.set(0);client.flush()
             await hold(.2,enabled=False);await hold(1,bumper=True)
@@ -138,7 +161,7 @@ async def run(port, hal_port):
             result['passed']=all(result['checks'].values())
         finally:
             with contextlib.suppress(Exception):await hold(.2,enabled=False)
-            mode.set(False);client.flush();reader.cancel()
+            injected.set([]);mode.set(False);client.flush();reader.cancel()
             with contextlib.suppress(asyncio.CancelledError,Exception):await reader
             client.stopClient()
     return result
