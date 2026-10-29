@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "footprint": {
+    "length_m": 0.86,
+    "width_m": 0.86,
+    "margin_m": 0.0
+  },
+  "field": {
+    "min_x": 0,
+    "min_y": 0,
+    "max_x": 16.541,
+    "max_y": 8.069
+  },
+  "obstacles": [
+    {
+      "min_x": 7.9,
+      "min_y": 3,
+      "max_x": 8.6,
+      "max_y": 5
+    }
+  ],
+  "planner": {
+    "resolution_m": 0.2,
+    "expansion_budget": 30000
+  },
+  "limits": {
+    "max_speed_mps": 1,
+    "max_omega_radps": 1,
+    "max_acceleration_mps2": 2,
+    "max_alpha_radps2": 3
+  },
+  "terrain": {
+    "lateral_acceleration_mps2": 2,
+    "steering_rate_radps": 1,
+    "stall_progress_m": 0.03,
+    "stall_request_mps": 0.01,
+    "regions": [
+      {
+        "bounds": {
+          "min_x": 4.0,
+          "min_y": 0.3,
+          "max_x": 4.3,
+          "max_y": 1.0
+        },
+        "grade_x": 0.05,
+        "grade_y": 0,
+        "rolling_resistance": 0.01
+      },
+      {
+        "bounds": {
+          "min_x": 12.241,
+          "min_y": 7.0,
+          "max_x": 12.541,
+          "max_y": 7.7
+        },
+        "grade_x": -0.05,
+        "grade_y": 0,
+        "rolling_resistance": 0.01
+      }
+    ]
+  }
+}

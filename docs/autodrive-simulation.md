@@ -469,3 +469,6 @@ checks the full robot build against the CI-built `2026.2.8` candidate for deskto
 and roboRIO Debug/Release. Both desktop test configurations passed 25 tests,
 and each linked library matched its staged archive. This is not public Maven or
 hardware validation.
+A separate [missing-watchdog-field test](../artifacts/configured-terrain-missing-watchdog.json.gz)
+used an intentionally [invalid fixture](../artifacts/configured-terrain-missing-watchdog-fixture.json);
+selecting the mode rejected the configuration and kept requested motion at zero.
