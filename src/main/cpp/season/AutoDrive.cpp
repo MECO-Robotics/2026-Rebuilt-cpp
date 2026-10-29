@@ -16,6 +16,27 @@
 #endif
 
 namespace season {
+#ifndef __FRC_ROBORIO__
+namespace {
+const char* FootprintOutcomeName(base::FootprintAutoDriveOutcome outcome) {
+  using O=base::FootprintAutoDriveOutcome;
+  switch (outcome) {
+    case O::running:return "running";
+    case O::arrived:return "arrived";
+    case O::stalled:return "stalled";
+    case O::blocked:return "blocked";
+    case O::no_route:return "no-route";
+    case O::planner_busy:return "planner-busy";
+    case O::target_unavailable:return "target-unavailable";
+    case O::invalid_feedback:return "invalid-feedback";
+    case O::source_error:return "source-error";
+    case O::settle_failed:return "settle-failed";
+    case O::interrupted:return "interrupted";
+  }
+  return "unknown";
+}
+}
+#endif
 void AutoDrive::Status(const char* value) {
   nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Status").SetString(value);
 }
@@ -155,7 +176,11 @@ frc2::CommandPtr AutoDrive::Command() {
             }
             return boxes;
           };
-          return base::AutoDriveFootprintToPose(drive_,target,std::move(obstacles),config);
+          auto outcome=std::make_shared<base::FootprintAutoDriveOutcome>();
+          auto entry=nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/FootprintOutcome");
+          entry.SetString("running");
+          return base::AutoDriveFootprintToPose(drive_,target,std::move(obstacles),config,outcome)
+              .FinallyDo([entry,outcome](bool) mutable {entry.SetString(FootprintOutcomeName(*outcome));});
         }
 #endif
         return base::AutoDriveToPose(drive_,target);

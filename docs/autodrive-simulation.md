@@ -138,6 +138,17 @@ staging detour; that margin was removed. The earlier margin trial continued
 from the wrong starting point after staging failed, so its later arrival is not
 valid evidence for the intended route. The driver now stops when staging fails.
 This option is not validated for reliable routing, hardware, or bump traversal.
+The desktop command now publishes `/AutoDrive/FootprintOutcome` so an arrival,
+stall, blocked attempt, no-route result, or other terminal outcome can be
+distinguished. An [instrumented repeat](../artifacts/footprint-trench-outcome-summary.json)
+of the earlier trench failure reported `no-route`. At the recorded post-stop
+pose, a reduced planner regression showed the pose was clear but its containing
+grid center was obstructed; the previous planner returned no route, while the
+new nearby-center seeding finds a checked route. Two subsequent full desktop
+trials with MecoBase `6bdbc56` reached the alternate goal, with approximately
+0.121 and 0.123 m sampled bump separation. They do not prove that the earlier
+live search started at the recorded post-stop pose or establish worst-case
+reliability, continuous clearance, ramp traversal, or hardware behavior.
 After the profile envelope was made to override request slew limiting, a
 [further run](../artifacts/footprint-profile-envelope.json) passed the same
 checks using MecoBase `26cdf21`. It took 21.4 seconds for the detour, ended the

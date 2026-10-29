@@ -27,6 +27,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
     measured=client.getStructTopic('/AdvantageScope/Drive/ChassisSpeeds',ChassisSpeeds).subscribe(ChassisSpeeds(),opts)
     active=client.getBooleanTopic('/AutoDrive/Active').subscribe(False)
     status=client.getStringTopic('/AutoDrive/Status').subscribe('')
+    outcome=client.getStringTopic('/AutoDrive/FootprintOutcome').subscribe('')
     x=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetX').publish()
     y=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetY').publish()
     heading=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').publish()
@@ -113,7 +114,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
             min_separation=min((support_separation(*sample) for sample in detour_samples),default=-1)
             result['cases'].append({'mode':'field_obstacle_detour','goal':goal,
                                     'truth':[q.X(),q.Y(),q.rotation().Z()],
-                                    'error_m':error,'status':status.get(),
+                                    'error_m':error,'status':status.get(),'outcome':outcome.get(),
                                     'elapsed_seconds':detour_seconds,
                                     'samples':len(detour_samples),'minimum_support_separation_m':min_separation})
             result['checks']['field_obstacle_detour']=direct_blocked and min_separation>0 and error<.1 and status.get()=='arrived' and not active.get()
@@ -132,7 +133,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                 track_ramp=False;q=truth.get();error=math.hypot(q.X()-ramp_goal[0],q.Y()-ramp_goal[1])
                 result['cases'].append({'mode':'modeled_bump_crossing','goal':ramp_goal,
                     'truth':[q.X(),q.Y(),q.rotation().Z()],'error_m':error,'status':status.get(),
-                    'elapsed_seconds':time.monotonic()-ramp_start,'samples':ramp_samples})
+                    'outcome':outcome.get(),'elapsed_seconds':time.monotonic()-ramp_start,'samples':ramp_samples})
                 if avoid_bumps:
                     # Plan-view envelope of the blue near-wall bump, including
                     # the same 5 mm margin used by the simulated obstacle map.
