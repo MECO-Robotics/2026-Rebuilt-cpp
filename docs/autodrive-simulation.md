@@ -439,7 +439,7 @@ The [simulation-only fixture](../artifacts/configured-terrain-simulation-fixture
 shows the optional schema. It is deliberately not installed in the deploy
 directory and is not a competition field map. Two desktop HAL/NT runs with
 virtual terrain over a flat physical lane passed blue/red goals and release
-stopping ([first](../artifacts/configured-terrain-simulation.json),
+stopping ([first](../artifacts/configured-terrain-simulation.json.gz),
 [repeat](../artifacts/configured-terrain-simulation-repeat.json.gz)); the repeat
 recorded 57 active samples in each virtual region. They do not validate ramp
 traversal. The robot build used local MecoBase `2026.2.8-dev.1`; the public
