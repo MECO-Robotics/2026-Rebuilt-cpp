@@ -364,3 +364,8 @@ The full robot build was subsequently repeated with the staged `2026.2.7`
 coordinate: desktop and roboRIO Debug/Release linked successfully, with 24
 passing tests in each desktop configuration. The [staged robot build record](../artifacts/autodrive-staged-robot-build.json)
 checks the linked archive hashes. This does not establish public Maven availability.
+A [strict blue practice-match trial](../artifacts/autodrive-staged-strict-blue.json)
+using the staged `2026.2.7` binary passed all checks, including 20 goal legs,
+no retries, bounded requests, simulated fuel following and collection, a
+simulated scoring volley, and stop on completion. This is one desktop run; it
+is not evidence of real-camera calibration, physical scoring, or hardware safety.
