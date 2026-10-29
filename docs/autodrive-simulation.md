@@ -343,3 +343,9 @@ Two further instrumented runs passed both fixed goals and the moved-goal check
 Their per-tick estimated pose, simulated truth, requested and measured speeds,
 and command status can help investigate a future recurrence; they do not explain
 the earlier short stop.
+A later [eight-run fixed-goal series](../artifacts/native-fixed-goal-diagnosis.json.gz)
+and [six-run series following a moving-target run](../artifacts/native-fixed-after-move.json.gz)
+all arrived. The [preceding moving-target run](../artifacts/native-fixed-sequence-setup.json.gz)
+is retained to identify the simulator sequence. These bounded repetitions did
+not reproduce or explain the earlier short stop; they do not establish a failure
+rate or validate physical behavior.

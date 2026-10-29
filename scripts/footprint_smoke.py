@@ -16,7 +16,7 @@ from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
 
-async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False, moving_target=False, camera_fuel=False, native=False):
+async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False, moving_target=False, camera_fuel=False, native=False, fixed_rounds=0):
     binary=running_sim_binary(nt_port=port,hal_port=hal_port)
     client=ntcore.NetworkTableInstance.create()
     client.startClient4('footprint-sim-validation');client.setServer('127.0.0.1',port)
@@ -104,7 +104,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
             mode.set(not native);profile_mode.set(profile);avoid_mode.set(avoid_bumps);track_mode.set(moving_target);follow.set(False);injected.set([]);client.flush()
-            for red in (False,True):
+            for red in ((False, True)*fixed_rounds if fixed_rounds else (False,True)):
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
                 x.set(goal[0]);y.set(goal[1]);heading.set(math.pi if red else 0);client.flush()
@@ -116,9 +116,12 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                 label='red' if red else 'blue'
                 result['cases'].append({'alliance':label,'goal':goal,'truth':[q.X(),q.Y(),q.rotation().Z()],
                                         'error_m':error,'status':status.get(),'samples':fixed_samples if native else []})
-                result['checks'][label+'_arrived']=error<.1 and status.get()=='arrived' and not active.get()
+                check_key=f'{label}_{len(result["cases"])}_arrived' if fixed_rounds else label+'_arrived'
+                result['checks'][check_key]=error<.1 and status.get()=='arrived' and not active.get()
                 await hold(.2,enabled=False)
             red=False
+            if fixed_rounds:
+                result['passed']=all(result['checks'].values());return result
             if camera_fuel:
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
                 stage=(6.2,.75);x.set(stage[0]);y.set(stage[1]);heading.set(0);client.flush()
@@ -315,7 +318,8 @@ if __name__=='__main__':
     parser.add_argument('--moving-target',action='store_true',help='move the supplied target during a command')
     parser.add_argument('--camera-fuel',action='store_true',help='exercise simulated camera fuel following and collection')
     parser.add_argument('--native',action='store_true',help='exercise native AutoDrive rather than footprint mode')
-    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps,args.moving_target,args.camera_fuel,args.native));text=json.dumps(result,indent=2)
+    parser.add_argument('--fixed-rounds',type=int,default=0,help='run only this many pairs of blue/red fixed-goal trials')
+    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps,args.moving_target,args.camera_fuel,args.native,args.fixed_rounds));text=json.dumps(result,indent=2)
     print(text)
     if args.output:args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(text+'\n')
     raise SystemExit(0 if result.get('passed') else 1)
