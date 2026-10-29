@@ -349,3 +349,9 @@ all arrived. The [preceding moving-target run](../artifacts/native-fixed-sequenc
 is retained to identify the simulator sequence. These bounded repetitions did
 not reproduce or explain the earlier short stop; they do not establish a failure
 rate or validate physical behavior.
+
+The robot also completed a full local desktop and roboRIO Debug/Release build
+against the development package with Base source `5fd8ffe`; desktop tests passed
+24 cases in each configuration. The [build record](../artifacts/autodrive-development-consumer-build.json)
+records matching linked-library and package hashes for all four targets. This is
+a local development package check, not public Maven, Windows, or hardware evidence.

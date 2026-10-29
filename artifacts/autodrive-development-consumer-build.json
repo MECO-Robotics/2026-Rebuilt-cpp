@@ -1,0 +1,33 @@
+{
+  "base_release_source": "5fd8ffeb383b86f928b6e3cf745284ab3eb2d75e",
+  "package_coordinate": "2026.2.7-dev.1",
+  "validation": "local desktop and roboRIO build; Windows not built",
+  "desktop_debug_tests_passed": 24,
+  "desktop_release_tests_passed": 24,
+  "artifacts": [
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Debug",
+      "archive_library_sha256": "b1bb5e8d475ea8e0bf63e61abfb9f8fb6158cec9f6203363bd0c8e490cf6914a",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Release",
+      "archive_library_sha256": "d53be1b21ad5f573d31c66b36071c12f351e3e9e1a43e6ece9a808d7f788c099",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxathena",
+      "configuration": "Debug",
+      "archive_library_sha256": "a3d767a5b9bb135a1b04be62c08820da984a7a112d6cb21861d001a71e0a0a52",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxathena",
+      "configuration": "Release",
+      "archive_library_sha256": "f711d744ece70bcf00c8d1cf175ebbd373c4282352717e20f2f094b833b98ee1",
+      "linked_library_matches": true
+    }
+  ]
+}
