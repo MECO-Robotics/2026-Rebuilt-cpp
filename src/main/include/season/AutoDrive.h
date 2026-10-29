@@ -3,6 +3,7 @@
 #include <cmath>
 #include <numbers>
 #include "season/MatchContext.h"
+#include "season/FootprintConfiguration.h"
 #include <base/ObjectPerception.h>
 #include "season/FuelSimulation.h"
 #ifndef __FRC_ROBORIO__
@@ -36,6 +37,7 @@ class AutoDrive {
   base::Drive& drive_;
   std::function<double()> extension_;
   std::unique_ptr<base::ObjectPerception> perception_;
+  std::optional<FootprintConfiguration> configuredFootprint_;
 #ifndef __FRC_ROBORIO__
   std::array<std::unique_ptr<meco::sim::SimulatedPieceSensor>,2> sensors_;
   std::array<std::optional<base::ObjectDetectionFrame>,2> frames_;

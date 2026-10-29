@@ -1,0 +1,41 @@
+{
+  "binary_sha256": "849067a5ec819d8c270cecd2894e94bfc25ab94a3725e61027d2efb9cdc5e698",
+  "cases": [
+    {
+      "alliance": "blue",
+      "goal": [
+        4.650000095367432,
+        0.6393179893493652
+      ],
+      "truth": [
+        4.633372568296671,
+        0.6387813150567506,
+        -0.00037298802148561606
+      ],
+      "error_m": 0.016636185734273428,
+      "status": "arrived",
+      "samples": []
+    },
+    {
+      "alliance": "red",
+      "goal": [
+        11.890800281304337,
+        7.429681780738202
+      ],
+      "truth": [
+        11.908605143549579,
+        7.430291995526128,
+        3.1325800075709673
+      ],
+      "error_m": 0.017815315929263126,
+      "status": "arrived",
+      "samples": []
+    }
+  ],
+  "checks": {
+    "blue_1_arrived": true,
+    "red_2_arrived": true,
+    "configured_mode_selected": true
+  },
+  "passed": true
+}
