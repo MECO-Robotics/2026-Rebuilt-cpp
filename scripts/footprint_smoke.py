@@ -46,7 +46,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
     injected=client.getDoubleArrayTopic('/Simulation/FootprintObstacle').publish()
     follower_trace=client.getDoubleArrayTopic('/Simulation/FootprintFollowerTrace').subscribe([],opts)
     result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'cases':[],'checks':{}}
-    red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[];track_dynamic=False;dynamic_samples=[];track_ramp=False;ramp_samples=[];track_camera=False;camera_samples=[]
+    red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[];track_dynamic=False;dynamic_samples=[];track_ramp=False;ramp_samples=[];track_camera=False;camera_samples=[];track_fixed=False;fixed_samples=[]
     def rectangle_separation(xpos,ypos,yaw,cx,cy,hx,hy):
         c,s=math.cos(yaw),math.sin(yaw);dx=xpos-cx;dy=ypos-cy
         half=.43
@@ -88,6 +88,12 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                     p=truth.get();v=requested.get();m=measured.get()
                     dynamic_samples.append((p.X(),p.Y(),p.rotation().Z(),math.hypot(v.vx,v.vy),active.get(),
                                             v.vx,v.vy,v.omega,m.vx,m.vy,m.omega,list(follower_trace.get())))
+                if track_fixed:
+                    p=truth.get();e=pose.get();v=requested.get();m=measured.get()
+                    fixed_samples.append({'truth':[p.X(),p.Y(),p.rotation().Z()],
+                        'estimated':[e.X(),e.Y(),e.rotation().radians()],
+                        'request':[v.vx,v.vy,v.omega],'measured':[m.vx,m.vy,m.omega],
+                        'active':active.get(),'status':status.get()})
                 if track_camera:
                     p=truth.get();v=requested.get()
                     camera_samples.append({'pose':[p.X(),p.Y(),p.rotation().Z()],'active':active.get(),
@@ -103,11 +109,13 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
                 x.set(goal[0]);y.set(goal[1]);heading.set(math.pi if red else 0);client.flush()
                 await hold(.2,enabled=False)
+                fixed_samples=[];track_fixed=native
                 await hold(8,bumper=True)
+                track_fixed=False
                 q=truth.get();error=math.hypot(q.X()-goal[0],q.Y()-goal[1])
                 label='red' if red else 'blue'
                 result['cases'].append({'alliance':label,'goal':goal,'truth':[q.X(),q.Y(),q.rotation().Z()],
-                                        'error_m':error,'status':status.get()})
+                                        'error_m':error,'status':status.get(),'samples':fixed_samples if native else []})
                 result['checks'][label+'_arrived']=error<.1 and status.get()=='arrived' and not active.get()
                 await hold(.2,enabled=False)
             red=False
@@ -161,12 +169,14 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                 track_dynamic=True;y.set(new_goal[1]);client.flush();await hold(25,bumper=True);track_dynamic=False
                 q=truth.get();error=math.hypot(q.X()-new_goal[0],q.Y()-new_goal[1])
                 stopped=next((i for i,s in enumerate(dynamic_samples) if s[4] and s[3]<.01),None)
-                resumed=stopped is not None and any(s[4] and s[3]>.05 for s in dynamic_samples[stopped+1:])
+                resumed_index=next((i for i in range(stopped+1,len(dynamic_samples)) if dynamic_samples[i][4] and dynamic_samples[i][3]>.05),None) if stopped is not None else None
+                resumed=resumed_index is not None
                 result['cases'].append({'mode':'moving_target','initial_goal':initial_goal,'new_goal':new_goal,
                     'truth':[q.X(),q.Y(),q.rotation().Z()],'error_m':error,'status':status.get(),
                     'outcome':outcome.get(),'started':started,'stopped':stopped is not None,'resumed':resumed,
                     'first_sample':dynamic_samples[0] if dynamic_samples else None,
                     'first_stopped_sample':dynamic_samples[stopped] if stopped is not None else None,
+                    'first_resumed_sample':dynamic_samples[resumed_index] if resumed_index is not None else None,
                     'last_sample':dynamic_samples[-1] if dynamic_samples else None})
                 result['checks']['moving_target_replan']=started and resumed and error<.1 and status.get()=='arrived' and not active.get()
                 result['passed']=all(result['checks'].values())
@@ -258,6 +268,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                                     'status':status.get(),'started':dynamic_started,'stopped':stopped is not None,
                                     'resumed':resumed,'first_sample':dynamic_samples[0] if dynamic_samples else None,
                                     'first_stopped_sample':dynamic_samples[stopped] if stopped is not None else None,
+                    'first_resumed_sample':dynamic_samples[resumed_index] if resumed_index is not None else None,
                                     'first_resumed_sample':dynamic_samples[resumed_index] if resumed_index is not None else None,
                                     'sampled_stop_duration_seconds':(resumed_index-stopped)*.02 if resumed_index is not None else None,
                                     'last_sample':dynamic_samples[-1] if dynamic_samples else None,

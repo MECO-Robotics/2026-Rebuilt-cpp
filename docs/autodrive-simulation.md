@@ -15,7 +15,15 @@ results; they do not establish hardware performance.
 The earlier companion implementation and its validation records are historical
 prototypes. Native C++ replaces that runtime; there is no planner-source copy in
 this robot project. The additional Python SE(2)/terrain/training behaviors are not
-claimed as native parity.
+claimed as native parity. The upstream [AutoDrive training repository](https://github.com/MECO-Robotics/AutoDrive/tree/d74b0a15e25ddbc6bacfbbb864674371629bb19e)
+contains GPU-vectorized match training and experimental strategy policies; these
+are not packaged as a C++ robot policy. Its pose-graph policy proposal describes
+contracts still under development, and its diagnostic strategies do not by
+themselves supply qualified executable goals. The desktop footprint route search
+and terrain speed profile cover parts of the planning problem, not trained-policy
+inference, strategic decision making, or training-system parity. A deployment
+would need an explicit observation/action contract, a qualified policy artifact,
+and end-to-end validation with the target robot's localization and sensing.
 
 ## Build
 
@@ -156,7 +164,8 @@ the target moved 0.65 m while the robot was driving; the command requested a
 stop, resumed, and arrived at the new target. Wheel-derived translation speed
 was about 0.79 m/s at the first zero request in both runs. This is not an
 instantaneous physical stop, a camera/fuel tracking test, or hardware evidence.
-The non-footprint `AutoDriveToPose` path still samples a fixed goal.
+The non-footprint `AutoDriveToPose` path still samples a fixed goal; the separate
+`AutoDriveTrackTarget` command handles opt-in moving targets.
 The footprint command now holds zero while a changed target stabilizes, with a
 bounded wait before replanning. In two [synthetic-camera trials](../artifacts/footprint-camera-fuel-summary.json),
 newly published fuel selections changed while active; the command stopped,
@@ -315,3 +324,22 @@ linked executable used local MecoBase development archive SHA-256
 `53f400d904c74b55b5e4dbfce0926587e826e1909646a806f51ebc1b608d9fca`;
 its Gradle link input matched that archive. These are single desktop trials,
 not evidence for real camera calibration or physical stopping distances.
+
+The subsequent MecoBase `1918b55` tracking gate also waits for pose-derived
+and wheel-derived motion to settle before replanning; it ends the command if
+that wait times out. In the [first run](../artifacts/native-moving-target-settled.json),
+the shifted target finished 0.0052 m away. In a [repeat](../artifacts/native-moving-target-settled-repeat.json),
+the moving-target check finished 0.031 m away and resumed at approximately
+0.046 m/s wheel-derived translation, while the preceding blue fixed-goal check
+stopped 0.198 m short. The full repeat therefore failed; the fixed-goal stop
+is unresolved. A separate [synthetic-camera run](../artifacts/native-camera-fuel-settled.json.gz)
+passed its collection and release checks. These runs used the development
+archive SHA-256 `d53be1b21ad5f573d31c66b36071c12f351e3e9e1a43e6ece9a808d7f788c099`,
+matching the linked Gradle input. The gate cannot detect movement absent from
+both pose and wheel feedback and does not establish physical stopping distance.
+Two further instrumented runs passed both fixed goals and the moved-goal check
+([first](../artifacts/native-moving-target-settled-instrumented.json.gz),
+[second](../artifacts/native-moving-target-settled-instrumented-repeat.json.gz)).
+Their per-tick estimated pose, simulated truth, requested and measured speeds,
+and command status can help investigate a future recurrence; they do not explain
+the earlier short stop.
