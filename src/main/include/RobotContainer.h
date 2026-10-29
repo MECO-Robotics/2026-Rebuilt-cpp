@@ -7,8 +7,11 @@
 #include "season/SeasonCommands.h"
 #include "base/SystemCheck.h"
 #include "season/FuelSimulation.h"
+#include "season/AutoDrive.h"
+#include "season/MatchContext.h"
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/DriveSimulationAdapter.h"
+
 #endif
 #include <frc2/command/button/CommandXboxController.h>
 #include <frc/smartdashboard/SendableChooser.h>
@@ -26,10 +29,19 @@ public:
   RobotContainer();
   frc2::Command *GetAutonomousCommand();
   void CancelChecks();
+  void SetMatchContext(season::MatchContext context) { matchContext_ = std::move(context); if(autoDrive_) autoDrive_->PublishMatchContext(); }
   void SimulationPeriodic();
   void ResetSimulation();
+  bool SimulationResetReady() const {
+#ifndef __FRC_ROBORIO__
+    return simulationResetFeedbackLoops_ == 0;
+#else
+    return true;
+#endif
+  }
 
 private:
+  season::MatchContext matchContext_;
   base::Drive drive_;
   base::PositionJoint rack_, hood_;
   base::Flywheel intake_, conveyor_, bottom_, top_, shooter_;
@@ -44,6 +56,7 @@ private:
   std::vector<std::unique_ptr<base::VisionIO>> LocalizationSources();
   void AcceptVision(const base::VisionObservation &observation);
   base::SystemCheck checks_;
+  std::unique_ptr<season::AutoDrive> autoDrive_;
 
 #ifndef __FRC_ROBORIO__
   std::unique_ptr<season::FuelSimulation> simulation_;

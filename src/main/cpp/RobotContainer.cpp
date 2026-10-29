@@ -194,6 +194,7 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
                                    checks_([this]
                                            {drive_.Stop();rack_.Stop();hood_.Stop();intake_.Stop();conveyor_.Stop();bottom_.Stop();top_.Stop();shooter_.Stop(); }, frc::RobotBase::IsReal() ? "/home/lvuser/systemcheck-latest.json" : "systemcheck-latest.json", {.setupPrompt = "Confirm robot on blocks, no fuel, clear personnel and Disable operator ready"})
 {
+  base::ConfigureNativeAutoDrivePathfinder();
   drive_.ConfigureAuto();
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
@@ -245,6 +246,9 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   controller_.Back().OnTrue(frc2::cmd::RunOnce([this]
                                                { ResetSimulation(); }));
 #endif
+  autoDrive_ = std::make_unique<season::AutoDrive>(drive_,[this] {return rack_.Position();},[this]() -> const season::MatchContext& {return matchContext_;});
+  (controller_.LeftBumper() && [] { return frc::DriverStation::IsTeleopEnabled(); })
+      .WhileTrue(autoDrive_->Command());
   auto m = Mechanisms();
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
@@ -354,6 +358,8 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   autoChooser_.SetDefaultOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
   autoChooser_.AddOption("Choreo LeftBlueBump + Shoot", seasonAutos_[1].get());
   autoChooser_.AddOption("You better hit the A stop before this -Manny (none)", seasonAutos_[2].get());
+  seasonAutos_.emplace_back(autoDrive_->Command());
+  autoChooser_.AddOption("AutoDrive target", seasonAutos_.back().get());
   frc::SmartDashboard::PutData("Auto Choices", &autoChooser_);
   checks_.ConfigureRequirements({&drive_, &rack_, &hood_, &shooter_, &intake_, &conveyor_, &bottom_, &top_});
   season::ConfigureSystemChecks(checks_, drive_, rack_, hood_, shooter_, {{"intake", &intake_}, {"conveyor", &conveyor_}, {"bottom-indexer", &bottom_}, {"top-indexer", &top_}}, [this]
@@ -455,7 +461,9 @@ void RobotContainer::SimulationPeriodic()
         {config.centerOfMassX, config.centerOfMassY, config.centerOfMassZ + simulationGroundedBodyHeight_.value()}};
   }
   if (simulation_)
-    simulation_->Periodic(.02, fuelRobotState);
+    simulation_->Periodic(.02, fuelRobotState, matchContext_.ownActive);
+  if (autoDrive_ && simulation_ && fuelRobotState && simulationResetFeedbackLoops_ == 0)
+    autoDrive_->UpdateSimulation(fuelRobotState->pose, simulation_->Model(), simulationFieldCollidersEnabled_);
 #endif
 }
 void RobotContainer::ResetSimulation()
@@ -466,6 +474,7 @@ void RobotContainer::ResetSimulation()
   simulationResetPhysicalOrigin_ = simulationFieldCollidersEnabled_ ? season::simulation::DefaultSpawn(red) : frc::Pose2d{};
   if (simulationFieldCollidersEnabled_ && !season::simulation::IsClearStartingPose(simulationResetPhysicalOrigin_))
     throw std::logic_error("Simulation spawn intersects field geometry");
+  if (autoDrive_) autoDrive_->ResetSimulation();
   simulatedLocalization_.Reset();
   lastAcceptedVision_ = -1e9;
   simulationResetFeedbackLoops_ = 5;
