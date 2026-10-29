@@ -64,6 +64,7 @@ AutoDrive::AutoDrive(base::Drive& drive, std::function<double()> extension,
   frc::SmartDashboard::PutBoolean("AutoDrive/FollowFuel",false);
 #ifndef __FRC_ROBORIO__
   frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintSim",false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintProfileSim",false);
 #endif
   nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(false);
   Status("idle-native");
@@ -117,6 +118,10 @@ frc2::CommandPtr AutoDrive::Command() {
           config.follow.finalSettleSamples=50;
           config.follow.poseAngularDamping=.5;
           config.follow.usePoseRateForSettling=true;
+          if (frc::SmartDashboard::GetBoolean("AutoDrive/UseFootprintProfileSim",false)) {
+            config.follow.terrain=[](base::FootprintPose,base::FootprintPose) {return base::FootprintTerrainSegment{};};
+            config.follow.angularStopTolerance=.01;
+          }
           auto obstacles=[] {
             std::vector<base::FieldRectangle> boxes;
             if (frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled",true)) for (const auto& body:simulation::FieldColliders()) {

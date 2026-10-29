@@ -77,6 +77,21 @@ requests; measured translation was 0.013 m/s and rotation 0.039 rad/s at the
 first resumed sample. The virtual-obstacle separations were about 0.061 m in
 both runs. These are sampled results, not continuous clearance or physical
 braking evidence; stale wheel and localization feedback could hide motion.
+The separate desktop `AutoDrive/UseFootprintProfileSim` toggle enables the
+experimental follower profile with flat terrain. The first [profile trial](../artifacts/footprint-profile-failure.json)
+passed alliance arrivals, static detour, release and disable, but failed the
+rotation and dynamic replan arrival checks: both commands remained active near
+their targets. The test used a locally built MecoBase at `328c81a`; it does not
+model ramp grade or establish hardware behavior.
+A [diagnostic repeat](../artifacts/footprint-profile-trace.json) failed the same
+two checks. Its final samples show heading repeatedly crossing the 0.02 rad
+settling boundary; the commands never completed the required dwell.
+With the MecoBase `78780a1` overshoot handling and a 0.01 rad correction
+deadband, [two subsequent runs](../artifacts/footprint-profile-tighter.json)
+passed all checks. Their detours took 22.4 seconds and their sampled virtual
+obstacle separations were 0.0645 and 0.0637 m. Final rotation errors were 0.0530
+and 0.0538 rad against a 0.06 rad test limit, leaving little margin. These
+flat-terrain simulation results do not validate slopes or physical stopping.
 
 ## Controls and real detections
 

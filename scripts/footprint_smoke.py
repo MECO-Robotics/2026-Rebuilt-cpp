@@ -16,7 +16,7 @@ from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
 
-async def run(port, hal_port):
+async def run(port, hal_port, profile=False):
     binary=running_sim_binary(nt_port=port,hal_port=hal_port)
     client=ntcore.NetworkTableInstance.create()
     client.startClient4('footprint-sim-validation');client.setServer('127.0.0.1',port)
@@ -32,6 +32,7 @@ async def run(port, hal_port):
     heading=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').publish()
     heading_readback=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').subscribe(float('nan'))
     mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintSim').publish()
+    profile_mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintProfileSim').publish()
     follow=client.getBooleanTopic('/SmartDashboard/AutoDrive/FollowFuel').publish()
     injected=client.getDoubleArrayTopic('/Simulation/FootprintObstacle').publish()
     follower_trace=client.getDoubleArrayTopic('/Simulation/FootprintFollowerTrace').subscribe([],opts)
@@ -78,7 +79,7 @@ async def run(port, hal_port):
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
-            mode.set(True);follow.set(False);injected.set([]);client.flush()
+            mode.set(True);profile_mode.set(profile);follow.set(False);injected.set([]);client.flush()
             for red in (False,True):
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
@@ -127,6 +128,7 @@ async def run(port, hal_port):
                                     'first_arrived':rotation_samples[arrival_index] if arrival_index is not None else None,
                                     'one_second_after_arrival':rotation_samples[arrival_index+50] if arrival_index is not None and arrival_index+50<len(rotation_samples) else None,
                                     'last_sample':rotation_samples[-1] if rotation_samples else None,
+                                    'tail_samples':rotation_samples[-100:],
                                     'error_m':error,'heading_error_rad':heading_error,'status':status.get()})
             settled=rotation_samples[arrival_index+50] if arrival_index is not None and arrival_index+50<len(rotation_samples) else None
             result['checks']['rotate_in_place']=error<.1 and heading_error<.06 and settled is not None and abs(math.remainder(settled['truth']-math.pi/2,2*math.pi))<.06 and status.get()=='arrived' and not active.get()
@@ -151,6 +153,7 @@ async def run(port, hal_port):
                                     'first_resumed_sample':dynamic_samples[resumed_index] if resumed_index is not None else None,
                                     'sampled_stop_duration_seconds':(resumed_index-stopped)*.02 if resumed_index is not None else None,
                                     'last_sample':dynamic_samples[-1] if dynamic_samples else None,
+                                    'tail_samples':dynamic_samples[-100:],
                                     'minimum_sampled_separation_m':separation})
             result['checks']['dynamic_obstacle_replan']=dynamic_started and resumed and separation>0 and error<.1 and status.get()=='arrived' and not active.get()
             injected.set([]);client.flush()
@@ -175,7 +178,7 @@ async def run(port, hal_port):
             result['passed']=all(result['checks'].values())
         finally:
             with contextlib.suppress(Exception):await hold(.2,enabled=False)
-            injected.set([]);mode.set(False);client.flush();reader.cancel()
+            injected.set([]);mode.set(False);profile_mode.set(False);client.flush();reader.cancel()
             with contextlib.suppress(asyncio.CancelledError,Exception):await reader
             client.stopClient()
     return result
@@ -186,7 +189,8 @@ if __name__=='__main__':
     parser.add_argument('--port',type=int,default=5811)
     parser.add_argument('--hal-port',type=int,default=3301)
     parser.add_argument('--output',type=Path)
-    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port));text=json.dumps(result,indent=2)
+    parser.add_argument('--profile',action='store_true')
+    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile));text=json.dumps(result,indent=2)
     print(text)
     if args.output:args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(text+'\n')
     raise SystemExit(0 if result.get('passed') else 1)
