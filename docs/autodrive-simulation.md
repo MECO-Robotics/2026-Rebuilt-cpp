@@ -46,8 +46,10 @@ continuous physical clearance or hardware measurement.
 A subsequent [rotation diagnostic](../artifacts/footprint-rotation-failure.json)
 failed: reported arrival occurred near the heading tolerance, followed by drift
 to 0.087 rad error. Estimated and simulated physical heading agreed at the final
-sample. The footprint mode remains experimental while this stopping behavior is
-investigated.
+sample. After reducing the simulated angular settling threshold and holding the
+final waypoint longer, [two subsequent runs](../artifacts/footprint-final-settling.json)
+ended within 0.06 rad and remained within that bound one second after arrival.
+These settings are simulation-only and do not establish hardware calibration.
 
 ## Controls and real detections
 

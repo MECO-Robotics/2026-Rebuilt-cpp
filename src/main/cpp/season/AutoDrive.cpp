@@ -108,6 +108,12 @@ frc2::CommandPtr AutoDrive::Command() {
           base::FootprintAutoDriveConfig config;
           config.footprint={.86,.86};
           config.field={0,0,simulation::kFieldLength,simulation::kFieldWidth};
+          // The modeled swerve can drift after a rotation if it releases the
+          // drivetrain while residual angular speed is still appreciable.
+          config.follow.headingTolerance=.02;
+          config.follow.angularSettleSpeed=.02;
+          config.follow.settleSamples=10;
+          config.follow.finalSettleSamples=50;
           auto obstacles=[] {
             std::vector<base::FieldRectangle> boxes;
             if (!frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled",true)) return boxes;

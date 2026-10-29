@@ -23,6 +23,7 @@ async def run(port, hal_port):
     pose=client.getStructTopic('/AdvantageScope/Drive/Pose',Pose2d).subscribe(Pose2d(),opts)
     truth=client.getStructTopic('/Simulation/RobotTruth',Pose3d).subscribe(Pose3d(),opts)
     requested=client.getStructTopic('/AdvantageScope/Drive/RequestedChassisSpeeds',ChassisSpeeds).subscribe(ChassisSpeeds(),opts)
+    measured=client.getStructTopic('/AdvantageScope/Drive/ChassisSpeeds',ChassisSpeeds).subscribe(ChassisSpeeds(),opts)
     active=client.getBooleanTopic('/AutoDrive/Active').subscribe(False)
     status=client.getStringTopic('/AutoDrive/Status').subscribe('')
     x=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetX').publish()
@@ -63,9 +64,10 @@ async def run(port, hal_port):
                 if track_detour:
                     p=truth.get();detour_samples.append((p.X(),p.Y(),p.rotation().Z()))
                 if track_rotation:
-                    p=truth.get();e=pose.get();v=requested.get()
+                    p=truth.get();e=pose.get();v=requested.get();m=measured.get()
                     rotation_samples.append({'truth':p.rotation().Z(),'estimated':e.rotation().radians(),
-                                             'status':status.get(),'active':active.get(),'requested_omega':v.omega})
+                                             'status':status.get(),'active':active.get(),'requested_omega':v.omega,
+                                             'measured_omega':m.omega})
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
@@ -100,17 +102,21 @@ async def run(port, hal_port):
             await hold(.3)
             p=pose.get();rotation_goal=(p.X(),p.Y())
             x.set(rotation_goal[0]);y.set(rotation_goal[1]);heading.set(math.pi/2);client.flush()
-            await hold(.2,enabled=False);track_rotation=True;await hold(8,bumper=True);track_rotation=False
+            await hold(.2,enabled=False);track_rotation=True;await hold(15,bumper=True);track_rotation=False
             q=truth.get();estimate=pose.get();error=math.hypot(q.X()-rotation_goal[0],q.Y()-rotation_goal[1])
             heading_error=abs(math.remainder(q.rotation().Z()-math.pi/2,2*math.pi))
             rotation_start=next((i for i,sample in enumerate(rotation_samples) if sample['active']),len(rotation_samples))
+            arrival_index=next((i for i in range(rotation_start,len(rotation_samples)) if rotation_samples[i]['status']=='arrived'),None)
             result['cases'].append({'mode':'rotate_in_place','goal':rotation_goal,
                                     'truth':[q.X(),q.Y(),q.rotation().Z()],
                                     'estimated_pose':[estimate.X(),estimate.Y(),estimate.rotation().radians()],
                                     'heading_readback':heading_readback.get(),
-                                    'first_arrived':next((sample for sample in rotation_samples[rotation_start:] if sample['status']=='arrived'),None),
+                                    'first_arrived':rotation_samples[arrival_index] if arrival_index is not None else None,
+                                    'one_second_after_arrival':rotation_samples[arrival_index+50] if arrival_index is not None and arrival_index+50<len(rotation_samples) else None,
+                                    'last_sample':rotation_samples[-1] if rotation_samples else None,
                                     'error_m':error,'heading_error_rad':heading_error,'status':status.get()})
-            result['checks']['rotate_in_place']=error<.1 and heading_error<.08 and status.get()=='arrived' and not active.get()
+            settled=rotation_samples[arrival_index+50] if arrival_index is not None and arrival_index+50<len(rotation_samples) else None
+            result['checks']['rotate_in_place']=error<.1 and heading_error<.06 and settled is not None and abs(math.remainder(settled['truth']-math.pi/2,2*math.pi))<.06 and status.get()=='arrived' and not active.get()
             await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
             p=pose.get();x.set(p.X()+1);y.set(p.Y());heading.set(0);client.flush()
             await hold(.2,enabled=False);await hold(1,bumper=True)
