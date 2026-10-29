@@ -92,6 +92,11 @@ passed all checks. Their detours took 22.4 seconds and their sampled virtual
 obstacle separations were 0.0645 and 0.0637 m. Final rotation errors were 0.0530
 and 0.0538 rad against a 0.06 rad test limit, leaving little margin. These
 flat-terrain simulation results do not validate slopes or physical stopping.
+After the profile envelope was made to override request slew limiting, a
+[further run](../artifacts/footprint-profile-envelope.json) passed the same
+checks using MecoBase `26cdf21`. It took 21.4 seconds for the detour, ended the
+rotation 0.0462 rad from target, and sampled 0.0612 m minimum virtual-obstacle
+separation. This is one run and does not establish continuous clearance.
 
 ## Controls and real detections
 
