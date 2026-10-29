@@ -105,6 +105,16 @@ the requested translation stayed above 0.97 m/s while body position barely
 changed over its final 100 samples and wheel-derived speed remained nonzero.
 This observation does not isolate the contact or drivetrain cause. The summary
 links the compressed full traces.
+An isolated [published-plant comparison](../artifacts/bump-plant-speed-probe.json)
+used the same MecoSimulation `2026.0.14` archive and a simplified speed
+controller, with the robot's configured ride height and foam damping. At a
+1 m/s target it did not clear within 10 seconds, with 1,447 accumulated
+backing contacts and 77 steps of bumper support while all wheels were unloaded. At
+5.24 m/s it cleared, with 55 accumulated backing contacts and eight unloaded
+samples. This supports high-centering as a modeled mechanism; it does not prove
+the exact cause in the robot run or characterize physical hardware. The
+comparison can be repeated with `scripts/bump_plant_speed_probe.py` and the
+published desktop static adapter archive.
 After the profile envelope was made to override request slew limiting, a
 [further run](../artifacts/footprint-profile-envelope.json) passed the same
 checks using MecoBase `26cdf21`. It took 21.4 seconds for the detour, ended the
