@@ -28,10 +28,11 @@ async def run(port, hal_port):
     x=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetX').publish()
     y=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetY').publish()
     heading=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').publish()
+    heading_readback=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').subscribe(float('nan'))
     mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintSim').publish()
     follow=client.getBooleanTopic('/SmartDashboard/AutoDrive/FollowFuel').publish()
     result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'cases':[],'checks':{}}
-    red=False;peak=0.;track_detour=False;detour_samples=[]
+    red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[]
     def support_separation(xpos,ypos,yaw):
         # The blue near-wall trench support in the simulation field model.
         cx=4.6256194; hx=53*.0254/2
@@ -47,7 +48,7 @@ async def run(port, hal_port):
             async for _ in ws: pass
         reader=asyncio.create_task(drain())
         async def hold(seconds,bumper=False,enabled=True,reset=False):
-            nonlocal peak
+            nonlocal peak,peak_omega
             for _ in range(round(seconds/.02)):
                 buttons=[False]*10;buttons[4]=bumper;buttons[6]=reset
                 for device in ('0','1'):
@@ -58,9 +59,13 @@ async def run(port, hal_port):
                     '>estop':False,'>station':'red1' if red else 'blue1','>new_data':True}}))
                 await asyncio.sleep(.02)
                 if active.get():
-                    velocity=requested.get();peak=max(peak,math.hypot(velocity.vx,velocity.vy))
+                    velocity=requested.get();peak=max(peak,math.hypot(velocity.vx,velocity.vy));peak_omega=max(peak_omega,abs(velocity.omega))
                 if track_detour:
                     p=truth.get();detour_samples.append((p.X(),p.Y(),p.rotation().Z()))
+                if track_rotation:
+                    p=truth.get();e=pose.get();v=requested.get()
+                    rotation_samples.append({'truth':p.rotation().Z(),'estimated':e.rotation().radians(),
+                                             'status':status.get(),'active':active.get(),'requested_omega':v.omega})
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
@@ -92,6 +97,20 @@ async def run(port, hal_port):
                                     'error_m':error,'status':status.get(),
                                     'samples':len(detour_samples),'minimum_support_separation_m':min_separation})
             result['checks']['field_obstacle_detour']=direct_blocked and min_separation>0 and error<.1 and status.get()=='arrived' and not active.get()
+            await hold(.3)
+            p=pose.get();rotation_goal=(p.X(),p.Y())
+            x.set(rotation_goal[0]);y.set(rotation_goal[1]);heading.set(math.pi/2);client.flush()
+            await hold(.2,enabled=False);track_rotation=True;await hold(8,bumper=True);track_rotation=False
+            q=truth.get();estimate=pose.get();error=math.hypot(q.X()-rotation_goal[0],q.Y()-rotation_goal[1])
+            heading_error=abs(math.remainder(q.rotation().Z()-math.pi/2,2*math.pi))
+            rotation_start=next((i for i,sample in enumerate(rotation_samples) if sample['active']),len(rotation_samples))
+            result['cases'].append({'mode':'rotate_in_place','goal':rotation_goal,
+                                    'truth':[q.X(),q.Y(),q.rotation().Z()],
+                                    'estimated_pose':[estimate.X(),estimate.Y(),estimate.rotation().radians()],
+                                    'heading_readback':heading_readback.get(),
+                                    'first_arrived':next((sample for sample in rotation_samples[rotation_start:] if sample['status']=='arrived'),None),
+                                    'error_m':error,'heading_error_rad':heading_error,'status':status.get()})
+            result['checks']['rotate_in_place']=error<.1 and heading_error<.08 and status.get()=='arrived' and not active.get()
             await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
             p=pose.get();x.set(p.X()+1);y.set(p.Y());heading.set(0);client.flush()
             await hold(.2,enabled=False);await hold(1,bumper=True)
@@ -108,8 +127,8 @@ async def run(port, hal_port):
             await hold(.3,bumper=True,enabled=False)
             velocity=requested.get()
             result['checks']['disable_stops']=started and not active.get() and math.hypot(velocity.vx,velocity.vy)<.01
-            result['checks']['bounded_requests']=peak<=1.01
-            result['peak_requested_mps']=peak
+            result['checks']['bounded_requests']=peak<=1.01 and peak_omega<=1.01
+            result['peak_requested_mps']=peak;result['peak_requested_radps']=peak_omega
             result['passed']=all(result['checks'].values())
         finally:
             with contextlib.suppress(Exception):await hold(.2,enabled=False)

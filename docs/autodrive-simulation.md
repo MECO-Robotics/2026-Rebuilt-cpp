@@ -43,6 +43,11 @@ detour whose direct line intersects a modeled trench support. At 20 ms sampled
 poses, the chassis remained at least 0.067 m clear of that support and finished
 within 0.02 m of the target. This is numerical simulation evidence, not a
 continuous physical clearance or hardware measurement.
+A subsequent [rotation diagnostic](../artifacts/footprint-rotation-failure.json)
+failed: reported arrival occurred near the heading tolerance, followed by drift
+to 0.087 rad error. Estimated and simulated physical heading agreed at the final
+sample. The footprint mode remains experimental while this stopping behavior is
+investigated.
 
 ## Controls and real detections
 
