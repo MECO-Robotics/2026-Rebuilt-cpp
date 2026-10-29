@@ -10,6 +10,6 @@
     "roborio_release": "passed",
     "coverage": "link native tracking, footprint command, segment speed profile, and existing Base APIs"
   },
-  "pom_sha256": "609c2feb4d030805732bc25ce48ca1bfbc3473b5b2f6d5ce14a511d71af54ce2",
+  "pom_sha256": "609c2feb4d030805732bc25ce48ca1bfbc3473b5b2f6d5bc14a511d71af54ce2",
   "limits": "Windows and Debug consumer results are from CI only when their jobs complete; no public deployment or hardware validation is represented."
 }
