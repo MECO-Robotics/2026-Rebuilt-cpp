@@ -1,0 +1,34 @@
+{
+  "coordinate": "2026.2.8",
+  "source": "GitHub Actions staged artifact; not public deployment",
+  "base_commit": "67ced8bd98ee73133c5442b77ef4eb50243eb811",
+  "package_run": "https://github.com/MECO-Robotics/MecoBase-cpp/actions/runs/40958928595",
+  "desktop_debug_tests_passed": 25,
+  "desktop_release_tests_passed": 25,
+  "artifacts": [
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Debug",
+      "archive_library_sha256": "a9341fbaf07aed652b4e1c0e0d2f2022586187a6821b68e8272efc1065792b88",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Release",
+      "archive_library_sha256": "91d3c5c28103202f77963c851734899c704b9aaec262e134e565cf5132875442",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxathena",
+      "configuration": "Debug",
+      "archive_library_sha256": "0222bd9d9220ae227f5cf2f08df5d955d901c00b7b2e8322b1214b938fbfc19c",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxathena",
+      "configuration": "Release",
+      "archive_library_sha256": "a472745480387070af07116433890e11149e941d19387c9143f1c03b720c749a",
+      "linked_library_matches": true
+    }
+  ]
+}

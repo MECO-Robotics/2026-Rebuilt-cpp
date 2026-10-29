@@ -127,13 +127,13 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
                 x.set(goal[0]);y.set(goal[1]);heading.set(math.pi if red else 0);client.flush()
                 await hold(.2,enabled=False)
-                fixed_samples=[];track_fixed=native
+                fixed_samples=[];track_fixed=native or configured
                 await hold(8,bumper=True)
                 track_fixed=False
                 q=truth.get();error=math.hypot(q.X()-goal[0],q.Y()-goal[1])
                 label='red' if red else 'blue'
                 result['cases'].append({'alliance':label,'goal':goal,'truth':[q.X(),q.Y(),q.rotation().Z()],
-                                        'error_m':error,'status':status.get(),'samples':fixed_samples if native else []})
+                                        'error_m':error,'status':status.get(),'samples':fixed_samples if native or configured else []})
                 check_key=f'{label}_{len(result["cases"])}_arrived' if fixed_rounds else label+'_arrived'
                 result['checks'][check_key]=error<.1 and status.get()=='arrived' and not active.get()
                 await hold(.2,enabled=False)
@@ -235,6 +235,8 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                                     'samples':len(detour_samples),'minimum_support_separation_m':min_separation})
             result['checks']['field_obstacle_detour']=direct_blocked and min_separation>0 and error<.1 and status.get()=='arrived' and not active.get()
             if ramp:
+                if configured:
+                    result['checks']['configured_mode_selected']=configured_status.get()=='ready'
                 if not result['checks']['field_obstacle_detour']:
                     result['passed']=False
                     return result
@@ -259,7 +261,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                     result['checks']['avoids_bump_and_arrives']=clearance>0 and error<.1 and status.get()=='arrived' and not active.get()
                 elif stall_check:
                     v=requested.get()
-                    result['checks']['stall_stops']=status.get()=='stopped-before-goal' and not active.get() and math.hypot(v.vx,v.vy)<.01 and abs(v.omega)<.01
+                    result['checks']['stall_stops']=status.get()=='stopped-before-goal' and not active.get() and math.hypot(v.vx,v.vy)<.01 and abs(v.omega)<.01 and (not configured or outcome.get()=='stalled')
                 else:
                     result['checks']['modeled_bump_crossing']=error<.1 and status.get()=='arrived' and not active.get()
                 result['passed']=all(result['checks'].values())
