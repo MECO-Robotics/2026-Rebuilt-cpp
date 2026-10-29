@@ -1,0 +1,41 @@
+{
+  "scope": "Desktop simulated ramp, pose-progress watchdog and virtual target; no physical stopping or stale-localization validation.",
+  "mecobase_revision": "fdf0c85f5e7bd4ae3bbe5959d89474c406110bdf",
+  "package_sha256": "bd333945b0a3c56a8c3a94e13471be3c4ca275ebc9aee783e506302e890a5691",
+  "robot_source_sha256": "db5e07f383d8dd0f81bde838dc68a702570a6b7a389332da8177c541fccae405",
+  "script_sha256": "f0dfa84d0d9e037713983455537bfab93a219a962f7a6f7f183a67db0acf64b0",
+  "runs": [
+    {
+      "trace": "footprint-terminal-stall-1.json.gz",
+      "binary_sha256": "fc9a023695b32149c53e0b37440cbc5a42f0044a4a386ecb2d815da5c59b75d6",
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "stall_stops": true
+      },
+      "status": "stopped-before-goal",
+      "elapsed_seconds": 8.353085799994005,
+      "goal_error_m": 1.6994593630210233,
+      "final_requested_mps": 0.0,
+      "final_truth_x_m": 5.199441448341342,
+      "final_estimated_x_m": 5.19765069122913
+    },
+    {
+      "trace": "footprint-terminal-stall-2.json.gz",
+      "binary_sha256": "fc9a023695b32149c53e0b37440cbc5a42f0044a4a386ecb2d815da5c59b75d6",
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "stall_stops": true
+      },
+      "status": "stopped-before-goal",
+      "elapsed_seconds": 7.312814921999234,
+      "goal_error_m": 1.7362661913338828,
+      "final_requested_mps": 0.0,
+      "final_truth_x_m": 5.2362652913311525,
+      "final_estimated_x_m": 5.235271635177864
+    }
+  ]
+}

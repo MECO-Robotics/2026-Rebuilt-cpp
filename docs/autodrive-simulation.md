@@ -122,6 +122,11 @@ illustrative 0.01 m/s threshold, two trials completed the staging checks and
 stopped before the bump goal with zero request after 17.7 and 13.6 seconds,
 including replanning attempts. This does not complete the crossing, prove a
 physical stopping distance, or validate behavior with stale localization.
+The subsequent MecoBase `fdf0c85` revision treats a stall as terminal rather
+than retrying it. In [two simulated trials](../artifacts/footprint-terminal-stall-summary.json),
+the staging checks passed and the ramp command stopped before its goal with
+zero request after 8.4 and 7.3 seconds. These measurements include approach
+and settling and do not establish physical stopping performance.
 After the profile envelope was made to override request slew limiting, a
 [further run](../artifacts/footprint-profile-envelope.json) passed the same
 checks using MecoBase `26cdf21`. It took 21.4 seconds for the detour, ended the
