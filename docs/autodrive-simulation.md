@@ -472,3 +472,11 @@ hardware validation.
 A separate [missing-watchdog-field test](../artifacts/configured-terrain-missing-watchdog.json.gz)
 used an intentionally [invalid fixture](../artifacts/configured-terrain-missing-watchdog-fixture.json);
 selecting the mode rejected the configuration and kept requested motion at zero.
+A separate [simulation-only avoidance fixture](../artifacts/configured-terrain-bump-avoidance-fixture.json)
+adds the modeled bump-plate plan-view rectangles as obstacles. In [two trials](../artifacts/configured-terrain-bump-avoidance.json.gz)
+([repeat](../artifacts/configured-terrain-bump-avoidance-repeat.json.gz)), the
+configured command reached the goal on the other side without traversing those
+rectangles; minimum sampled separations from the modeled bump were about 0.121
+and 0.123 m. Both used the staged `2026.2.8` candidate and illustrative robot
+limits. The field boxes, clearance samples, and modeled robot are not physical
+measurements, and this does not establish ramp traversal or continuous clearance.
