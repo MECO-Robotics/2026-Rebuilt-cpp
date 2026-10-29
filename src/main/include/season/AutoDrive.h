@@ -1,5 +1,7 @@
 #pragma once
 #include <base/AutoDrive.h>
+#include <cmath>
+#include <numbers>
 #include "season/MatchContext.h"
 #include <base/ObjectPerception.h>
 #include "season/FuelSimulation.h"
@@ -8,6 +10,11 @@
 #endif
 
 namespace season {
+inline bool AutoDriveArrived(const frc::Pose2d& pose, const frc::ChassisSpeeds& speeds, const frc::Pose2d& goal) {
+  return pose.Translation().Distance(goal.Translation()).value() < .05 &&
+      std::abs(std::remainder((goal.Rotation().Radians()-pose.Rotation().Radians()).value(),2*std::numbers::pi)) < .06 &&
+      std::hypot(speeds.vx.value(),speeds.vy.value()) < .2 && std::abs(speeds.omega.value()) < .2;
+}
 class AutoDrive {
  public:
   AutoDrive(base::Drive& drive, std::function<double()> intakeExtension,

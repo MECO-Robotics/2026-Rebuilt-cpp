@@ -62,8 +62,10 @@ async def run(args):
     heading=nt.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').publish()
     follow=nt.getBooleanTopic('/SmartDashboard/AutoDrive/FollowFuel').publish()
     select=nt.getStringTopic('/SmartDashboard/Auto Choices/selected').publish()
-    red=args.alliance=='red'; lane_y=8.069-0.639318 if red else .639318
+    red=args.alliance=='red'; lane_y=8.069-.75 if red else .75
     home=16.541-3.65 if red else 3.65; middle=16.541-7.35 if red else 7.35
+    # Stop autonomous short of the neutral fuel grid; teleop approaches it with the intake active.
+    auto_target=16.541-6.2 if red else 6.2
     angle=math.pi if red else 0
     result={'scenario':'practice-full-match-native-goal-driving','alliance':args.alliance,'auto_result':args.auto_result,
             'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(), 'checks':{},'legs':[],
@@ -86,7 +88,7 @@ async def run(args):
             await disable();await asyncio.sleep(.3)
             nt.getEntry('/Sim/Practice/Config/AllianceStation').setString('Red1' if red else 'Blue1')
             nt.getEntry('/Sim/Practice/Config/AutoResult').setString(args.auto_result)
-            select.set('AutoDrive target');goal(middle);nt.flush();await asyncio.sleep(.3)
+            select.set('AutoDrive target');goal(auto_target);nt.flush();await asyncio.sleep(.3)
             command.set('start');nt.flush();start=time.monotonic();previous='';phases=set()
             auto_seen=False;auto_error=None;auto_status='';peak_count=0;peak_clusters=0;started=False
             mode='initial'; leg_target=home; leg_started=0; saw_active=False; leg_settle=0;leg_retries=0;leg_finish=None
@@ -101,7 +103,7 @@ async def run(args):
                     print(f'{now-start:.1f}s practice={state}',flush=True);previous=state
                 if state=='autonomous':started=True;auto_seen |= active.get()
                 if state=='assessment' and auto_error is None:
-                    auto_error=error(middle);auto_status=status.get()
+                    auto_error=error(auto_target);auto_status=status.get()
                 if state=='teleop':
                     if active.get():
                         req=requested.get();peak_request=max(peak_request,math.hypot(req.vx,req.vy));peak_omega=max(peak_omega,abs(req.omega))
@@ -142,7 +144,7 @@ async def run(args):
                         failed_arrival=distance>(.10 if args.strict_arrival else .25) or (args.strict_arrival and
                             (heading_error>.12 or settled_speed>.2 or status.get()!='arrived'))
                         if failed_arrival:
-                            if args.continuous and distance<1 and status.get() in ('arrived','stopped-before-goal') and leg_retries<2:
+                            if args.continuous and not args.strict_arrival and distance<1 and status.get() in ('arrived','stopped-before-goal') and leg_retries<2:
                                 result['retries'].append(result['legs'].pop());leg_retries+=1
                                 print(f'retry incomplete approach: error={distance:.3f}m',flush=True)
                                 goal(leg_target);mode='release';leg_started=now

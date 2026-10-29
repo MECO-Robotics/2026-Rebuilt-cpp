@@ -1,6 +1,7 @@
 #include "season/AutoDrive.h"
 #include "season/PerceptionGeometry.h"
 #include <frc/RobotBase.h>
+#include <frc2/command/Commands.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
 #include <frc/smartdashboard/SmartDashboard.h>
@@ -101,10 +102,13 @@ frc2::CommandPtr AutoDrive::Command() {
         sampled->reset();
         nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(true);Status("planning-native");
       })
+      // Retain the drivetrain until the stop has had time to settle; reporting
+      // arrival immediately after the last commanded output can observe coasting.
+      .AndThen(frc2::cmd::Wait(units::second_t{.3}))
       .FinallyDo([this,sampled](bool interrupted) {
         nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(false);
         const auto& goal=*sampled;
-        const bool reached=goal && goal->Translation().Distance(drive_.Pose().Translation()).value()<.25;
+        const bool reached=goal && AutoDriveArrived(drive_.Pose(),drive_.Speeds(),*goal);
         Status(interrupted ? "interrupted" : reached ? "arrived" : goal ? "stopped-before-goal" : "stopped-no-target");
       });
 }
