@@ -35,15 +35,8 @@ value overrides this default. The GUI's configured frame limiter remains in
 place; the change does not alter the 20 ms robot period or roboRIO settings.
 
 Evidence: `artifacts/physical-stick-{packet-clock,no-vsync}.json` and
-`artifacts/physical-stick-cadence-summary.json`. To passively repeat a physical
-stick capture, enable Teleop and run:
-
-```sh
-python scripts/sim_observe_input.py --duration 30 --output artifacts/physical-repeat.json
-```
-
-This observer sends no joystick or DS-state writes. The automated websocket
-experiments below bypass physical-controller polling and therefore did not
+`artifacts/physical-stick-cadence-summary.json`. The automated websocket
+experiments below bypassed physical-controller polling and therefore did not
 establish a fix for this symptom.
 
 ## Measured boundaries
@@ -150,23 +143,8 @@ Omit `FRC_SIM_GUI=1` for the headless comparison. The launcher snapshots the
 binary/libraries and loads the same HAL websocket extension in either mode.
 `FRC_SIM_LATENCY_PROBE` is opt-in; ordinary runs publish no latency probes.
 
-Use an isolated Python environment with `pyntcore`, `robotpy-wpimath` (2026),
-`websockets` (14–16), and `msgpack` for the socket-cadence helper:
-
-```sh
-python scripts/sim_latency.py --output artifacts/simulation-latency-repeat.json
-python scripts/sim_latency.py --raw-only --steps 12 --output artifacts/raw-input-repeat.json
-python scripts/sim_input_cadence.py --output artifacts/input-cadence-repeat.json
-python scripts/advantagescope_cadence.py --output artifacts/AS-cadence-repeat.json
-```
-
-`--raw-only` holds each stick step with repeated raw writes at about 100 Hz,
-without sending DS notifications during the step. Repeating writes matters when
-SimGUI also owns a joystick slot; one websocket write can be overwritten before
-the next robot loop. Repeat with the packet clock disabled to isolate ingestion.
-
-These scripts drive only localhost HAL and disable it during cleanup. The last
-helper requires one connected AdvantageScope client and Linux `ss`.
+The original one-off capture scripts have been removed; the recorded results
+above describe the historical investigation, not a currently packaged test.
 
 `/Diagnostics/Latency/RobotLoop` contains: loop-start NT microseconds,
 scheduler-end NT microseconds, cached forward stick, command-read forward stick,

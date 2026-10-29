@@ -52,7 +52,6 @@ In another terminal:
 python3 -m venv /tmp/frc-cpp-sim-venv
 /tmp/frc-cpp-sim-venv/bin/pip install 'pyntcore>=2026,<2027' 'robotpy-wpimath>=2026,<2027' 'websockets>=14,<17'
 /tmp/frc-cpp-sim-venv/bin/python scripts/sim_smoke.py --max-speed 5.24 --reset-button 8 --reset-enabled --output artifacts/season-drive-smoke.json
-/tmp/frc-cpp-sim-venv/bin/python scripts/season_mechanism_smoke.py --output artifacts/season-mechanism-smoke.json
 /tmp/frc-cpp-sim-venv/bin/python scripts/season_auto_smoke.py --output artifacts/season-auto-smoke.json
 ```
 
@@ -142,8 +141,7 @@ Set `FRC_SIM_DS_PACKET_CLOCK=0` to compare the original producer-driven packet c
 Linux GUI simulation defaults `vblank_mode=0` in both launch paths: SimGUI polls
 physical controllers on its render thread, and covered-window swap synchronization
 was observed to reduce input updates to 1 Hz. An explicit `vblank_mode` overrides
-the default. `scripts/sim_observe_input.py` records physical-stick cadence without
-injecting input; see the investigation for measured before/after results.
+the default; see the investigation for measured before/after results.
 
 In desktop Teleop, **Back/View** resets the simulation scene (body upright,
 pose, wheel state and fuel). **Start/Menu** resets only the driver translation frame; it preserves the absolute
@@ -216,8 +214,6 @@ from Java source commit `e336f10169757882cf966979121be507ce4ec8b9`.
 Validation: desktop and roboRIO Debug/Release builds and all 31 tests in each
 desktop configuration passed. The local HAL/NT animation smoke passed at
 0.300 m rack extension. AdvantageScope GUI rendering remains unverified.
-The older `season_mechanism_smoke.py` is blocked with the current vendordep
-because its expected mechanism `/Voltage` dashboard topics are absent.
 
 Desktop localization uses the public MecoBase `InjectedVisionIO` boundary with
 robot-specific ideal Limelight 3 and Quest 3S models. Observations follow the
