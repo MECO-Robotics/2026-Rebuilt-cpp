@@ -1,0 +1,135 @@
+{
+  "recordedAt": "2026-10-27T22:39:08.563894-04:00",
+  "scope": "NT-controlled desktop practice matches and shared 2026 competition context; no new driving strategy",
+  "sourceHeads": {
+    "robot": "9f923d818f0db03ff5bbfedadcaf8ca0423d1eff",
+    "simulation": "07facfc5de0213ce238ed59a2d49c5ce90a6502b"
+  },
+  "workingTrees": "Uncommitted development changes in existing autodrive worktrees; not published",
+  "versions": {
+    "wpilib": "2026.2.1",
+    "MecoBase": "2026.2.4-dev.1",
+    "MecoSimulation": "2026.0.13-dev.2"
+  },
+  "build": {
+    "command": "JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build -PmecoBaseMaven=../MecoBase-cpp-autodrive/build/vendor-maven/maven -PmecoSimulationMaven=../MecoSimulation-cpp-autodrive/build/native-autodrive-package/maven --max-workers=2 --console=plain",
+    "passed": true,
+    "targets": [
+      "linuxx86-64 Debug",
+      "linuxx86-64 Release",
+      "linuxathena Debug",
+      "linuxathena Release"
+    ],
+    "nativeTestsPerDesktopConfiguration": 11
+  },
+  "simulationPackaging": {
+    "linuxArtifactVerification": true,
+    "pythonTests": 14,
+    "cleanConsumers": [
+      "Linux Debug",
+      "Linux Release"
+    ],
+    "windowsValidated": false
+  },
+  "guiFullMatch": {
+    "binary_sha256": "3a8e501eb7fe1d92fac827b41eccfb659694875953dcd7ad724557b08d9f92cf",
+    "checks": {
+      "complete": true,
+      "phases": true,
+      "autonomous_scheduled": true,
+      "context_agreement": true,
+      "all_hub_phases": true,
+      "teleop_countdown": true,
+      "autonomous_cancelled": true,
+      "game_data_delayed": true,
+      "manual_disable_aborts": true
+    },
+    "transitions": [
+      {
+        "state": "autonomous",
+        "elapsed": 0.10060746000090148,
+        "time": 19.959894,
+        "data": ""
+      },
+      {
+        "state": "assessment",
+        "elapsed": 20.126134431000537,
+        "time": 0.0,
+        "data": ""
+      },
+      {
+        "state": "teleop",
+        "elapsed": 23.142246110000997,
+        "time": 139.959511,
+        "data": "R"
+      },
+      {
+        "state": "complete",
+        "elapsed": 163.15780554800222,
+        "time": -1.0,
+        "data": ""
+      }
+    ],
+    "context_mismatches": [],
+    "passed": true
+  },
+  "guiControls": {
+    "binary_sha256": "3a8e501eb7fe1d92fac827b41eccfb659694875953dcd7ad724557b08d9f92cf",
+    "checks": {
+      "teleop_bumper_schedules": true,
+      "bumper_release_cancels": true,
+      "controls_preserve_practice": true,
+      "manual_disable_aborts": true
+    },
+    "transitions": [
+      {
+        "state": "autonomous",
+        "elapsed": 0.10088139999788837,
+        "time": 19.958304,
+        "data": ""
+      },
+      {
+        "state": "assessment",
+        "elapsed": 20.137264550998225,
+        "time": 0.0,
+        "data": ""
+      },
+      {
+        "state": "teleop",
+        "elapsed": 23.156887584998913,
+        "time": 139.959393,
+        "data": "R"
+      }
+    ],
+    "passed": true
+  },
+  "binaries": {
+    "linuxx86-64/debug": {
+      "sha256": "23468ef0e4353a6e690d43acc32c65c475fe4f0900712e7380674e15c17d36b5"
+    },
+    "linuxx86-64/release": {
+      "sha256": "3a8e501eb7fe1d92fac827b41eccfb659694875953dcd7ad724557b08d9f92cf"
+    },
+    "linuxathena/debug": {
+      "sha256": "08ec80022c974b6d85f638256ccd528322d9d2c4b605b4088de9f15944122305",
+      "practiceEndpointAbsent": true
+    },
+    "linuxathena/release": {
+      "sha256": "a3e7761a903216abb769623f30da215ca63955af91831fea3bbe0b363c2f6abb",
+      "practiceEndpointAbsent": true
+    }
+  },
+  "limitations": [
+    "Windows consumers and public vendordep publication remain pending; compatible Base source ref required for cross-platform CI.",
+    "GUI extension coexistence was exercised; manual-disable stimulus used HAL transport, not an automated GUI click.",
+    "Separate AutoDrive navigation smoke still fails repeated autonomous goal arrival; blue/red headless teleop goals and cancellation pass.",
+    "No Jetson commissioning, hardware deployment, scoring-derived AUTO result, or full FMS scoring/referee/network emulation."
+  ],
+  "nativeSourceSha256": {
+    "src/main/include/season/MatchContext.h": "4afea3a9896d2805f2c72e64db43d009f922f9d2d308b3f9b1be62fa9ba1f440",
+    "src/main/cpp/Robot.cpp": "fcd002e3d9afc6a79fab24c6db83b5556c6cdbfb9d742a9ed52a2d923ab7a3a2",
+    "src/main/cpp/season/AutoDrive.cpp": "117b2a0c5ab6626c9eb66a171a6b4a1a0ef657e8214d8f8ae12f889802a08da5"
+  },
+  "vendorControllerSha256": "3cb72c486e0baac7f810bacd6cc124d680ccd746b3332b0391b451982dd8ae0f",
+  "separateAutoDriveSmoke": "autodrive-onboard-headless-validation.json"
+}

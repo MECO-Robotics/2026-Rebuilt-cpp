@@ -14,8 +14,8 @@ For device configuration, commissioning, and diagnosis, use [`frc-hardware`](.ag
 ## Build and simulate
 
 Install WPILib 2026.2.1 with its C++ toolchains. This project uses the published
-[MecoBase 2026.2.4 vendordep](https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json)
-and the matching-year [MecoSimulation 2026.0.13 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
+[MecoBase 2026.2.5 vendordep](https://meco-robotics.github.io/MecoBase-cpp/MecoBase.json)
+and the matching-year [MecoSimulation 2026.0.14 vendordep](https://meco-robotics.github.io/MecoSimulation-cpp/MecoSimulation.json).
 The current checkout resolves both from their public Maven URLs; the build,
 Debug/Release tests, and localhost desktop drive smoke against MecoSimulation
 2026.0.6 are recorded in the [public-package validation record](artifacts/public-multivendordep-validation-2026.0.6.json)
@@ -158,7 +158,7 @@ The unshifted physics body pose is published separately at
 geometry on flat ground). Physics validation scripts use that raw pose. The model-origin
 offset follows chassis rotation and preserves bump/airborne height changes.
 
-The desktop Full3D robot now uses [configurable chassis clearance and compressible pool-noodle bumpers](docs/compliant-bumper-contact.md) through the MecoSimulation 2026.0.13 vendordep.
+The desktop Full3D robot now uses [configurable chassis clearance and compressible pool-noodle bumpers](docs/compliant-bumper-contact.md) through the MecoSimulation 2026.0.14 vendordep.
 
 The swerve modules are hard mounted. The rigid wheel-contact model has no
 vertical springs, dampers, suspension travel or load-dependent sag.

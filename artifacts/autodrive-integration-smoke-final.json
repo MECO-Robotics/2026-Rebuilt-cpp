@@ -1,0 +1,84 @@
+{
+  "scenario": "onboard-native-autodrive",
+  "seed": 3737,
+  "binary_sha256": "7401db41eb5153bb6778cba06fd693dda9e2aa3bc39d0eda8eadf30982be7f17",
+  "checks": {
+    "blue_native_motion": true,
+    "typed_simulated_camera_detection": true,
+    "blue_goal": true,
+    "red_native_motion": true,
+    "red_goal": true,
+    "short_approach_finishes": true,
+    "deployed_camera_fuel_follow": true,
+    "release_cancels_owner": true,
+    "disable_cancels_owner": true,
+    "autonomous_native_goal": true,
+    "bounded_autodrive_requests": true,
+    "no_external_command_stream": true
+  },
+  "cases": [
+    {
+      "alliance": "blue",
+      "goal": [
+        5.4500000953674315,
+        0.6393179893493652
+      ],
+      "truth": [
+        5.447518307978758,
+        0.6402497395716195,
+        0.013243415265065719
+      ],
+      "error_m": 0.002650929482134706,
+      "status": "arrived"
+    },
+    {
+      "alliance": "red",
+      "goal": [
+        11.089769457693563,
+        7.429693414033591
+      ],
+      "truth": [
+        11.095716983324731,
+        7.429863519109181,
+        -3.1367757118564086
+      ],
+      "error_m": 0.005949957720029608,
+      "status": "arrived"
+    },
+    {
+      "mode": "short_approach",
+      "goal": [
+        4.001323166560405,
+        0.6394025758097883
+      ],
+      "error_m": 0.021104642809641916,
+      "status": "arrived"
+    },
+    {
+      "mode": "deployed_camera_fuel_follow",
+      "movement_m": 1.076394210415419,
+      "collected": 8.0,
+      "detection_fresh": true,
+      "status": "arrived"
+    },
+    {
+      "mode": "autonomous",
+      "goal": [
+        5.449647666695429,
+        0.6393439110687448
+      ],
+      "error_m": 0.004320830515099878,
+      "selected": "AutoDrive target",
+      "active_at_start": true,
+      "status": "arrived",
+      "start_pose": [
+        3.650071146055431,
+        0.6393178918070276,
+        0.00023444461109560852
+      ]
+    }
+  ],
+  "peak_requested_mps": 2.0000000000000004,
+  "peak_requested_radps": 0.3622322504871211,
+  "passed": true
+}

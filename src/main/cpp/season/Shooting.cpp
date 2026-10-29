@@ -91,20 +91,21 @@ const char* ReadinessName(Readiness value) {
   return names[static_cast<unsigned>(value)];
 }
 Readiness EvaluateReadiness(bool poseReady,ShotSolution s,double vx,double vy,double omega,double heading,double hood,double flywheel) {
-  if(!poseReady) return Readiness::PoseNotReady;
-  if(!s.calibrated) return Readiness::OutOfRange;
-  if(std::hypot(vx,vy)>.25||std::abs(omega)>10*kPi/180) return Readiness::MovingTooFast;
+  if(!poseReady||!std::isfinite(heading)) return Readiness::PoseNotReady;
+  if(!s.calibrated||!std::isfinite(s.distanceMeters)||!std::isfinite(s.headingRadians)||!std::isfinite(s.hoodRotations)||!std::isfinite(s.flywheelRps)) return Readiness::OutOfRange;
+  if(!std::isfinite(vx)||!std::isfinite(vy)||!std::isfinite(omega)||std::hypot(vx,vy)>.25||std::abs(omega)>10*kPi/180) return Readiness::MovingTooFast;
   if(std::abs(Wrap(heading-s.headingRadians))>2*kPi/180) return Readiness::Aiming;
-  if(std::abs(hood-s.hoodRotations)>.002) return Readiness::HoodMoving;
-  if(std::abs(flywheel-s.flywheelRps)>.75) return Readiness::FlywheelSpinningUp;
+  if(!std::isfinite(hood)||std::abs(hood-s.hoodRotations)>.002) return Readiness::HoodMoving;
+  if(!std::isfinite(flywheel)||std::abs(flywheel-s.flywheelRps)>.75) return Readiness::FlywheelSpinningUp;
   return Readiness::Ready;
 }
 double ClampCalibrationHood(double value) { return std::isfinite(value)?std::clamp(value,kHoodMin,kHoodMax):0; }
 double ClampCalibrationFlywheel(double value) { return std::isfinite(value)?std::clamp(value,0.0,60.0):0; }
 void VolleyFeedGate::Reset(double now) { feeding_=false;lastFalseTime_=now; }
 bool VolleyFeedGate::Calculate(bool held,double measured,double target,double now) {
-  if(!held) { Reset(now);return false; }
-  if(!feeding_) { bool ready=std::isfinite(measured)&&std::isfinite(target)&&target>0&&std::abs(measured-target)<=3;
+  // A volley may tolerate real speed sag after spin-up, never invalid feedback.
+  if(!held||!std::isfinite(measured)||!std::isfinite(target)||target<=0||!std::isfinite(now)) { Reset(now);return false; }
+  if(!feeding_) { bool ready=std::abs(measured-target)<=3;
     if(!ready) lastFalseTime_=now;
     feeding_=ready&&now-lastFalseTime_>=kDebounceSeconds;
   }

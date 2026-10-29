@@ -1,6 +1,8 @@
 #include "season/FuelSimulation.h"
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <array>
+#include <utility>
 #include <cmath>
 #include <limits>
 using namespace season;
@@ -82,4 +84,37 @@ TEST(ParticleContacts, RejectsAliasedGroupsWithoutChangingParticles) {
  ASSERT_EQ(particles.size(),1u);
  EXPECT_DOUBLE_EQ(particles[0].position.x,1);
  EXPECT_DOUBLE_EQ(particles[0].velocity.x,4);
+}
+
+TEST(FuelSimulation, HubCrossingScoresOnlyWhenActive) {
+ const auto hub=HubPosition(Alliance::Blue);
+ for(const std::optional<bool> active : {std::optional<bool>{true}, std::optional<bool>{false}, std::optional<bool>{}}) {
+   FuelModel model;model.SetStoredFuel(1);
+   FuelInputs input;input.robot={hub.x-1.24,hub.y+.12,0};input.feeding=true;input.flywheelRps=30;input.hubActive=active;
+   for(int i=0;i<100;++i) model.Step(.02,input);
+   EXPECT_EQ(model.LaunchedFuel(),1);
+   EXPECT_EQ(model.SuccessfulScores(),active.value_or(false)?1:0);
+   EXPECT_EQ(model.FloorFuel().size(),1u); // Inactive fuel still passes through and returns.
+ }
+}
+
+TEST(FuelSimulation, ScoringAssessmentContinuesBrieflyAfterDeactivation) {
+ const auto hub=HubPosition(Alliance::Blue);
+ for(const auto& [delay,expected] : std::array<std::pair<double,int>,2>{{{2.,1},{3.1,0}}}) {
+   FuelModel model;model.SetStoredFuel(1);
+   FuelInputs input;input.robot={hub.x-1.24,hub.y+.12,0};input.flywheelRps=30;input.hubActive=true;
+   model.Step(.02,input);input.hubActive=false;
+   for(int i=0;i<static_cast<int>(delay/.02);++i) model.Step(.02,input);
+   input.feeding=true;
+   for(int i=0;i<100;++i) model.Step(.02,input);
+   EXPECT_EQ(model.LaunchedFuel(),1);
+   EXPECT_EQ(model.SuccessfulScores(),expected);
+ }
+}
+
+TEST(FuelSimulation, ResetReproducesSeededBurst) {
+ FuelModel model{8324}; FuelInputs input; input.feeding=true; input.flywheelRps=37; input.hoodRotations=.02;
+ auto run=[&] { model.SetStoredFuel(4); for(int i=0;i<12;++i) model.Step(.02,input); return model.Projectiles(); };
+ const auto first=run(); ASSERT_EQ(first.size(),4u); model.Reset(); const auto second=run(); ASSERT_EQ(second.size(),first.size());
+ for(size_t i=0;i<first.size();++i) { EXPECT_DOUBLE_EQ(first[i].position.x,second[i].position.x); EXPECT_DOUBLE_EQ(first[i].position.y,second[i].position.y); EXPECT_DOUBLE_EQ(first[i].velocity.z,second[i].velocity.z); }
 }

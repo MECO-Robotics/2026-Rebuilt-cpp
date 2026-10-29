@@ -1,0 +1,4049 @@
+{
+  "scenario": "practice-full-match-native-goal-driving",
+  "alliance": "blue",
+  "auto_result": "R",
+  "binary_sha256": "85c314e957f63018098612ee81042d90d9cdd749f4a2ddd931cc9693befb6d1c",
+  "checks": {
+    "match_complete": true,
+    "auto_goal": true,
+    "all_hub_phases": true,
+    "hub_context": true,
+    "multiple_goal_legs": true,
+    "observed_fuel": true,
+    "collected_fuel": true,
+    "stopped_on_complete": true,
+    "fuel_follow_collected": true,
+    "shot_scored": true,
+    "repeated_scoring_and_collection": true,
+    "driving_late_in_match": true,
+    "bounded_requests": true,
+    "settled_without_retries": true
+  },
+  "legs": [
+    {
+      "target": 3.65,
+      "error_m": 0.040016765479883816,
+      "status": "arrived",
+      "time_remaining": 134.799891,
+      "stored": 0.0,
+      "truth": [
+        3.689832369187002,
+        0.7538371714090458,
+        0.009496155804333177
+      ],
+      "estimate": [
+        3.689825341324983,
+        0.7538358157226045,
+        0.00946095932195209
+      ],
+      "command_finish": {
+        "truth": [
+          3.6897370387573862,
+          0.7538279065274943,
+          0.008921335656074805
+        ],
+        "estimate": [
+          3.6897418208556854,
+          0.7538278976355733,
+          0.008888695257066306
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.21845475844302734,
+        "status_distance": 0.03992574514312567,
+        "status_heading_error": -0.008888695257066306,
+        "status_speed": 0.0006102307916303331,
+        "status_omega": -0.0002571477156356407,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.009496155804333177,
+      "settled_speed_mps": 8.24036263102315e-05
+    },
+    {
+      "target": 7.35,
+      "error_m": 0.02409472198520853,
+      "status": "arrived",
+      "time_remaining": 129.820337,
+      "stored": 8.0,
+      "truth": [
+        7.374048088197425,
+        0.7514983596341868,
+        -0.009752698641852945
+      ],
+      "estimate": [
+        7.374055224005419,
+        0.7515005825664406,
+        -0.009739536967354613
+      ],
+      "command_finish": {
+        "truth": [
+          7.373949144710974,
+          0.7514933433468154,
+          -0.009170430330079074
+        ],
+        "estimate": [
+          7.373948689318037,
+          0.7514913067084608,
+          -0.009133987529072591
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.04460876795339422,
+        "status_distance": 0.023995076906535805,
+        "status_heading_error": 0.009133987529072591,
+        "status_speed": 0.0013958397399301623,
+        "status_omega": 0.0013382198030986205,
+        "status_goal": [
+          7.35,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.009752698641852945,
+      "settled_speed_mps": 0.00013291213818064507
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.011405370658076943,
+      "status": "arrived",
+      "time_remaining": 124.84076,
+      "stored": 8.0,
+      "truth": [
+        3.6444454720054056,
+        0.7599614104726886,
+        0.03520029244478452
+      ],
+      "estimate": [
+        3.644452439012749,
+        0.7599587722329021,
+        0.03521848270385515
+      ],
+      "command_finish": {
+        "truth": [
+          3.6472416306782134,
+          0.7584411592619137,
+          0.03277913733781258
+        ],
+        "estimate": [
+          3.6477777299918923,
+          0.758287023145488,
+          0.03208803848681353
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.025356714864936975,
+        "status_distance": 0.008579815650862705,
+        "status_heading_error": -0.03208803848681353,
+        "status_speed": 0.043847437713684344,
+        "status_omega": 0.03934631813947698,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.03520029244478452,
+      "settled_speed_mps": 0.00025611426070288164
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.04240710766998074,
+      "status": "arrived",
+      "time_remaining": 101.580315,
+      "stored": 3.0,
+      "truth": [
+        3.692365557253677,
+        0.7481232103157948,
+        -0.0054322874315926
+      ],
+      "estimate": [
+        3.692365397792593,
+        0.748123412780715,
+        -0.005432281219165513
+      ],
+      "command_finish": {
+        "truth": [
+          3.6923912235892242,
+          0.7481217844409416,
+          -0.0054322599637826145
+        ],
+        "estimate": [
+          3.692419899587208,
+          0.7481201519726739,
+          -0.005431584320682448
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.2501480993143645,
+        "status_distance": 0.04246153211548843,
+        "status_heading_error": 0.005431584320682448,
+        "status_speed": 0.0007141373806934575,
+        "status_omega": 0.0003672123248260675,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.0054322874315926,
+      "settled_speed_mps": 0.0003967617983027927
+    },
+    {
+      "target": 7.35,
+      "error_m": 0.0048320336009120245,
+      "status": "arrived",
+      "time_remaining": 96.600538,
+      "stored": 3.0,
+      "truth": [
+        7.348371352822815,
+        0.7545492919331024,
+        -0.024186129703560134
+      ],
+      "estimate": [
+        7.348303482662571,
+        0.7545176175669862,
+        -0.024178060345725665
+      ],
+      "command_finish": {
+        "truth": [
+          7.347605468106403,
+          0.7538191565626595,
+          -0.020333188552920392
+        ],
+        "estimate": [
+          7.34742737511388,
+          0.753832435830199,
+          -0.02005583637839736
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.012847875725966322,
+        "status_distance": 0.004615838298432318,
+        "status_heading_error": 0.02005583637839736,
+        "status_speed": 0.012125899427724466,
+        "status_omega": 0.024000270372011814,
+        "status_goal": [
+          7.35,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.024186129703560134,
+      "settled_speed_mps": 0.002547141941783753
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.03632302124423201,
+      "status": "arrived",
+      "time_remaining": 91.180234,
+      "stored": 3.0,
+      "truth": [
+        3.686318202278525,
+        0.7494083450625042,
+        -0.0053802298690255445
+      ],
+      "estimate": [
+        3.686311618061235,
+        0.7494086649367385,
+        -0.005405795604443823
+      ],
+      "command_finish": {
+        "truth": [
+          3.6863003081941983,
+          0.749410574413748,
+          -0.004742898321175095
+        ],
+        "estimate": [
+          3.6862820953075572,
+          0.7494111853572362,
+          -0.004673338533895376
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.11357326180974883,
+        "status_distance": 0.036286872868713925,
+        "status_heading_error": 0.004673338533895376,
+        "status_speed": 0.0019048632539344359,
+        "status_omega": -0.003468654148949343,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.0053802298690255445,
+      "settled_speed_mps": 7.937438615776644e-05
+    },
+    {
+      "target": 7.35,
+      "error_m": 0.008425716622141798,
+      "status": "arrived",
+      "time_remaining": 86.078849,
+      "stored": 3.0,
+      "truth": [
+        7.3415928688642085,
+        0.7494406730274273,
+        0.01289846457175416
+      ],
+      "estimate": [
+        7.3415685704038305,
+        0.7494339201409402,
+        0.013049727001600066
+      ],
+      "command_finish": {
+        "truth": [
+          7.341443544171236,
+          0.7493309529647777,
+          0.015882097951141264
+        ],
+        "estimate": [
+          7.341606883830716,
+          0.7494825186190857,
+          0.015727969561375982
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.019127134663078152,
+        "status_distance": 0.00840905381185582,
+        "status_heading_error": -0.015727969561375982,
+        "status_speed": 0.011013255084966285,
+        "status_omega": 0.01599827882878945,
+        "status_goal": [
+          7.35,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.01289846457175416,
+      "settled_speed_mps": 0.002406599784664182
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.004400244722187066,
+      "status": "arrived",
+      "time_remaining": 80.160841,
+      "stored": 3.0,
+      "truth": [
+        3.6456483652809424,
+        0.7506522490989095,
+        0.003946581926276165
+      ],
+      "estimate": [
+        3.6456461035110417,
+        0.7506524355419948,
+        0.003946507161803463
+      ],
+      "command_finish": {
+        "truth": [
+          3.6454343746673366,
+          0.7506699140482891,
+          0.003896391980780419
+        ],
+        "estimate": [
+          3.6453853251554245,
+          0.7506738946012931,
+          0.003928410908304228
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.15712400447056726,
+        "status_distance": 0.004663620680845454,
+        "status_heading_error": -0.003928410908304228,
+        "status_speed": 0.0031742154049300966,
+        "status_omega": 0.00012465951079113107,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.003946581926276165,
+      "settled_speed_mps": 0.0001322821704121136
+    },
+    {
+      "target": 7.35,
+      "error_m": 0.009166690766387826,
+      "status": "arrived",
+      "time_remaining": 75.080583,
+      "stored": 3.0,
+      "truth": [
+        7.340946005144591,
+        0.7514329678170903,
+        -0.00472684371613317
+      ],
+      "estimate": [
+        7.340942824719557,
+        0.7514341645883492,
+        -0.004802004466702219
+      ],
+      "command_finish": {
+        "truth": [
+          7.341477056862889,
+          0.7513442439742039,
+          -0.007154151869270693
+        ],
+        "estimate": [
+          7.3417059644480736,
+          0.7513114888943421,
+          -0.007348109318272505
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.019564007409079397,
+        "status_distance": 0.008397084545042795,
+        "status_heading_error": 0.007348109318272505,
+        "status_speed": 0.005476510759850469,
+        "status_omega": 0.008187956070570638,
+        "status_goal": [
+          7.35,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.00472684371613317,
+      "settled_speed_mps": 0.0006593796803558597
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.0013073459182650472,
+      "status": "arrived",
+      "time_remaining": 70.099731,
+      "stored": 3.0,
+      "truth": [
+        3.650782388676484,
+        0.7489526121497201,
+        -0.009081039290076308
+      ],
+      "estimate": [
+        3.6507742743234712,
+        0.7489506468599199,
+        -0.009005019397411367
+      ],
+      "command_finish": {
+        "truth": [
+          3.6499253601725883,
+          0.7491674114091714,
+          -0.004842080825691266
+        ],
+        "estimate": [
+          3.64995773279058,
+          0.7491759287819146,
+          -0.004590815229750012
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.017066942192006346,
+        "status_distance": 0.0008251544640058932,
+        "status_heading_error": 0.004590815229750012,
+        "status_speed": 0.002405263834787962,
+        "status_omega": -0.029280682618323062,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.009081039290076308,
+      "settled_speed_mps": 0.0003465429048632181
+    },
+    {
+      "target": 7.35,
+      "error_m": 0.002329455349625231,
+      "status": "arrived",
+      "time_remaining": 65.100336,
+      "stored": 3.0,
+      "truth": [
+        7.347743459453471,
+        0.7505782620407485,
+        -0.013380347676295246
+      ],
+      "estimate": [
+        7.347730870444514,
+        0.7505769859775364,
+        -0.01328940271939559
+      ],
+      "command_finish": {
+        "truth": [
+          7.348841645576035,
+          0.7506961383467559,
+          -0.009837390790843314
+        ],
+        "estimate": [
+          7.349005840023742,
+          0.7507056563502417,
+          -0.009585806782065104
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.014572253341610825,
+        "status_distance": 0.0012191410677311841,
+        "status_heading_error": 0.009585806782065104,
+        "status_speed": 0.008027216584032035,
+        "status_omega": -0.008966828588811773,
+        "status_goal": [
+          7.35,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.013380347676295246,
+      "settled_speed_mps": 0.0010467857811955398
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.0021455468634441043,
+      "status": "arrived",
+      "time_remaining": 60.120296,
+      "stored": 3.0,
+      "truth": [
+        3.6481008224238582,
+        0.7509982464012034,
+        0.004267211851781783
+      ],
+      "estimate": [
+        3.6480815477275503,
+        0.7510047868621893,
+        0.0043436230844476785
+      ],
+      "command_finish": {
+        "truth": [
+          3.6488085481180343,
+          0.750815167970822,
+          0.005303493214743709
+        ],
+        "estimate": [
+          3.6490443478967274,
+          0.7507447998280536,
+          0.005367569602755401
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.015478186769352953,
+        "status_distance": 0.0012116095601958368,
+        "status_heading_error": -0.005367569602755401,
+        "status_speed": 0.012933183185116976,
+        "status_omega": 0.029507618584539295,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.004267211851781783,
+      "settled_speed_mps": 0.00044744728031088335
+    },
+    {
+      "target": 7.35,
+      "error_m": 0.011100119076831557,
+      "status": "arrived",
+      "time_remaining": 54.980763,
+      "stored": 3.0,
+      "truth": [
+        7.339067448895085,
+        0.7519214499364444,
+        -0.0004662640858732233
+      ],
+      "estimate": [
+        7.339042802830939,
+        0.7519280401468711,
+        -0.0005640402796088395
+      ],
+      "command_finish": {
+        "truth": [
+          7.339382466770367,
+          0.7518616127048101,
+          -0.0027898306457723363
+        ],
+        "estimate": [
+          7.339519362017571,
+          0.7518363337111724,
+          -0.002906650164041129
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.01845594987531243,
+        "status_distance": 0.010640295767389188,
+        "status_heading_error": 0.002906650164041129,
+        "status_speed": 0.006705983020231511,
+        "status_omega": 0.0025238332217137394,
+        "status_goal": [
+          7.35,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.0004662640858732233,
+      "settled_speed_mps": 0.0001855187382624657
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.0022488896889100557,
+      "status": "arrived",
+      "time_remaining": 50.000123,
+      "stored": 3.0,
+      "truth": [
+        3.6522187092625242,
+        0.7496328024492528,
+        0.004221310801588956
+      ],
+      "estimate": [
+        3.6522357521152817,
+        0.7496275087867617,
+        0.004206006240220376
+      ],
+      "command_finish": {
+        "truth": [
+          3.651956296057926,
+          0.7496934334520577,
+          0.003393729952979466
+        ],
+        "estimate": [
+          3.6518944864528358,
+          0.7497056462323844,
+          0.0033744477987657307
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.013258335681212865,
+        "status_distance": 0.001917217530821175,
+        "status_heading_error": -0.0033744477987657307,
+        "status_speed": 0.005329068443570291,
+        "status_omega": -0.001237635497989875,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.004221310801588956,
+      "settled_speed_mps": 0.00045100475566148957
+    },
+    {
+      "target": 7.35,
+      "error_m": 0.004872208549890046,
+      "status": "arrived",
+      "time_remaining": 44.940128,
+      "stored": 3.0,
+      "truth": [
+        7.345292788519977,
+        0.7487427902975379,
+        0.016838319988527698
+      ],
+      "estimate": [
+        7.345165255529738,
+        0.7487874018112235,
+        0.01661425689754833
+      ],
+      "command_finish": {
+        "truth": [
+          7.342869408413559,
+          0.7496700311662972,
+          0.007184746557351772
+        ],
+        "estimate": [
+          7.342585493830409,
+          0.7497166228188693,
+          0.00681639692006428
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.01594187003755783,
+        "status_distance": 0.007419919431212249,
+        "status_heading_error": -0.00681639692006428,
+        "status_speed": 0.021693399271564003,
+        "status_omega": -0.004837055941154119,
+        "status_goal": [
+          7.35,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.016838319988527698,
+      "settled_speed_mps": 0.006982616186526582
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.0015518002640782346,
+      "status": "arrived",
+      "time_remaining": 39.940597,
+      "stored": 3.0,
+      "truth": [
+        3.650731980837453,
+        0.7486316842056036,
+        -0.010824846028468869
+      ],
+      "estimate": [
+        3.6507062224689313,
+        0.7486312082631208,
+        -0.010726928290592337
+      ],
+      "command_finish": {
+        "truth": [
+          3.650715268027948,
+          0.7486348594314544,
+          -0.007864515810233301
+        ],
+        "estimate": [
+          3.650785933704814,
+          0.7486465455235036,
+          -0.007651853287420633
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.014740110635147696,
+        "status_distance": 0.0015650976992861016,
+        "status_heading_error": 0.007651853287420633,
+        "status_speed": 0.004263457855314886,
+        "status_omega": -0.004781338587476468,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.010824846028468869,
+      "settled_speed_mps": 0.001052719848108744
+    },
+    {
+      "target": 7.35,
+      "error_m": 0.0020025546040718786,
+      "status": "arrived",
+      "time_remaining": 34.640578,
+      "stored": 3.0,
+      "truth": [
+        7.348010840729588,
+        0.7502312365438756,
+        0.009748948036788387
+      ],
+      "estimate": [
+        7.347991761426099,
+        0.7502314653268372,
+        0.009664899759371272
+      ],
+      "command_finish": {
+        "truth": [
+          7.3475856459273095,
+          0.7502346118781293,
+          0.007730907969859191
+        ],
+        "estimate": [
+          7.347484191130673,
+          0.7502356819365676,
+          0.007647366513517222
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.032504823938038496,
+        "status_distance": 0.002526824141527889,
+        "status_heading_error": -0.007647366513517222,
+        "status_speed": 0.004708545508896332,
+        "status_omega": -0.0016848548747730025,
+        "status_goal": [
+          7.35,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.009748948036788387,
+      "settled_speed_mps": 0.00026453647423820605
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.0032507332511149166,
+      "status": "arrived",
+      "time_remaining": 29.660695,
+      "stored": 3.0,
+      "truth": [
+        3.6471265445620715,
+        0.7515200396429514,
+        0.005586801229648164
+      ],
+      "estimate": [
+        3.6471348609139196,
+        0.751523841827121,
+        0.005633985285201025
+      ],
+      "command_finish": {
+        "truth": [
+          3.6479309227796395,
+          0.7512351180034581,
+          0.00550304060451912
+        ],
+        "estimate": [
+          3.6482839255678337,
+          0.7510768381509579,
+          0.005434556509380438
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.010099941038334177,
+        "status_distance": 0.0020259545552882615,
+        "status_heading_error": -0.005434556509380438,
+        "status_speed": 0.008269400278853175,
+        "status_omega": -0.01772968884007519,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.005586801229648164,
+      "settled_speed_mps": 0.0001375988507825583
+    },
+    {
+      "target": 3.65,
+      "error_m": 0.03659481620662019,
+      "status": "arrived",
+      "time_remaining": 6.600088,
+      "stored": 8.0,
+      "truth": [
+        3.6865871147851292,
+        0.749249263763974,
+        -5.645358404604552e-05
+      ],
+      "estimate": [
+        3.686606044354258,
+        0.7492489853845922,
+        -8.212712848532024e-05
+      ],
+      "command_finish": {
+        "truth": [
+          3.6864818721427,
+          0.7492507593798079,
+          -0.0006744386623248705
+        ],
+        "estimate": [
+          3.6864361231039595,
+          0.7492514922574972,
+          -0.0007379859801726918
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.11643696416733648,
+        "status_distance": 0.03644381059504461,
+        "status_heading_error": 0.0007379859801726918,
+        "status_speed": 0.0022487640489057253,
+        "status_omega": 0.0030752069811563524,
+        "status_goal": [
+          3.65,
+          0.75
+        ]
+      },
+      "heading_error_rad": 5.645358404604552e-05,
+      "settled_speed_mps": 0.0006614106652969067
+    },
+    {
+      "target": 7.35,
+      "error_m": 0.006875028043198107,
+      "status": "arrived",
+      "time_remaining": 1.600554,
+      "stored": 8.0,
+      "truth": [
+        7.356053424055147,
+        0.7467408486068722,
+        0.0362701123306649
+      ],
+      "estimate": [
+        7.356059527966743,
+        0.7467433589329855,
+        0.036257814777625526
+      ],
+      "command_finish": {
+        "truth": [
+          7.356571013419118,
+          0.747701503479252,
+          0.031284104410252
+        ],
+        "estimate": [
+          7.356254689414272,
+          0.7474557235006317,
+          0.03246911194154724
+        ],
+        "module_speed_max": 0.0,
+        "status": "arrived",
+        "final_reason": "approaching",
+        "final_start_distance": 0.008467159239209352,
+        "status_distance": 0.006752368663976419,
+        "status_heading_error": -0.03246911194154724,
+        "status_speed": 0.03160638351924523,
+        "status_omega": 0.02258370539468033,
+        "status_goal": [
+          7.35,
+          0.75
+        ]
+      },
+      "heading_error_rad": 0.0362701123306649,
+      "settled_speed_mps": 0.0015205048807545138
+    }
+  ],
+  "phase_seen": [
+    "disabled",
+    "endgame",
+    "shift1",
+    "shift2",
+    "shift3",
+    "shift4",
+    "transition"
+  ],
+  "auto": {
+    "active_seen": true,
+    "goal_error_m": 0.010266646590861564,
+    "status": "arrived"
+  },
+  "error": null,
+  "retries": [],
+  "shots": [
+    {
+      "scored": 7.0,
+      "launched": 8.0,
+      "volley_launched": 8.0,
+      "phase": "shift1",
+      "time_remaining": 112.080735,
+      "feeding_seen": true,
+      "stored": 0.0,
+      "projectiles_remaining": 0.0
+    },
+    {
+      "scored": 3.0,
+      "launched": 11.0,
+      "volley_launched": 3.0,
+      "phase": "endgame",
+      "time_remaining": 17.260782,
+      "feeding_seen": true,
+      "stored": 0.0,
+      "projectiles_remaining": 0.0
+    }
+  ],
+  "fuel_runs": [
+    {
+      "start": [
+        6.211724700472068,
+        0.670821519161644
+      ],
+      "goal": [
+        7.500082149507849,
+        1.2788965406370327
+      ],
+      "end": [
+        6.555458950576609,
+        0.8272728773884359
+      ],
+      "progress_m": 0.3776149412177112,
+      "collected": 1.0,
+      "status": "planning-native"
+    },
+    {
+      "start": [
+        6.348493068602604,
+        0.6868808605708286
+      ],
+      "goal": [
+        7.501646085360257,
+        1.2798529576911908
+      ],
+      "end": [
+        7.014387182900803,
+        1.0339097968821018
+      ],
+      "progress_m": 0.750868864201554,
+      "collected": 1.0,
+      "status": "planning-native"
+    }
+  ],
+  "shot_trace": [
+    {
+      "time": 0.0,
+      "phase": "shift1",
+      "pose": [
+        3.6444454720054056,
+        0.7599614104726886,
+        0.03520029244478452
+      ],
+      "shooter_rps": 0.0,
+      "shooter_target": 0.0,
+      "hood": 0.0,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        5.0,
+        -5.0,
+        5.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 0.20852141099931032,
+      "phase": "shift1",
+      "pose": [
+        3.636027936982625,
+        0.7687205118679675,
+        0.13555192964608007
+      ],
+      "shooter_rps": 7.718284007175025,
+      "shooter_target": 39.31873936229734,
+      "hood": 0.0037740078616267823,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 0.4119827099984832,
+      "phase": "shift1",
+      "pose": [
+        3.63943376914956,
+        0.7658923364378704,
+        0.6109510339454564
+      ],
+      "shooter_rps": 18.717749498950724,
+      "shooter_target": 39.55034321051303,
+      "hood": 0.007965613119418298,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 0.6171510169988323,
+      "phase": "shift1",
+      "pose": [
+        3.6610607374026114,
+        0.7390403219102705,
+        1.001220138075519
+      ],
+      "shooter_rps": 29.685936992508122,
+      "shooter_target": 39.75557675017343,
+      "hood": 0.01108741633428067,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 0.8246397439997963,
+      "phase": "shift1",
+      "pose": [
+        3.6633401016418703,
+        0.7350990135122615,
+        1.2197873262507921
+      ],
+      "shooter_rps": 39.984436965591456,
+      "shooter_target": 39.81672090003498,
+      "hood": 0.013599749586319133,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 1.0338056229993526,
+      "phase": "shift1",
+      "pose": [
+        3.6629156381003227,
+        0.7351205743097288,
+        1.2689545225626195
+      ],
+      "shooter_rps": 40.20144970956045,
+      "shooter_target": 39.82259889695682,
+      "hood": 0.015259941859968462,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 1.244196646999626,
+      "phase": "shift1",
+      "pose": [
+        3.662807280091167,
+        0.7351520979349062,
+        1.2772091619463757
+      ],
+      "shooter_rps": 40.20015015888803,
+      "shooter_target": 39.82281645049711,
+      "hood": 0.016586963435029852,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 1.451363299998775,
+      "phase": "shift1",
+      "pose": [
+        3.6627944582301275,
+        0.7351493475508993,
+        1.2779675082110742
+      ],
+      "shooter_rps": 40.20176092801009,
+      "shooter_target": 39.82286332915105,
+      "hood": 0.017462039072296678,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 1.6566428759997507,
+      "phase": "shift1",
+      "pose": [
+        3.6627982918070714,
+        0.7351461547015649,
+        1.2784937978482007
+      ],
+      "shooter_rps": 40.20037035045434,
+      "shooter_target": 39.82278757926247,
+      "hood": 0.018107069549306548,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 1.8665563859995018,
+      "phase": "shift1",
+      "pose": [
+        3.662808130856947,
+        0.7351505459186137,
+        1.278781428335114
+      ],
+      "shooter_rps": 40.200015393158765,
+      "shooter_target": 39.82287415337692,
+      "hood": 0.018622575396820648,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 2.0724134649990447,
+      "phase": "shift1",
+      "pose": [
+        3.662800818029043,
+        0.7351479224926215,
+        1.2788173822238076
+      ],
+      "shooter_rps": 40.19985034894493,
+      "shooter_target": 39.822881714368414,
+      "hood": 0.018962510819142492,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 2.279731490998529,
+      "phase": "shift1",
+      "pose": [
+        3.662796808531786,
+        0.7351403653257829,
+        1.2790946416220332
+      ],
+      "shooter_rps": 40.20018079639253,
+      "shooter_target": 39.8228582224242,
+      "hood": 0.019213083365431084,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.8852884076661507,
+        0.23842544715590597,
+        -0.2510771708708499
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 2.48958465800024,
+      "phase": "shift1",
+      "pose": [
+        3.662796305592692,
+        0.7351401996956811,
+        1.2796013800662376
+      ],
+      "shooter_rps": 40.20106534325398,
+      "shooter_target": 39.82286307280346,
+      "hood": 0.019413343861493026,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.784256156780463,
+        0.37315047726665185,
+        -0.3857910723620459
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 2.6952447969997593,
+      "phase": "shift1",
+      "pose": [
+        3.6627939698830425,
+        0.7351405406223099,
+        1.279918216410621
+      ],
+      "shooter_rps": 40.20041899587933,
+      "shooter_target": 39.82286792032915,
+      "hood": 0.019545398245371767,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.6924857759951575,
+        0.49552493894784266,
+        -0.5081554256110752
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 2.903296638000029,
+      "phase": "shift1",
+      "pose": [
+        3.6627831123675483,
+        0.735136216775692,
+        1.2802255633007096
+      ],
+      "shooter_rps": 40.201028111594574,
+      "shooter_target": 39.82296022865384,
+      "hood": 0.019642740640303406,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.6007887821557922,
+        0.6178015402090788,
+        -0.6304219265236601
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 3.111551920999773,
+      "phase": "shift1",
+      "pose": [
+        3.6627880375961213,
+        0.735140908021656,
+        1.280679300415582
+      ],
+      "shooter_rps": 40.200388665064736,
+      "shooter_target": 39.822830952711115,
+      "hood": 0.01972053904736739,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.5000067808146125,
+        0.7521928662092847,
+        -0.7648021514690915
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 3.316515585000161,
+      "phase": "shift1",
+      "pose": [
+        3.6627902175570384,
+        0.7351571444675457,
+        1.2809718414405373
+      ],
+      "shooter_rps": 40.19954087678047,
+      "shooter_target": 39.82288982686391,
+      "hood": 0.01977183303064566,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.4084637085945353,
+        0.8742642152405544,
+        -0.8868634171060412
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 3.5226246059992263,
+      "phase": "shift1",
+      "pose": [
+        3.6627982560862646,
+        0.7351601599070205,
+        1.2811238101639246
+      ],
+      "shooter_rps": 40.200036026299436,
+      "shooter_target": 39.82288804853876,
+      "hood": 0.019809639936521056,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.316993841546256,
+        0.9962379462450164,
+        -1.008827072779678
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 3.7316596989985555,
+      "phase": "shift1",
+      "pose": [
+        3.6628079927968105,
+        0.7351670542027198,
+        1.281308656732014
+      ],
+      "shooter_rps": 40.200861316717024,
+      "shooter_target": 39.822866623645304,
+      "hood": 0.01983985034303068,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.2164614698996363,
+        1.1302963946955158,
+        -1.1428744476719048
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 3.9382195649995992,
+      "phase": "shift1",
+      "pose": [
+        3.662801571457859,
+        0.7351643812990873,
+        1.2814172809593076
+      ],
+      "shooter_rps": 40.20067112673197,
+      "shooter_target": 39.82278787261916,
+      "hood": 0.019859770067504327,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.1251451432179804,
+        1.2520653818648664,
+        -1.2646333764227768
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 4.14825239899983,
+      "phase": "shift1",
+      "pose": [
+        3.662788651429004,
+        0.735164982757347,
+        1.2815578291184055
+      ],
+      "shooter_rps": 40.200907454266606,
+      "shooter_target": 39.822854661387474,
+      "hood": 0.019874454327053852,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.0339018403842375,
+        1.3737369928001693,
+        -1.3862949369831177
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 4.352468291999685,
+      "phase": "shift1",
+      "pose": [
+        3.6627838893637117,
+        0.7351650477632033,
+        1.2819478835778233
+      ],
+      "shooter_rps": 40.200601104766065,
+      "shooter_target": 39.82291715165153,
+      "hood": 0.019886191094406508,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.9336184801175604,
+        1.5074633882144632,
+        -1.5200102862675422
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 4.558719769000163,
+      "phase": "shift1",
+      "pose": [
+        3.662783696023085,
+        0.7351658008616838,
+        1.2820787040020638
+      ],
+      "shooter_rps": 40.200302099912435,
+      "shooter_target": 39.822771327584384,
+      "hood": 0.01989393086821969,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.8425283373421055,
+        1.6289307624502598,
+        -1.6414676269988289
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 4.769266785999207,
+      "phase": "shift1",
+      "pose": [
+        3.662793691013641,
+        0.7351755912673584,
+        1.2822181554226502
+      ],
+      "shooter_rps": 40.200738518977786,
+      "shooter_target": 39.82278853828821,
+      "hood": 0.019899635473734547,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.7515110375397978,
+        1.7503010016458593,
+        -1.7628278407135192
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 4.974984272999791,
+      "phase": "shift1",
+      "pose": [
+        3.6628010526248618,
+        0.7351905673171818,
+        1.282501373600011
+      ],
+      "shooter_rps": 40.200877295204805,
+      "shooter_target": 39.822620366599274,
+      "hood": 0.01990418645082218,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.651476071869967,
+        1.8836961664951941,
+        -1.8962119867934433
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 5.181017281000095,
+      "phase": "shift1",
+      "pose": [
+        3.6627881561880478,
+        0.7351896712524036,
+        1.2826268298429797
+      ],
+      "shooter_rps": 40.20040370215565,
+      "shooter_target": 39.822744203086685,
+      "hood": 0.01990718145908852,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.5606115527596072,
+        2.0048626748707523,
+        -2.017368486516757
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 5.391432070999144,
+      "phase": "shift1",
+      "pose": [
+        3.6627819110547595,
+        0.735183265172628,
+        1.2827236754413085
+      ],
+      "shooter_rps": 40.200482914312246,
+      "shooter_target": 39.82275974384841,
+      "hood": 0.019909392659640347,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.469819696195645,
+        2.1259322888025567,
+        -2.1384280998000373
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 5.594681131999096,
+      "phase": "shift1",
+      "pose": [
+        3.662774311749209,
+        0.7351807160200023,
+        1.2829948772474655
+      ],
+      "shooter_rps": 40.200894384796435,
+      "shooter_target": 39.82282172334714,
+      "hood": 0.0199112985314235,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.3700325098673019,
+        2.2589970435209734,
+        -2.271481863041734
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 5.802520935998473,
+      "phase": "shift1",
+      "pose": [
+        3.662774603797637,
+        0.7351738710005256,
+        1.2831477514263936
+      ],
+      "shooter_rps": 40.200317221626186,
+      "shooter_target": 39.82275738349919,
+      "hood": 0.019912433415906882,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.279393055568618,
+        2.379863431259173,
+        -2.392338266918395
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 6.009879827999612,
+      "phase": "shift1",
+      "pose": [
+        3.662767532105467,
+        0.7351733868170169,
+        1.2833079691606466
+      ],
+      "shooter_rps": 40.200815897408425,
+      "shooter_target": 39.82276631632602,
+      "hood": 0.019913272743004123,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.1888260838364837,
+        2.5006331645541144,
+        -2.513098024335693
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 6.215655273999801,
+      "phase": "shift1",
+      "pose": [
+        3.6627510079760066,
+        0.73517085818438,
+        1.2834758396405086
+      ],
+      "shooter_rps": 40.20059916430297,
+      "shooter_target": 39.822848022952414,
+      "hood": 0.019913892148146574,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.0892860631181964,
+        2.6333683275435003,
+        -2.6458222230734494
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 6.42291904800004,
+      "phase": "shift1",
+      "pose": [
+        3.662735302907578,
+        0.7351729621355909,
+        1.283439576351842
+      ],
+      "shooter_rps": 40.200680770320034,
+      "shooter_target": 39.822869569983006,
+      "hood": 0.019914352826343885,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.9988711161620017,
+        2.7539353380213525,
+        -2.7663792744190636
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 6.631695026999296,
+      "phase": "shift1",
+      "pose": [
+        3.662716902182472,
+        0.7351648248956298,
+        1.283463918705181
+      ],
+      "shooter_rps": 40.201848178764116,
+      "shooter_target": 39.82290544145836,
+      "hood": 0.01991469251437569,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.9085284722383026,
+        2.87440593346198,
+        -2.886839918691571
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 6.835973195999031,
+      "phase": "shift1",
+      "pose": [
+        3.6626914895005784,
+        0.7351460622252765,
+        1.2835350390224889
+      ],
+      "shooter_rps": 40.20122364582923,
+      "shooter_target": 39.82296402630404,
+      "hood": 0.019914997150259572,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.8002126581264445,
+        3.0188434886957234,
+        -3.031265543027242
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 7.044270266998865,
+      "phase": "shift1",
+      "pose": [
+        3.6626623243536454,
+        0.7351403010668617,
+        1.283522092766339
+      ],
+      "shooter_rps": 40.20018629329115,
+      "shooter_target": 39.82301910369154,
+      "hood": 0.019915188941119193,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.7100288774154154,
+        3.139102242363819,
+        -3.15151436302587
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 7.2541853099992295,
+      "phase": "shift1",
+      "pose": [
+        3.662643779301536,
+        0.7351294889845794,
+        1.2836135746810933
+      ],
+      "shooter_rps": 40.2017163876214,
+      "shooter_target": 39.823171615909814,
+      "hood": 0.01991534775171238,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.6109100129028725,
+        3.2712757997074586,
+        -3.2836770025078907
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 7.4623041069989995,
+      "phase": "shift1",
+      "pose": [
+        3.6626423945653523,
+        0.7351365446323568,
+        1.2836851956909057
+      ],
+      "shooter_rps": 40.20100919797871,
+      "shooter_target": 39.82310474429096,
+      "hood": 0.01991545897208429,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.5208776137473269,
+        3.3913326882835473,
+        -3.403723974089066
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 7.668931808999332,
+      "phase": "shift1",
+      "pose": [
+        3.662643792577728,
+        0.7351401159035277,
+        1.283747184366148
+      ],
+      "shooter_rps": 40.20022016034715,
+      "shooter_target": 39.82304644113896,
+      "hood": 0.019915536642929454,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.4309172117084189,
+        3.5112935697567367,
+        -3.5236749464977652
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 7.874543527999776,
+      "phase": "shift1",
+      "pose": [
+        3.662644707065289,
+        0.7351489243369466,
+        1.283828795376693
+      ],
+      "shooter_rps": 40.2009630474711,
+      "shooter_target": 39.82305145292504,
+      "hood": 0.019915597190111118,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.3320438574213552,
+        3.6431397428024885,
+        -3.6555102287246486
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 8.082538322998516,
+      "phase": "shift1",
+      "pose": [
+        3.6626403470923505,
+        0.7351505477634835,
+        1.2839333656618979
+      ],
+      "shooter_rps": 40.20116761763559,
+      "shooter_target": 39.82306306550279,
+      "hood": 0.01991563360566167,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.24223446197681786,
+        3.762899259188837,
+        -3.7752598526797594
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 8.290852735999579,
+      "phase": "shift1",
+      "pose": [
+        3.6626305425579204,
+        0.7351492447464815,
+        1.284118283466078
+      ],
+      "shooter_rps": 40.19970394442088,
+      "shooter_target": 39.823060713031,
+      "hood": 0.019915661097573364,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.1524968853172911,
+        3.8825630062749044,
+        -3.894913715245369
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 8.493707627998447,
+      "phase": "shift1",
+      "pose": [
+        3.6626148444573725,
+        0.735147716718221,
+        1.284102952968266
+      ],
+      "shooter_rps": 40.200582119183245,
+      "shooter_target": 39.82308686448695,
+      "hood": 0.01991568207357285,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.06283107001072474,
+        4.0021310606454925,
+        -4.014471892999953
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 8.69993367799907,
+      "phase": "shift1",
+      "pose": [
+        3.662590920136511,
+        0.7351492759242189,
+        1.2843150978473723
+      ],
+      "shooter_rps": 40.20047701464507,
+      "shooter_target": 39.8231843300694,
+      "hood": 0.019915701405610692,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.035718510952801985,
+        4.133545486695803,
+        -4.145875463894761
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 8.911675513998489,
+      "phase": "shift1",
+      "pose": [
+        3.662585298091682,
+        0.7351640520605845,
+        1.2843841678553085
+      ],
+      "shooter_rps": 40.200185229763626,
+      "shooter_target": 39.823036812419524,
+      "hood": 0.019915717459910245,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.12523381415522172,
+        4.252912835375034,
+        -4.265232952536776
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 9.11914002499907,
+      "phase": "shift1",
+      "pose": [
+        3.6625887514349214,
+        0.7351744285784191,
+        1.2844202646707545
+      ],
+      "shooter_rps": 40.201286127176054,
+      "shooter_target": 39.82306731323451,
+      "hood": 0.01991572155805491,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.21467753375234022,
+        4.372184728362691,
+        -4.38449499337209
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 9.328936325999166,
+      "phase": "shift1",
+      "pose": [
+        3.6625871265825176,
+        0.7351731782558097,
+        1.2844146377882015
+      ],
+      "shooter_rps": 40.200679018601754,
+      "shooter_target": 39.82304954655128,
+      "hood": 0.01991572217318088,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.3129830145643758,
+        4.503273650428168,
+        -4.515573087169496
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 9.536768676000065,
+      "phase": "shift1",
+      "pose": [
+        3.662590575457597,
+        0.7351750121563001,
+        1.2844079143169973
+      ],
+      "shooter_rps": 40.20022108519031,
+      "shooter_target": 39.822987605861485,
+      "hood": 0.019915721864938236,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.4022765948648924,
+        4.622345334857883,
+        -4.6346349359845895
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 9.744052197000201,
+      "phase": "shift1",
+      "pose": [
+        3.6625990089004077,
+        0.7351835164911226,
+        1.284486950237971
+      ],
+      "shooter_rps": 40.2006374655144,
+      "shooter_target": 39.82301259069344,
+      "hood": 0.019915719046241395,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.5004170611202013,
+        4.753214212423425,
+        -4.765493003458278
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 9.951723786000002,
+      "phase": "shift1",
+      "pose": [
+        3.6626083155718665,
+        0.7351862573206764,
+        1.2844461568056869
+      ],
+      "shooter_rps": 40.19989482102886,
+      "shooter_target": 39.82286640425315,
+      "hood": 0.019915712204623497,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.5895607541463775,
+        4.872086024363201,
+        -4.884354996293392
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 10.156108274999497,
+      "phase": "shift1",
+      "pose": [
+        3.662609487311156,
+        0.7351899027901561,
+        1.2844998962036307
+      ],
+      "shooter_rps": 40.20050360698853,
+      "shooter_target": 39.82297321801821,
+      "hood": 0.019915704470659174,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.6786331607365087,
+        4.9908627768822615,
+        -5.003121937559933
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 10.363606187998812,
+      "phase": "shift1",
+      "pose": [
+        3.662615018392178,
+        0.7351882641868438,
+        1.2846128354773807
+      ],
+      "shooter_rps": 40.1999155596427,
+      "shooter_target": 39.822900867938905,
+      "hood": 0.019915699463460848,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.7676343378969388,
+        5.109544545997734,
+        -5.121793903268747
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 10.572101740999642,
+      "phase": "shift1",
+      "pose": [
+        3.662605025338495,
+        0.7351933128935845,
+        1.284717572720743
+      ],
+      "shooter_rps": 40.20077734514439,
+      "shooter_target": 39.82293751313279,
+      "hood": 0.019915694358203145,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.8654534307634101,
+        5.239984876845685,
+        -5.252223459423861
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 10.774787555999865,
+      "phase": "shift1",
+      "pose": [
+        3.6626037434324235,
+        0.7351992805283832,
+        1.2847198854558346
+      ],
+      "shooter_rps": 40.20124197995678,
+      "shooter_target": 39.822907459832585,
+      "hood": 0.019915690494373847,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.9543052114743662,
+        5.358467427979004,
+        -5.37069622360642
+      ],
+      "stored": 8.0,
+      "launched": 0.0,
+      "scored": 0.0
+    },
+    {
+      "time": 10.98204115199951,
+      "phase": "shift1",
+      "pose": [
+        3.6625938327768153,
+        0.7352025707899041,
+        1.2846807845660746
+      ],
+      "shooter_rps": 40.200156042226595,
+      "shooter_target": 39.82289509958253,
+      "hood": 0.019915684493632752,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.043085939185743,
+        5.476855230975728,
+        -5.489074247478811
+      ],
+      "stored": 5.0,
+      "launched": 3.0,
+      "scored": 0.0
+    },
+    {
+      "time": 11.191581491999386,
+      "phase": "shift1",
+      "pose": [
+        3.662590935159356,
+        0.7352057478647015,
+        1.2847216734205693
+      ],
+      "shooter_rps": 40.20094896975883,
+      "shooter_target": 39.82286534969925,
+      "hood": 0.01991567923336558,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.1406627412666617,
+        5.606972470601887,
+        -5.619180739100264
+      ],
+      "stored": 2.0,
+      "launched": 6.0,
+      "scored": 0.0
+    },
+    {
+      "time": 11.396407548998468,
+      "phase": "shift1",
+      "pose": [
+        3.6625922645495845,
+        0.7352018862409555,
+        1.2847934611475917
+      ],
+      "shooter_rps": 40.20046927431452,
+      "shooter_target": 39.82287947869141,
+      "hood": 0.019915676286696205,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.2292944425727148,
+        5.7251615490649215,
+        -5.737360054854104
+      ],
+      "stored": 0.0,
+      "launched": 8.0,
+      "scored": 0.0
+    },
+    {
+      "time": 11.604811759998483,
+      "phase": "shift1",
+      "pose": [
+        3.6625915262098707,
+        0.7352053960105436,
+        1.2847884304382138
+      ],
+      "shooter_rps": 40.2006472279545,
+      "shooter_target": 39.82286089075718,
+      "hood": 0.01991567371497216,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.3178552668723054,
+        5.843256114075608,
+        -5.855444864962639
+      ],
+      "stored": 0.0,
+      "launched": 8.0,
+      "scored": 0.0
+    },
+    {
+      "time": 11.81180692199996,
+      "phase": "shift1",
+      "pose": [
+        3.6625919846726753,
+        0.7352021868237071,
+        1.2848731646738938
+      ],
+      "shooter_rps": 40.20022621970924,
+      "shooter_target": 39.82289325473987,
+      "hood": 0.019915672605798136,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.4151903783043425,
+        5.973051062753452,
+        -5.9852290922578035
+      ],
+      "stored": 0.0,
+      "launched": 8.0,
+      "scored": 0.0
+    },
+    {
+      "time": 12.016894006999792,
+      "phase": "shift1",
+      "pose": [
+        3.6625939913675167,
+        0.7351978210072732,
+        1.2849625951796615
+      ],
+      "shooter_rps": 40.200695005252356,
+      "shooter_target": 39.8229086889326,
+      "hood": 0.0199156701756368,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.5036025453261879,
+        6.090947395456681,
+        -6.103115686433359
+      ],
+      "stored": 0.0,
+      "launched": 8.0,
+      "scored": 0.0
+    },
+    {
+      "time": 12.224870887999714,
+      "phase": "shift1",
+      "pose": [
+        3.662584569860296,
+        0.7352031150799467,
+        1.2849717980727307
+      ],
+      "shooter_rps": 40.19974127432233,
+      "shooter_target": 39.82282455049852,
+      "hood": 0.01991567240430413,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.5919440108987661,
+        6.208749448810517,
+        -6.220908009047225
+      ],
+      "stored": 0.0,
+      "launched": 8.0,
+      "scored": 1.0
+    },
+    {
+      "time": 12.431344781998632,
+      "phase": "shift1",
+      "pose": [
+        3.662581226924293,
+        0.735199873944777,
+        1.2849773293246844
+      ],
+      "shooter_rps": 40.201306865658154,
+      "shooter_target": 39.822838248890626,
+      "hood": 0.01991567122487347,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.6890380303320973,
+        6.338222904831316,
+        -6.350370770241426
+      ],
+      "stored": 0.0,
+      "launched": 8.0,
+      "scored": 5.0
+    },
+    {
+      "time": 12.637785244000042,
+      "phase": "shift1",
+      "pose": [
+        3.662573499195653,
+        0.735202540515117,
+        1.2850337152658793
+      ],
+      "shooter_rps": 40.20083819730712,
+      "shooter_target": 39.822920781797436,
+      "hood": 0.019915673284660877,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.7772312068402059,
+        6.455827216884719,
+        -6.4679653678887785
+      ],
+      "stored": 0.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 0.0,
+      "phase": "endgame",
+      "pose": [
+        3.6471265445620715,
+        0.7515200396429514,
+        0.005586801229648164
+      ],
+      "shooter_rps": 4.4666918614837356e-282,
+      "shooter_target": 39.822961086150926,
+      "hood": 0.01991567247232798,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        5.0,
+        -5.0,
+        5.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 0.21027960299943516,
+      "phase": "endgame",
+      "pose": [
+        3.6414625571117103,
+        0.7554725406769032,
+        0.057765674272850884
+      ],
+      "shooter_rps": 6.616613736268978,
+      "shooter_target": 39.2980023199976,
+      "hood": 0.019872539596745054,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 0.4147481649997644,
+      "phase": "endgame",
+      "pose": [
+        3.6624786434619607,
+        0.7464717834162519,
+        0.4575426282048823
+      ],
+      "shooter_rps": 17.619211929428786,
+      "shooter_target": 39.50152591313196,
+      "hood": 0.019827684310502976,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 0.6255835809988639,
+      "phase": "endgame",
+      "pose": [
+        3.7016508842858205,
+        0.7248403344979794,
+        1.0504967832915588
+      ],
+      "shooter_rps": 30.78103887841759,
+      "shooter_target": 39.773941907874416,
+      "hood": 0.01983259590406492,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 0.8336127019993,
+      "phase": "endgame",
+      "pose": [
+        3.7010261131674214,
+        0.7213795777256448,
+        1.2395508445633436
+      ],
+      "shooter_rps": 39.983762000180946,
+      "shooter_target": 39.82878504665007,
+      "hood": 0.0198528175086244,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 1.0389863109994621,
+      "phase": "endgame",
+      "pose": [
+        3.700487770921438,
+        0.72137323484886,
+        1.2834199780167306
+      ],
+      "shooter_rps": 40.21150731678988,
+      "shooter_target": 39.833979716327036,
+      "hood": 0.019872087005684904,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 1.2489856679985678,
+      "phase": "endgame",
+      "pose": [
+        3.700425370463427,
+        0.7214042220069088,
+        1.288766516592267
+      ],
+      "shooter_rps": 40.212577216262446,
+      "shooter_target": 39.834147294256795,
+      "hood": 0.01988493565547095,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 1.4544077089994971,
+      "phase": "endgame",
+      "pose": [
+        3.700410412802519,
+        0.721394719779947,
+        1.2894183295297716
+      ],
+      "shooter_rps": 40.21152359200565,
+      "shooter_target": 39.834084210141626,
+      "hood": 0.019894409726611575,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 1.6605407429997285,
+      "phase": "endgame",
+      "pose": [
+        3.7004019364979723,
+        0.7213934258351202,
+        1.2896849537274415
+      ],
+      "shooter_rps": 40.21063218622953,
+      "shooter_target": 39.83412145401572,
+      "hood": 0.0199019869231186,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 1.870743321000191,
+      "phase": "endgame",
+      "pose": [
+        3.7004109727544012,
+        0.7213906751305186,
+        1.2900500916414168
+      ],
+      "shooter_rps": 40.21090924462406,
+      "shooter_target": 39.83405259206152,
+      "hood": 0.019906984263992438,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 2.0767938809985935,
+      "phase": "endgame",
+      "pose": [
+        3.7004084579229044,
+        0.7213756771278,
+        1.2901211880995418
+      ],
+      "shooter_rps": 40.211120132219854,
+      "shooter_target": 39.83415837034106,
+      "hood": 0.019910671336660718,
+      "feeding": false,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 2.2823589089985035,
+      "phase": "endgame",
+      "pose": [
+        3.700387813493768,
+        0.7213923706327304,
+        1.2901737116539478
+      ],
+      "shooter_rps": 40.21176408849188,
+      "shooter_target": 39.83417601556732,
+      "hood": 0.019913620414951594,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.9382269493516286,
+        -0.09058377184701483,
+        0.07830481145831847
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 2.4912742729993624,
+      "phase": "endgame",
+      "pose": [
+        3.700381114220191,
+        0.7213892081901997,
+        1.2904093411638708
+      ],
+      "shooter_rps": 40.21151970641482,
+      "shooter_target": 39.834074377215245,
+      "hood": 0.019915564263019363,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.846333441189786,
+        0.03216152887807944,
+        -0.044430670026679664
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 2.697307328999159,
+      "phase": "endgame",
+      "pose": [
+        3.700377390464993,
+        0.7213926101530057,
+        1.2903736737488518
+      ],
+      "shooter_rps": 40.21161874881422,
+      "shooter_target": 39.834138443364324,
+      "hood": 0.019916997209399684,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.7545134184363915,
+        0.15480867263061215,
+        -0.16706800239137332
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 2.908273790999374,
+      "phase": "endgame",
+      "pose": [
+        3.7003705382426046,
+        0.7214020491163814,
+        1.290476599167639
+      ],
+      "shooter_rps": 40.2110553691624,
+      "shooter_target": 39.83413399101212,
+      "hood": 0.019918139994152026,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.6535961989200025,
+        0.2896072531360252,
+        -0.3018557994320141
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 3.116526220999731,
+      "phase": "endgame",
+      "pose": [
+        3.700363702378043,
+        0.7214145281030324,
+        1.29066788278504
+      ],
+      "shooter_rps": 40.21184766400061,
+      "shooter_target": 39.83409322888511,
+      "hood": 0.019918889530566825,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.5619303043009496,
+        0.41204852266982517,
+        -0.42428727404726274
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 3.3242778009989706,
+      "phase": "endgame",
+      "pose": [
+        3.700365877210611,
+        0.7214072561347326,
+        1.2906716260297042
+      ],
+      "shooter_rps": 40.21234105173372,
+      "shooter_target": 39.834096949215976,
+      "hood": 0.019919440428440103,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.4703377130723263,
+        0.5343918783587576,
+        -0.5466208426504466
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 3.5334056739993684,
+      "phase": "endgame",
+      "pose": [
+        3.700361183854767,
+        0.721408817341922,
+        1.2908492002865226
+      ],
+      "shooter_rps": 40.211928693091984,
+      "shooter_target": 39.834076630114154,
+      "hood": 0.019919886580746334,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.3696704581760946,
+        0.6688565725746431,
+        -0.681074780111421
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 3.7384409779988346,
+      "phase": "endgame",
+      "pose": [
+        3.700369910042273,
+        0.7214132196636398,
+        1.29103283081725
+      ],
+      "shooter_rps": 40.2119030454211,
+      "shooter_target": 39.834101913493576,
+      "hood": 0.019920175146976495,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.278231613317623,
+        0.7909945639803122,
+        -0.8032030008598485
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 3.94522080599927,
+      "phase": "endgame",
+      "pose": [
+        3.700367357916436,
+        0.7214226457248787,
+        1.291285888460531
+      ],
+      "shooter_rps": 40.21177682134205,
+      "shooter_target": 39.833999879820766,
+      "hood": 0.019920386187230396,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.18686589028241,
+        0.9130348840665947,
+        -0.9252335581022839
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 4.152616748999208,
+      "phase": "endgame",
+      "pose": [
+        3.7003757152703995,
+        0.721418318206082,
+        1.2913366243070208
+      ],
+      "shooter_rps": 40.211945330767584,
+      "shooter_target": 39.83404182086243,
+      "hood": 0.01992055242382802,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        2.086447980862132,
+        1.047166519005032,
+        -1.059354462929512
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 4.356644773999506,
+      "phase": "endgame",
+      "pose": [
+        3.700386457267508,
+        0.7214129360594733,
+        1.2914186878326797
+      ],
+      "shooter_rps": 40.21204965382282,
+      "shooter_target": 39.83403544677085,
+      "hood": 0.019920664110913894,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.9952356233784814,
+        1.1690019834804644,
+        -1.1811801809489086
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 4.564562145998934,
+      "phase": "endgame",
+      "pose": [
+        3.7003875719884642,
+        0.7214042327285147,
+        1.291551391950125
+      ],
+      "shooter_rps": 40.21262806418462,
+      "shooter_target": 39.83414666534223,
+      "hood": 0.01992074624064676,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.904096206600645,
+        1.290740018561272,
+        -1.3029084773677235
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 4.77331176899861,
+      "phase": "endgame",
+      "pose": [
+        3.7003753145895875,
+        0.7213899720225846,
+        1.2916046785974944
+      ],
+      "shooter_rps": 40.210343936314935,
+      "shooter_target": 39.83406075299163,
+      "hood": 0.019920820202622955,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.8039270250457,
+        1.4245394191858956,
+        -1.4366971744588428
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 4.979079887998523,
+      "phase": "endgame",
+      "pose": [
+        3.7003670215772626,
+        0.7213869210977648,
+        1.2917744808413072
+      ],
+      "shooter_rps": 40.211592533319624,
+      "shooter_target": 39.83405481781312,
+      "hood": 0.019920873631213618,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.712940593944099,
+        1.5460731060683153,
+        -1.5582211390264895
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 5.186214811999889,
+      "phase": "endgame",
+      "pose": [
+        3.7003515920356302,
+        0.7213773219687597,
+        1.2918345861600027
+      ],
+      "shooter_rps": 40.2116217763018,
+      "shooter_target": 39.83422092170887,
+      "hood": 0.019920914156791078,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.6220269228794892,
+        1.6675096048816407,
+        -1.679647923299781
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 5.394239664999986,
+      "phase": "endgame",
+      "pose": [
+        3.7003391579391858,
+        0.7213739711136203,
+        1.291859262668638
+      ],
+      "shooter_rps": 40.21219563536557,
+      "shooter_target": 39.83424111008422,
+      "hood": 0.019920956343943592,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.522105853109021,
+        1.8009775941127,
+        -1.8131052355092123
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 5.602184086999841,
+      "phase": "endgame",
+      "pose": [
+        3.700334126318368,
+        0.7213734256742041,
+        1.291881912541114
+      ],
+      "shooter_rps": 40.21213675343427,
+      "shooter_target": 39.83431738127789,
+      "hood": 0.019920985960649503,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.4313447887862414,
+        1.9222102508832772,
+        -1.9343281940464847
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 5.813555958999132,
+      "phase": "endgame",
+      "pose": [
+        3.7003306305063655,
+        0.7213647504386224,
+        1.2919825252772617
+      ],
+      "shooter_rps": 40.21159437905842,
+      "shooter_target": 39.83416987626363,
+      "hood": 0.01992101264921401,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.3315914454833044,
+        2.055454202137024,
+        -2.067561486200936
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 6.01476541699958,
+      "phase": "endgame",
+      "pose": [
+        3.700329573743086,
+        0.7213681604749194,
+        1.2921337784524651
+      ],
+      "shooter_rps": 40.21168458202869,
+      "shooter_target": 39.834287189238424,
+      "hood": 0.01992103148558117,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.2409827317382676,
+        2.1764833590319874,
+        -2.1885809611419473
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 6.2229762879997,
+      "phase": "endgame",
+      "pose": [
+        3.700335238921638,
+        0.7213704046972,
+        1.2922873440416633
+      ],
+      "shooter_rps": 40.212416757540964,
+      "shooter_target": 39.83421376069372,
+      "hood": 0.019921045828959254,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.1504464759771698,
+        2.2974157313204384,
+        -2.3095036592189113
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 6.433307829000114,
+      "phase": "endgame",
+      "pose": [
+        3.700335689223547,
+        0.721366957706237,
+        1.2924326371590777
+      ],
+      "shooter_rps": 40.21284941316864,
+      "shooter_target": 39.83429242506997,
+      "hood": 0.019921052515689684,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        1.0599826202568012,
+        2.4182513963991012,
+        -2.4303296578223605
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 6.636685624000165,
+      "phase": "endgame",
+      "pose": [
+        3.7003379192719397,
+        0.7213553225789852,
+        1.2924545956916413
+      ],
+      "shooter_rps": 40.21176808751116,
+      "shooter_target": 39.83427601132822,
+      "hood": 0.019921065146617713,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.9605559319129077,
+        2.551059023455597,
+        -2.5631266606841354
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 6.84559977599929,
+      "phase": "endgame",
+      "pose": [
+        3.700332613299967,
+        0.7213427883849965,
+        1.292383260665025
+      ],
+      "shooter_rps": 40.21170253394358,
+      "shooter_target": 39.8343820780639,
+      "hood": 0.019921078851793016,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.8702439278790178,
+        2.671691855044765,
+        -2.6837498420241355
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 7.054060106000179,
+      "phase": "endgame",
+      "pose": [
+        3.7003350423607118,
+        0.7213407615906668,
+        1.2924270106437936
+      ],
+      "shooter_rps": 40.212512491017705,
+      "shooter_target": 39.83442566348114,
+      "hood": 0.01992108889783328,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.7800041445562184,
+        2.792228218960877,
+        -2.8042765634081896
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 7.260812901999088,
+      "phase": "endgame",
+      "pose": [
+        3.7003405839007653,
+        0.7213278015459291,
+        1.2925287202877087
+      ],
+      "shooter_rps": 40.2122005902261,
+      "shooter_target": 39.8344658100752,
+      "hood": 0.019921103011995532,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.6808237288950697,
+        2.9247068911748775,
+        -2.9367446377428283
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 7.468694576999042,
+      "phase": "endgame",
+      "pose": [
+        3.7003392907290236,
+        0.721325085266324,
+        1.2926406581619687
+      ],
+      "shooter_rps": 40.2124098357797,
+      "shooter_target": 39.8343803702563,
+      "hood": 0.019921116958023375,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.5907354211331551,
+        3.04504092400531,
+        -3.057069044227058
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 7.673833585999091,
+      "phase": "endgame",
+      "pose": [
+        3.700343801596769,
+        0.721327281321495,
+        1.2926547959799264
+      ],
+      "shooter_rps": 40.21129933119663,
+      "shooter_target": 39.83444371517885,
+      "hood": 0.019921125450536512,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.5007191551968772,
+        3.165278728106102,
+        -3.1772972296796445
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 7.879314316998716,
+      "phase": "endgame",
+      "pose": [
+        3.7003515788598405,
+        0.7213251189748627,
+        1.2927154736177071
+      ],
+      "shooter_rps": 40.21176335059241,
+      "shooter_target": 39.83439005213477,
+      "hood": 0.019921134765173924,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.39279465017096793,
+        3.3094371794482895,
+        -3.321444148796676
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 8.090077736998865,
+      "phase": "endgame",
+      "pose": [
+        3.700351006387647,
+        0.7213106168763405,
+        1.2927519762751405
+      ],
+      "shooter_rps": 40.21105239015367,
+      "shooter_target": 39.834556827641,
+      "hood": 0.019921139578177528,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.30293667352730125,
+        3.4294635511289715,
+        -3.441460918743085
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 8.297017103999679,
+      "phase": "endgame",
+      "pose": [
+        3.700359567601215,
+        0.721303667051605,
+        1.292823645126056
+      ],
+      "shooter_rps": 40.21214608456819,
+      "shooter_target": 39.834490525114,
+      "hood": 0.01992115263891351,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.20417589257430568,
+        3.561381702915825,
+        -3.573368517490456
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 8.504974841000148,
+      "phase": "endgame",
+      "pose": [
+        3.700359566050792,
+        0.7213036666781721,
+        1.2928951470376886
+      ],
+      "shooter_rps": 40.21175155511035,
+      "shooter_target": 39.834494989446995,
+      "hood": 0.019921161786502085,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.11446875059480599,
+        3.6812065995784855,
+        -3.6931838285362146
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 8.714298119999512,
+      "phase": "endgame",
+      "pose": [
+        3.700359766718229,
+        0.7213039041255488,
+        1.2929913254669176
+      ],
+      "shooter_rps": 40.2116553473996,
+      "shooter_target": 39.83448013057575,
+      "hood": 0.019921168210228962,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        0.024833345630257964,
+        3.8009356746575595,
+        -3.812903325663814
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 8.921383911998419,
+      "phase": "endgame",
+      "pose": [
+        3.700358024746675,
+        0.7213083347177994,
+        1.2929605932057944
+      ],
+      "shooter_rps": 40.21156744417614,
+      "shooter_target": 39.83453921662048,
+      "hood": 0.019921172974742905,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.0736828120442179,
+        3.9325270747675325,
+        -3.9444841988734165
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 9.130172207000214,
+      "phase": "endgame",
+      "pose": [
+        3.700345446869592,
+        0.7213168459248499,
+        1.2931099630796927
+      ],
+      "shooter_rps": 40.211199653267855,
+      "shooter_target": 39.83442040152918,
+      "hood": 0.019921175776037282,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.163167755951102,
+        4.052055173867566,
+        -4.064002736099425
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 9.334045632000198,
+      "phase": "endgame",
+      "pose": [
+        3.7003441680470783,
+        0.7213095961190378,
+        1.2931376432390351
+      ],
+      "shooter_rps": 40.21304427186569,
+      "shooter_target": 39.83447438832964,
+      "hood": 0.019921175124074965,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.25258114053040837,
+        4.1714876887271135,
+        -4.183425696731387
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 9.53838542199992,
+      "phase": "endgame",
+      "pose": [
+        3.700346966485373,
+        0.7213053070326679,
+        1.2931637512225482
+      ],
+      "shooter_rps": 40.21224689767621,
+      "shooter_target": 39.834532747234164,
+      "hood": 0.019921175940571335,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.350853280840451,
+        4.3027531465003666,
+        -4.314680653678638
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 9.74660149400006,
+      "phase": "endgame",
+      "pose": [
+        3.700347546656897,
+        0.7213022543221709,
+        1.2933153616705955
+      ],
+      "shooter_rps": 40.21208527722542,
+      "shooter_target": 39.83447556100657,
+      "hood": 0.019921177311658017,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.44011657704320106,
+        4.421985183183771,
+        -4.433903152172084
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 9.954018165999514,
+      "phase": "endgame",
+      "pose": [
+        3.700348071494867,
+        0.7213045853858087,
+        1.2935768130642418
+      ],
+      "shooter_rps": 40.21189339197956,
+      "shooter_target": 39.834484435002864,
+      "hood": 0.019921182807810522,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.5293084911656282,
+        4.541121872381907,
+        -4.553030310807761
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 10.161080813999433,
+      "phase": "endgame",
+      "pose": [
+        3.7003540492066667,
+        0.7213095321460014,
+        1.293680477814504
+      ],
+      "shooter_rps": 40.212513008164805,
+      "shooter_target": 39.834444009801175,
+      "hood": 0.019921183819351873,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.6273372185245178,
+        4.672062195153926,
+        -4.683960158763561
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 10.37057677699886,
+      "phase": "endgame",
+      "pose": [
+        3.7003649375874414,
+        0.7213215532547905,
+        1.2936449774308056
+      ],
+      "shooter_rps": 40.21249686486864,
+      "shooter_target": 39.83443389791692,
+      "hood": 0.019921180454612095,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.7163794160283923,
+        4.790998902745795,
+        -4.802887351790876
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 10.575176323998676,
+      "phase": "endgame",
+      "pose": [
+        3.7003697504342443,
+        0.7213476329576063,
+        1.293610168195744
+      ],
+      "shooter_rps": 40.21178821288573,
+      "shooter_target": 39.83440985234389,
+      "hood": 0.019921172164016607,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.8053504082601705,
+        4.909840499021189,
+        -4.921719441110325
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 10.781869829999778,
+      "phase": "endgame",
+      "pose": [
+        3.7003593035731006,
+        0.7213552473999946,
+        1.2935838705306861
+      ],
+      "shooter_rps": 40.21205198712006,
+      "shooter_target": 39.834386719006254,
+      "hood": 0.019921151530226146,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.903136325584102,
+        5.040456492127749,
+        -5.052324985346024
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 10.992669618999571,
+      "phase": "endgame",
+      "pose": [
+        3.700357919970907,
+        0.7213728600627994,
+        1.2936075216966774
+      ],
+      "shooter_rps": 40.21141801062762,
+      "shooter_target": 39.834299952682315,
+      "hood": 0.019921135517314337,
+      "feeding": true,
+      "sim_feeding": false,
+      "feed_volts": [
+        -0.9919579720345129,
+        5.159098602136783,
+        -5.170957604357388
+      ],
+      "stored": 3.0,
+      "launched": 8.0,
+      "scored": 7.0
+    },
+    {
+      "time": 11.202332143999229,
+      "phase": "endgame",
+      "pose": [
+        3.7003497822605596,
+        0.7213830696156069,
+        1.293596220184074
+      ],
+      "shooter_rps": 40.2117675066111,
+      "shooter_target": 39.83417981788795,
+      "hood": 0.01992111716271024,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.0807085895831126,
+        5.277645836413166,
+        -5.28949535522586
+      ],
+      "stored": 0.0,
+      "launched": 11.0,
+      "scored": 7.0
+    },
+    {
+      "time": 11.41737975199976,
+      "phase": "endgame",
+      "pose": [
+        3.7003359980498063,
+        0.7213886832036491,
+        1.2936773306674023
+      ],
+      "shooter_rps": 40.21155364420884,
+      "shooter_target": 39.83411065063063,
+      "hood": 0.0199210992821176,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.1782522982948995,
+        5.407938303195283,
+        -5.41977739901821
+      ],
+      "stored": 0.0,
+      "launched": 11.0,
+      "scored": 7.0
+    },
+    {
+      "time": 11.625661756999762,
+      "phase": "endgame",
+      "pose": [
+        3.7003379420424274,
+        0.7213853814668727,
+        1.2937462581669739
+      ],
+      "shooter_rps": 40.21185260126198,
+      "shooter_target": 39.83424443234088,
+      "hood": 0.01992108263502821,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.275710206300868,
+        5.53811616304108,
+        -5.549944845042437
+      ],
+      "stored": 0.0,
+      "launched": 11.0,
+      "scored": 7.0
+    },
+    {
+      "time": 11.831965821998892,
+      "phase": "endgame",
+      "pose": [
+        3.7003363159226077,
+        0.7213858544667323,
+        1.2938158768627483
+      ],
+      "shooter_rps": 40.211979917733984,
+      "shooter_target": 39.834243895224674,
+      "hood": 0.019921075637442567,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.3642339128385608,
+        5.656360304522019,
+        -5.668179527361945
+      ],
+      "stored": 0.0,
+      "launched": 11.0,
+      "scored": 7.0
+    },
+    {
+      "time": 12.034600122999109,
+      "phase": "endgame",
+      "pose": [
+        3.7003363096159902,
+        0.7213805690774344,
+        1.2938706894875427
+      ],
+      "shooter_rps": 40.21172864467254,
+      "shooter_target": 39.83413049037583,
+      "hood": 0.019921074020239293,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.4526868287310566,
+        5.774509888517812,
+        -5.7863196597606095
+      ],
+      "stored": 0.0,
+      "launched": 11.0,
+      "scored": 7.0
+    },
+    {
+      "time": 12.24301104999904,
+      "phase": "endgame",
+      "pose": [
+        3.7003476597028424,
+        0.721391334851098,
+        1.2939307715956343
+      ],
+      "shooter_rps": 40.21120678828902,
+      "shooter_target": 39.8341493282677,
+      "hood": 0.019921068043753053,
+      "feeding": true,
+      "sim_feeding": true,
+      "feed_volts": [
+        -1.5410690105882252,
+        5.892564990644195,
+        -5.904365317848117
+      ],
+      "stored": 0.0,
+      "launched": 11.0,
+      "scored": 7.0
+    }
+  ],
+  "shot": {
+    "scored": 3.0,
+    "launched": 11.0,
+    "volley_launched": 3.0,
+    "phase": "endgame",
+    "time_remaining": 17.260782,
+    "feeding_seen": true,
+    "stored": 0.0,
+    "projectiles_remaining": 0.0
+  },
+  "fuel_trace": [
+    {
+      "elapsed": 0.0,
+      "clusters": 83.0,
+      "active": false,
+      "status": "interrupted",
+      "position": [
+        6.211724700472068,
+        0.670821519161644
+      ],
+      "selected": [
+        -1.0,
+        -1.0
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        82.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.0003189999999975157,
+        2.6000000005410584e-05
+      ]
+    },
+    {
+      "elapsed": 0.10602404500059492,
+      "clusters": 83.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.211869100922574,
+        0.6707969486320842
+      ],
+      "selected": [
+        7.501147825712323,
+        1.2802532813244403
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        80.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.00031999999999499096,
+        2.5000000000829914e-05
+      ]
+    },
+    {
+      "elapsed": 0.21155287200053863,
+      "clusters": 79.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.221733606880582,
+        0.6702471342789574
+      ],
+      "selected": [
+        7.496066107294967,
+        1.284202535755014
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        81.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.000309000000001447,
+        2.69999999957804e-05
+      ]
+    },
+    {
+      "elapsed": 0.313356468001075,
+      "clusters": 75.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.25585509145987,
+        0.6808475580954707
+      ],
+      "selected": [
+        7.490918129704779,
+        1.275248901393942
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        81.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.00031700000000256523,
+        2.6000000005410584e-05
+      ]
+    },
+    {
+      "elapsed": 0.41700543300066784,
+      "clusters": 81.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.313885362684488,
+        0.7083288432465431
+      ],
+      "selected": [
+        7.495302742456018,
+        1.275095783194585
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        81.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.0003339999999951715,
+        2.6000000005410584e-05
+      ]
+    },
+    {
+      "elapsed": 0.5191687330006971,
+      "clusters": 88.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.397223882033164,
+        0.7478713059667899
+      ],
+      "selected": [
+        7.500039271548124,
+        1.2768767265656846
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        87.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.00033600000000433283,
+        2.5999999998305157e-05
+      ]
+    },
+    {
+      "elapsed": 0.6232956630010449,
+      "clusters": 90.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.505436875583543,
+        0.8013271884392187
+      ],
+      "selected": [
+        7.492685761305653,
+        1.2632038257596094
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        93.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.00035199999999946385,
+        2.5000000000829914e-05
+      ]
+    },
+    {
+      "elapsed": 0.0,
+      "clusters": 84.0,
+      "active": false,
+      "status": "interrupted",
+      "position": [
+        6.348493068602604,
+        0.6868808605708286
+      ],
+      "selected": [
+        7.495410475848691,
+        1.4833499454319947
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        83.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.00044900000000325235,
+        3.699999999184911e-05
+      ]
+    },
+    {
+      "elapsed": 0.10457478200078185,
+      "clusters": 81.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.348634015009119,
+        0.6868710418192258
+      ],
+      "selected": [
+        7.501187182936068,
+        1.2798083529891535
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        82.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.00045599999998557905,
+        3.5999999994373866e-05
+      ]
+    },
+    {
+      "elapsed": 0.20782236300146906,
+      "clusters": 82.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.358278575791595,
+        0.6872554531911961
+      ],
+      "selected": [
+        7.498180525192486,
+        1.2806740550351674
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        83.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.0004460000000108266,
+        3.5999999994373866e-05
+      ]
+    },
+    {
+      "elapsed": 0.3125320079998346,
+      "clusters": 83.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.395654384557821,
+        0.694434525651087
+      ],
+      "selected": [
+        7.494090734627378,
+        1.2781244979633
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        80.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.0006670000000212895,
+        5.5000000003246896e-05
+      ]
+    },
+    {
+      "elapsed": 0.4181639530015673,
+      "clusters": 82.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.456504004752237,
+        0.7240468363194118
+      ],
+      "selected": [
+        7.494308481372342,
+        1.2743947994129305
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        86.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.00046700000001465014,
+        3.699999999184911e-05
+      ]
+    },
+    {
+      "elapsed": 0.5209775600014837,
+      "clusters": 103.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.5605607073354735,
+        0.7939303398952872
+      ],
+      "selected": [
+        7.49827346719091,
+        1.2589778606674649
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        101.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.000545000000016671,
+        3.5999999994373866e-05
+      ]
+    },
+    {
+      "elapsed": 0.6224670940009673,
+      "clusters": 112.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.682009091535382,
+        0.8707211663044172
+      ],
+      "selected": [
+        7.486850604873908,
+        1.2615300354865349
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        110.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.000572000000005346,
+        4.200000000764703e-05
+      ]
+    },
+    {
+      "elapsed": 0.7255071859999589,
+      "clusters": 112.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        6.841197459876052,
+        0.9473703386700457
+      ],
+      "selected": [
+        7.730009665858697,
+        1.2510878974421482
+      ],
+      "stored": 0.0,
+      "camera_counts": [
+        111.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.00059500000000412,
+        3.399999999942338e-05
+      ]
+    },
+    {
+      "elapsed": 0.8284682299999986,
+      "clusters": 128.0,
+      "active": true,
+      "status": "planning-native",
+      "position": [
+        7.014387182900803,
+        1.0339097968821018
+      ],
+      "selected": [
+        7.969344843102449,
+        0.9634260777695854
+      ],
+      "stored": 1.0,
+      "camera_counts": [
+        128.0,
+        0.0
+      ],
+      "camera_frame_ages": [
+        0.0006590000000130658,
+        3.5999999994373866e-05
+      ]
+    }
+  ],
+  "fuel_follow": {
+    "start": [
+      6.348493068602604,
+      0.6868808605708286
+    ],
+    "goal": [
+      7.501646085360257,
+      1.2798529576911908
+    ],
+    "end": [
+      7.014387182900803,
+      1.0339097968821018
+    ],
+    "progress_m": 0.750868864201554,
+    "collected": 1.0,
+    "status": "planning-native"
+  },
+  "hub_errors": [],
+  "peak_stored_fuel": 8.0,
+  "peak_clusters": 128.0,
+  "peak_requested_mps": 2.0000000000000004,
+  "peak_requested_radps": 3.0,
+  "final_scored": 10.0,
+  "final_launched": 11.0,
+  "passed": true
+}

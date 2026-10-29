@@ -19,6 +19,9 @@ namespace season
     // Field relative chassis velocity, including launch inheritance.
     double vx{}, vy{}, omega{}, rackMetres{}, hoodRotations{}, flywheelRps{};
     bool collecting = false, feeding = false;
+    // Scoring depends on hub state at the moment fuel crosses the opening.
+    // A missing state cannot establish that a crossing earned points.
+    std::optional<bool> hubActive{true};
     Alliance alliance = Alliance::Blue;
     std::optional<FuelRobotState> physics;
   };
@@ -47,10 +50,13 @@ namespace season
   private:
     void Launch(const FuelInputs &input, int index);
     double Random(double amplitude);
+    unsigned seed_;
     std::mt19937 random_;
     std::vector<FuelParticle> floor_, airborne_;
     int stored_ = 0, scored_ = 0, launched_ = 0, pending_ = 0, burstIndex_ = 0;
     double time_ = 0, lastBurst_ = -1e9, nextShot_ = -1e9;
+    std::optional<bool> lastHubActive_;
+    std::optional<double> scoringGraceUntil_;
   };
   // Call only from Robot::SimulationPeriodic. Actuator voltages select collection
   // and feeding, so command cancellation immediately stops simulated launching.
@@ -58,7 +64,8 @@ namespace season
   {
   public:
     FuelSimulation(Mechanisms mechanisms, base::Drive &drive);
-    void Periodic(double dt = .02, std::optional<FuelRobotState> physics = std::nullopt);
+    void Periodic(double dt = .02, std::optional<FuelRobotState> physics = std::nullopt,
+                  std::optional<bool> hubActive = true);
     void Reset();
     FuelModel &Model() { return model_; }
 
