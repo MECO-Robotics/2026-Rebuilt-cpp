@@ -166,6 +166,11 @@ kept the trigger held collected fuel but exhausted the three-attempt target
 change budget; continuous tracking is not established. An attempted association
 heuristic also failed and was removed. These results do not validate a real
 camera, identity tracking, or physical intake behavior.
+Two further release-on-collection trials using `4bee96e` also passed: each
+observed a freshly published target change, stopped, collected while active,
+and stopped on release. One resumed after the target-change stop; in the other,
+collection occurred before resumption. The tests do not require a needless
+restart after collection and do not establish continuous following.
 After the profile envelope was made to override request slew limiting, a
 [further run](../artifacts/footprint-profile-envelope.json) passed the same
 checks using MecoBase `26cdf21`. It took 21.4 seconds for the detour, ended the

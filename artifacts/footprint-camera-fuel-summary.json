@@ -147,6 +147,57 @@
       "resumed_after_stop": true,
       "collected_while_active": true,
       "released_from_active": true
+    },
+    {
+      "trace": "footprint-camera-fuel-deadline-1.json.gz",
+      "label": "deadline-1",
+      "binary_sha256": "6dd380045f9a96e76999cc7534a021414f6038e23a9e8bd7a966eb1059f1c824",
+      "mecobase_revision": "4bee96e",
+      "passed_reported": true,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "camera_staging": true,
+        "camera_observed": true,
+        "camera_target_change_stops": true,
+        "camera_collected": true,
+        "camera_release_stops": true
+      },
+      "status": "interrupted",
+      "outcome": "interrupted",
+      "stored_before": 0.0,
+      "stored_after": 2.0,
+      "target_moved": true,
+      "stopped_after_change": true,
+      "resumed_after_stop": true,
+      "collected_while_active": true,
+      "released_from_active": true
+    },
+    {
+      "trace": "footprint-camera-fuel-deadline-2.json.gz",
+      "label": "deadline-2",
+      "binary_sha256": "6dd380045f9a96e76999cc7534a021414f6038e23a9e8bd7a966eb1059f1c824",
+      "mecobase_revision": "4bee96e",
+      "passed_reported": true,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "camera_staging": true,
+        "camera_observed": true,
+        "camera_target_change_stops": true,
+        "camera_collected": true,
+        "camera_release_stops": true
+      },
+      "status": "interrupted",
+      "outcome": "interrupted",
+      "stored_before": 0.0,
+      "stored_after": 3.0,
+      "target_moved": true,
+      "stopped_after_change": true,
+      "resumed_after_stop": false,
+      "collected_while_active": true,
+      "released_from_active": true
     }
-  ]
+  ],
+  "deadline_package_sha256": "caf6b576b055ec65c21e33484251b3ee8b5d10c9783433980ccc2dc03d85dcb6"
 }
