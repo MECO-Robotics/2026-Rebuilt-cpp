@@ -83,3 +83,10 @@ TEST(ParticleContacts, RejectsAliasedGroupsWithoutChangingParticles) {
  EXPECT_DOUBLE_EQ(particles[0].position.x,1);
  EXPECT_DOUBLE_EQ(particles[0].velocity.x,4);
 }
+
+TEST(FuelSimulation, ResetReproducesSeededBurst) {
+ FuelModel model{8324}; FuelInputs input; input.feeding=true; input.flywheelRps=37; input.hoodRotations=.02;
+ auto run=[&] { model.SetStoredFuel(4); for(int i=0;i<12;++i) model.Step(.02,input); return model.Projectiles(); };
+ const auto first=run(); ASSERT_EQ(first.size(),4u); model.Reset(); const auto second=run(); ASSERT_EQ(second.size(),first.size());
+ for(size_t i=0;i<first.size();++i) { EXPECT_DOUBLE_EQ(first[i].position.x,second[i].position.x); EXPECT_DOUBLE_EQ(first[i].position.y,second[i].position.y); EXPECT_DOUBLE_EQ(first[i].velocity.z,second[i].velocity.z); }
+}

@@ -29,8 +29,8 @@ const std::vector<meco::sim::ContactBox> kBumpers = [] {
 std::vector<double> Positions(const std::vector<FuelParticle>& particles){std::vector<double> values;for(auto& p:particles){values.push_back(p.position.x);values.push_back(p.position.y);values.push_back(p.position.z);}return values;}
 std::vector<double> Positions(const std::vector<FuelPoint>& particles){std::vector<double> values;for(auto& p:particles){values.push_back(p.x);values.push_back(p.y);values.push_back(p.z);}return values;}
 }
-FuelModel::FuelModel(unsigned seed):random_(seed){Reset();}
-void FuelModel::Reset(){floor_.clear();airborne_.clear();stored_=scored_=launched_=pending_=burstIndex_=0;time_=0;lastBurst_=nextShot_=-1e9;}
+FuelModel::FuelModel(unsigned seed):seed_(seed),random_(seed){Reset();}
+void FuelModel::Reset(){random_.seed(seed_);floor_.clear();airborne_.clear();stored_=scored_=launched_=pending_=burstIndex_=0;time_=0;lastBurst_=nextShot_=-1e9;}
 void FuelModel::AddFloorFuel(Point point){floor_.push_back({{point.x,point.y,radius},{}});}
 void FuelModel::SetStoredFuel(int count){stored_=std::clamp(count,0,54);}
 double FuelModel::Random(double amplitude){return std::uniform_real_distribution<double>{-amplitude,amplitude}(random_);}

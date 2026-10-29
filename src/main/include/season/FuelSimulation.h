@@ -47,6 +47,7 @@ namespace season
   private:
     void Launch(const FuelInputs &input, int index);
     double Random(double amplitude);
+    unsigned seed_;
     std::mt19937 random_;
     std::vector<FuelParticle> floor_, airborne_;
     int stored_ = 0, scored_ = 0, launched_ = 0, pending_ = 0, burstIndex_ = 0;
