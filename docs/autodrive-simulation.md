@@ -480,3 +480,6 @@ rectangles; minimum sampled separations from the modeled bump were about 0.121
 and 0.123 m. Both used the staged `2026.2.8` candidate and illustrative robot
 limits. The field boxes, clearance samples, and modeled robot are not physical
 measurements, and this does not establish ramp traversal or continuous clearance.
+An [overlapping-region configuration](../artifacts/configured-terrain-overlap-fixture.json)
+was also [rejected through the scheduled command](../artifacts/configured-terrain-overlap.json.gz),
+with zero requested motion throughout the desktop check.
