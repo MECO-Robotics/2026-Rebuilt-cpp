@@ -16,7 +16,7 @@ from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
 
-async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False, moving_target=False):
+async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False, moving_target=False, camera_fuel=False):
     binary=running_sim_binary(nt_port=port,hal_port=hal_port)
     client=ntcore.NetworkTableInstance.create()
     client.startClient4('footprint-sim-validation');client.setServer('127.0.0.1',port)
@@ -28,6 +28,12 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
     active=client.getBooleanTopic('/AutoDrive/Active').subscribe(False)
     status=client.getStringTopic('/AutoDrive/Status').subscribe('')
     outcome=client.getStringTopic('/AutoDrive/FootprintOutcome').subscribe('')
+    clusters=client.getDoubleTopic('/SmartDashboard/AutoDrive/ClusterCount').subscribe(0,opts)
+    front_count=client.getDoubleTopic('/SmartDashboard/AutoDrive/SimFrontDetections').subscribe(0,opts)
+    rear_count=client.getDoubleTopic('/SmartDashboard/AutoDrive/SimRearDetections').subscribe(0,opts)
+    fuel_x=client.getDoubleTopic('/SmartDashboard/AutoDrive/SelectedFuelX').subscribe(-1,opts)
+    fuel_y=client.getDoubleTopic('/SmartDashboard/AutoDrive/SelectedFuelY').subscribe(-1,opts)
+    stored=client.getDoubleTopic('/SmartDashboard/FieldSimulation/StoredFuelCount').subscribe(0,opts)
     x=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetX').publish()
     y=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetY').publish()
     heading=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').publish()
@@ -40,7 +46,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
     injected=client.getDoubleArrayTopic('/Simulation/FootprintObstacle').publish()
     follower_trace=client.getDoubleArrayTopic('/Simulation/FootprintFollowerTrace').subscribe([],opts)
     result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'cases':[],'checks':{}}
-    red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[];track_dynamic=False;dynamic_samples=[];track_ramp=False;ramp_samples=[]
+    red=False;peak=0.;peak_omega=0.;track_detour=False;detour_samples=[];track_rotation=False;rotation_samples=[];track_dynamic=False;dynamic_samples=[];track_ramp=False;ramp_samples=[];track_camera=False;camera_samples=[]
     def rectangle_separation(xpos,ypos,yaw,cx,cy,hx,hy):
         c,s=math.cos(yaw),math.sin(yaw);dx=xpos-cx;dy=ypos-cy
         half=.43
@@ -55,13 +61,13 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
         async def drain():
             async for _ in ws: pass
         reader=asyncio.create_task(drain())
-        async def hold(seconds,bumper=False,enabled=True,reset=False):
+        async def hold(seconds,bumper=False,enabled=True,reset=False,intake=False):
             nonlocal peak,peak_omega
             for _ in range(round(seconds/.02)):
                 buttons=[False]*10;buttons[4]=bumper;buttons[6]=reset
                 for device in ('0','1'):
                     await ws.send(json.dumps({'type':'Joystick','device':device,'data':{
-                        '>axes':[0]*6,'>buttons':buttons if device=='0' else [False]*10,'>povs':[-1]}}))
+                        '>axes':([0,0,0,.8 if intake else 0,0,0] if device=='0' else [0]*6),'>buttons':buttons if device=='0' else [False]*10,'>povs':[-1]}}))
                 await ws.send(json.dumps({'type':'DriverStation','device':'','data':{
                     '>enabled':enabled,'>autonomous':False,'>test':False,'>ds':True,'>fms':False,
                     '>estop':False,'>station':'red1' if red else 'blue1','>new_data':True}}))
@@ -82,6 +88,12 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                     p=truth.get();v=requested.get();m=measured.get()
                     dynamic_samples.append((p.X(),p.Y(),p.rotation().Z(),math.hypot(v.vx,v.vy),active.get(),
                                             v.vx,v.vy,v.omega,m.vx,m.vy,m.omega,list(follower_trace.get())))
+                if track_camera:
+                    p=truth.get();v=requested.get()
+                    camera_samples.append({'pose':[p.X(),p.Y(),p.rotation().Z()],'active':active.get(),
+                        'request':[v.vx,v.vy,v.omega],'clusters':clusters.get(),
+                        'camera_counts':[front_count.get(),rear_count.get()],
+                        'selected':[fuel_x.get(),fuel_y.get()],'selected_timestamp':fuel_x.getAtomic().time,'stored':stored.get()})
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
@@ -99,6 +111,47 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                 result['checks'][label+'_arrived']=error<.1 and status.get()=='arrived' and not active.get()
                 await hold(.2,enabled=False)
             red=False
+            if camera_fuel:
+                await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
+                stage=(6.2,.75);x.set(stage[0]);y.set(stage[1]);heading.set(0);client.flush()
+                await hold(.2,enabled=False);await hold(.5,bumper=True)
+                for _ in range(35):
+                    if not active.get() and status.get() in ('arrived','stopped-before-goal','stopped-no-target'):break
+                    await hold(1,bumper=True)
+                q=truth.get();stage_error=math.hypot(q.X()-stage[0],q.Y()-stage[1])
+                result['checks']['camera_staging']=stage_error<.1 and status.get()=='arrived' and not active.get()
+                result['cases'].append({'mode':'camera_staging','goal':stage,'truth':[q.X(),q.Y(),q.rotation().Z()],
+                    'error_m':stage_error,'status':status.get(),'clusters':clusters.get(),
+                    'camera_counts':[front_count.get(),rear_count.get()]})
+                if not result['checks']['camera_staging']:
+                    result['passed']=False;return result
+                await hold(.3,enabled=False);before=stored.get();selection_before=fuel_x.getAtomic().time;follow.set(True);client.flush()
+                await hold(.3,enabled=False);track_camera=True;seen_active=False
+                for _ in range(100):
+                    await hold(.2,bumper=True,intake=True)
+                    seen_active |= active.get()
+                    if stored.get()>before or (seen_active and not active.get()):break
+                collected_while_active=any(s['active'] and s['stored']>before for s in camera_samples)
+                released_from_active=active.get()
+                track_camera=False;await hold(.4,intake=True)
+                valid=[s for s in camera_samples if s['active'] and s['selected_timestamp']>selection_before and s['selected'][0]>=0 and s['selected'][1]>=0]
+                initial=valid[0]['selected'] if valid else None
+                changed=next((i for i,s in enumerate(camera_samples) if initial and s['active'] and
+                    s['selected_timestamp']>selection_before and s['selected'][0]>=0 and s['selected'][1]>=0 and math.hypot(s['selected'][0]-initial[0],s['selected'][1]-initial[1])>=.3),None)
+                stopped=next((i for i in range(changed,len(camera_samples)) if camera_samples[i]['active'] and
+                    math.hypot(*camera_samples[i]['request'][:2])<.01),None) if changed is not None else None
+                resumed=stopped is not None and any(s['active'] and math.hypot(*s['request'][:2])>.05 for s in camera_samples[stopped+1:])
+                result['cases'].append({'mode':'camera_fuel','status':status.get(),'outcome':outcome.get(),
+                    'stored_before':before,'stored_after':stored.get(),'selection_timestamp_before':selection_before,'initial_target':initial,'target_moved':changed is not None,
+                    'stopped_after_change':stopped is not None,'resumed_after_stop':resumed,
+                    'collected_while_active':collected_while_active,'released_from_active':released_from_active,
+                    'samples':camera_samples})
+                result['checks']['camera_observed']=bool(valid) and any(sum(s['camera_counts'])>0 for s in valid)
+                result['checks']['camera_target_change_stops']=changed is not None and stopped is not None
+                result['checks']['camera_collected']=collected_while_active
+                v=requested.get()
+                result['checks']['camera_release_stops']=released_from_active and not active.get() and status.get()=='interrupted' and math.hypot(v.vx,v.vy)<.01 and abs(v.omega)<.01
+                result['passed']=all(result['checks'].values());return result
             if moving_target:
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
                 p=pose.get();initial_goal=(p.X()-1.2,p.Y());new_goal=(initial_goal[0],initial_goal[1]+.65)
@@ -249,7 +302,8 @@ if __name__=='__main__':
     parser.add_argument('--stall-check',action='store_true',help='expect the ramp command to stop before the goal')
     parser.add_argument('--avoid-bumps',action='store_true',help='treat modeled bumps as obstacles')
     parser.add_argument('--moving-target',action='store_true',help='move the supplied target during a command')
-    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps,args.moving_target));text=json.dumps(result,indent=2)
+    parser.add_argument('--camera-fuel',action='store_true',help='exercise simulated camera fuel following and collection')
+    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps,args.moving_target,args.camera_fuel));text=json.dumps(result,indent=2)
     print(text)
     if args.output:args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(text+'\n')
     raise SystemExit(0 if result.get('passed') else 1)

@@ -28,6 +28,8 @@ const char* FootprintOutcomeName(base::FootprintAutoDriveOutcome outcome) {
     case O::no_route:return "no-route";
     case O::planner_busy:return "planner-busy";
     case O::target_unavailable:return "target-unavailable";
+    case O::target_unstable:return "target-unstable";
+    case O::target_changed:return "target-changed";
     case O::invalid_feedback:return "invalid-feedback";
     case O::source_error:return "source-error";
     case O::settle_failed:return "settle-failed";

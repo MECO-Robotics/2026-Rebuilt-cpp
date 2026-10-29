@@ -157,6 +157,15 @@ stop, resumed, and arrived at the new target. Wheel-derived translation speed
 was about 0.79 m/s at the first zero request in both runs. This is not an
 instantaneous physical stop, a camera/fuel tracking test, or hardware evidence.
 The non-footprint `AutoDriveToPose` path still samples a fixed goal.
+The footprint command now holds zero while a changed target stabilizes, with a
+bounded wait before replanning. In two [synthetic-camera trials](../artifacts/footprint-camera-fuel-summary.json),
+newly published fuel selections changed while active; the command stopped,
+resumed, collected two modeled pieces, and stopped on trigger release. The
+test follows the existing release-on-collection workflow. A separate test that
+kept the trigger held collected fuel but exhausted the three-attempt target
+change budget; continuous tracking is not established. An attempted association
+heuristic also failed and was removed. These results do not validate a real
+camera, identity tracking, or physical intake behavior.
 After the profile envelope was made to override request slew limiting, a
 [further run](../artifacts/footprint-profile-envelope.json) passed the same
 checks using MecoBase `26cdf21`. It took 21.4 seconds for the detour, ended the
