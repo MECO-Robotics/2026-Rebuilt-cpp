@@ -360,3 +360,7 @@ The [staged-package record](../artifacts/autodrive-staged-consumer-validation.js
 adds clean desktop and roboRIO Release consumer links against the CI-built
 `2026.2.7` candidate, including the new reusable APIs. The candidate source
 predates the final test-only changes; this is not a public-package check.
+The full robot build was subsequently repeated with the staged `2026.2.7`
+coordinate: desktop and roboRIO Debug/Release linked successfully, with 24
+passing tests in each desktop configuration. The [staged robot build record](../artifacts/autodrive-staged-robot-build.json)
+checks the linked archive hashes. This does not establish public Maven availability.
