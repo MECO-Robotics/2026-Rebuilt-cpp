@@ -374,3 +374,8 @@ A clean robot build without local overrides also passed against public MecoBase
 configurations passed 24 cases. The [public build record](../artifacts/autodrive-public-consumer-build.json)
 compares each linked library with its checksummed public archive and verifies
 that the previous `2026.2.6` POM remains unchanged.
+A [strict red practice-match trial](../artifacts/autodrive-public-strict-red.json)
+using the public MecoBase `2026.2.7` binary passed all checks with 22 goal legs,
+no retries, bounded requests, simulated fuel following and collection, a scoring
+volley, and stop on completion. This is desktop simulation evidence, not a
+physical-camera, drivetrain, or scoring qualification.
