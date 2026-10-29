@@ -16,7 +16,7 @@ from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
 
-async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False):
+async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False, moving_target=False):
     binary=running_sim_binary(nt_port=port,hal_port=hal_port)
     client=ntcore.NetworkTableInstance.create()
     client.startClient4('footprint-sim-validation');client.setServer('127.0.0.1',port)
@@ -35,6 +35,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
     mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintSim').publish()
     profile_mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintProfileSim').publish()
     avoid_mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/AvoidBumpsSim').publish()
+    track_mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/TrackTargetSim').publish()
     follow=client.getBooleanTopic('/SmartDashboard/AutoDrive/FollowFuel').publish()
     injected=client.getDoubleArrayTopic('/Simulation/FootprintObstacle').publish()
     follower_trace=client.getDoubleArrayTopic('/Simulation/FootprintFollowerTrace').subscribe([],opts)
@@ -84,7 +85,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
-            mode.set(True);profile_mode.set(profile);avoid_mode.set(avoid_bumps);follow.set(False);injected.set([]);client.flush()
+            mode.set(True);profile_mode.set(profile);avoid_mode.set(avoid_bumps);track_mode.set(moving_target);follow.set(False);injected.set([]);client.flush()
             for red in (False,True):
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
@@ -98,6 +99,25 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                 result['checks'][label+'_arrived']=error<.1 and status.get()=='arrived' and not active.get()
                 await hold(.2,enabled=False)
             red=False
+            if moving_target:
+                await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
+                p=pose.get();initial_goal=(p.X()-1.2,p.Y());new_goal=(initial_goal[0],initial_goal[1]+.65)
+                x.set(initial_goal[0]);y.set(initial_goal[1]);heading.set(0);client.flush()
+                await hold(.2,enabled=False);await hold(1,bumper=True)
+                v=requested.get();started=active.get() and math.hypot(v.vx,v.vy)>.05
+                track_dynamic=True;y.set(new_goal[1]);client.flush();await hold(25,bumper=True);track_dynamic=False
+                q=truth.get();error=math.hypot(q.X()-new_goal[0],q.Y()-new_goal[1])
+                stopped=next((i for i,s in enumerate(dynamic_samples) if s[4] and s[3]<.01),None)
+                resumed=stopped is not None and any(s[4] and s[3]>.05 for s in dynamic_samples[stopped+1:])
+                result['cases'].append({'mode':'moving_target','initial_goal':initial_goal,'new_goal':new_goal,
+                    'truth':[q.X(),q.Y(),q.rotation().Z()],'error_m':error,'status':status.get(),
+                    'outcome':outcome.get(),'started':started,'stopped':stopped is not None,'resumed':resumed,
+                    'first_sample':dynamic_samples[0] if dynamic_samples else None,
+                    'first_stopped_sample':dynamic_samples[stopped] if stopped is not None else None,
+                    'last_sample':dynamic_samples[-1] if dynamic_samples else None})
+                result['checks']['moving_target_replan']=started and resumed and error<.1 and status.get()=='arrived' and not active.get()
+                result['passed']=all(result['checks'].values())
+                return result
             await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
             start=truth.get();goal=(5.9,2.4)
             x.set(goal[0]);y.set(goal[1]);heading.set(0);client.flush()
@@ -213,7 +233,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
             result['passed']=all(result['checks'].values())
         finally:
             with contextlib.suppress(Exception):await hold(.2,enabled=False)
-            injected.set([]);mode.set(False);profile_mode.set(False);avoid_mode.set(False);client.flush();reader.cancel()
+            injected.set([]);mode.set(False);profile_mode.set(False);avoid_mode.set(False);track_mode.set(False);client.flush();reader.cancel()
             with contextlib.suppress(asyncio.CancelledError,Exception):await reader
             client.stopClient()
     return result
@@ -228,7 +248,8 @@ if __name__=='__main__':
     parser.add_argument('--ramp',action='store_true',help='exercise the modeled bump after the detour')
     parser.add_argument('--stall-check',action='store_true',help='expect the ramp command to stop before the goal')
     parser.add_argument('--avoid-bumps',action='store_true',help='treat modeled bumps as obstacles')
-    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps));text=json.dumps(result,indent=2)
+    parser.add_argument('--moving-target',action='store_true',help='move the supplied target during a command')
+    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps,args.moving_target));text=json.dumps(result,indent=2)
     print(text)
     if args.output:args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(text+'\n')
     raise SystemExit(0 if result.get('passed') else 1)

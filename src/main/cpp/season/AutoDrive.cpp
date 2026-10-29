@@ -87,6 +87,7 @@ AutoDrive::AutoDrive(base::Drive& drive, std::function<double()> extension,
   frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintSim",false);
   frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintProfileSim",false);
   frc::SmartDashboard::PutBoolean("AutoDrive/AvoidBumpsSim",false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/TrackTargetSim",false);
 #endif
   nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(false);
   Status("idle-native");
@@ -123,7 +124,11 @@ frc2::CommandPtr AutoDrive::Command() {
   auto sampled=std::make_shared<std::optional<frc::Pose2d>>();
   auto target=[this,sampled] {
         auto goal=Target();
-        if(!*sampled && goal) *sampled=goal;
+        bool track=frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel",false);
+#ifndef __FRC_ROBORIO__
+        track=track || frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim",false);
+#endif
+        if(goal && (!*sampled || track)) *sampled=goal;
         return goal;
       };
   return frc2::cmd::Defer([this,target]() -> frc2::CommandPtr {
@@ -133,6 +138,9 @@ frc2::CommandPtr AutoDrive::Command() {
           const bool avoidBumps=frc::SmartDashboard::GetBoolean("AutoDrive/AvoidBumpsSim",false);
           config.footprint={.86,.86};
           config.field={0,0,simulation::kFieldLength,simulation::kFieldWidth};
+          if (frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel",false) ||
+              frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim",false))
+            config.targetTranslationReplanThreshold=.3;
           // The modeled swerve can drift after a rotation if it releases the
           // drivetrain while residual angular speed is still appreciable.
           config.follow.headingTolerance=.02;

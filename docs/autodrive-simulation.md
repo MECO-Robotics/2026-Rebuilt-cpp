@@ -149,6 +149,14 @@ trials with MecoBase `6bdbc56` reached the alternate goal, with approximately
 0.121 and 0.123 m sampled bump separation. They do not prove that the earlier
 live search started at the recorded post-stop pose or establish worst-case
 reliability, continuous clearance, ramp traversal, or hardware behavior.
+The desktop footprint experiment enables bounded target-change replanning for
+`FollowFuel`, and a separate default-off `AutoDrive/TrackTargetSim` setting
+exercises it with a dashboard target. In [two controlled trials](../artifacts/footprint-moving-target.json),
+the target moved 0.65 m while the robot was driving; the command requested a
+stop, resumed, and arrived at the new target. Wheel-derived translation speed
+was about 0.79 m/s at the first zero request in both runs. This is not an
+instantaneous physical stop, a camera/fuel tracking test, or hardware evidence.
+The non-footprint `AutoDriveToPose` path still samples a fixed goal.
 After the profile envelope was made to override request slew limiting, a
 [further run](../artifacts/footprint-profile-envelope.json) passed the same
 checks using MecoBase `26cdf21`. It took 21.4 seconds for the detour, ended the
