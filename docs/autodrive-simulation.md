@@ -27,8 +27,8 @@ and end-to-end validation with the target robot's localization and sensing.
 
 ## Build
 
-The project resolves MecoBase `2026.2.7` and MecoSimulation `2026.0.14`
-from public Maven. MecoBase provides native planning and perception; the desktop
+This draft targets MecoBase `2026.2.8` and MecoSimulation `2026.0.14`
+from public Maven; Base 2026.2.8 is pending publication. MecoBase provides native planning and perception; the desktop
 Simulation package supplies physics and synthetic camera rays.
 
 ```sh
@@ -398,8 +398,8 @@ The shape below illustrates the schema, not a complete field map or validated
 robot configuration. Replace every value with robot-specific and field-specific
 measurements before use. Each obstacle is an axis-aligned field-frame rectangle;
 the configured mode has only this static obstacle snapshot and does not detect
-other robots or obstacles absent from the file. It does not use the simulation
-terrain profile. Do not infer hardware readiness from the example.
+other robots or obstacles absent from the file. Without a `terrain` section it
+uses stop-at-waypoint following. Do not infer hardware readiness from the example.
 
 ```json
 {
@@ -424,3 +424,23 @@ wheel-derived speed, and the first resumed request at approximately 0.055 m/s.
 These are simulation samples, not measured stopping distances or physical
 validation. The fixture used no margin and one illustrative obstacle, and is
 not deployed or suitable as a competition field map.
+
+An optional `terrain` object enables the MecoBase terrain profile on both
+desktop and roboRIO. It requires `lateral_acceleration_mps2`,
+`steering_rate_radps`, and a nonempty `regions` array. Each region supplies a
+`bounds` rectangle, `grade_x` and `grade_y` as rise/run in the positive field
+axes, and dimensionless `rolling_resistance`. Regions must lie inside the field
+and must not overlap; ambiguous travel along a shared boundary fails closed.
+Supply robot-specific measured values. The profile models the path centerline
+and uses the configured acceleration for braking; it does not model whole-body
+contact, guarantee traction, or establish a physical stopping distance.
+
+The [simulation-only fixture](../artifacts/configured-terrain-simulation-fixture.json)
+shows the optional schema. It is deliberately not installed in the deploy
+directory and is not a competition field map. Two desktop HAL/NT runs with
+virtual terrain over a flat physical lane passed blue/red goals and release
+stopping ([first](../artifacts/configured-terrain-simulation.json),
+[repeat](../artifacts/configured-terrain-simulation-repeat.json.gz)); the repeat
+recorded 57 active samples in each virtual region. They do not validate ramp
+traversal. The robot build used local MecoBase `2026.2.8-dev.1`; the public
+release is required before this configuration can be used without an override.

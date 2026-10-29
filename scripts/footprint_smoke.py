@@ -127,13 +127,13 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
                 x.set(goal[0]);y.set(goal[1]);heading.set(math.pi if red else 0);client.flush()
                 await hold(.2,enabled=False)
-                fixed_samples=[];track_fixed=native
+                fixed_samples=[];track_fixed=native or configured
                 await hold(8,bumper=True)
                 track_fixed=False
                 q=truth.get();error=math.hypot(q.X()-goal[0],q.Y()-goal[1])
                 label='red' if red else 'blue'
                 result['cases'].append({'alliance':label,'goal':goal,'truth':[q.X(),q.Y(),q.rotation().Z()],
-                                        'error_m':error,'status':status.get(),'samples':fixed_samples if native else []})
+                                        'error_m':error,'status':status.get(),'samples':fixed_samples if native or configured else []})
                 check_key=f'{label}_{len(result["cases"])}_arrived' if fixed_rounds else label+'_arrived'
                 result['checks'][check_key]=error<.1 and status.get()=='arrived' and not active.get()
                 await hold(.2,enabled=False)

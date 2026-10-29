@@ -1,5 +1,7 @@
 #include "season/FootprintConfiguration.h"
 #include <wpi/json.h>
+#include <base/FootprintTerrainMap.h>
+#include <memory>
 #include <algorithm>
 #include <cmath>
 
@@ -57,6 +59,25 @@ std::optional<FootprintConfiguration> ParseFootprintConfiguration(std::string_vi
             result.drive.follow.maxAcceleration<=0 || result.drive.follow.maxAlpha<=0 ||
             !std::isfinite(result.drive.footprint.length) || !std::isfinite(result.drive.footprint.width))
             return std::nullopt;
+        if (json.contains("terrain")) {
+            const auto& terrain=json.at("terrain");
+            const auto& regions=terrain.at("regions");
+            if (!regions.is_array() || regions.empty() || regions.size()>128) return std::nullopt;
+            std::vector<base::FootprintTerrainRegion> data;
+            for (const auto& item:regions) {
+                const auto r=Rectangle(item.at("bounds"));
+                if (r.minX<field.minX || r.maxX>field.maxX || r.minY<field.minY || r.maxY>field.maxY)
+                    return std::nullopt;
+                data.push_back({r,Number(item,"grade_x"),Number(item,"grade_y"),Number(item,"rolling_resistance")});
+            }
+            result.drive.follow.profileLateralAcceleration=Number(terrain,"lateral_acceleration_mps2");
+            result.drive.follow.profileSteeringRate=Number(terrain,"steering_rate_radps");
+            if (result.drive.follow.profileLateralAcceleration<=0 || result.drive.follow.profileSteeringRate<=0)
+                return std::nullopt;
+            auto map=std::make_shared<const base::FootprintTerrainMap>(std::move(data));
+            result.drive.follow.terrain=[map](base::FootprintPose a,base::FootprintPose b) {return map->Segment(a,b);};
+            result.drive.follow.terrainBoundaries=[map](base::FootprintPose a,base::FootprintPose b) {return map->Boundaries(a,b);};
+        }
         return result;
     } catch (...) {return std::nullopt;}
 }
