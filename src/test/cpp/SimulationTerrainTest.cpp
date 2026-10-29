@@ -24,5 +24,8 @@ TEST(SimulationTerrain, SplitsBumpIntoUphillAndDownhillInEitherDirection) {
     // a larger illustrative value demonstrates the profile is computable.
     EXPECT_TRUE(base::FootprintSpeedProfile(route,terrain,{1,2,2,2,1},0).empty());
     EXPECT_EQ(base::FootprintSpeedProfile(route,terrain,{1,4,4,2,1},0).size(),route.size());
+    const auto obstacles=RampObstacles();
+    EXPECT_EQ(obstacles.size(),8u);
+    EXPECT_FALSE(base::SweptFootprintClear(start,end,{.86,.86},{0,0,kFieldLength,kFieldWidth},obstacles));
 }
 #endif

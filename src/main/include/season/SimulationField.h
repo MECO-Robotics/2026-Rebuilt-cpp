@@ -24,5 +24,7 @@ namespace season::simulation
     // not modeled here. These functions are desktop simulation inputs only.
     std::vector<double> RampBoundaries(base::FootprintPose a, base::FootprintPose b);
     base::FootprintTerrainSegment RampTerrain(base::FootprintPose a, base::FootprintPose b);
+    // Conservative plan-view rectangles for the optional ramp avoidance policy.
+    std::vector<base::FieldRectangle> RampObstacles();
 }
 #endif

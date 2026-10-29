@@ -55,6 +55,12 @@ base::FootprintTerrainSegment RampTerrain(base::FootprintPose a,base::FootprintP
             return {ramp.gradeX*dx/length,0};
     return {};
 }
+std::vector<base::FieldRectangle> RampObstacles() {
+    std::vector<base::FieldRectangle> boxes;
+    for (const auto& ramp : Ramps())
+        boxes.push_back({ramp.xmin-.005,ramp.ymin-.005,ramp.xmax+.005,ramp.ymax+.005});
+    return boxes;
+}
 frc::Pose2d DefaultSpawn(bool red) {
     constexpr double laneY=units::meter_t{units::inch_t{50.34}}.value()/2;
     return {units::meter_t{red?kFieldLength-3.65:3.65},

@@ -65,6 +65,7 @@ AutoDrive::AutoDrive(base::Drive& drive, std::function<double()> extension,
 #ifndef __FRC_ROBORIO__
   frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintSim",false);
   frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintProfileSim",false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/AvoidBumpsSim",false);
 #endif
   nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(false);
   Status("idle-native");
@@ -108,6 +109,7 @@ frc2::CommandPtr AutoDrive::Command() {
 #ifndef __FRC_ROBORIO__
         if(frc::RobotBase::IsSimulation() && frc::SmartDashboard::GetBoolean("AutoDrive/UseFootprintSim",false)) {
           base::FootprintAutoDriveConfig config;
+          const bool avoidBumps=frc::SmartDashboard::GetBoolean("AutoDrive/AvoidBumpsSim",false);
           config.footprint={.86,.86};
           config.field={0,0,simulation::kFieldLength,simulation::kFieldWidth};
           // The modeled swerve can drift after a rotation if it releases the
@@ -127,7 +129,7 @@ frc2::CommandPtr AutoDrive::Command() {
             // Illustrative simulation-only capability, not a measured robot limit.
             config.follow.maxAcceleration=4;
           }
-          auto obstacles=[] {
+          auto obstacles=[avoidBumps] {
             std::vector<base::FieldRectangle> boxes;
             if (frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled",true)) for (const auto& body:simulation::FieldColliders()) {
               // Skip traversable inclined ramps and objects entirely above or
@@ -139,6 +141,10 @@ frc2::CommandPtr AutoDrive::Command() {
                   body.pose.position.z-body.halfExtents.z>.45) continue;
               boxes.push_back({body.pose.position.x-body.halfExtents.x,body.pose.position.y-body.halfExtents.y,
                                body.pose.position.x+body.halfExtents.x,body.pose.position.y+body.halfExtents.y});
+            }
+            if (frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled",true) && avoidBumps) {
+              const auto ramps=simulation::RampObstacles();
+              boxes.insert(boxes.end(),ramps.begin(),ramps.end());
             }
             // Desktop HAL/NT tests can inject one perceived obstacle. It is
             // not a simulated rigid body or a hardware detection source.

@@ -16,7 +16,7 @@ from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
 
-async def run(port, hal_port, profile=False, ramp=False, stall_check=False):
+async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoid_bumps=False):
     binary=running_sim_binary(nt_port=port,hal_port=hal_port)
     client=ntcore.NetworkTableInstance.create()
     client.startClient4('footprint-sim-validation');client.setServer('127.0.0.1',port)
@@ -33,6 +33,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False):
     heading_readback=client.getDoubleTopic('/SmartDashboard/AutoDrive/TargetHeading').subscribe(float('nan'))
     mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintSim').publish()
     profile_mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/UseFootprintProfileSim').publish()
+    avoid_mode=client.getBooleanTopic('/SmartDashboard/AutoDrive/AvoidBumpsSim').publish()
     follow=client.getBooleanTopic('/SmartDashboard/AutoDrive/FollowFuel').publish()
     injected=client.getDoubleArrayTopic('/Simulation/FootprintObstacle').publish()
     follower_trace=client.getDoubleArrayTopic('/Simulation/FootprintFollowerTrace').subscribe([],opts)
@@ -69,7 +70,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False):
                     p=truth.get();detour_samples.append((p.X(),p.Y(),p.rotation().Z()))
                 if track_ramp:
                     p=truth.get();v=requested.get();m=measured.get();e=pose.get()
-                    ramp_samples.append((p.X(),p.Y(),p.Z(),p.rotation().Y(),v.vx,v.vy,v.omega,m.vx,m.vy,m.omega,e.X(),e.Y(),e.rotation().radians()))
+                    ramp_samples.append((p.X(),p.Y(),p.Z(),p.rotation().Y(),v.vx,v.vy,v.omega,m.vx,m.vy,m.omega,e.X(),e.Y(),e.rotation().radians(),p.rotation().Z()))
                 if track_rotation:
                     p=truth.get();e=pose.get();v=requested.get();m=measured.get()
                     rotation_samples.append({'truth':p.rotation().Z(),'estimated':e.rotation().radians(),
@@ -82,7 +83,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False):
         try:
             await hold(1,enabled=False)
             if not client.isConnected() or not pose.getAtomic().time:raise RuntimeError('missing robot telemetry')
-            mode.set(True);profile_mode.set(profile);follow.set(False);injected.set([]);client.flush()
+            mode.set(True);profile_mode.set(profile);avoid_mode.set(avoid_bumps);follow.set(False);injected.set([]);client.flush()
             for red in (False,True):
                 await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
                 p=pose.get();goal=(p.X()+(-1.0 if red else 1.0),p.Y())
@@ -117,6 +118,9 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False):
                                     'samples':len(detour_samples),'minimum_support_separation_m':min_separation})
             result['checks']['field_obstacle_detour']=direct_blocked and min_separation>0 and error<.1 and status.get()=='arrived' and not active.get()
             if ramp:
+                if not result['checks']['field_obstacle_detour']:
+                    result['passed']=False
+                    return result
                 await hold(.3,enabled=False)
                 ramp_goal=(3.5,2.4)
                 x.set(ramp_goal[0]);y.set(ramp_goal[1]);heading.set(0);client.flush()
@@ -129,7 +133,14 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False):
                 result['cases'].append({'mode':'modeled_bump_crossing','goal':ramp_goal,
                     'truth':[q.X(),q.Y(),q.rotation().Z()],'error_m':error,'status':status.get(),
                     'elapsed_seconds':time.monotonic()-ramp_start,'samples':ramp_samples})
-                if stall_check:
+                if avoid_bumps:
+                    # Plan-view envelope of the blue near-wall bump, including
+                    # the same 5 mm margin used by the simulated obstacle map.
+                    clearance=min((rectangle_separation(s[0],s[1],s[13],4.6256194,4.0346376-60*.0254,
+                                                       44.4*.0254/2+.005,73*.0254/2+.005) for s in ramp_samples),default=-1)
+                    result['cases'][-1]['minimum_sampled_bump_separation_m']=clearance
+                    result['checks']['avoids_bump_and_arrives']=clearance>0 and error<.1 and status.get()=='arrived' and not active.get()
+                elif stall_check:
                     v=requested.get()
                     result['checks']['stall_stops']=status.get()=='stopped-before-goal' and not active.get() and math.hypot(v.vx,v.vy)<.01 and abs(v.omega)<.01
                 else:
@@ -201,7 +212,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False):
             result['passed']=all(result['checks'].values())
         finally:
             with contextlib.suppress(Exception):await hold(.2,enabled=False)
-            injected.set([]);mode.set(False);profile_mode.set(False);client.flush();reader.cancel()
+            injected.set([]);mode.set(False);profile_mode.set(False);avoid_mode.set(False);client.flush();reader.cancel()
             with contextlib.suppress(asyncio.CancelledError,Exception):await reader
             client.stopClient()
     return result
@@ -215,7 +226,8 @@ if __name__=='__main__':
     parser.add_argument('--profile',action='store_true')
     parser.add_argument('--ramp',action='store_true',help='exercise the modeled bump after the detour')
     parser.add_argument('--stall-check',action='store_true',help='expect the ramp command to stop before the goal')
-    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check));text=json.dumps(result,indent=2)
+    parser.add_argument('--avoid-bumps',action='store_true',help='treat modeled bumps as obstacles')
+    args=parser.parse_args();result=asyncio.run(run(args.port,args.hal_port,args.profile,args.ramp,args.stall_check,args.avoid_bumps));text=json.dumps(result,indent=2)
     print(text)
     if args.output:args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(text+'\n')
     raise SystemExit(0 if result.get('passed') else 1)

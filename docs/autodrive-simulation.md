@@ -127,6 +127,17 @@ than retrying it. In [two simulated trials](../artifacts/footprint-terminal-stal
 the staging checks passed and the ramp command stopped before its goal with
 zero request after 8.4 and 7.3 seconds. These measurements include approach
 and settling and do not establish physical stopping performance.
+
+`AutoDrive/AvoidBumpsSim` is a separate, default-off desktop experiment that
+maps modeled ramp plates to footprint-planner obstacles. Its value is sampled
+at command start. In [recorded trials](../artifacts/footprint-avoid-ramp-summary.json),
+two of three runs using the modeled .86 m footprint reached the alternate goal
+with about .121 m minimum sampled bump separation; the other stopped in the
+trench. Two trials with an extra 5 cm per-side planning margin both failed the
+staging detour; that margin was removed. The earlier margin trial continued
+from the wrong starting point after staging failed, so its later arrival is not
+valid evidence for the intended route. The driver now stops when staging fails.
+This option is not validated for reliable routing, hardware, or bump traversal.
 After the profile envelope was made to override request slew limiting, a
 [further run](../artifacts/footprint-profile-envelope.json) passed the same
 checks using MecoBase `26cdf21`. It took 21.4 seconds for the detour, ended the
