@@ -140,13 +140,16 @@ async def run(port, hal_port):
             track_dynamic=True;await hold(35,bumper=True);track_dynamic=False
             q=truth.get();error=math.hypot(q.X()-dynamic_goal[0],q.Y()-dynamic_goal[1])
             stopped=next((i for i,s in enumerate(dynamic_samples) if s[4] and s[3]<.01),None)
-            resumed=stopped is not None and any(s[4] and s[3]>.05 for s in dynamic_samples[stopped+1:])
+            resumed_index=next((i for i in range(stopped+1,len(dynamic_samples)) if dynamic_samples[i][4] and dynamic_samples[i][3]>.05),None) if stopped is not None else None
+            resumed=resumed_index is not None
             separation=min((rectangle_separation(s[0],s[1],s[2],7.65,2.4,.15,.5) for s in dynamic_samples),default=-1)
             result['cases'].append({'mode':'perceived_obstacle_replan','goal':dynamic_goal,
                                     'truth':[q.X(),q.Y(),q.rotation().Z()],'error_m':error,
                                     'status':status.get(),'started':dynamic_started,'stopped':stopped is not None,
                                     'resumed':resumed,'first_sample':dynamic_samples[0] if dynamic_samples else None,
                                     'first_stopped_sample':dynamic_samples[stopped] if stopped is not None else None,
+                                    'first_resumed_sample':dynamic_samples[resumed_index] if resumed_index is not None else None,
+                                    'sampled_stop_duration_seconds':(resumed_index-stopped)*.02 if resumed_index is not None else None,
                                     'last_sample':dynamic_samples[-1] if dynamic_samples else None,
                                     'minimum_sampled_separation_m':separation})
             result['checks']['dynamic_obstacle_replan']=dynamic_started and resumed and separation>0 and error<.1 and status.get()=='arrived' and not active.get()

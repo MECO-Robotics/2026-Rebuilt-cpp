@@ -70,6 +70,13 @@ passed the same checks. Their static detours took 25.6 and 26.6 seconds, and
 the minimum sampled virtual-obstacle separations were 0.060 and 0.058 m. The
 robot was still moving when the stop was requested, so these results do not
 establish a safe stopping distance or hardware readiness.
+After adding a settling gate before each search, two more
+[desktop runs](../artifacts/footprint-settle-validation.json) passed. In the
+second run, approximately 0.5 seconds separated the sampled stop and resume
+requests; measured translation was 0.013 m/s and rotation 0.039 rad/s at the
+first resumed sample. The virtual-obstacle separations were about 0.061 m in
+both runs. These are sampled results, not continuous clearance or physical
+braking evidence; stale wheel and localization feedback could hide motion.
 
 ## Controls and real detections
 
