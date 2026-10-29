@@ -8,25 +8,25 @@
         0.6393179893493652
       ],
       "truth": [
-        4.631661940525155,
-        0.6387199472844355,
-        -0.002210140283146354
+        4.632042878115687,
+        0.6387237095084668,
+        -0.002064656243473504
       ],
-      "error_m": 0.018347903894743493,
+      "error_m": 0.017967048170349297,
       "status": "arrived"
     },
     {
       "alliance": "red",
       "goal": [
-        11.890564394345782,
-        7.429684542371998
+        11.890667918993106,
+        7.4296846384027635
       ],
       "truth": [
-        11.908636606303977,
-        7.4302882729615005,
-        3.138660713745181
+        11.908873114084173,
+        7.430287795138216,
+        3.1386604688087014
       ],
-      "error_m": 0.018082293429944957,
+      "error_m": 0.01821518395052125,
       "status": "arrived"
     },
     {
@@ -36,12 +36,14 @@
         2.4
       ],
       "truth": [
-        5.900135519747595,
-        2.3816056234873377,
-        0.0001868975225441998
+        5.900166985104202,
+        2.3810278633486623,
+        -0.00011908093588055315
       ],
-      "error_m": 0.01839487572373258,
-      "status": "arrived"
+      "error_m": 0.018972871504915948,
+      "status": "arrived",
+      "samples": 1250,
+      "minimum_support_separation_m": 0.06742582314262321
     }
   ],
   "checks": {
@@ -51,7 +53,7 @@
     "release_stops": true,
     "bounded_requests": true
   },
-  "peak_requested_mps": 1.0000000404253613,
+  "peak_requested_mps": 1.0000001160964274,
   "passed": true,
   "evidence": {
     "base_revision": "9a9d6e8113e40eaf82e84a7da9a6591d456b3018",
@@ -59,7 +61,7 @@
     "simulation_coordinate": "2026.0.14",
     "robot_parent": "51829c1ce402a21107d01f30eb90cdffce5d4ea8",
     "robot_autodrive_source_sha256": "fb105f293ed2dd184aec6b76c1595e8d63884c018a6192807c2a253af1f91e5f",
-    "driver_sha256": "b452666bc96d4559d5d0c8cd596d1a0326436f16cc59dcc2671e33ccc7b6816b",
-    "scope": "desktop simulation with modeled geometry; no hardware validation"
+    "driver_sha256": "7165382e0aef8270794698eb076f8635b6a700e335c78ead15b4df078e50bd66",
+    "scope": "desktop simulation with modeled geometry; sampled clearance at 20 ms; no hardware validation"
   }
 }

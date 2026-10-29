@@ -38,6 +38,11 @@ ramps are excluded. This is simulation geometry, not a measured hardware
 configuration. It requires a local development MecoBase package and is not the
 default driver behavior. `scripts/footprint_smoke.py` exercises the toggle through
 desktop HAL and NT on both alliances.
+The [development run](../artifacts/footprint-sim-validation.json) also checked a
+detour whose direct line intersects a modeled trench support. At 20 ms sampled
+poses, the chassis remained at least 0.067 m clear of that support and finished
+within 0.02 m of the target. This is numerical simulation evidence, not a
+continuous physical clearance or hardware measurement.
 
 ## Controls and real detections
 
