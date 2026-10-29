@@ -94,9 +94,20 @@ async def run(port, hal_port):
             result['checks']['field_obstacle_detour']=direct_blocked and min_separation>0 and error<.1 and status.get()=='arrived' and not active.get()
             await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
             p=pose.get();x.set(p.X()+1);y.set(p.Y());heading.set(0);client.flush()
-            await hold(.2,enabled=False);await hold(1,bumper=True);await hold(.3)
+            await hold(.2,enabled=False);await hold(1,bumper=True)
+            before_release=requested.get()
+            started=active.get() and math.hypot(before_release.vx,before_release.vy)>.1
+            await hold(.3)
             velocity=requested.get()
-            result['checks']['release_stops']=not active.get() and math.hypot(velocity.vx,velocity.vy)<.01
+            result['checks']['release_stops']=started and not active.get() and math.hypot(velocity.vx,velocity.vy)<.01
+            await hold(.2,enabled=False);await hold(.15,reset=True);await hold(.8,enabled=False)
+            p=pose.get();x.set(p.X()+1);y.set(p.Y());heading.set(0);client.flush()
+            await hold(.2,enabled=False);await hold(1,bumper=True)
+            before_disable=requested.get()
+            started=active.get() and math.hypot(before_disable.vx,before_disable.vy)>.1
+            await hold(.3,bumper=True,enabled=False)
+            velocity=requested.get()
+            result['checks']['disable_stops']=started and not active.get() and math.hypot(velocity.vx,velocity.vy)<.01
             result['checks']['bounded_requests']=peak<=1.01
             result['peak_requested_mps']=peak
             result['passed']=all(result['checks'].values())
