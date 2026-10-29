@@ -1,0 +1,56 @@
+{
+  "binary_sha256": "a30b0afde85d6e8bcd80e34519af97db38198dcba378aef64d3d44f0d404fd18",
+  "checks": {
+    "teleop_bumper_schedules": true,
+    "bumper_release_cancels": true,
+    "controls_preserve_practice": true,
+    "auto_order_unknown_before_game_data": true,
+    "hub_order_and_next_change": true,
+    "shift1_hub_state": true,
+    "context_agreement": true,
+    "manual_disable_aborts": true
+  },
+  "transitions": [
+    {
+      "state": "autonomous",
+      "elapsed": 0.10066738200112013,
+      "time": 19.975868,
+      "data": ""
+    },
+    {
+      "state": "assessment",
+      "elapsed": 20.14320241200039,
+      "time": 0.0,
+      "data": ""
+    },
+    {
+      "state": "teleop",
+      "elapsed": 23.062740612000198,
+      "time": 139.958875,
+      "data": "R"
+    }
+  ],
+  "context_mismatches": [],
+  "hub_transition_observed": {
+    "station": "Blue1",
+    "result": "R",
+    "time": 139.479171,
+    "expected_next": 34.47917100000001,
+    "order_known": true,
+    "inactive_first": "red",
+    "first_active": "blue",
+    "next_known": true,
+    "next_seconds": 34.47917100000001
+  },
+  "hub_shift1_observed": {
+    "station": "Blue1",
+    "result": "R",
+    "time": 128.979501,
+    "phase": "shift1",
+    "hub_known": true,
+    "hub_active": true,
+    "next_known": true,
+    "next_seconds": 23.979501
+  },
+  "passed": true
+}

@@ -15,13 +15,15 @@ claimed as native parity.
 
 This worktree consumes unpublished development vendordeps:
 
-- MecoBase `2026.2.4-dev.1`: native command, validation, ownership and native AD* integration.
-- MecoSimulation `2026.0.13-dev.2`: physics and synthetic camera rays only, desktop-only.
+- MecoBase `2026.2.5-dev.1`: native command, validation, ownership and native AD* integration.
+- MecoSimulation `2026.0.14-dev.1`: physics and synthetic camera rays only, desktop-only.
 
 ```sh
 JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --max-workers=2 \
-  -PmecoBaseMaven=../MecoBase-cpp-autodrive/build/vendor-maven/maven \
-  -PmecoSimulationMaven=../MecoSimulation-cpp-autodrive/build/native-autodrive-package/maven
+  -PmecoBaseMaven=../MecoBase-cpp-integration/build/vendor-maven/maven \
+  -PmecoBaseVersion=2026.2.5-dev.1 \
+  -PmecoSimulationMaven=../MecoSimulation-cpp-integration/build/integration-package/maven \
+  -PmecoSimulationVersion=2026.0.14-dev.1
 ./scripts/sim_headless.sh
 ```
 

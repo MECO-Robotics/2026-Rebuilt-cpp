@@ -1,0 +1,149 @@
+{
+  "recordedAt": "2026-10-27T23:13:24.279245-04:00",
+  "scope": "Official FMS hub order and own-hub timing exposed to native AutoDrive; no timing-based driving strategy",
+  "versions": {
+    "wpilib": "2026.2.1",
+    "MecoBase": "2026.2.4-dev.1",
+    "MecoSimulation": "2026.0.13-dev.2"
+  },
+  "robotBinarySha256": "a30b0afde85d6e8bcd80e34519af97db38198dcba378aef64d3d44f0d404fd18",
+  "vendordepReleaseArchiveSha256": "11e459f40c07cd3745563e8055ca72db823123cfbb950f2a275e4c63f78fb2da",
+  "matchContextSha256": "7565ce31b28f28b6418241490626e75bbed38936842fc291d34ee5204f22402c",
+  "practiceControllerSha256": "0942335acce95390cb27fb937278f016c26aaec33f154b779fc8b3903b96ac82",
+  "build": {
+    "desktopAndRoborioDebugRelease": true,
+    "nativeTestsPerDesktopConfiguration": 12
+  },
+  "stationRegression": {
+    "original": "Blue1 was Red3; Red1 was unknown",
+    "testFailedBeforeFix": true,
+    "testPassedAfterFix": true
+  },
+  "liveSim": {
+    "redAutoResultBlueStation": {
+      "binary_sha256": "a30b0afde85d6e8bcd80e34519af97db38198dcba378aef64d3d44f0d404fd18",
+      "checks": {
+        "teleop_bumper_schedules": true,
+        "bumper_release_cancels": true,
+        "controls_preserve_practice": true,
+        "auto_order_unknown_before_game_data": true,
+        "hub_order_and_next_change": true,
+        "shift1_hub_state": true,
+        "context_agreement": true,
+        "manual_disable_aborts": true
+      },
+      "transitions": [
+        {
+          "state": "autonomous",
+          "elapsed": 0.10066738200112013,
+          "time": 19.975868,
+          "data": ""
+        },
+        {
+          "state": "assessment",
+          "elapsed": 20.14320241200039,
+          "time": 0.0,
+          "data": ""
+        },
+        {
+          "state": "teleop",
+          "elapsed": 23.062740612000198,
+          "time": 139.958875,
+          "data": "R"
+        }
+      ],
+      "context_mismatches": [],
+      "hub_transition_observed": {
+        "station": "Blue1",
+        "result": "R",
+        "time": 139.479171,
+        "expected_next": 34.47917100000001,
+        "order_known": true,
+        "inactive_first": "red",
+        "first_active": "blue",
+        "next_known": true,
+        "next_seconds": 34.47917100000001
+      },
+      "hub_shift1_observed": {
+        "station": "Blue1",
+        "result": "R",
+        "time": 128.979501,
+        "phase": "shift1",
+        "hub_known": true,
+        "hub_active": true,
+        "next_known": true,
+        "next_seconds": 23.979501
+      },
+      "passed": true
+    },
+    "blueAutoResultBlueStation": {
+      "binary_sha256": "a30b0afde85d6e8bcd80e34519af97db38198dcba378aef64d3d44f0d404fd18",
+      "checks": {
+        "teleop_bumper_schedules": true,
+        "bumper_release_cancels": true,
+        "controls_preserve_practice": true,
+        "auto_order_unknown_before_game_data": true,
+        "hub_order_and_next_change": true,
+        "shift1_hub_state": true,
+        "context_agreement": true,
+        "manual_disable_aborts": true
+      },
+      "transitions": [
+        {
+          "state": "autonomous",
+          "elapsed": 0.10026177300096606,
+          "time": 19.975828,
+          "data": ""
+        },
+        {
+          "state": "assessment",
+          "elapsed": 20.15507869299836,
+          "time": 0.0,
+          "data": ""
+        },
+        {
+          "state": "teleop",
+          "elapsed": 23.075938488000247,
+          "time": 139.959333,
+          "data": "B"
+        }
+      ],
+      "context_mismatches": [],
+      "hub_transition_observed": {
+        "station": "Blue1",
+        "result": "B",
+        "time": 139.478736,
+        "expected_next": 9.478735999999998,
+        "order_known": true,
+        "inactive_first": "blue",
+        "first_active": "red",
+        "next_known": true,
+        "next_seconds": 9.478735999999998
+      },
+      "hub_shift1_observed": {
+        "station": "Blue1",
+        "result": "B",
+        "time": 128.980429,
+        "phase": "shift1",
+        "hub_known": true,
+        "hub_active": false,
+        "next_known": true,
+        "next_seconds": 23.980428999999987
+      },
+      "passed": true
+    }
+  },
+  "cleanLinuxReleaseVendordepConsumer": {
+    "passed": true,
+    "testedStationMappings": [
+      "Blue1",
+      "Red1"
+    ]
+  },
+  "limitations": [
+    "Local unpublished development vendordeps; Windows was not revalidated.",
+    "Context is supplied to AutoDrive, but no hub-dependent goal or shooting strategy was requested.",
+    "A separate prior repeated-autonomous AutoDrive navigation smoke stops short; this task does not fix it.",
+    "FMS timing on a real field is approximate; no hardware or Jetson commissioning was performed."
+  ]
+}
