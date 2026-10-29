@@ -427,17 +427,22 @@ not deployed or suitable as a competition field map.
 
 An optional `terrain` object enables the MecoBase terrain profile on both
 desktop and roboRIO. It requires `lateral_acceleration_mps2`,
-`steering_rate_radps`, and a nonempty `regions` array. Each region supplies a
+`steering_rate_radps`, `stall_timeout_s`, `stall_progress_m`,
+`stall_request_mps`, and a nonempty `regions` array. These watchdog thresholds
+must be positive, and the request threshold must be below the speed limit. Each region supplies a
 `bounds` rectangle, `grade_x` and `grade_y` as rise/run in the positive field
 axes, and dimensionless `rolling_resistance`. Regions must lie inside the field
 and must not overlap; ambiguous travel along a shared boundary fails closed.
 Supply robot-specific measured values. The profile models the path centerline
-and uses the configured acceleration for braking; it does not model whole-body
-contact, guarantee traction, or establish a physical stopping distance.
+and uses the configured acceleration for braking; the watchdog ends a stalled
+route when pose progress remains below the supplied threshold while the request
+exceeds its threshold. It cannot detect motion missing from the pose estimate,
+model whole-body contact, guarantee traction, or establish a physical stopping distance.
 
-The [simulation-only fixture](../artifacts/configured-terrain-simulation-fixture.json)
-shows the optional schema. It is deliberately not installed in the deploy
-directory and is not a competition field map. Two desktop HAL/NT runs with
+The [simulation-only watchdog fixture](../artifacts/configured-terrain-watchdog-fixture.json)
+shows the current optional schema. It is deliberately not installed in the deploy
+directory and is not a competition field map. Two earlier desktop HAL/NT runs with
+the [pre-watchdog fixture](../artifacts/configured-terrain-simulation-fixture.json) and
 virtual terrain over a flat physical lane passed blue/red goals and release
 stopping ([first](../artifacts/configured-terrain-simulation.json.gz),
 [repeat](../artifacts/configured-terrain-simulation-repeat.json.gz)); the repeat
@@ -445,3 +450,16 @@ recorded 57 active samples in each virtual region. They do not validate ramp
 traversal. A [third run with unsplit-boundary rejection](../artifacts/configured-terrain-boundary-guard.json.gz)
 passed the same checks using MecoBase `2026.2.8-dev.2`. The public release
 is required before this configuration can be used without an override.
+
+Two additional configured-profile trials used a [simulation-only bump fixture](../artifacts/configured-terrain-bump-fixture.json)
+derived from the published MecoSimulation `v2026.0.14` field-collider source
+(commit `f6d0db7ce343c28a1d7ab59378c12738e1406e1d`; extracted source SHA-256
+`01917a3a6bc48b9dd41c10bbb30f31d2253f4f63c2c1b9d9974f087dc0f8dd08`).
+The fixture uses the modeled centerline grades and illustrative 4 m/s²
+acceleration and watchdog settings; it is not a measured robot configuration.
+Both [first](../artifacts/configured-terrain-bump-stall.json.gz) and
+[repeat](../artifacts/configured-terrain-bump-stall-repeat.json.gz) reached the
+staging goal, then ended with `stalled` and zero requested velocity before the
+bump goal, after approximately 7.3 and 8.4 seconds respectively. Neither
+crossed the bump. This establishes the configured watchdog path in desktop
+simulation, not the physical cause, braking distance, or hardware performance.

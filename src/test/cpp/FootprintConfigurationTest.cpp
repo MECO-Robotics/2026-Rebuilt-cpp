@@ -33,16 +33,22 @@ TEST(FootprintConfiguration, OptionalTerrainRequiresValidProfileAndSuppliesDirec
       "planner":{"resolution_m":0.2,"expansion_budget":30000},
       "limits":{"max_speed_mps":1,"max_omega_radps":1,"max_acceleration_mps2":2,"max_alpha_radps2":3},
       "terrain":{"lateral_acceleration_mps2":2,"steering_rate_radps":1,
+        "stall_timeout_s":3,"stall_progress_m":0.03,"stall_request_mps":0.01,
         "regions":[{"bounds":{"min_x":1,"min_y":1,"max_x":2,"max_y":2},"grade_x":0.1,"grade_y":0,"rolling_resistance":0.02}]}})";
     const auto result=season::ParseFootprintConfiguration(json);
     ASSERT_TRUE(result);
     ASSERT_TRUE(result->drive.follow.terrain);
     ASSERT_TRUE(result->drive.follow.terrainBoundaries);
+    EXPECT_DOUBLE_EQ(result->drive.follow.translationStallTimeout,3);
     EXPECT_EQ(result->drive.follow.terrainBoundaries({0,1.5,0},{3,1.5,0}).size(),2u);
     EXPECT_NEAR(result->drive.follow.terrain({1,1.5,0},{2,1.5,0}).grade,.1,1e-9);
     EXPECT_NEAR(result->drive.follow.terrain({2,1.5,0},{1,1.5,0}).grade,-.1,1e-9);
     auto invalid=json;
     const std::string needle="\"rolling_resistance\":0.02";
     invalid.replace(invalid.find(needle),needle.size(),"\"rolling_resistance\":-0.02");
+    EXPECT_FALSE(season::ParseFootprintConfiguration(invalid));
+    invalid=json;
+    const std::string timeout="\"stall_timeout_s\":3,";
+    invalid.erase(invalid.find(timeout),timeout.size());
     EXPECT_FALSE(season::ParseFootprintConfiguration(invalid));
 }

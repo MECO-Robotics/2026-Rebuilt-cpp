@@ -72,7 +72,13 @@ std::optional<FootprintConfiguration> ParseFootprintConfiguration(std::string_vi
             }
             result.drive.follow.profileLateralAcceleration=Number(terrain,"lateral_acceleration_mps2");
             result.drive.follow.profileSteeringRate=Number(terrain,"steering_rate_radps");
-            if (result.drive.follow.profileLateralAcceleration<=0 || result.drive.follow.profileSteeringRate<=0)
+            result.drive.follow.translationStallTimeout=Number(terrain,"stall_timeout_s");
+            result.drive.follow.translationStallProgress=Number(terrain,"stall_progress_m");
+            result.drive.follow.translationStallRequest=Number(terrain,"stall_request_mps");
+            if (result.drive.follow.profileLateralAcceleration<=0 || result.drive.follow.profileSteeringRate<=0 ||
+                result.drive.follow.translationStallTimeout<=0 || result.drive.follow.translationStallProgress<=0 ||
+                result.drive.follow.translationStallRequest<=0 ||
+                result.drive.follow.translationStallRequest>=result.drive.follow.maxSpeed)
                 return std::nullopt;
             auto map=std::make_shared<const base::FootprintTerrainMap>(std::move(data));
             result.drive.follow.terrain=[map](base::FootprintPose a,base::FootprintPose b) {return map->Segment(a,b);};

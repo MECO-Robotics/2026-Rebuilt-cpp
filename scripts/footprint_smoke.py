@@ -235,6 +235,8 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                                     'samples':len(detour_samples),'minimum_support_separation_m':min_separation})
             result['checks']['field_obstacle_detour']=direct_blocked and min_separation>0 and error<.1 and status.get()=='arrived' and not active.get()
             if ramp:
+                if configured:
+                    result['checks']['configured_mode_selected']=configured_status.get()=='ready'
                 if not result['checks']['field_obstacle_detour']:
                     result['passed']=False
                     return result
@@ -259,7 +261,7 @@ async def run(port, hal_port, profile=False, ramp=False, stall_check=False, avoi
                     result['checks']['avoids_bump_and_arrives']=clearance>0 and error<.1 and status.get()=='arrived' and not active.get()
                 elif stall_check:
                     v=requested.get()
-                    result['checks']['stall_stops']=status.get()=='stopped-before-goal' and not active.get() and math.hypot(v.vx,v.vy)<.01 and abs(v.omega)<.01
+                    result['checks']['stall_stops']=status.get()=='stopped-before-goal' and not active.get() and math.hypot(v.vx,v.vy)<.01 and abs(v.omega)<.01 and (not configured or outcome.get()=='stalled')
                 else:
                     result['checks']['modeled_bump_crossing']=error<.1 and status.get()=='arrived' and not active.get()
                 result['passed']=all(result['checks'].values())
