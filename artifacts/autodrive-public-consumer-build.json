@@ -1,0 +1,39 @@
+{
+  "base_version": "2026.2.7",
+  "simulation_version": "2026.0.14",
+  "source": "public Maven, clean robot build without local overrides",
+  "base_release_run": "https://github.com/MECO-Robotics/MecoBase-cpp/actions/runs/40947613368",
+  "desktop_debug_tests_passed": 24,
+  "desktop_release_tests_passed": 24,
+  "previous_2026_2_6_pom_sha256": "f0fb7e1a50f8d3e821680cf5ed6f1ff8f220ee250c39961d0e9adece9b3ea14e",
+  "artifacts": [
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Debug",
+      "public_archive_sha256": "6970eafa52323477171524548965f554d45123ff17aa05fa4452ad8952a8b6f1",
+      "linked_library_sha256": "729edab4477ce08c76ade88d739c395c72ac17f818c5269f67b2ddd9377c4910",
+      "matches_public_archive": true
+    },
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Release",
+      "public_archive_sha256": "a01662a6acbcc3d34ecab85f1780311941064c8931151d59f39d3728172f2e51",
+      "linked_library_sha256": "de41a9fd48375bfc2af2dcba64f8a99471f3eb3a66aa1bcd99a221d0fbf4f609",
+      "matches_public_archive": true
+    },
+    {
+      "target": "Linuxathena",
+      "configuration": "Debug",
+      "public_archive_sha256": "f5f4b5168d208f4c4d6c8c67fcc7a16dd79e57d87218d6b7484e59f5af110ac0",
+      "linked_library_sha256": "81ad57ea0f31a1480fbb0b2bf5e5de8b4ae5cd400aefe744f46d7181df4f9fb5",
+      "matches_public_archive": true
+    },
+    {
+      "target": "Linuxathena",
+      "configuration": "Release",
+      "public_archive_sha256": "db4ef52e36b778c0129aa0417f243f6e07e2c583eca899c15b32b55305ead78d",
+      "linked_library_sha256": "c8c947b4039e175c7ef3a9fbf8e7304fc633a54a12b12701f0d6b1f166dd94a3",
+      "matches_public_archive": true
+    }
+  ]
+}

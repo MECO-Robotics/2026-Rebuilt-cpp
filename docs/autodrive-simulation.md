@@ -27,8 +27,8 @@ and end-to-end validation with the target robot's localization and sensing.
 
 ## Build
 
-This draft targets MecoBase `2026.2.7` and MecoSimulation `2026.0.14`
-from public Maven; Base 2026.2.7 is pending publication. MecoBase provides native planning and perception; the desktop
+The project resolves MecoBase `2026.2.7` and MecoSimulation `2026.0.14`
+from public Maven. MecoBase provides native planning and perception; the desktop
 Simulation package supplies physics and synthetic camera rays.
 
 ```sh
@@ -369,3 +369,8 @@ using the staged `2026.2.7` binary passed all checks, including 20 goal legs,
 no retries, bounded requests, simulated fuel following and collection, a
 simulated scoring volley, and stop on completion. This is one desktop run; it
 is not evidence of real-camera calibration, physical scoring, or hardware safety.
+A clean robot build without local overrides also passed against public MecoBase
+`2026.2.7`: desktop and roboRIO Debug/Release linked, and both desktop test
+configurations passed 24 cases. The [public build record](../artifacts/autodrive-public-consumer-build.json)
+compares each linked library with its checksummed public archive and verifies
+that the previous `2026.2.6` POM remains unchanged.
