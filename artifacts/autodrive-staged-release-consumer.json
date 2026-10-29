@@ -1,0 +1,16 @@
+{
+  "scope": "clean worktree staged vendordep release consumer",
+  "simulation_ci_run": "https://github.com/MECO-Robotics/MecoSimulation-cpp/actions/runs/40809214410",
+  "base_commit": "be42bee88f9a3802bf52f0b4eb3c7d01dff2ac4d",
+  "simulation_commit": "258e6cc8b79d90a330c0eedbffd4971714c08ed6",
+  "base_version": "2026.2.5",
+  "simulation_version": "2026.0.14",
+  "command": "./gradlew frcUserProgramLinuxathenaReleaseExecutable frcUserProgramLinuxx86-64ReleaseExecutable --max-workers=2 with explicit staged Maven overrides",
+  "result": "passed",
+  "executable_sha256": {
+    "roborio_release": "02ac3d52b6d9e8132c6c0a7a49107b0ccb16dc4345a38c4d7f466a6ae4713dda",
+    "linux_release": "30fabf87813c4d23064b426c2c72069db68ab2b76659a1245e1a7108102203d2"
+  },
+  "public_maven_validation": false,
+  "hardware_validation": false
+}
