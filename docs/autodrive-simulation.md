@@ -101,7 +101,11 @@ projectiles settle, and permits up to two separately recorded bumper retries
 for a valid goal stopped less than 1 m away. A retry requires releasing and
 pressing the binding again; it is not autonomous recovery by the robot.
 Add `--strict-arrival` to require bounded AutoDrive outputs, settled position,
-heading and speed, and no driver retries.
+heading and speed, and no driver retries. The onboard command can make up to
+three obstacle-aware pathfinding attempts when a timed trajectory ends short;
+its final straight approach still requires a clear navgrid segment. The scenario
+stages autonomous before the neutral fuel grid and uses a centered clear lane so
+teleop can collect the fuel without first pushing it away.
 For example, with the isolated simulator running on ports 5811 and 3301:
 
 ```sh
