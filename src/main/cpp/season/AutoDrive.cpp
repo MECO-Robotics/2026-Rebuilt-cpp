@@ -7,13 +7,38 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
 #include <algorithm>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #ifndef __FRC_ROBORIO__
 #include "season/SimulationField.h"
+#include <base/FootprintAutoDrive.h>
 #endif
 
 namespace season {
+#ifndef __FRC_ROBORIO__
+namespace {
+const char* FootprintOutcomeName(base::FootprintAutoDriveOutcome outcome) {
+  using O=base::FootprintAutoDriveOutcome;
+  switch (outcome) {
+    case O::running:return "running";
+    case O::arrived:return "arrived";
+    case O::stalled:return "stalled";
+    case O::blocked:return "blocked";
+    case O::no_route:return "no-route";
+    case O::planner_busy:return "planner-busy";
+    case O::target_unavailable:return "target-unavailable";
+    case O::target_unstable:return "target-unstable";
+    case O::target_changed:return "target-changed";
+    case O::invalid_feedback:return "invalid-feedback";
+    case O::source_error:return "source-error";
+    case O::settle_failed:return "settle-failed";
+    case O::interrupted:return "interrupted";
+  }
+  return "unknown";
+}
+}
+#endif
 void AutoDrive::Status(const char* value) {
   nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Status").SetString(value);
 }
@@ -60,6 +85,12 @@ AutoDrive::AutoDrive(base::Drive& drive, std::function<double()> extension,
   frc::SmartDashboard::PutNumber("AutoDrive/TargetY",.65);
   frc::SmartDashboard::PutNumber("AutoDrive/TargetHeading",0.0);
   frc::SmartDashboard::PutBoolean("AutoDrive/FollowFuel",false);
+#ifndef __FRC_ROBORIO__
+  frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintSim",false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintProfileSim",false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/AvoidBumpsSim",false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/TrackTargetSim",false);
+#endif
   nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(false);
   Status("idle-native");
 }
@@ -93,11 +124,82 @@ std::optional<frc::Pose2d> AutoDrive::Target() {
 }
 frc2::CommandPtr AutoDrive::Command() {
   auto sampled=std::make_shared<std::optional<frc::Pose2d>>();
-  return base::AutoDriveToPose(drive_,[this,sampled] {
+  auto target=[this,sampled] {
         auto goal=Target();
-        if(!*sampled && goal) *sampled=goal;
+        bool track=frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel",false);
+#ifndef __FRC_ROBORIO__
+        track=track || frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim",false);
+#endif
+        if(goal && (!*sampled || track)) *sampled=goal;
         return goal;
-      })
+      };
+  return frc2::cmd::Defer([this,target]() -> frc2::CommandPtr {
+#ifndef __FRC_ROBORIO__
+        if(frc::RobotBase::IsSimulation() && frc::SmartDashboard::GetBoolean("AutoDrive/UseFootprintSim",false)) {
+          base::FootprintAutoDriveConfig config;
+          const bool avoidBumps=frc::SmartDashboard::GetBoolean("AutoDrive/AvoidBumpsSim",false);
+          config.footprint={.86,.86};
+          config.field={0,0,simulation::kFieldLength,simulation::kFieldWidth};
+          if (frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel",false) ||
+              frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim",false))
+            config.targetTranslationReplanThreshold=.3;
+          // The modeled swerve can drift after a rotation if it releases the
+          // drivetrain while residual angular speed is still appreciable.
+          config.follow.headingTolerance=.02;
+          config.follow.angularSettleSpeed=.02;
+          config.follow.settleSamples=10;
+          config.follow.finalSettleSamples=50;
+          config.follow.poseAngularDamping=.5;
+          config.follow.usePoseRateForSettling=true;
+          if (frc::SmartDashboard::GetBoolean("AutoDrive/UseFootprintProfileSim",false)) {
+            config.follow.terrain=simulation::RampTerrain;
+            config.follow.terrainBoundaries=simulation::RampBoundaries;
+            config.follow.angularStopTolerance=.01;
+            config.follow.translationStallTimeout=3;
+            config.follow.translationStallRequest=.01;
+            // Illustrative simulation-only capability, not a measured robot limit.
+            config.follow.maxAcceleration=4;
+          }
+          auto obstacles=[avoidBumps] {
+            std::vector<base::FieldRectangle> boxes;
+            if (frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled",true)) for (const auto& body:simulation::FieldColliders()) {
+              // Skip traversable inclined ramps and objects entirely above or
+              // below the modeled chassis contact volume. Remaining field
+              // boxes are axis aligned in this desktop model.
+              if (std::abs(body.pose.rotation.x)>1e-8 || std::abs(body.pose.rotation.y)>1e-8 ||
+                  std::abs(body.pose.rotation.z)>1e-8 ||
+                  body.pose.position.z+body.halfExtents.z<.05 ||
+                  body.pose.position.z-body.halfExtents.z>.45) continue;
+              boxes.push_back({body.pose.position.x-body.halfExtents.x,body.pose.position.y-body.halfExtents.y,
+                               body.pose.position.x+body.halfExtents.x,body.pose.position.y+body.halfExtents.y});
+            }
+            if (frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled",true) && avoidBumps) {
+              const auto ramps=simulation::RampObstacles();
+              boxes.insert(boxes.end(),ramps.begin(),ramps.end());
+            }
+            // Desktop HAL/NT tests can inject one perceived obstacle. It is
+            // not a simulated rigid body or a hardware detection source.
+            const auto observed=nt::NetworkTableInstance::GetDefault().GetEntry("/Simulation/FootprintObstacle").GetDoubleArray({});
+            if (!observed.empty()) {
+              if (observed.size()!=4) throw std::runtime_error("invalid simulated footprint obstacle");
+              boxes.push_back({observed[0],observed[1],observed[2],observed[3]});
+            }
+            return boxes;
+          };
+          auto outcome=std::make_shared<base::FootprintAutoDriveOutcome>();
+          auto entry=nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/FootprintOutcome");
+          entry.SetString("running");
+          return base::AutoDriveFootprintToPose(drive_,target,std::move(obstacles),config,outcome)
+              .FinallyDo([entry,outcome](bool) mutable {entry.SetString(FootprintOutcomeName(*outcome));});
+        }
+#endif
+        bool track=frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel",false);
+#ifndef __FRC_ROBORIO__
+        track=track || frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim",false);
+#endif
+        if (track) return base::AutoDriveTrackTarget(drive_,target);
+        return base::AutoDriveToPose(drive_,target);
+      },{&drive_})
       .BeforeStarting([this,sampled] {
         sampled->reset();
         nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(true);Status("planning-native");

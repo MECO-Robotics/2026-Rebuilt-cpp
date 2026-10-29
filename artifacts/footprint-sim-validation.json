@@ -1,0 +1,68 @@
+{
+  "binary_sha256": "a9fb8a50c294002c7ba9cfd728bd46810fc1fe5a99f3c3131864a8d0da9c1a0a",
+  "cases": [
+    {
+      "alliance": "blue",
+      "goal": [
+        4.650000095367432,
+        0.6393179893493652
+      ],
+      "truth": [
+        4.63172910801898,
+        0.6387226195466591,
+        -0.0015387326199534986
+      ],
+      "error_m": 0.018280684995077158,
+      "status": "arrived"
+    },
+    {
+      "alliance": "red",
+      "goal": [
+        11.89052662633691,
+        7.429683713404694
+      ],
+      "truth": [
+        11.91021683486571,
+        7.430270150545482,
+        3.138581965448225
+      ],
+      "error_m": 0.019698939576222423,
+      "status": "arrived"
+    },
+    {
+      "mode": "field_obstacle_detour",
+      "goal": [
+        5.9,
+        2.4
+      ],
+      "truth": [
+        5.900158882095316,
+        2.3806250480978632,
+        -0.0001402663159223291
+      ],
+      "error_m": 0.019375603338485266,
+      "status": "arrived",
+      "samples": 1250,
+      "minimum_support_separation_m": 0.06811016493341022
+    }
+  ],
+  "checks": {
+    "blue_arrived": true,
+    "red_arrived": true,
+    "field_obstacle_detour": true,
+    "release_stops": true,
+    "disable_stops": true,
+    "bounded_requests": true
+  },
+  "peak_requested_mps": 1.000000028630242,
+  "passed": true,
+  "evidence": {
+    "base_revision": "9a9d6e8113e40eaf82e84a7da9a6591d456b3018",
+    "base_coordinate": "2026.2.7-dev.1",
+    "simulation_coordinate": "2026.0.14",
+    "robot_parent": "51829c1ce402a21107d01f30eb90cdffce5d4ea8",
+    "robot_autodrive_source_sha256": "fb105f293ed2dd184aec6b76c1595e8d63884c018a6192807c2a253af1f91e5f",
+    "driver_sha256": "2381992cba4f9aa485bf393bda955521bdcdaf437da300e4720f08f27924e63f",
+    "scope": "desktop simulation with modeled geometry; sampled clearance at 20 ms; no hardware validation"
+  }
+}

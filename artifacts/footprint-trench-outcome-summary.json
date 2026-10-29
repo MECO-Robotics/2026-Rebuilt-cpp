@@ -1,0 +1,199 @@
+{
+  "scope": "Desktop simulation, optional modeled-bump avoidance and approximately 20ms clearance samples; no hardware or continuous clearance validation.",
+  "fixed_package_sha256": "c992da5a961c460169bfab7ebce95fae3eb05d141760b5639bbcb7bbd65ffa20",
+  "robot_source_sha256": "8adc8e225a781394cc8e3b35cfcdcfb5c5c3b9997aa07bca36c0c43f5e65fb58",
+  "current_script_sha256": "36dae9ec4acc91fc3ecc24f0722de246f651ff43b19dd50338ca74ba9c47ad3e",
+  "runs": [
+    {
+      "trace": "footprint-trench-outcome-1.json.gz",
+      "binary_sha256": "e3715ccde94e078d2aa45275b423ec67a6c2d80bce53cd431007298214163ff2",
+      "mecobase_revision": "b060968",
+      "passed": true,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "avoids_bump_and_arrives": true
+      },
+      "cases": [
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.900114355452364,
+            2.397832093363707,
+            -0.012141335722947028
+          ],
+          "error_m": 0.002170920623414719,
+          "status": "arrived",
+          "elapsed_seconds": 21.38989395400131,
+          "minimum_support_separation_m": 0.07389179206812196
+        },
+        {
+          "mode": "modeled_bump_crossing",
+          "goal": [
+            3.5,
+            2.4
+          ],
+          "truth": [
+            3.4999105666927797,
+            2.397517708460279,
+            -0.0020735374580423955
+          ],
+          "error_m": 0.002483902092396225,
+          "status": "arrived",
+          "outcome": "arrived",
+          "elapsed_seconds": 29.226848131002043,
+          "minimum_sampled_bump_separation_m": 0.12182664696719347
+        }
+      ]
+    },
+    {
+      "trace": "footprint-trench-outcome-2.json.gz",
+      "binary_sha256": "e3715ccde94e078d2aa45275b423ec67a6c2d80bce53cd431007298214163ff2",
+      "mecobase_revision": "b060968",
+      "passed": false,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "avoids_bump_and_arrives": false
+      },
+      "cases": [
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.90012001088623,
+            2.397652252290834,
+            -0.01657724706011784
+          ],
+          "error_m": 0.0023508130335498575,
+          "status": "arrived",
+          "outcome": "arrived",
+          "elapsed_seconds": 21.342791451002995,
+          "minimum_support_separation_m": 0.07241526546539759
+        },
+        {
+          "mode": "modeled_bump_crossing",
+          "goal": [
+            3.5,
+            2.4
+          ],
+          "truth": [
+            3.5148289528903915,
+            0.8095564654239603,
+            -0.011286204558944218
+          ],
+          "error_m": 1.5905126640547542,
+          "status": "stopped-before-goal",
+          "outcome": "no-route",
+          "elapsed_seconds": 20.868891703998088,
+          "minimum_sampled_bump_separation_m": 0.26068197515939995
+        }
+      ]
+    },
+    {
+      "trace": "footprint-trench-outcome-3.json.gz",
+      "binary_sha256": "bbe7e1b2dcd5eb2ebc7defd7f19fba0ffc99c85e5ad9e5302f0668940a39455c",
+      "mecobase_revision": "6bdbc56",
+      "passed": true,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "avoids_bump_and_arrives": true
+      },
+      "cases": [
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.900124348564845,
+            2.3974944083861653,
+            -0.01312271225956945
+          ],
+          "error_m": 0.0025086753279165335,
+          "status": "arrived",
+          "outcome": "arrived",
+          "elapsed_seconds": 20.277212028995564,
+          "minimum_support_separation_m": 0.07247677580391196
+        },
+        {
+          "mode": "modeled_bump_crossing",
+          "goal": [
+            3.5,
+            2.4
+          ],
+          "truth": [
+            3.499907541369923,
+            2.397559754439112,
+            0.0015801457500423165
+          ],
+          "error_m": 0.0024419965183655828,
+          "status": "arrived",
+          "outcome": "arrived",
+          "elapsed_seconds": 29.195971996996377,
+          "minimum_sampled_bump_separation_m": 0.12079234374877873
+        }
+      ]
+    },
+    {
+      "trace": "footprint-trench-outcome-4.json.gz",
+      "binary_sha256": "bbe7e1b2dcd5eb2ebc7defd7f19fba0ffc99c85e5ad9e5302f0668940a39455c",
+      "mecobase_revision": "6bdbc56",
+      "passed": true,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "avoids_bump_and_arrives": true
+      },
+      "cases": [
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.900089599739879,
+            2.397472094831077,
+            -0.009632546103551532
+          ],
+          "error_m": 0.0025294925689660253,
+          "status": "arrived",
+          "outcome": "arrived",
+          "elapsed_seconds": 20.278134165004303,
+          "minimum_support_separation_m": 0.0743950623454156
+        },
+        {
+          "mode": "modeled_bump_crossing",
+          "goal": [
+            3.5,
+            2.4
+          ],
+          "truth": [
+            3.4999074852653966,
+            2.3973066451463305,
+            -0.0007876077465115075
+          ],
+          "error_m": 0.0026949432914076714,
+          "status": "arrived",
+          "outcome": "arrived",
+          "elapsed_seconds": 29.163480419003463,
+          "minimum_sampled_bump_separation_m": 0.1226154542751478
+        }
+      ]
+    }
+  ]
+}

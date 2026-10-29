@@ -1,0 +1,97 @@
+{
+  "binary_sha256": "a9fb8a50c294002c7ba9cfd728bd46810fc1fe5a99f3c3131864a8d0da9c1a0a",
+  "cases": [
+    {
+      "alliance": "blue",
+      "goal": [
+        4.650000095367432,
+        0.6393179893493652
+      ],
+      "truth": [
+        4.630994318963409,
+        0.638698195615888,
+        -0.002385694268080844
+      ],
+      "error_m": 0.019015879705965934,
+      "status": "arrived"
+    },
+    {
+      "alliance": "red",
+      "goal": [
+        11.89054876835315,
+        7.429683220491857
+      ],
+      "truth": [
+        11.9087872400415,
+        7.430279209895216,
+        3.138666147544259
+      ],
+      "error_m": 0.018248206840553567,
+      "status": "arrived"
+    },
+    {
+      "mode": "field_obstacle_detour",
+      "goal": [
+        5.9,
+        2.4
+      ],
+      "truth": [
+        5.900114532817472,
+        2.3810276585397356,
+        -8.875553836125342e-05
+      ],
+      "error_m": 0.01897268716474134,
+      "status": "arrived",
+      "samples": 1250,
+      "minimum_support_separation_m": 0.07655346948361921
+    },
+    {
+      "mode": "rotate_in_place",
+      "goal": [
+        5.900114532817472,
+        2.3810276585397356
+      ],
+      "truth": [
+        5.899017388485127,
+        2.38021594466246,
+        1.484294815862032
+      ],
+      "estimated_pose": [
+        5.899032653723457,
+        2.3802129813070345,
+        1.4842979521983322
+      ],
+      "heading_readback": 1.5707963267948966,
+      "first_arrived": {
+        "truth": 1.5155540884805387,
+        "estimated": 1.5162997374904206,
+        "status": "arrived",
+        "active": false,
+        "requested_omega": 0.0
+      },
+      "error_m": 0.0013647729131831081,
+      "heading_error_rad": 0.08650151093286462,
+      "status": "arrived"
+    }
+  ],
+  "checks": {
+    "blue_arrived": true,
+    "red_arrived": true,
+    "field_obstacle_detour": true,
+    "rotate_in_place": false,
+    "release_stops": true,
+    "disable_stops": true,
+    "bounded_requests": true
+  },
+  "peak_requested_mps": 1.0000000380363898,
+  "peak_requested_radps": 1.0,
+  "passed": false,
+  "evidence": {
+    "base_revision": "9a9d6e8113e40eaf82e84a7da9a6591d456b3018",
+    "base_coordinate": "2026.2.7-dev.1",
+    "simulation_coordinate": "2026.0.14",
+    "robot_autodrive_source_sha256": "fb105f293ed2dd184aec6b76c1595e8d63884c018a6192807c2a253af1f91e5f",
+    "driver_sha256": "e8ba253d04aff85232f39ee224b8be29d7f234e8e0adc084f1551d7f7332e5d8",
+    "scope": "desktop simulation; failed strict rotation after drift; no hardware validation"
+  }
+}

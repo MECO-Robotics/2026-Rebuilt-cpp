@@ -1,0 +1,61 @@
+{
+  "scope": "Desktop simulation; centerline ramp profile, virtual target, approximately 20ms samples. Not hardware or calibrated physical stopping.",
+  "mecobase_revision": "e1e4b8fbed5b198e93c75149f3e971f10a3c60df",
+  "package_sha256": "53e50a46d63e5a59140e7fc5dd1faacb7906eed9101ef5a8c8055fb0d67978dc",
+  "current_robot_source_sha256": "db5e07f383d8dd0f81bde838dc68a702570a6b7a389332da8177c541fccae405",
+  "script_sha256": "f0dfa84d0d9e037713983455537bfab93a219a962f7a6f7f183a67db0acf64b0",
+  "watchdog_timeout_seconds": 3,
+  "runs": [
+    {
+      "trace": "footprint-stall-watchdog-failure.json.gz",
+      "passed": false,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "stall_stops": false
+      },
+      "status": "planning-native",
+      "elapsed_seconds": 46.98322060499777,
+      "goal_error_m": 1.745934379512911,
+      "final_requested_mps": 0.048348628641193686,
+      "final_truth_x_m": 5.245908548266467,
+      "final_estimated_x_m": 5.244598164444148,
+      "watchdog_request_threshold_mps": 0.1
+    },
+    {
+      "trace": "footprint-stall-watchdog-lower-1.json.gz",
+      "passed": true,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "stall_stops": true
+      },
+      "status": "stopped-before-goal",
+      "elapsed_seconds": 17.739319002997945,
+      "goal_error_m": 1.7353423792859588,
+      "final_requested_mps": 0.0,
+      "final_truth_x_m": 5.235301524833837,
+      "final_estimated_x_m": 5.233948644098019,
+      "watchdog_request_threshold_mps": 0.01
+    },
+    {
+      "trace": "footprint-stall-watchdog-lower-2.json.gz",
+      "passed": true,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "stall_stops": true
+      },
+      "status": "stopped-before-goal",
+      "elapsed_seconds": 13.611056442001427,
+      "goal_error_m": 1.7602807760790773,
+      "final_requested_mps": 0.0,
+      "final_truth_x_m": 5.260280292613691,
+      "final_estimated_x_m": 5.259428548957677,
+      "watchdog_request_threshold_mps": 0.01
+    }
+  ]
+}

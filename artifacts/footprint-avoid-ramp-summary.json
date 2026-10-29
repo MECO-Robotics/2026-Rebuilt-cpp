@@ -1,0 +1,221 @@
+{
+  "scope": "Desktop simulation; modeled bump avoidance; sampled clearance; no hardware or continuous-contact proof.",
+  "mecobase_revision": "fdf0c85f5e7bd4ae3bbe5959d89474c406110bdf",
+  "runs": [
+    {
+      "trace": "footprint-avoid-ramp-unpadded-1.json.gz",
+      "binary_sha256": "93a16f8e7f989f099e4b955152586cdc327947cecdba543b6ba5ba94e1ef6e71",
+      "planning_footprint_m": 0.86,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "avoids_bump_and_arrives": true
+      },
+      "passed": true,
+      "cases": [
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.90009289661985,
+            2.397523964189914,
+            -0.011621618702773975
+          ],
+          "error_m": 0.0024777778582444243,
+          "status": "arrived",
+          "elapsed_seconds": 21.354750509999576,
+          "minimum_support_separation_m": 0.07401313403883891
+        },
+        {
+          "mode": "modeled_bump_crossing",
+          "goal": [
+            3.5,
+            2.4
+          ],
+          "truth": [
+            3.4999134366090163,
+            2.3974435055171,
+            -0.001256443385411144
+          ],
+          "error_m": 0.0025579595895469896,
+          "status": "arrived",
+          "elapsed_seconds": 29.17464405499777,
+          "minimum_sampled_bump_separation_m": 0.12144562818348914
+        }
+      ]
+    },
+    {
+      "trace": "footprint-avoid-ramp-unpadded-2.json.gz",
+      "binary_sha256": "93a16f8e7f989f099e4b955152586cdc327947cecdba543b6ba5ba94e1ef6e71",
+      "planning_footprint_m": 0.86,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "avoids_bump_and_arrives": false
+      },
+      "passed": false,
+      "cases": [
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.900122384886696,
+            2.3977105098199667,
+            -0.017249934025511553
+          ],
+          "error_m": 0.0022927588937697147,
+          "status": "arrived",
+          "elapsed_seconds": 21.4092410259982,
+          "minimum_support_separation_m": 0.07427993606184123
+        },
+        {
+          "mode": "modeled_bump_crossing",
+          "goal": [
+            3.5,
+            2.4
+          ],
+          "truth": [
+            3.514609015962464,
+            0.8141133922696279,
+            -0.0038396828652520077
+          ],
+          "error_m": 1.5859538946406793,
+          "status": "stopped-before-goal",
+          "elapsed_seconds": 20.89062646200182,
+          "minimum_sampled_bump_separation_m": 0.2613824202360452
+        }
+      ]
+    },
+    {
+      "trace": "footprint-avoid-ramp-margin-1.json.gz",
+      "binary_sha256": "db5e9d15deb146a2eb5dc0d245208ffc22d25972f17f6aff65777c09ba038c43",
+      "planning_footprint_m": 0.96,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": false,
+        "avoids_bump_and_arrives": true
+      },
+      "passed": false,
+      "cases": [
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.677733488415792,
+            0.6997351649871643,
+            0.007970097044975146
+          ],
+          "error_m": 1.7147311484174532,
+          "status": "stopped-before-goal",
+          "elapsed_seconds": 47.49848091699823,
+          "minimum_support_separation_m": 0.14286451649518594
+        },
+        {
+          "mode": "modeled_bump_crossing",
+          "goal": [
+            3.5,
+            2.4
+          ],
+          "truth": [
+            3.4999983215702315,
+            2.3974539441865375,
+            -0.000989099065123502
+          ],
+          "error_m": 0.0025460563666958465,
+          "status": "arrived",
+          "elapsed_seconds": 20.882907585000794,
+          "minimum_sampled_bump_separation_m": 0.12198729422780069
+        }
+      ]
+    },
+    {
+      "trace": "footprint-avoid-ramp-margin-2.json.gz",
+      "binary_sha256": "db5e9d15deb146a2eb5dc0d245208ffc22d25972f17f6aff65777c09ba038c43",
+      "planning_footprint_m": 0.96,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": false
+      },
+      "passed": false,
+      "cases": [
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.67758080919454,
+            0.6997603224033782,
+            0.007772829533292378
+          ],
+          "error_m": 1.7147260007687584,
+          "status": "stopped-before-goal",
+          "elapsed_seconds": 47.46653089099709,
+          "minimum_support_separation_m": 0.13579805688512359
+        }
+      ]
+    },
+    {
+      "trace": "footprint-avoid-ramp-final.json.gz",
+      "binary_sha256": "04cc0066b2c1cb413b2a574de3790fddd4ec6ec848eefed81adbeb288fefb43a",
+      "planning_footprint_m": 0.86,
+      "checks": {
+        "blue_arrived": true,
+        "red_arrived": true,
+        "field_obstacle_detour": true,
+        "avoids_bump_and_arrives": true
+      },
+      "passed": true,
+      "cases": [
+        {
+          "mode": "field_obstacle_detour",
+          "goal": [
+            5.9,
+            2.4
+          ],
+          "truth": [
+            5.900114282303553,
+            2.3979948043875825,
+            -0.01688453882163012
+          ],
+          "error_m": 0.0020084496232077604,
+          "status": "arrived",
+          "elapsed_seconds": 21.34126893600478,
+          "minimum_support_separation_m": 0.07582219109063437
+        },
+        {
+          "mode": "modeled_bump_crossing",
+          "goal": [
+            3.5,
+            2.4
+          ],
+          "truth": [
+            3.499908506795818,
+            2.397673224999112,
+            0.0030605340095016262
+          ],
+          "error_m": 0.0023285731491985845,
+          "status": "arrived",
+          "elapsed_seconds": 30.258123036001052,
+          "minimum_sampled_bump_separation_m": 0.1212252273946387
+        }
+      ]
+    }
+  ],
+  "final_robot_source_sha256": "bc230a2ea838706bae6da203f45cf6355fa29d1dbee507a0b3adfa48eeb98626",
+  "final_script_sha256": "0678f210052147b359c99da56ee2da061cbdc452bca0ac2d95156c514262986f"
+}

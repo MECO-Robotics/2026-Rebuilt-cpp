@@ -1,0 +1,33 @@
+{
+  "package_source": "GitHub Actions staged artifact; not public deployment",
+  "base_commit": "f0e36ec184431490498e77e3159df9b7feaa7b89",
+  "coordinate": "2026.2.7",
+  "desktop_debug_tests_passed": 24,
+  "desktop_release_tests_passed": 24,
+  "artifacts": [
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Debug",
+      "archive_library_sha256": "525fc4a32a5d3994d4c0ea9806c3a01db711571fd9d07978cdc0462e1a741f18",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxx86-64",
+      "configuration": "Release",
+      "archive_library_sha256": "b124ed73f9bce88d96e13583a142e815a12e402ce6a3f2868cea32b4007e340a",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxathena",
+      "configuration": "Debug",
+      "archive_library_sha256": "b33ae655a5d81a6324f736ecf109104eeadca19cf82ede11bbb9691be2a1999a",
+      "linked_library_matches": true
+    },
+    {
+      "target": "Linuxathena",
+      "configuration": "Release",
+      "archive_library_sha256": "93c03a6f1942c0b57d12e7cabfab6f2f7b41935457213a0adf57471bbd3f1534",
+      "linked_library_matches": true
+    }
+  ]
+}

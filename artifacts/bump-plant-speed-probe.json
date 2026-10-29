@@ -1,0 +1,13 @@
+{
+  "scope": "Published numerical plant test, simplified speed controller, not the robot scheduler or hardware.",
+  "revision": "f6d0db7ce343c28a1d7ab59378c12738e1406e1d",
+  "archive_sha256": "b9110e8570cc81fc1816fcd6a166119b1eae4f0982fb7f9f4e0315828f774181",
+  "adapted_source_sha256": "5bbb992e3127765e41e1cdd6fa5a6455e25213cb6ebed8e0b3591a01c4677254",
+  "changes": "Compliant case only; compare targets; report non-clearance; use robot ride height, center of mass and foam damping.",
+  "step_seconds": 0.004,
+  "maximum_steps": 2500,
+  "results": {
+    "1.0": "scenario=2 max_tilt_deg=15.2155 compliant=1 max_compression=0.0133767 max_foam_force=1066.59 pan_contacts=0 backing_contacts=1447 cleared=0 final_x=4.84632 rode_bump=1 max_body_height=0.242611 bumper_supported_unloaded_steps=77",
+    "5.24": "scenario=2 max_tilt_deg=15.1847 compliant=1 max_compression=0.013142 max_foam_force=2692.07 pan_contacts=0 backing_contacts=55 cleared=1 final_x=6.29401 rode_bump=1 max_body_height=0.294961 bumper_supported_unloaded_steps=8"
+  }
+}
