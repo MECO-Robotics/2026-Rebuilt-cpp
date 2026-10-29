@@ -1,0 +1,100 @@
+{
+  "scenario": "onboard-native-autodrive",
+  "seed": 3737,
+  "binary_sha256": "45167af43c8b4dbbffd5aca044f22beb20b61374918e80681bd19b98207a7707",
+  "checks": {
+    "blue_native_motion": true,
+    "typed_simulated_camera_detection": true,
+    "blue_goal": true,
+    "red_native_motion": true,
+    "red_goal": true,
+    "short_approach_finishes": true,
+    "deployed_camera_fuel_follow": true,
+    "release_cancels_owner": true,
+    "disable_cancels_owner": true,
+    "autonomous_native_goal": true,
+    "bounded_autodrive_requests": true,
+    "no_external_command_stream": true
+  },
+  "cases": [
+    {
+      "alliance": "blue",
+      "goal": [
+        5.4500000953674315,
+        0.6393179893493652
+      ],
+      "truth": [
+        5.459187414152011,
+        0.6393373900241275,
+        0.0006204449040113283
+      ],
+      "error_m": 0.009187339268562794,
+      "status": "arrived"
+    },
+    {
+      "alliance": "red",
+      "goal": [
+        11.091348736390863,
+        7.429666323729137
+      ],
+      "truth": [
+        11.08668342534973,
+        7.428467856026742,
+        3.133477490196295
+      ],
+      "error_m": 0.004816788550912795,
+      "status": "arrived"
+    },
+    {
+      "mode": "short_approach",
+      "goal": [
+        3.9998547487794567,
+        0.639318094416032
+      ],
+      "error_m": 0.029536570313722827,
+      "status": "arrived"
+    },
+    {
+      "mode": "deployed_camera_fuel_follow",
+      "movement_m": 1.0333372408424153,
+      "collected": 8.0,
+      "detection_fresh": true,
+      "status": "arrived"
+    },
+    {
+      "mode": "autonomous",
+      "goal": [
+        5.4502834723705496,
+        0.6393219447447848
+      ],
+      "error_m": 0.01264320405247931,
+      "selected": "AutoDrive target",
+      "active_at_start": false,
+      "status": "arrived",
+      "start_pose": [
+        3.65004863646457,
+        0.6393179590435605,
+        0.00012000086915477436
+      ]
+    }
+  ],
+  "peak_requested_mps": 2.0000000000000004,
+  "peak_requested_radps": 0.396154004629153,
+  "passed": true,
+  "evidence": {
+    "package": "MecoBase 2026.2.6 public",
+    "publication_run": "https://github.com/MECO-Robotics/MecoBase-cpp/actions/runs/40905819530",
+    "source_revision": "8705ba06af5c38f4ef21a8540457ec876702e90b",
+    "cached_artifact_checksum_matches": {
+      "meco-base-cpp-2026.2.6-linuxx86-64static.zip": true,
+      "meco-base-cpp-2026.2.6-headers.zip": true,
+      "meco-base-cpp-2026.2.6-linuxathenastaticdebug.zip": true,
+      "meco-base-cpp-2026.2.6-linuxathenastatic.zip": true,
+      "meco-base-cpp-2026.2.6.pom": true,
+      "meco-base-cpp-2026.2.6-linuxx86-64staticdebug.zip": true
+    },
+    "robot_revision": "51829c1",
+    "build": "public dependencies refreshed; desktop and roboRIO Debug/Release; 23 desktop tests each",
+    "scope": "desktop simulation; no physical hardware validation"
+  }
+}
