@@ -19,6 +19,7 @@
 #include <stdexcept>
 #endif
 #include <frc2/command/CommandScheduler.h>
+// Construct simulation services before the robot loop starts.
 Robot::Robot()
 {
 #ifndef __FRC_ROBORIO__
@@ -36,19 +37,22 @@ Robot::Robot()
 #endif
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
-    practice_ = std::make_unique<meco::sim::PracticeMatchController>(meco::sim::PracticeMatchProfile{20,3,140});
+    practice_ = std::make_unique<meco::sim::PracticeMatchController>(meco::sim::PracticeMatchProfile{20, 3, 140});
 #endif
   frc::DataLogManager::Start();
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
   frc::RobotController::SetBrownoutVoltage(units::volt_t{6});
 }
+// Refresh match context before running scheduled commands.
 void Robot::RobotPeriodic()
 {
   const auto match = base::season2026::ReadMatchContext();
   container_.SetMatchContext(match);
-  if (autonomousPending_ && frc::DriverStation::IsAutonomousEnabled() && container_.SimulationResetReady()) {
+  if (autonomousPending_ && frc::DriverStation::IsAutonomousEnabled() && container_.SimulationResetReady())
+  {
     autonomousPending_ = false;
-    if (autonomous_) container_.ScheduleAutonomous(autonomous_);
+    if (autonomous_)
+      container_.ScheduleAutonomous(autonomous_);
   }
   base::simulation::BeginLatencyProbe();
   frc2::CommandScheduler::GetInstance().Run();
@@ -71,19 +75,27 @@ void Robot::RobotPeriodic()
   nt->GetEntry("RedHubActive").SetBoolean(match.redActive.value_or(false));
   nt->GetEntry("BlueNextChange").SetDouble(match.blueNextChange.value_or(-1));
   nt->GetEntry("RedNextChange").SetDouble(match.redNextChange.value_or(-1));
-  frc::SmartDashboard::PutString("Shifts/Game State",match.phase);
-  frc::SmartDashboard::PutBoolean("Shifts/Shift Active",match.ownActive.value_or(false));
-  frc::SmartDashboard::PutBoolean("Shifts/State Known",match.ownActive.has_value());
-  if (match.periodTime) {
-    const int seconds=static_cast<int>(*match.periodTime);
-    frc::SmartDashboard::PutString("Match Time",fmt::format("{:02d}:{:02d}.{}",seconds/60,seconds%60,static_cast<int>(*match.periodTime*10)%10));
-  } else frc::SmartDashboard::PutString("Match Time","unknown");
-  const auto next=match.alliance ? (*match.alliance==frc::DriverStation::Alliance::kBlue?match.blueNextChange:match.redNextChange) : std::nullopt;
-  frc::SmartDashboard::PutString("Shifts/Remaining Shift Time",next?fmt::format("{:.1f}",*next):"unknown");
-  frc::SmartDashboard::PutBoolean("Shifts/Active First?",match.alliance&&match.gameDataValid&&
-      ((*match.alliance==frc::DriverStation::Alliance::kBlue)==(match.gameData=="R")));
-
+  frc::SmartDashboard::PutString("Shifts/Game State", match.phase);
+  frc::SmartDashboard::PutBoolean("Shifts/Shift Active", match.ownActive.value_or(false));
+  frc::SmartDashboard::PutBoolean("Shifts/State Known", match.ownActive.has_value());
+  if (match.periodTime)
+  {
+    const int seconds = static_cast<int>(*match.periodTime);
+    frc::SmartDashboard::PutString("Match Time", fmt::format("{:02d}:{:02d}.{}", seconds / 60, seconds % 60,
+                                                             static_cast<int>(*match.periodTime * 10) % 10));
+  }
+  else
+    frc::SmartDashboard::PutString("Match Time", "unknown");
+  const auto next = match.alliance ? (*match.alliance == frc::DriverStation::Alliance::kBlue ? match.blueNextChange
+                                                                                             : match.redNextChange)
+                                   : std::nullopt;
+  frc::SmartDashboard::PutString("Shifts/Remaining Shift Time", next ? fmt::format("{:.1f}", *next) : "unknown");
+  frc::SmartDashboard::PutBoolean(
+      "Shifts/Active First?",
+      match.alliance && match.gameDataValid &&
+          ((*match.alliance == frc::DriverStation::Alliance::kBlue) == (match.gameData == "R")));
 }
+// Reset the scene before scheduling the selected autonomous command.
 void Robot::AutonomousInit()
 {
   container_.CancelChecks();
@@ -93,11 +105,13 @@ void Robot::AutonomousInit()
   container_.ResetSimulation();
   autonomous_ = container_.GetAutonomousCommand();
   autonomousPending_ = autonomous_ != nullptr;
-  if (autonomousPending_ && container_.SimulationResetReady()) {
+  if (autonomousPending_ && container_.SimulationResetReady())
+  {
     autonomousPending_ = false;
     container_.ScheduleAutonomous(autonomous_);
   }
 }
+// Release autonomous ownership before accepting driver input.
 void Robot::TeleopInit()
 {
   autonomousPending_ = false;
@@ -105,6 +119,7 @@ void Robot::TeleopInit()
   if (autonomous_)
     autonomous_->Cancel();
 }
+// Test mode starts with no scheduled robot commands.
 void Robot::TestInit()
 {
   autonomousPending_ = false;
@@ -115,10 +130,12 @@ void Robot::TestInit()
 int main() { return frc::StartRobot<Robot>(); }
 #endif
 
+// Advance the practice controller, scene, battery, and simulated DS packet.
 void Robot::SimulationPeriodic()
 {
 #ifndef __FRC_ROBORIO__
-  if (practice_) practice_->Update();
+  if (practice_)
+    practice_->Update();
 #endif
   container_.SimulationPeriodic();
 #ifndef __FRC_ROBORIO__
@@ -126,11 +143,14 @@ void Robot::SimulationPeriodic()
   const double batteryVoltage = meco::sim::UpdateBatterySupply(runtime);
   frc::SmartDashboard::PutNumber("SimulationPower/SupplyCurrentAmps", runtime.SupplyCurrent());
   frc::SmartDashboard::PutNumber("SimulationPower/BusVoltage", batteryVoltage);
-  static auto powerPublisher = nt::NetworkTableInstance::GetDefault()
-                                   .GetDoubleArrayTopic("/Simulation/PowerSamples")
-                                   .Publish();
+  static auto powerPublisher =
+      nt::NetworkTableInstance::GetDefault().GetDoubleArrayTopic("/Simulation/PowerSamples").Publish();
   powerPublisher.Set(std::array<double, 3>{static_cast<double>(nt::Now()), runtime.SupplyCurrent(), batteryVoltage});
   meco::sim::PublishDriverStationPacket();
 #endif
 }
-void Robot::DisabledInit() { autonomousPending_ = false; container_.CancelChecks(); }
+void Robot::DisabledInit()
+{
+  autonomousPending_ = false;
+  container_.CancelChecks();
+}

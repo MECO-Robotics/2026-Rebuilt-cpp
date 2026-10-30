@@ -22,6 +22,7 @@
 #include <frc/geometry/struct/Pose3dStruct.h>
 #endif
 #include <vector>
+// Owns season subsystems, command bindings, and simulation adapters.
 class RobotContainer
 {
 public:
@@ -29,6 +30,7 @@ public:
   frc2::Command *GetAutonomousCommand();
   void ScheduleAutonomous(frc2::Command *command);
   void CancelChecks();
+  // Share one Driver Station-derived snapshot across season logic.
   void SetMatchContext(base::season2026::MatchContext context)
   {
     matchContext_ = std::move(context);
@@ -37,6 +39,7 @@ public:
   }
   void SimulationPeriodic();
   void ResetSimulation();
+  // Autonomous waits until reset feedback has been reconciled.
   bool SimulationResetReady() const
   {
 #ifndef __FRC_ROBORIO__

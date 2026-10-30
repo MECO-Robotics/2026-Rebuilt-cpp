@@ -3,107 +3,140 @@
 #include "season/Mechanisms.h"
 #include <algorithm>
 
-namespace season {
+namespace season
+{
 // A timeout or unknown/inactive HUB must never authorize a hub shot.
-inline bool OffensiveHubShotAllowed(std::optional<bool> hubActive,
-                                    std::optional<frc::Pose2d> target,
-                                    frc::Pose2d pose, frc::ChassisSpeeds speeds) {
-  return hubActive.value_or(false) && target && AutoDriveArrived(pose,speeds,*target);
+inline bool OffensiveHubShotAllowed(std::optional<bool> hubActive, std::optional<frc::Pose2d> target, frc::Pose2d pose,
+                                    frc::ChassisSpeeds speeds)
+{
+  return hubActive.value_or(false) && target && AutoDriveArrived(pose, speeds, *target);
 }
 // Anonymous detections can disappear due to pickup or occlusion. This is a
 // heuristic, not a measured hopper count.
-class OffensiveFuelEstimate {
- public:
-  void Observe(const std::vector<base::ObjectCluster>& points, frc::Pose2d pose) {
-    for (const auto& old:previous_) {
-      const auto local=(old.position-pose.Translation()).RotateBy(-pose.Rotation());
-      const bool mouth=local.X().value()>=.20 && local.X().value()<=.70 && std::abs(local.Y().value())<=.4;
-      const bool seen=std::any_of(points.begin(),points.end(),[&](const auto& p) {return p.position.Distance(old.position).value()<.12;});
-      if (mouth && !seen) ++count_;
+class OffensiveFuelEstimate
+{
+public:
+  void Observe(const std::vector<base::ObjectCluster> &points, frc::Pose2d pose)
+  {
+    for (const auto &old : previous_)
+    {
+      const auto local = (old.position - pose.Translation()).RotateBy(-pose.Rotation());
+      const bool mouth = local.X().value() >= .20 && local.X().value() <= .70 && std::abs(local.Y().value()) <= .4;
+      const bool seen = std::any_of(points.begin(), points.end(),
+                                    [&](const auto &p) { return p.position.Distance(old.position).value() < .12; });
+      if (mouth && !seen)
+        ++count_;
     }
-    previous_=points;
+    previous_ = points;
   }
-  void StartCollection() {previous_.clear();}
-  void CompleteFeed(bool fed) {if (fed) count_=0;}
-  int Count() const {return count_;}
- private:
-  int count_=0;
+  void StartCollection() { previous_.clear(); }
+  void CompleteFeed(bool fed)
+  {
+    if (fed)
+      count_ = 0;
+  }
+  int Count() const { return count_; }
+
+private:
+  int count_ = 0;
   std::vector<base::ObjectCluster> previous_;
 };
-enum class OffensiveDecision { Wait, Collect, Score, Ferry };
-enum class OffensiveCommitment { None, Score, Ferry };
-inline std::optional<frc::Translation2d> MatchOffensiveTarget(
-    frc::Translation2d locked, const std::vector<base::ObjectCluster>& points) {
-  const auto nearest = std::min_element(points.begin(), points.end(), [&](const auto& a, const auto& b) {
-    return a.position.Distance(locked) < b.position.Distance(locked);
-  });
+enum class OffensiveDecision
+{
+  Wait,
+  Collect,
+  Score,
+  Ferry
+};
+enum class OffensiveCommitment
+{
+  None,
+  Score,
+  Ferry
+};
+inline std::optional<frc::Translation2d> MatchOffensiveTarget(frc::Translation2d locked,
+                                                              const std::vector<base::ObjectCluster> &points)
+{
+  const auto nearest = std::min_element(points.begin(), points.end(), [&](const auto &a, const auto &b)
+                                        { return a.position.Distance(locked) < b.position.Distance(locked); });
   if (nearest == points.end() || nearest->position.Distance(locked).value() >= .3)
     return std::nullopt;
   return nearest->position;
 }
-inline OffensiveCommitment ReconcileOffensiveCommitment(OffensiveCommitment current,
-    std::optional<bool> hubActive, bool fullFeedCompleted) {
-  if (fullFeedCompleted) return OffensiveCommitment::None;
-  if (!hubActive) return current;
-  if ((current==OffensiveCommitment::Score && !*hubActive) ||
-      (current==OffensiveCommitment::Ferry && *hubActive)) return OffensiveCommitment::None;
+inline OffensiveCommitment ReconcileOffensiveCommitment(OffensiveCommitment current, std::optional<bool> hubActive,
+                                                        bool fullFeedCompleted)
+{
+  if (fullFeedCompleted)
+    return OffensiveCommitment::None;
+  if (!hubActive)
+    return current;
+  if ((current == OffensiveCommitment::Score && !*hubActive) || (current == OffensiveCommitment::Ferry && *hubActive))
+    return OffensiveCommitment::None;
   return current;
 }
 // Estimate enough time for the staged trench route and shooter readiness.
 // This is a conservative scheduling heuristic, not an arrival guarantee.
-inline bool OffensiveScoringWindowClosing(frc::Pose2d pose,
-    frc::DriverStation::Alliance alliance, const FieldGeometry& field,
-    std::optional<double> nextChange) {
-  if (!nextChange || !std::isfinite(*nextChange) || *nextChange < 0) return false;
-  const bool red=alliance==frc::DriverStation::Alliance::kRed;
-  const frc::Translation2d home{units::meter_t{red ? field.length-3.65 : 3.65},
-                               units::meter_t{red ? field.width-.75 : .75}};
-  const frc::Translation2d trench{units::meter_t{red ? field.length-6.2 : 6.2},
-                                 units::meter_t{red ? field.width-.75 : .75}};
-  const double route=InAllianceZone(alliance,pose.Translation(),field)
-      ? pose.Translation().Distance(home).value()
-      : pose.Translation().Distance(trench).value()+trench.Distance(home).value();
+inline bool OffensiveScoringWindowClosing(frc::Pose2d pose, frc::DriverStation::Alliance alliance,
+                                          const FieldGeometry &field, std::optional<double> nextChange)
+{
+  if (!nextChange || !std::isfinite(*nextChange) || *nextChange < 0)
+    return false;
+  const bool red = alliance == frc::DriverStation::Alliance::kRed;
+  const frc::Translation2d home{units::meter_t{red ? field.length - 3.65 : 3.65},
+                                units::meter_t{red ? field.width - .75 : .75}};
+  const frc::Translation2d trench{units::meter_t{red ? field.length - 6.2 : 6.2},
+                                  units::meter_t{red ? field.width - .75 : .75}};
+  const double route = InAllianceZone(alliance, pose.Translation(), field)
+                           ? pose.Translation().Distance(home).value()
+                           : pose.Translation().Distance(trench).value() + trench.Distance(home).value();
   // Staged return is limited to 1 m/s; allow time for path setup, settling,
   // aiming and at least the beginning of a volley.
   return *nextChange <= route + 8.;
 }
 // Upstream single-robot arbitration adapted to an estimated, not measured, load.
-inline OffensiveDecision DecideOffense(std::optional<bool> active,
-    std::optional<frc::DriverStation::Alliance> alliance, frc::Pose2d pose,
-    const FieldGeometry& field, const std::vector<base::ObjectCluster>& points,
-    int estimatedFuel, double capacity, bool scoreCommitted=false, bool ferryCommitted=false,
-    bool autonomous=false, std::optional<double> periodTime=std::nullopt, bool collectionExpired=false,
-    bool loadUnknown=true) {
-  if (!active || !alliance) return OffensiveDecision::Wait;
-  bool anyEligible=false, friendlyFuel=false, nearbyMidfield=false;
-  const bool inZone=InAllianceZone(*alliance,pose.Translation(),field);
-  const bool capacityKnown=std::isfinite(capacity) && capacity>0;
-  const bool full=capacityKnown && estimatedFuel>=capacity;
-  const double remaining=capacityKnown ? std::clamp(1.-estimatedFuel/capacity,0.,1.) : 1.;
-  for (const auto& p:points) {
-    const bool friendly=InAllianceZone(*alliance,p.position,field);
-    if (friendly) friendlyFuel=true;
-    if (*active || !friendly) anyEligible=true;
-    if (!friendly && p.position.Distance(pose.Translation()).value()<=2.+1.5*remaining)
-      nearbyMidfield=true;
+inline OffensiveDecision DecideOffense(std::optional<bool> active, std::optional<frc::DriverStation::Alliance> alliance,
+                                       frc::Pose2d pose, const FieldGeometry &field,
+                                       const std::vector<base::ObjectCluster> &points, int estimatedFuel,
+                                       double capacity, bool scoreCommitted = false, bool ferryCommitted = false,
+                                       bool autonomous = false, std::optional<double> periodTime = std::nullopt,
+                                       bool collectionExpired = false, bool loadUnknown = true)
+{
+  if (!active || !alliance)
+    return OffensiveDecision::Wait;
+  bool anyEligible = false, friendlyFuel = false, nearbyMidfield = false;
+  const bool inZone = InAllianceZone(*alliance, pose.Translation(), field);
+  const bool capacityKnown = std::isfinite(capacity) && capacity > 0;
+  const bool full = capacityKnown && estimatedFuel >= capacity;
+  const double remaining = capacityKnown ? std::clamp(1. - estimatedFuel / capacity, 0., 1.) : 1.;
+  for (const auto &p : points)
+  {
+    const bool friendly = InAllianceZone(*alliance, p.position, field);
+    if (friendly)
+      friendlyFuel = true;
+    if (*active || !friendly)
+      anyEligible = true;
+    if (!friendly && p.position.Distance(pose.Translation()).value() <= 2. + 1.5 * remaining)
+      nearbyMidfield = true;
   }
-  const bool autoReturn=autonomous && periodTime && std::isfinite(*periodTime) && *periodTime<=13.;
+  const bool autoReturn = autonomous && periodTime && std::isfinite(*periodTime) && *periodTime <= 13.;
   // No possession sensor: zero inferred pickups is unknown, not proof of an
   // empty hopper. Timed attempts may therefore operate on an empty hopper.
-  const bool mayCarry=estimatedFuel>0 || loadUnknown;
+  const bool mayCarry = estimatedFuel > 0 || loadUnknown;
   // Ferry trajectories must cross into the alliance zone from the neutral side.
   // Keep collecting toward neutral rather than committing to an impossible shot
   // while the robot is still in its own zone.
-  if (!*active && inZone) return OffensiveDecision::Collect;
-  if (mayCarry && *active && (autoReturn || collectionExpired ||
-      (estimatedFuel>0 && (scoreCommitted || full ||
-        (inZone && !friendlyFuel) || (!inZone && !nearbyMidfield))))) return OffensiveDecision::Score;
-  if (mayCarry && !*active && (collectionExpired ||
-      (estimatedFuel>0 && (ferryCommitted || full || !anyEligible)))) return OffensiveDecision::Ferry;
+  if (!*active && inZone)
+    return OffensiveDecision::Collect;
+  if (mayCarry && *active &&
+      (autoReturn || collectionExpired ||
+       (estimatedFuel > 0 && (scoreCommitted || full || (inZone && !friendlyFuel) || (!inZone && !nearbyMidfield)))))
+    return OffensiveDecision::Score;
+  if (mayCarry && !*active && (collectionExpired || (estimatedFuel > 0 && (ferryCommitted || full || !anyEligible))))
+    return OffensiveDecision::Ferry;
   return OffensiveDecision::Collect;
 }
 // Runs until interrupted. Possession is not sensed on this robot; collection
 // and shooting are bounded attempts rather than exact capacity-based decisions.
-frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
-                                    Mechanisms mechanisms, FieldGeometry field);
-}
+frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, Mechanisms mechanisms,
+                                    FieldGeometry field);
+} // namespace season

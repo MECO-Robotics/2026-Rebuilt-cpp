@@ -4,6 +4,7 @@
 #ifndef __FRC_ROBORIO__
 #include <meco/sim/PracticeMatchController.h>
 #endif
+// Drives the command scheduler and season mode transitions.
 class Robot : public frc::TimedRobot
 {
 public:
