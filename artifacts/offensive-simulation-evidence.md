@@ -17,6 +17,14 @@ and HAL websocket endpoints. HAL websocket listens on all interfaces.
 | [Blue, R inactive first](offensive-public-blue.json.gz) | Public MecoBase 2026.2.10, `de868a2a5912ddcac9fbd12b5c3608f2cf85a0be151a4fe879fd6f824ea0a986` | Complete, 7 auto scores, 92 teleop pickups, 35 teleop scores, stopped on disable; 54 stored at completion. |
 | [Red, R inactive first, debugger](offensive-staged-red-gdb.json.gz) | Local staged MecoBase 2026.2.10, `dc109e1860b1cef28de2b445cf15e88a2c5daade2fb6ac0f38fa2dc394ccd1aa` | Complete, 8 auto scores, 54 teleop pickups, 43 teleop scores, stopped on disable. No `std::bad_optional_access` caught. |
 | [Red, R inactive first, repeat](offensive-staged-red-repeat.json.gz) | Same staged executable as above | Complete, 9 auto scores, 55 teleop pickups, 46 teleop scores, stopped on disable. |
+| [Red, R inactive first, public Release](offensive-public-release-red.json.gz) | Public MecoBase 2026.2.10, `ed397709b0b098f13a7bda81d5956330804ece6f94bf5464a96e6794282ffcdc` | Complete, 108 teleop pickups, 45 teleop scores, stopped on disable. |
+
+The public Release red trial was the second practice in the same simulator
+process. Its `complete` score sample of 11 predates the reset; autonomous and
+teleop samples are after reset. The simulator reported quota errors writing its
+WPILOG under `/tmp`; the NT observer trace was saved, but the WPILOG is incomplete.
+The [Release library hashes](offensive-public-release-libs.sha256) record the
+linked dependency files.
 
 The public Linux x86-64 debug MecoBase archive downloaded from the published
 Maven URL and Gradle's cached archive both had SHA-256
@@ -43,6 +51,10 @@ zero requested drive speed and zero bottom-indexer, top-indexer and conveyor
 voltage after the relevant stop. The staged probe interrupted an active drive;
 the public probe began in score phase with feed already off. Neither proves
 interruption during an actively feeding volley or checks every motor.
+An additional [public Release probe](offensive-public-red-active-feed-safety.json)
+injected missing game data while feeding was active and observed all three feed
+voltages and the drive request go to zero. Its later release and disable checks
+did not necessarily occur during feeding.
 
 ## Unresolved failure
 
