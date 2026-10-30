@@ -1,0 +1,83 @@
+{
+  "binary_sha256": "dc109e1860b1cef28de2b445cf15e88a2c5daade2fb6ac0f38fa2dc394ccd1aa",
+  "active_started": true,
+  "active": {
+    "phase": "return",
+    "known": true,
+    "voltages": [
+      0.0,
+      -0.0,
+      0.0
+    ],
+    "request": [
+      0.8334213480678448,
+      0.5526380882501462,
+      0.08048879178651736
+    ]
+  },
+  "unknown_seen": true,
+  "unknown": {
+    "phase": "wait-for-match",
+    "known": false,
+    "voltages": [
+      0.0,
+      -0.0,
+      0.0
+    ],
+    "request": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "unknown_stopped": true,
+  "resumed": true,
+  "resume_snapshot": {
+    "phase": "return",
+    "known": true,
+    "voltages": [
+      0.0,
+      -0.0,
+      0.0
+    ],
+    "request": [
+      0.639497310985882,
+      0.16494725720087072,
+      -0.12931473346657105
+    ]
+  },
+  "released": true,
+  "release_snapshot": {
+    "phase": "idle",
+    "known": true,
+    "voltages": [
+      0.0,
+      -0.0,
+      0.0
+    ],
+    "request": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "release_stopped": true,
+  "reengaged": true,
+  "disabled": true,
+  "disabled_snapshot": {
+    "phase": "idle",
+    "known": true,
+    "voltages": [
+      0.0,
+      -0.0,
+      0.0
+    ],
+    "request": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "disable_stopped": true,
+  "passed": true
+}
