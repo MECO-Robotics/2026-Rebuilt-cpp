@@ -149,10 +149,14 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     auto direct=[&drive,home,invalid] {
       return base::AutoDriveToPose(drive,home).WithTimeout(15_s).Until(invalid);
     };
-    return frc2::cmd::Either(
-      base::AutoDriveToPose(drive,trench).WithTimeout(15_s).Until(invalid)
-        .AndThen(frc2::cmd::Either(direct(),frc2::cmd::None(),stageArrived)),
-      direct(),needsStage).BeforeStarting([] {Phase("return");});
+    auto stageAttempt=[&drive,trench,invalid,stageArrived] {
+      return frc2::cmd::Either(frc2::cmd::None(),
+          base::AutoDriveToPose(drive,trench).WithTimeout(8_s).Until(invalid),stageArrived);
+    };
+    auto staged=frc2::cmd::Sequence(stageAttempt(),stageAttempt(),stageAttempt(),
+        frc2::cmd::Either(direct(),frc2::cmd::None(),stageArrived));
+    return frc2::cmd::Either(std::move(staged),direct(),needsStage)
+        .BeforeStarting([] {Phase("return");});
   };
   auto shot = [&perception,&drive,m,field,estimate]() {
     CoordinatedShotOptions options;
