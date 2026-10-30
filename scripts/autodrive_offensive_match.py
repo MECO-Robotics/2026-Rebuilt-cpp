@@ -40,7 +40,7 @@ async def run(args):
     clusters = number('/SmartDashboard/AutoDrive/ClusterCount')
     front = number('/SmartDashboard/AutoDrive/SimFrontDetections')
     rear = number('/SmartDashboard/AutoDrive/SimRearDetections')
-    offense_phase = string('/AutoDrive/OffensePhase')
+    offense_phase = string('/SmartDashboard/AutoDrive/OffensePhase')
     phase = string('/Match/Phase')
     remaining = number('/Match/Time')
     hub_known = boolean('/SmartDashboard/AutoDrive/HubKnown')
