@@ -155,7 +155,7 @@ async def run(args):
                 await asyncio.sleep(.1)
                 await disable()
             reader.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
+            with contextlib.suppress(asyncio.CancelledError, Exception):
                 await reader
             nt.stopClient()
             ntcore.NetworkTableInstance.destroy(nt)
