@@ -32,6 +32,7 @@
 using namespace units::literals;
 namespace
 {
+// Select hardware IO only on a real robot.
 base::Mode Mode() { return frc::RobotBase::IsReal() ? base::Mode::Real : base::Mode::Sim; }
 #ifndef __FRC_ROBORIO__
 meco::sim::RobotContactConfig RobotContacts()
@@ -54,6 +55,7 @@ meco::sim::RobotContactConfig RobotContacts()
   return c;
 }
 #endif
+// Configure the swerve hardware, geometry, and simulation model.
 base::DriveConfig DriveConfig()
 {
   base::DriveConfig c;
@@ -97,6 +99,7 @@ base::DriveConfig DriveConfig()
   c.autoConfigFromGUI = true;
   c.autoTranslationKP = 15;
   c.autoRotationKP = 10;
+  // Module order is front-left, front-right, back-left, back-right.
   c.modules = {{{2, 1, 9, .3076171875, .2794, .2794, false, true, false},
                 {8, 3, 10, .304931640625, .2794, -.2794, true, true, false},
                 {6, 5, 11, -.083740234375, -.2794, .2794, false, true, false},
@@ -130,10 +133,12 @@ base::DriveConfig DriveConfig()
 #endif
   return c;
 }
+// Construct flywheel motor IO using the season configuration and inertia.
 std::unique_ptr<base::MotorIO> Motor(const season::hardware::FlywheelConfig &c, base::Vendor vendor)
 {
   return base::MakeMotorIO(Mode(), vendor, c.motor, c.inertiaKgMetersSquared);
 }
+// Derive trench references from the official field tag layout.
 season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
 {
   auto midpoint = [&](int a, int b)
@@ -143,6 +148,7 @@ season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
   };
   return {layout.GetFieldLength().value(), layout.GetFieldWidth().value(), midpoint(22, 23), midpoint(6, 7)};
 }
+// Express the headset mount relative to the robot frame.
 base::QuestNavConfig QuestConfig(const frc::AprilTagFieldLayout &layout)
 {
   base::QuestNavConfig c;
@@ -152,6 +158,7 @@ base::QuestNavConfig QuestConfig(const frc::AprilTagFieldLayout &layout)
                                     frc::Rotation3d{180_deg, 0_deg, 180_deg}};
   return c;
 }
+// Express the Limelight mount relative to the robot frame.
 base::VisionConfig VisionConfig(const frc::AprilTagFieldLayout &layout)
 {
   base::VisionConfig c;
@@ -197,6 +204,7 @@ void RobotContainer::AcceptVision(const base::VisionObservation &observation)
   if (vision_->Inputs(1).tracking && !vision_->Inputs(1).aligned)
     vision_->AlignToField(1, observation.pose);
 }
+// Pass non-owning subsystem references to season command factories.
 season::Mechanisms RobotContainer::Mechanisms() { return {rack_, intake_, conveyor_, bottom_, top_, hood_, shooter_}; }
 RobotContainer::RobotContainer()
     : drive_(DriveConfig()),
@@ -242,6 +250,7 @@ RobotContainer::RobotContainer()
           frc::RobotBase::IsReal() ? "/home/lvuser/systemcheck-latest.json" : "systemcheck-latest.json",
           {.setupPrompt = "Confirm robot on blocks, no fuel, clear personnel and Disable operator ready"})
 {
+  // Install the pathfinder before constructing commands that use it.
   base::ConfigureNativeAutoDrivePathfinder();
   drive_.ConfigureAuto();
 #ifndef __FRC_ROBORIO__
@@ -255,6 +264,7 @@ RobotContainer::RobotContainer()
         nt::NetworkTableInstance::GetDefault().GetStructTopic<frc::Pose3d>("/Simulation/RobotTruth").Publish();
     simulationBodyPosePublisher_ =
         nt::NetworkTableInstance::GetDefault().GetStructTopic<frc::Pose3d>("/Simulation/PhysicsBodyTruth").Publish();
+    // The drive owns one physics adapter and its optional field arena.
     const auto backend = base::sim::BackendFromEnvironment();
     const auto &physics = drive_.Config().simulation;
     // Hard-mounted wheels have a fixed geometric body-to-floor offset.
@@ -280,6 +290,7 @@ RobotContainer::RobotContainer()
                                    simulationFieldCollidersEnabled_ ? season::simulation::FieldColliders().size() : 0);
     simulationSession_ = simulation.get(); // Drive owns the session for this container lifetime.
     drive_.SetSimulationAdapter(std::move(simulation));
+    // A starting auto pose must move both simulation truth and odometry.
     drive_.SetPoseResetCallback(
         [this](const frc::Pose2d &pose)
         {
@@ -291,12 +302,14 @@ RobotContainer::RobotContainer()
               simulationResetPhysicalOrigin_ = pose;
               simulatedLocalization_.Reset();
               lastAcceptedVision_ = -1e9;
+              // Allow simulated encoders and gyro to catch up after teleporting.
               simulationResetFeedbackLoops_ = 5;
               drive_.ResetSimulation(pose);
               frc::SmartDashboard::PutString("Simulation/AutoStartPose", "applied");
             }
             else
             {
+              // Reject overlapping starts and restore the prior simulation origin.
               autonomousPoseBlocked_ = true;
               drive_.ResetPose(simulationResetPhysicalOrigin_);
               frc::SmartDashboard::PutString("Simulation/AutoStartPose", "blocked-by-field");
@@ -308,7 +321,9 @@ RobotContainer::RobotContainer()
         });
   }
 #endif
+  // Manual driving resumes whenever no other command owns the drivetrain.
   drive_.SetDefaultCommand(frc2::cmd::RunEnd([this] { DriveTeleop(false); }, [this] { drive_.Stop(); }, {&drive_}));
+  // Perception uses the live intake extension and the shared match snapshot.
   autoDrive_ = std::make_unique<season::AutoDrive>(
       drive_, [this] { return rack_.Position(); },
       [this]() -> const base::season2026::MatchContext & { return matchContext_; });
@@ -317,7 +332,9 @@ RobotContainer::RobotContainer()
   if (frc::RobotBase::IsSimulation())
     simulation_ = std::make_unique<season::FuelSimulation>(m, drive_);
 #endif
+  // Bind controls before registering the named autonomous actions.
   ConfigureBindings();
+  // PathPlanner markers reuse commands with explicit mechanism requirements.
   pathplanner::NamedCommands::registerCommand("DeployIntake",
                                               frc2::cmd::RunOnce([this] { rack_.SetPosition(.3); }, {&rack_}));
   pathplanner::NamedCommands::registerCommand("StowIntake",
@@ -356,6 +373,7 @@ RobotContainer::RobotContainer()
                                                                   conveyor_.Stop();
                                                                 },
                                                                 {&intake_, &conveyor_}));
+  // Spin up from the current pose while the auto is running.
   auto calculatedSpinUp = [this]
   {
     return frc2::cmd::RunEnd(
@@ -376,6 +394,7 @@ RobotContainer::RobotContainer()
   };
   pathplanner::NamedCommands::registerCommand("AutoSpinUp", calculatedSpinUp().WithTimeout(2_s));
   pathplanner::NamedCommands::registerCommand("Fender", season::ShooterPreset(m, 0, 30));
+  // AutoAim owns the drivetrain while it rotates toward the selected target.
   pathplanner::NamedCommands::registerCommand(
       "AutoAim",
       frc2::cmd::RunEnd(
@@ -397,11 +416,13 @@ RobotContainer::RobotContainer()
             shooter_.Stop();
           },
           {&drive_, &hood_, &shooter_}));
+  // Combine deployed PathPlanner autos with season-specific options.
   autoChooser_ = pathplanner::AutoBuilder::buildAutoChooser();
   seasonAutos_.emplace_back(HubShot(true, true));
   seasonAutos_.emplace_back(
       base::FollowChoreo<2026>(drive_, "LeftBlueBump", {10, 0, 0}, {7, 0, 0}, units::second_t{.02}).AndThen(HubShot()));
   seasonAutos_.emplace_back(frc2::cmd::None());
+  // Hardware and desktop simulation intentionally choose different defaults.
   if (!frc::RobotBase::IsSimulation())
     autoChooser_.SetDefaultOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
   else
@@ -420,6 +441,7 @@ RobotContainer::RobotContainer()
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
   {
+    // The dashboard command starts practice using the selected sim station.
     seasonAutos_.emplace_back(frc2::cmd::RunOnce(
                                   []
                                   {
@@ -457,6 +479,7 @@ RobotContainer::RobotContainer()
     frc::SmartDashboard::PutData("Start Practice Match", seasonAutos_.back().get());
   }
 #endif
+  // Reserve all controlled mechanisms during a diagnostic run.
   checks_.ConfigureRequirements({&drive_, &rack_, &hood_, &shooter_, &intake_, &conveyor_, &bottom_, &top_});
   season::ConfigureSystemChecks(
       checks_, drive_, rack_, hood_, shooter_,
@@ -473,6 +496,7 @@ void RobotContainer::ConfigureBindings()
   // driver heading reset. This binding never exists on the physical robot.
   controller_.Back().OnTrue(frc2::cmd::RunOnce([this] { ResetSimulation(); }));
 #endif
+  // LB selects target driving or offense according to the dashboard toggle.
   (controller_.LeftBumper() &&
    []
    {
@@ -496,18 +520,22 @@ void RobotContainer::ConfigureBindings()
                 drive_.Pose().Rotation() - frc::Rotation2d{units::radian_t{red ? std::numbers::pi : 0}};
           },
           {&drive_}));
+  // Triggers acquire and eject while held.
   (controller_.RightTrigger() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Acquire(m));
   (controller_.LeftTrigger() && [] { return frc::DriverStation::IsTeleopEnabled(); })
       .WhileTrue(season::Eject(m).AlongWith(
           frc2::cmd::RunEnd([this] { rack_.SetPosition(.30); }, [this] { rack_.Stop(); }, {&rack_})));
+  // Feed while held; rumble reports shooter readiness.
   (controller_.RightBumper() && [] { return frc::DriverStation::IsTeleopEnabled(); })
       .WhileTrue(season::AgitateAndFeed(
           m, [this](double intensity)
           { controller_.GetHID().SetRumble(frc::GenericHID::RumbleType::kBothRumble, intensity); }));
+  // Either operator can hold the rack deploy and stow commands.
   (controller_.POVUp() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Deploy(m));
   (copilot_.POVUp() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Deploy(m));
   (controller_.POVDown() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Stow(m));
   (copilot_.POVDown() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Stow(m));
+  // Copilot left/right latches the rack position.
   (copilot_.POVLeft() &&
    []
    {
@@ -518,6 +546,7 @@ void RobotContainer::ConfigureBindings()
    {
      return frc::DriverStation::IsTeleopEnabled();
    }).OnTrue(frc2::cmd::RunOnce([this] { rack_.SetPosition(0); }, {&rack_}));
+  // A assists aiming while retaining driver translation.
   (controller_.A() && [] { return frc::DriverStation::IsTeleopEnabled(); })
       .WhileTrue(frc2::cmd::RunEnd([this] { DriveTeleop(true); },
                                    [this]
@@ -527,6 +556,7 @@ void RobotContainer::ConfigureBindings()
                                      shooter_.Stop();
                                    },
                                    {&drive_, &hood_, &shooter_}));
+  // Face buttons select latched shooter presets or stop the shooter.
   (controller_.X() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::DriverHubPreset(m));
   (copilot_.X() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::DriverHubPreset(m));
   (controller_.Y() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::ShooterPreset(m, .049, 55));
@@ -545,6 +575,7 @@ void RobotContainer::DriveTeleop(bool aim)
   const double x = deadband(base::simulation::ObserveJoystick(-controller_.GetLeftY())) * drive_.Config().maxSpeed;
   const double y = deadband(-controller_.GetLeftX()) * drive_.Config().maxSpeed;
   double omega = deadband(-controller_.GetRightX()) * drive_.Config().maxAngularRate;
+  // Aim controls rotation and shooter targets while translation stays manual.
   if (aim)
   {
     const auto p = drive_.Pose();
@@ -572,12 +603,14 @@ season::ShotTarget RobotContainer::SelectTarget()
   if (frc::RobotBase::IsSimulation())
     return season::SelectTarget(alliance, p, simulatedLocalization_.tagIds, field_);
 #endif
+  // Limelight publishes each raw fiducial as a seven-value record.
   auto raw = table->GetNumberArray("rawfiducials", {});
   if (vision_->Inputs().connected)
     for (size_t i = 0; i + 6 < raw.size(); i += 7)
       ids.push_back(static_cast<int>(raw[i]));
   return season::SelectTarget(alliance, p, ids, field_);
 }
+// Build a bounded shot with optional drivetrain ownership and vision gating.
 frc2::CommandPtr RobotContainer::HubShot(bool ownDrive, bool requireVision)
 {
   season::CoordinatedShotOptions o;
@@ -599,6 +632,7 @@ frc2::CommandPtr RobotContainer::HubShot(bool ownDrive, bool requireVision)
       o);
 }
 frc2::Command *RobotContainer::GetAutonomousCommand() { return autoChooser_.GetSelected(); }
+// Capture only the initial pose reset made while the auto is scheduled.
 void RobotContainer::ScheduleAutonomous(frc2::Command *command)
 {
 #ifndef __FRC_ROBORIO__
@@ -630,6 +664,7 @@ void RobotContainer::SimulationPeriodic()
       drive_.ResetPose(simulationResetPose_.TransformBy(frc::Transform2d{
           simulationResetPhysicalOrigin_, frc::Pose2d{units::meter_t{truth->x}, units::meter_t{truth->y},
                                                       frc::Rotation2d{units::radian_t{truth->yaw}}}}));
+    // Keep body-origin physics and floor-referenced visualization distinct.
     const auto body = simulationSession_->PhysicsTruth().body;
     const auto q = body.pose.rotation;
     const frc::Pose3d bodyPose{units::meter_t{body.pose.position.x}, units::meter_t{body.pose.position.y},
@@ -638,6 +673,7 @@ void RobotContainer::SimulationPeriodic()
     simulationBodyPosePublisher_.Set(bodyPose);
     const auto visualPose = meco::sim::FloorReferencedRobotPose(bodyPose, simulationGroundedBodyHeight_);
     simulationPosePublisher_.Set(visualPose);
+    // Do not generate localization observations while reset feedback settles.
     if (simulationResetFeedbackLoops_ == 0)
       simulatedLocalization_.Update(visualPose, frc::Timer::GetFPGATimestamp(), layout_,
                                     VisionConfig(layout_).robotToCamera, QuestConfig(layout_).robotToQuest);
@@ -648,12 +684,14 @@ void RobotContainer::SimulationPeriodic()
     frc::SmartDashboard::PutNumber("Localization/TruthErrorMetres",
                                    drive_.Pose().Translation().Distance(visualPose.ToPose2d().Translation()).value());
     const auto &config = drive_.Config().simulation;
+    // Launch and contact calculations consume physical pose and velocities.
     fuelRobotState = season::FuelRobotState{
         visualPose,
         {body.linearVelocity.x, body.linearVelocity.y, body.linearVelocity.z},
         {body.angularVelocity.x, body.angularVelocity.y, body.angularVelocity.z},
         {config.centerOfMassX, config.centerOfMassY, config.centerOfMassZ + simulationGroundedBodyHeight_.value()}};
   }
+  // Step fuel once, then generate camera observations from the updated scene.
   if (simulation_)
     simulation_->Periodic(.02, fuelRobotState, matchContext_.ownActive);
   if (autoDrive_ && simulation_ && fuelRobotState && simulationResetFeedbackLoops_ == 0)
@@ -665,6 +703,7 @@ void RobotContainer::ResetSimulation()
 {
   driverHeadingOffset_ = frc::Rotation2d{};
 #ifndef __FRC_ROBORIO__
+  // Reset to a clear alliance-specific starting pose.
   const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
   simulationResetPhysicalOrigin_ =
       simulationFieldCollidersEnabled_ ? season::simulation::DefaultSpawn(red) : frc::Pose2d{};
