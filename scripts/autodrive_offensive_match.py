@@ -41,6 +41,7 @@ async def run(args):
     front = number('/SmartDashboard/AutoDrive/SimFrontDetections')
     rear = number('/SmartDashboard/AutoDrive/SimRearDetections')
     offense_phase = string('/SmartDashboard/AutoDrive/OffensePhase')
+    estimated_fuel = number('/SmartDashboard/AutoDrive/EstimatedFuel')
     phase = string('/Match/Phase')
     remaining = number('/Match/Time')
     hub_known = boolean('/SmartDashboard/AutoDrive/HubKnown')
@@ -91,6 +92,8 @@ async def run(args):
             score_by_phase = {}
             teleop_start_score = None
             teleop_feed = False
+            teleop_collected = 0
+            previous_stored = None
             while time.monotonic() - start < 170:
                 now = time.monotonic()
                 current = state.get()
@@ -100,6 +103,10 @@ async def run(args):
                 started |= current == 'autonomous'
                 if current == 'teleop' and teleop_start_score is None:
                     teleop_start_score = scored.get()
+                if current == 'teleop':
+                    if previous_stored is not None:
+                        teleop_collected += max(0, stored.get() - previous_stored)
+                    previous_stored = stored.get()
                 if current == 'aborted':
                     raise RuntimeError('practice aborted: ' + nt.getEntry('/Sim/Practice/Reason').getString(''))
                 if started and current == 'complete':
@@ -115,7 +122,7 @@ async def run(args):
                     p = truth.get()
                     result['trace'].append({'elapsed': round(now-start, 2), 'state': current,
                         'phase': phase.get(), 'offense_phase': offense_phase.get(), 'time': remaining.get(),
-                        'pose': [p.X(), p.Y(), p.rotation().Z()], 'stored': stored.get(),
+                        'pose': [p.X(), p.Y(), p.rotation().Z()], 'stored': stored.get(), 'estimated_fuel': estimated_fuel.get(),
                         'launched': launched.get(), 'scored': scored.get(), 'feeding': feeding.get(),
                         'clusters': clusters.get(), 'detections': [front.get(), rear.get()],
                         'hub_known': hub_known.get(), 'hub_active': hub_active.get()})
@@ -125,12 +132,13 @@ async def run(args):
             await asyncio.sleep(.5)
             result.update({'peak_clusters': peak_clusters, 'peak_detections': peak_detections,
                            'peak_stored': peak_stored, 'final_launched': launched.get(),
-                           'final_scored': scored.get(), 'teleop_score_delta': (scored.get() - teleop_start_score if teleop_start_score is not None else None),
+                           'final_scored': scored.get(), 'teleop_collected': teleop_collected, 'teleop_score_delta': (scored.get() - teleop_start_score if teleop_start_score is not None else None),
                            'score_by_phase': score_by_phase})
             result['checks'] = {'match_complete': state.get() == 'complete' and not running.get(),
                 'simulated_camera_observed_fuel': peak_detections > 0 and peak_clusters > 0,
                 'collected_fuel': peak_stored > 0, 'feeding_seen': saw_feed,
                 'launched_fuel': launched.get() > 0, 'scored_fuel': scored.get() > 0,
+                'teleop_collected': teleop_collected > 0,
                 'teleop_scoring': teleop_start_score is not None and scored.get() > teleop_start_score and teleop_feed,
                 'stopped_on_complete': len(modules.get()) == 4 and max(abs(m.speed) for m in modules.get()) < .05}
             result['passed'] = all(result['checks'].values())
