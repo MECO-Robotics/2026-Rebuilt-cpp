@@ -1,6 +1,10 @@
 #ifndef __FRC_ROBORIO__
 #include "season/FuelSimulation.h"
 #include "season/RobotVisualization.h"
+#if __has_include(<meco/sim/ParticleMotion.h>)
+#include <meco/sim/ParticleMotion.h>
+#define MECO_HAS_PARTICLE_MOTION 1
+#endif
 #include <networktables/NetworkTableInstance.h>
 
 #include <frc/DriverStation.h>
@@ -74,12 +78,23 @@ void FuelModel::Step(double dt,const FuelInputs& in){
  // Substeps resolve descending hub-height crossings even with coarse callers.
  int steps=std::max(1,static_cast<int>(std::ceil(dt/.005)));double h=dt/steps;
  for(int step=0;step<steps;++step){
-  for(auto it=airborne_.begin();it!=airborne_.end();){auto previous=it->position;it->position.x+=it->velocity.x*h;it->position.y+=it->velocity.y*h;it->position.z+=it->velocity.z*h-.5*9.80665*h*h;it->velocity.z-=9.80665*h;
+  for(auto it=airborne_.begin();it!=airborne_.end();){auto previous=it->position;
+#if MECO_HAS_PARTICLE_MOTION
+   meco::sim::AdvanceBallisticParticle(*it,h);
+#else
+   it->position.x+=it->velocity.x*h;it->position.y+=it->velocity.y*h;it->position.z+=it->velocity.z*h-.5*9.80665*h*h;it->velocity.z-=9.80665*h;
+#endif
    Point hub=HubPosition(in.alliance);double height=72*.0254;bool crossing=previous.z>=height&&it->position.z<height&&it->velocity.z<0;double fraction=crossing?(previous.z-height)/(previous.z-it->position.z):0;double x=previous.x+(it->position.x-previous.x)*fraction,y=previous.y+(it->position.y-previous.y)*fraction;
    if(crossing&&std::abs(x-hub.x)<=.6096&&std::abs(y-hub.y)<=.6096){if(scoring)++scored_;double direction=in.alliance==Alliance::Blue?1:-1,angle=(direction>0?0:kPi)+Random(kPi/4);floor_.push_back({{hub.x+direction*.65,hub.y,radius},{3*std::cos(angle),3*std::sin(angle),0}});it=airborne_.erase(it);}
    else if(it->position.z<=radius){floor_.push_back({{it->position.x,it->position.y,radius},{it->velocity.x*.15,it->velocity.y*.15,0}});it=airborne_.erase(it);}else ++it;
   }
-  for(auto& p:floor_){p.position.x+=p.velocity.x*h;p.position.y+=p.velocity.y*h;double attenuation=std::exp(-2*h);p.velocity.x*=attenuation;p.velocity.y*=attenuation;}
+  for(auto& p:floor_){
+#if MECO_HAS_PARTICLE_MOTION
+   meco::sim::AdvanceGroundParticle(p,h,2);
+#else
+   p.position.x+=p.velocity.x*h;p.position.y+=p.velocity.y*h;double attenuation=std::exp(-2*h);p.velocity.x*=attenuation;p.velocity.y*=attenuation;
+#endif
+  }
   meco::sim::ResolveParticleContacts(floor_,airborne_,RobotState(in),radius,.25,.30,kBumpers);
   // A bumper or ball may lift resting fuel back into ballistic motion.
   for(auto it=floor_.begin();it!=floor_.end();){if(it->position.z>radius+1e-6||it->velocity.z>1e-6){airborne_.push_back(*it);it=floor_.erase(it);}else{it->position.z=radius;it->velocity.z=0;++it;}}

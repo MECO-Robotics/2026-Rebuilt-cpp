@@ -1,4 +1,14 @@
 #pragma once
+#if __has_include(<base/season2026/MatchContext.h>)
+#include <base/season2026/MatchContext.h>
+#include "season/Shooting.h"
+namespace season {
+using base::season2026::MatchContext;
+using base::season2026::ComputeMatchContext;
+using base::season2026::ReadMatchContext;
+using base::season2026::AllianceLabel;
+}
+#else
 #include "season/Shooting.h"
 #include <frc/DriverStation.h>
 #include <optional>
@@ -77,3 +87,5 @@ inline MatchContext ReadMatchContext() {
       frc::DriverStation::GetGameSpecificMessage());
 }
 }
+
+#endif

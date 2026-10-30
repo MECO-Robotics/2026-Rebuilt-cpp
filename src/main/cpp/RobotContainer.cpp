@@ -1,6 +1,8 @@
 #include "season/SimulationLatency.h"
 #include "season/SimulationField.h"
-#include "season/SimulationPose.h"
+#ifndef __FRC_ROBORIO__
+#include <meco/sim/SimulationPose.h>
+#endif
 #include "RobotContainer.h"
 #include "season/MechanismConstants.h"
 #include "base/ChoreoAuto.h"
@@ -442,7 +444,7 @@ void RobotContainer::SimulationPeriodic()
         units::meter_t{body.pose.position.x}, units::meter_t{body.pose.position.y}, units::meter_t{body.pose.position.z},
         frc::Rotation3d{frc::Quaternion{q.w, q.x, q.y, q.z}}};
     simulationBodyPosePublisher_.Set(bodyPose);
-    const auto visualPose = season::simulation::FloorReferencedRobotPose(bodyPose, simulationGroundedBodyHeight_);
+    const auto visualPose = meco::sim::FloorReferencedRobotPose(bodyPose, simulationGroundedBodyHeight_);
     simulationPosePublisher_.Set(visualPose);
     if (simulationResetFeedbackLoops_ == 0)
       simulatedLocalization_.Update(visualPose, frc::Timer::GetFPGATimestamp(), layout_,

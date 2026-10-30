@@ -50,3 +50,12 @@ vendor protocol, driver, private header or estimator implementation. MecoSimulat
 remains the sole physics owner. The shared ideal-observation helper applies field and height bounds; the season
 selects camera fix and alignment policy. Sensor noise, latency and wire protocol
 remain outside that ideal model.
+
+During the staged boundary migration, a development MecoBase package may provide
+`base/season2026/MatchContext.h`, and a development MecoSimulation package may
+provide `meco/sim/ParticleMotion.h`. The robot uses those headers when available
+and otherwise keeps its existing local calculations for the published versions.
+The motion helper does not step the physics world or own game rules. Robot-specific
+fuel collection, launch configuration, scoring, and telemetry stay here. Remove
+the compatibility fallbacks only after adopting published versions containing
+both APIs and validating a clean consumer.

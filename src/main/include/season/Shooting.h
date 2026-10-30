@@ -1,6 +1,9 @@
 #pragma once
 #include <array>
 #include <vector>
+#if __has_include(<base/season2026/Alliance.h>)
+#include <base/season2026/Alliance.h>
+#endif
 
 // Pure season algorithms. Distances are meters, angles radians, mechanism
 // positions rotations, velocities rotations/second; time is monotonic seconds.
@@ -15,11 +18,11 @@ namespace season
   {
     double x{}, y{}, heading{};
   };
-  enum class Alliance
-  {
-    Blue,
-    Red
-  };
+#if __has_include(<base/season2026/Alliance.h>)
+  using Alliance = base::season2026::Alliance;
+#else
+  enum class Alliance { Blue, Red };
+#endif
   enum class ShotMode
   {
     Hub,
