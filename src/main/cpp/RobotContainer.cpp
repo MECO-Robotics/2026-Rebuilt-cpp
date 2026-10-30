@@ -304,8 +304,10 @@ void RobotContainer::ConfigureBindings()
   controller_.Back().OnTrue(frc2::cmd::RunOnce([this]
                                                { ResetSimulation(); }));
 #endif
-  (controller_.LeftBumper() && [] { return frc::DriverStation::IsTeleopEnabled(); })
-      .WhileTrue(frc2::cmd::Either(season::OffensiveAutoDrive(*autoDrive_,drive_,Mechanisms(),field_),autoDrive_->Command(), [] {return frc::SmartDashboard::GetBoolean("AutoDrive/OffenseEnabled",false);}));
+  (controller_.LeftBumper() && [] { return frc::DriverStation::IsTeleopEnabled() && !frc::SmartDashboard::GetBoolean("AutoDrive/OffenseEnabled",false); })
+      .WhileTrue(autoDrive_->Command());
+  (controller_.LeftBumper() && [] { return frc::DriverStation::IsTeleopEnabled() && frc::SmartDashboard::GetBoolean("AutoDrive/OffenseEnabled",false); })
+      .WhileTrue(season::OffensiveAutoDrive(*autoDrive_,drive_,Mechanisms(),field_));
   auto m = Mechanisms();
   // Presets latch between button presses. No idle default overwrites their setpoints.
   (controller_.Start() && []
