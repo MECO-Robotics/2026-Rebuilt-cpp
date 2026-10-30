@@ -98,3 +98,24 @@ The full local build passed on desktop and roboRIO and all 30 desktop tests
 passed in Debug and Release. This single run does not establish repeatability.
 The same binary also completed a [red timing-candidate match](offensive-red-window-candidate.json.gz)
 with 9 autonomous and 18 teleop scores, 21 teleop pickups, and a normal stop.
+
+With the checked-in descriptor selecting public PathPlanner `2026.1.2-meco1`,
+the full `JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew build --max-workers=2`
+built desktop and roboRIO and passed all 30 desktop tests in both configurations.
+The Gradle-cached public headers, desktop debug/release and roboRIO debug/release
+archives matched the public Maven downloads by SHA-256:
+
+| Artifact | SHA-256 |
+|---|---|
+| headers | `72606f595bdf2ad9b2f32b1a645912bb6579739f933377b25d89b30b44466be3` |
+| linuxx86-64 release | `32be3216378b3f65a7fee00b49f26ed972e0954a6e588c2a27362c247a2aadcd` |
+| linuxx86-64 debug | `3bce52b31c5c8a3905c9a548ddb13c6866b1373764df7e29dd8ef2e9797d116b` |
+| linuxathena release | `7c18c7faffed0172d2f051e776092d353afdac1ae00e9384c85c566596f9cfa4` |
+| linuxathena debug | `aba5f9b6b9eb193383ced9129fc2379280cd68cfe0c1bb4facfa306234845fb9` |
+
+The rebuilt desktop binary SHA-256 was
+`6d4285ea749763964b8e13ba2deeb8e6514ee766b0514bb2cf991e05eeb425c2`.
+A [blue match](offensive-published-pathplanner-blue.json.gz) scored 9 in auto
+and 64 in teleop; a [red match](offensive-published-pathplanner-red.json.gz)
+scored 16 in auto and 28 in teleop. Both completed and stopped normally. These
+are desktop simulation trials, not hardware qualification or a reliability guarantee.

@@ -547,3 +547,9 @@ One blue run spent several seconds on a modeled bump during a later return.
 These results do not establish reliable navigation or hardware readiness.
 See the [evidence record](../artifacts/offensive-simulation-evidence.md) for
 package hashes, test conditions, and limitations.
+
+The checked-in MecoBase descriptor intentionally overrides its PathPlanner
+dependency to the publicly hosted MECO `2026.1.2-meco1` package for its sample
+index fix. The supported platforms for that package are desktop Linux and
+Windows x86-64 and roboRIO. Replacing the descriptor from its upstream URL
+will discard this override; reapply or migrate it when updating the dependency.

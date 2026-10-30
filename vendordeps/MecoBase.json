@@ -5,13 +5,13 @@
   "uuid": "e7b42af3-247c-42bb-84f6-769ec1c64422",
   "frcYear": "2026",
   "mavenUrls": [
+    "https://meco-robotics.github.io/MecoBase-cpp/maven",
     "https://3015rangerrobotics.github.io/pathplannerlib/repo",
     "https://dev.studica.com/maven/release/2026/",
     "https://maven.ctr-electronics.com/release/",
     "https://maven.photonvision.org/repository/internal",
     "https://maven.photonvision.org/repository/snapshots",
-    "https://maven.revrobotics.com/",
-    "https://meco-robotics.github.io/MecoBase-cpp/maven"
+    "https://maven.revrobotics.com/"
   ],
   "jsonUrl": "https://raw.githubusercontent.com/MECO-Robotics/MecoBase-cpp/v2026.2.10/vendor/MecoBase.json",
   "javaDependencies": [],
@@ -150,7 +150,7 @@
     {
       "groupId": "com.pathplanner.lib",
       "artifactId": "PathplannerLib-cpp",
-      "version": "2026.1.2",
+      "version": "2026.1.2-meco1",
       "libName": "PathplannerLib",
       "headerClassifier": "headers",
       "sharedLibrary": false,
@@ -158,10 +158,7 @@
       "binaryPlatforms": [
         "windowsx86-64",
         "linuxx86-64",
-        "osxuniversal",
-        "linuxathena",
-        "linuxarm32",
-        "linuxarm64"
+        "linuxathena"
       ]
     },
     {
