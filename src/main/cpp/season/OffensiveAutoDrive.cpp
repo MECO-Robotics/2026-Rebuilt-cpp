@@ -31,6 +31,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
   // disappearing in the intake mouth may also be occluded. Never treat this
   // estimate as a measured hopper sensor or as a capacity guarantee.
   auto estimate=std::make_shared<OffensiveFuelEstimate>();
+  auto commitment=std::make_shared<OffensiveCommitment>(OffensiveCommitment::None);
   frc::Preferences::InitDouble("AutoDrive/EstimatedCapacity",0);
 
   auto decision = [&perception,&drive,field,estimate](bool expired) {
@@ -163,7 +164,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     return frc2::cmd::Either(std::move(staged),direct(),needsStage)
         .BeforeStarting([] {Phase("return");});
   };
-  auto shot = [&perception,&drive,m,field,estimate]() {
+  auto shot = [&perception,&drive,m,field,estimate,commitment]() {
     CoordinatedShotOptions options;
     options.ownDrive=true;
     options.autonomous=true;
@@ -180,9 +181,13 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     return CoordinatedShot(m,drive,field,target,options)
         .Until([&perception] {return !perception.MatchState().ownActive.value_or(false);})
         .BeforeStarting([fed] {fed->Reset();Phase("score");})
-        .FinallyDo([estimate,fed](bool interrupted) {estimate->CompleteFeed(!interrupted && fed->elapsed>=7.9);});
+        .FinallyDo([estimate,fed,commitment](bool interrupted) {
+          const bool complete=!interrupted && fed->elapsed>=7.9;
+          estimate->CompleteFeed(complete);
+          *commitment=ReconcileOffensiveCommitment(*commitment,std::nullopt,complete);
+        });
   };
-  auto ferry = [&perception,&drive,m,field,estimate]() {
+  auto ferry = [&perception,&drive,m,field,estimate,commitment]() {
     CoordinatedShotOptions options;
     options.ownDrive=true; options.autonomous=true;
     options.simulation=frc::RobotBase::IsSimulation();
@@ -196,7 +201,11 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     return CoordinatedShot(m,drive,field,target,options)
       .Until([&perception] {return !perception.MatchState().ownActive.has_value() || *perception.MatchState().ownActive;})
       .BeforeStarting([fed] {fed->Reset();Phase("ferry");})
-      .FinallyDo([estimate,fed](bool interrupted) {estimate->CompleteFeed(!interrupted && fed->elapsed>=7.9);});
+      .FinallyDo([estimate,fed,commitment](bool interrupted) {
+          const bool complete=!interrupted && fed->elapsed>=7.9;
+          estimate->CompleteFeed(complete);
+          *commitment=ReconcileOffensiveCommitment(*commitment,std::nullopt,complete);
+        });
   };
   auto waitForKnown = [&perception]() {
     return frc2::cmd::WaitUntil([&perception] {
@@ -207,17 +216,31 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     const auto target=home();
     return OffensiveHubShotAllowed(perception.MatchState().ownActive,target,drive.Pose(),drive.Speeds());
   };
-  // Re-evaluate after collection ends; unknown inputs restart at wait and a
-  // timeout triggers a bounded attempt even when possession is unknown.
-  auto next = [decision,matchLost,collectionStarted] {
+  // Preserve a committed attempt through navigation failure or an incomplete
+  // feed. A hub-state change releases it; unknown match data preserves it but
+  // waits. The estimated load is not treated as proof of an empty hopper.
+  auto next = [decision,matchLost,collectionStarted,commitment] {
     if (*matchLost) return OffensiveDecision::Wait;
+    if (*commitment==OffensiveCommitment::Score) return OffensiveDecision::Score;
+    if (*commitment==OffensiveCommitment::Ferry) return OffensiveDecision::Ferry;
     return decision(frc::Timer::GetFPGATimestamp().value()-*collectionStarted>=19.9);
   };
-  auto cycle=frc2::cmd::Sequence(waitForKnown(),collect(),
+  auto reconcile=frc2::cmd::RunOnce([&perception,commitment] {
+    *commitment=ReconcileOffensiveCommitment(*commitment,perception.MatchState().ownActive,false);
+  });
+  auto record=frc2::cmd::RunOnce([next,commitment] {
+    auto choice=next();
+    if (choice==OffensiveDecision::Score) *commitment=OffensiveCommitment::Score;
+    if (choice==OffensiveDecision::Ferry) *commitment=OffensiveCommitment::Ferry;
+  });
+  auto cycle=frc2::cmd::Sequence(waitForKnown(),std::move(reconcile),
+      frc2::cmd::Either(collect(),frc2::cmd::None(),[commitment] {return *commitment==OffensiveCommitment::None;}),
+      std::move(record),
       frc2::cmd::Either(frc2::cmd::Sequence(returnHome(),
           frc2::cmd::Either(shot(),frc2::cmd::None(),mayShoot)),
         frc2::cmd::Either(ferry(),frc2::cmd::None(),[next] {return next()==OffensiveDecision::Ferry;}),
-        [next] {return next()==OffensiveDecision::Score;})).Repeatedly();
+        [next] {return next()==OffensiveDecision::Score;}),
+      frc2::cmd::Wait(.5_s)).Repeatedly();
   return std::move(cycle).FinallyDo([&drive,m](bool) {
         drive.Stop();m.rack.Stop();m.intake.Stop();m.conveyor.Stop();m.bottomIndexer.Stop();m.topIndexer.Stop();m.hood.Stop();m.shooter.Stop();Phase("idle");
       });

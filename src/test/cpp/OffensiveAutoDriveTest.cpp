@@ -56,3 +56,13 @@ TEST(OffensiveAutoDrive, ArbitrationUsesHubZoneAndEstimatedLoad) {
   EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{nearby},0,0,false,false,false,std::nullopt,true,false),D::Collect);
   EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{nearby},0,0,false,false,true,13.),D::Score);
 }
+
+TEST(OffensiveAutoDrive, CommitmentSurvivesFailedAttemptButRespondsToHubChange) {
+  using C=season::OffensiveCommitment;
+  EXPECT_EQ(season::ReconcileOffensiveCommitment(C::Score,true,false),C::Score);
+  EXPECT_EQ(season::ReconcileOffensiveCommitment(C::Score,std::nullopt,false),C::Score);
+  EXPECT_EQ(season::ReconcileOffensiveCommitment(C::Score,false,false),C::None);
+  EXPECT_EQ(season::ReconcileOffensiveCommitment(C::Ferry,false,false),C::Ferry);
+  EXPECT_EQ(season::ReconcileOffensiveCommitment(C::Ferry,true,false),C::None);
+  EXPECT_EQ(season::ReconcileOffensiveCommitment(C::Ferry,false,true),C::None);
+}

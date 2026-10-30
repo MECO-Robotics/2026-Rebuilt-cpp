@@ -31,6 +31,15 @@ class OffensiveFuelEstimate {
   std::vector<base::ObjectCluster> previous_;
 };
 enum class OffensiveDecision { Wait, Collect, Score, Ferry };
+enum class OffensiveCommitment { None, Score, Ferry };
+inline OffensiveCommitment ReconcileOffensiveCommitment(OffensiveCommitment current,
+    std::optional<bool> hubActive, bool fullFeedCompleted) {
+  if (fullFeedCompleted) return OffensiveCommitment::None;
+  if (!hubActive) return current;
+  if ((current==OffensiveCommitment::Score && !*hubActive) ||
+      (current==OffensiveCommitment::Ferry && *hubActive)) return OffensiveCommitment::None;
+  return current;
+}
 // Upstream single-robot arbitration adapted to an estimated, not measured, load.
 inline OffensiveDecision DecideOffense(std::optional<bool> active,
     std::optional<frc::DriverStation::Alliance> alliance, frc::Pose2d pose,
