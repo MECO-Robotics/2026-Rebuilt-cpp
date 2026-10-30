@@ -531,3 +531,16 @@ and the upstream cluster-edge sweep; it is not policy parity. Simulation
 camera observations feed the same perception interface as hardware; the policy
 does not read simulated stored-fuel truth. Desktop scoring results do not prove
 physical sensing, mechanism calibration or field safety.
+
+The [public-package blue practice run](../artifacts/offensive-public-blue.json.gz)
+scored 7 FUEL in autonomous and 35 more in teleop, with 92 teleop acquisitions;
+54 remained stored at completion. Staged-package runs also scored in
+[red](../artifacts/offensive-staged-red-repeat.json.gz), and a
+[cancellation probe](../artifacts/offensive-staged-safety.json) checked
+drive requests and indexer/conveyor outputs. These runs use simulated cameras
+and physics. An earlier red run crashed with `std::bad_optional_access` near
+match end; two later red runs passed, but the original crash was not explained.
+One blue run spent several seconds on a modeled bump during a later return.
+These results do not establish reliable navigation or hardware readiness.
+See the [evidence record](../artifacts/offensive-simulation-evidence.md) for
+package hashes, test conditions, and limitations.
