@@ -66,6 +66,7 @@ double AllianceBoundary(frc::DriverStation::Alliance alliance, const FieldGeomet
 bool InAllianceZone(frc::DriverStation::Alliance alliance, frc::Translation2d point, const FieldGeometry &field);
 bool SeesAllianceSideTag(frc::DriverStation::Alliance alliance, const std::vector<int> &ids);
 ShotTarget FerryTarget(frc::DriverStation::Alliance alliance, frc::Pose2d robot, const FieldGeometry &field);
+ShotTarget DriverAimTarget(frc::DriverStation::Alliance alliance, frc::Pose2d robot, const FieldGeometry &field);
 ShotTarget SelectTarget(frc::DriverStation::Alliance alliance, frc::Pose2d robot, const std::vector<int> &ids,
                         const FieldGeometry &field);
 double FerryFlywheelRps(double distanceMeters, double hoodRotations);

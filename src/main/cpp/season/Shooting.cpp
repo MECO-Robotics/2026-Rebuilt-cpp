@@ -91,7 +91,12 @@ ShotTarget FerryTarget(frc::DriverStation::Alliance a, frc::Pose2d robot, const 
          high = std::max(reference.Y().value(), f.width - reference.Y().value());
   return {ShotMode::Ferry, {reference.X(), units::meter_t{robot.Y().value() <= f.width / 2 ? low : high}}};
 }
-// Hub targeting applies inside the alliance zone or with an alliance tag.
+ShotTarget DriverAimTarget(frc::DriverStation::Alliance a, frc::Pose2d robot, const FieldGeometry &f)
+{
+  return InAllianceZone(a, robot.Translation(), f) ? ShotTarget{ShotMode::Hub, HubPosition(a)}
+                                                   : FerryTarget(a, robot, f);
+}
+// Autonomous hub targeting applies inside the alliance zone or with an alliance tag.
 ShotTarget SelectTarget(frc::DriverStation::Alliance a, frc::Pose2d robot, const std::vector<int> &ids,
                         const FieldGeometry &f)
 {

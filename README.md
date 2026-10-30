@@ -32,7 +32,7 @@ Controller artwork adapted from [Xbox Controller.svg](https://commons.wikimedia.
 | Left bumper | Run AutoDrive while held |
 | Right trigger / left trigger | Intake / eject fuel while held |
 | Right bumper | Agitate and feed while held; rumble indicates shooter readiness |
-| A | Assist aiming while driving |
+| A | Assist aiming while driving: hub in the alliance zone, ferry outside it |
 | X / Y / B | Select hub / ferry / shooter idle |
 | POV up / down | Deploy / stow the intake while held |
 | Start | Reset the driver heading reference (the gyro and field pose are unchanged) |
