@@ -120,12 +120,8 @@ void AutoDrive::PublishMatchContext() const {
   frc::SmartDashboard::PutBoolean("AutoDrive/HubNextChangeKnown",match.ownNextChange.has_value());
   frc::SmartDashboard::PutNumber("AutoDrive/HubNextChangeSeconds",match.ownNextChange.value_or(-1));
 }
-std::vector<frc::Translation2d> AutoDrive::VisibleFuel() const {
-  std::vector<frc::Translation2d> positions;
-  const auto& clusters=perception_->Clusters();
-  positions.reserve(clusters.size());
-  for (const auto& cluster:clusters) positions.push_back(cluster.position);
-  return positions;
+std::vector<base::ObjectCluster> AutoDrive::VisibleFuel() const {
+  return perception_->Clusters();
 }
 std::optional<frc::Pose2d> AutoDrive::Target() {
   if(frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel",false)) {

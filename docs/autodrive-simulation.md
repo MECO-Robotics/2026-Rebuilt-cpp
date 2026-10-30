@@ -497,8 +497,8 @@ pose. Ferry shots use the existing ferry trajectory safety and readiness checks.
 
 This is an adaptation of the deterministic offense in upstream AutoDrive
 [`_tensor_3v3_actions.py` at d74b0a15](https://github.com/MECO-Robotics/AutoDrive/blob/d74b0a15e25ddbc6bacfbbb864674371629bb19e/frc_defense/_tensor_3v3_actions.py).
-The active-HUB pickup ranking approximates its nearby-yield and return-distance
-preference; inactive-HUB pickup excludes the friendly alliance zone and uses a
+The active-HUB pickup ranking uses its acceleration-limited pickup and return
+time per confidence-weighted nearby yield; inactive-HUB pickup excludes the friendly alliance zone and uses a
 nearby target before a ferry attempt. When no fuel is visible, the command
 searches toward the neutral zone. It briefly holds a pickup target through
 observation dropouts, and commits to a return and shot or ferry attempt until
@@ -506,9 +506,13 @@ completion or interruption.
 
 This robot has no carried-FUEL sensor. The command therefore runs bounded
 collection and shooting attempts and cannot reproduce upstream capacity or
-possession decisions. Its camera adapter provides fresh field positions, not
-upstream track confidence, age, velocity, teammate intent or opponent tracks.
-The candidate ranking omits those inputs, route-time and obstacle-detour costs,
+possession decisions. It estimates pickups from observations disappearing near
+the intake; occlusion and missed detections can make this count wrong. A
+completed feeding attempt clears the estimate without proving that the hopper
+is empty. A 20-second collection limit prevents indefinite collection. Its
+camera adapter provides confidence and capture time but lacks persistent track
+identities, velocity, teammate intent and opponent tracks. The candidate
+ranking omits obstacle-detour costs,
 and the upstream cluster-edge sweep; it is not policy parity. Simulation
 camera observations feed the same perception interface as hardware; the policy
 does not read simulated stored-fuel truth. Desktop scoring results do not prove

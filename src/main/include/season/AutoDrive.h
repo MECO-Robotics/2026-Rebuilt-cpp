@@ -25,7 +25,7 @@ namespace season
               std::function<const base::season2026::MatchContext &()> matchContext);
     frc2::CommandPtr Command();
     // Fresh, estimated field-frame observations from the camera perception path.
-    std::vector<frc::Translation2d> VisibleFuel() const;
+    std::vector<base::ObjectCluster> VisibleFuel() const;
     void PublishMatchContext() const;
     // Same DriverStation-derived input on hardware and in simulation. Unknowns
     // stay explicit; this supplies timing context without selecting a strategy.

@@ -16,25 +16,38 @@ void Phase(const char* phase) { frc::SmartDashboard::PutString("AutoDrive/Offens
 }
 frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
                                     Mechanisms m, FieldGeometry field) {
-  auto collect = [&perception, &drive, m, field]() {
+  // Anonymous detections are only a rough pickup estimate: an observation
+  // disappearing in the intake mouth may also be occluded. Never treat this
+  // estimate as a measured hopper sensor or as a capacity guarantee.
+  struct Estimate {int fuel=0; std::vector<base::ObjectCluster> previous;};
+  auto estimate=std::make_shared<Estimate>();
+  auto collect = [&perception, &drive, m, field, estimate]() {
     struct TargetLock {std::optional<frc::Translation2d> position; double seen=0;};
     auto lock=std::make_shared<TargetLock>();
-    auto goal = [&perception, &drive, field, lock]() -> std::optional<frc::Pose2d> {
+    auto goal = [&perception, &drive, field, lock, estimate]() -> std::optional<frc::Pose2d> {
       const auto alliance = frc::DriverStation::GetAlliance();
       if (!alliance || !perception.MatchState().ownActive.has_value()) return std::nullopt;
       auto points = perception.VisibleFuel();
+      const auto pose=drive.Pose();
+      for (const auto& old:estimate->previous) {
+        const auto local=(old.position-pose.Translation()).RotateBy(-pose.Rotation());
+        const bool mouth=local.X().value()>=.20 && local.X().value()<=.70 && std::abs(local.Y().value())<=.4;
+        const bool stillSeen=std::any_of(points.begin(),points.end(),[&](const auto& p) {return p.position.Distance(old.position).value()<.12;});
+        if (mouth && !stillSeen) estimate->fuel=std::min(54,estimate->fuel+1);
+      }
+      estimate->previous=points;
+      frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel",estimate->fuel);
       const auto& match = perception.MatchState();
       // Upstream avoids collecting in its own zone while its hub is inactive.
       if (!match.ownActive.value_or(false))
-        std::erase_if(points, [alliance,field](const auto& p) { return InAllianceZone(*alliance,p,field); });
+        std::erase_if(points, [alliance,field](const auto& p) { return InAllianceZone(*alliance,p.position,field); });
       const double now=frc::Timer::GetFPGATimestamp().value();
       if (lock->position && !*match.ownActive && InAllianceZone(*alliance,*lock->position,field)) lock->position.reset();
       if (lock->position) {
-        const auto found=std::find_if(points.begin(),points.end(),[&](const auto& p) { return p.Distance(*lock->position).value()<.3; });
-        if (found!=points.end()) {lock->position=*found;lock->seen=now;}
+        const auto found=std::find_if(points.begin(),points.end(),[&](const auto& p) { return p.position.Distance(*lock->position).value()<.3; });
+        if (found!=points.end()) {lock->position=found->position;lock->seen=now;}
         else if (now-lock->seen>.4) lock->position.reset();
       }
-      const auto pose=drive.Pose();
       if (points.empty() && !lock->position) {
         // No observations: seek the neutral zone so the cameras can reacquire.
         const frc::Translation2d search{units::meter_t{field.length/2},
@@ -46,31 +59,46 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
       // Our perception exposes positions only, not track age or confidence.
       const auto intake=pose.Translation()+frc::Translation2d{.58_m,pose.Rotation()};
       std::sort(points.begin(),points.end(),[&](const auto& a,const auto& b) {
-        return a.Distance(intake)<b.Distance(intake);
+        return a.position.Distance(intake)<b.position.Distance(intake);
       });
       const auto count=std::min<std::size_t>(4,points.size());
-      auto cost=[&](const frc::Translation2d& p) {
-        const double outbound=p.Distance(intake).value();
-        if (!*match.ownActive) return outbound;
+      // Upstream's acceleration-limited pickup + return cycle time divided
+      // by confidence-weighted nearby yield (no hidden simulator state).
+      const auto speeds=frc::ChassisSpeeds::FromRobotRelativeSpeeds(drive.Speeds(),pose.Rotation());
+      const double maxSpeed=std::min(2.,drive.Config().maxSpeed), acceleration=3., maxOmega=3.;
+      auto travelTime=[&](double distance,double initial) {
+        initial=std::clamp(initial,0.,maxSpeed);
+        double toMax=(maxSpeed*maxSpeed-initial*initial)/(2*acceleration);
+        return distance<=toMax ? (std::sqrt(initial*initial+2*acceleration*distance)-initial)/acceleration :
+          (maxSpeed-initial)/acceleration+(distance-toMax)/maxSpeed;
+      };
+      auto cost=[&](const base::ObjectCluster& candidate) {
+        const auto delta=candidate.position-intake;
+        const double outbound=delta.Norm().value();
+        const double age=std::clamp(now-candidate.captureTime.value(),0.,2.);
+        if (!*match.ownActive) return outbound+age*.4;
         double yield=0;
-        for (const auto& other:points) if (p.Distance(other).value()<=1.22) ++yield;
+        for (const auto& other:points) if (candidate.position.Distance(other.position).value()<=1.22)
+          yield+=std::clamp(other.confidence,0.,1.)*std::exp(-std::max(0.,now-other.captureTime.value()));
+        const double projected=outbound>1e-6 ? (speeds.vx.value()*delta.X().value()+speeds.vy.value()*delta.Y().value())/outbound : 0.;
+        const double turn=std::abs(std::remainder((delta.Angle()-pose.Rotation()).Radians().value(),2*std::numbers::pi))/maxOmega;
         const double boundary=AllianceBoundary(*alliance,field);
         const double back=*alliance==frc::DriverStation::Alliance::kBlue ?
-            std::max(0.,p.X().value()-boundary) : std::max(0.,boundary-p.X().value());
-        return (outbound+back+.2)/std::max(1.,yield);
+            std::max(0.,candidate.position.X().value()-boundary) : std::max(0.,boundary-candidate.position.X().value());
+        return (std::max(travelTime(outbound,projected),turn)+travelTime(back,0)+.2+age*.4/maxSpeed)/std::max(.1,yield);
       };
       if (!lock->position) {
         auto chosen=std::min_element(points.begin(),points.begin()+count,[&](const auto& a,const auto& b) {return cost(a)<cost(b);});
-        lock->position=*chosen;lock->seen=now;
+        lock->position=chosen->position;lock->seen=now;
       }
       const auto direction=(*lock->position-pose.Translation()).Angle();
       const auto through=*lock->position + frc::Translation2d{.55_m,direction};
       return frc::Pose2d{frc::Translation2d{units::meter_t{std::clamp(through.X().value(),.5,field.length-.5)},units::meter_t{std::clamp(through.Y().value(),.5,field.width-.5)}},direction};
     };
-    return frc2::cmd::Deadline(frc2::cmd::Wait(7_s),
+    return frc2::cmd::Deadline(frc2::cmd::Wait(20_s),
         base::AutoDriveTrackTarget(drive,goal), Acquire(m))
-        .Until([&perception] {return !frc::DriverStation::GetAlliance().has_value() || !perception.MatchState().ownActive.has_value();})
-        .BeforeStarting([lock] {lock->position.reset();Phase("collect"); });
+        .Until([&perception,estimate] {return estimate->fuel>=54 || !frc::DriverStation::GetAlliance().has_value() || !perception.MatchState().ownActive.has_value();})
+        .BeforeStarting([lock,estimate] {lock->position.reset();estimate->previous.clear();Phase("collect"); });
   };
   auto home = [&drive,field]() -> std::optional<frc::Pose2d> {
     auto alliance=frc::DriverStation::GetAlliance();
@@ -87,7 +115,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
         .Until([&perception] {return !perception.MatchState().ownActive.value_or(false) || !frc::DriverStation::GetAlliance().has_value();})
         .BeforeStarting([] {Phase("return");});
   };
-  auto shot = [&perception,&drive,m,field]() {
+  auto shot = [&perception,&drive,m,field,estimate]() {
     CoordinatedShotOptions options;
     options.ownDrive=true;
     options.autonomous=true;
@@ -95,26 +123,32 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     options.readyTimeoutSeconds=8;
     options.feedSeconds=8;
     options.totalTimeoutSeconds=15;
+    auto fed=std::make_shared<bool>(false);
+    options.readyFeedback=[fed](bool ready) {if (ready) *fed=true;};
     auto target=[] {
       auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);
       return ShotTarget{ShotMode::Hub,HubPosition(alliance)};
     };
     return CoordinatedShot(m,drive,field,target,options)
         .Until([&perception] {return !perception.MatchState().ownActive.value_or(false);})
-        .BeforeStarting([] {Phase("score");});
+        .BeforeStarting([fed] {*fed=false;Phase("score");})
+        .FinallyDo([estimate,fed](bool interrupted) {if (!interrupted && *fed) estimate->fuel=0;});
   };
-  auto ferry = [&perception,&drive,m,field]() {
+  auto ferry = [&perception,&drive,m,field,estimate]() {
     CoordinatedShotOptions options;
     options.ownDrive=true; options.autonomous=true;
     options.simulation=frc::RobotBase::IsSimulation();
     options.readyTimeoutSeconds=8; options.feedSeconds=8; options.totalTimeoutSeconds=15;
+    auto fed=std::make_shared<bool>(false);
+    options.readyFeedback=[fed](bool ready) {if (ready) *fed=true;};
     auto target=[&drive,field] {
       auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);
       return FerryTarget(alliance,drive.Pose(),field);
     };
     return CoordinatedShot(m,drive,field,target,options)
       .Until([&perception] {return !perception.MatchState().ownActive.has_value() || *perception.MatchState().ownActive;})
-      .BeforeStarting([] {Phase("ferry");});
+      .BeforeStarting([fed] {*fed=false;Phase("ferry");})
+      .FinallyDo([estimate,fed](bool interrupted) {if (!interrupted && *fed) estimate->fuel=0;});
   };
   auto waitForKnown = [&perception]() {
     return frc2::cmd::WaitUntil([&perception] {
