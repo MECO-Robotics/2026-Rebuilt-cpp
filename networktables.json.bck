@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "name": "/Preferences/Intake/ShotRetractSpeedMps",
+    "type": "double",
+    "value": 0.1,
+    "properties": {
+      "persistent": true
+    }
+  },
+  {
+    "name": "/Preferences/Intake/ShotHoldPositionMeters",
+    "type": "double",
+    "value": 0.13,
+    "properties": {
+      "persistent": true
+    }
+  }
+]
