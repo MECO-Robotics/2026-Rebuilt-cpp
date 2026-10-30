@@ -81,7 +81,7 @@ namespace season
     bool autonomous = false, simulation = false;
     // Markers share the path drivetrain and must not claim or command it.
     bool ownDrive = true;
-    double readyTimeoutSeconds = 2, feedSeconds = 1;
+    double readyTimeoutSeconds = 2, feedSeconds = 1, totalTimeoutSeconds = 3;
   };
   frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry field,
                                    std::function<ShotTarget()> target, CoordinatedShotOptions options = {});

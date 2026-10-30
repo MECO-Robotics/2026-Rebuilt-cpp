@@ -1,3 +1,4 @@
+#include "season/OffensiveAutoDrive.h"
 #include "base/SimulationLatency.h"
 #include "season/Simulation.h"
 #include "RobotContainer.h"
@@ -285,6 +286,9 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   autoChooser_.AddOption("You better hit the A stop before this -Manny (none)", seasonAutos_[2].get());
   seasonAutos_.emplace_back(autoDrive_->Command());
   autoChooser_.AddOption("AutoDrive target", seasonAutos_.back().get());
+  seasonAutos_.emplace_back(season::OffensiveAutoDrive(*autoDrive_,drive_,m,field_));
+  autoChooser_.AddOption("AutoDrive offensive",seasonAutos_.back().get());
+  frc::SmartDashboard::PutBoolean("AutoDrive/OffenseEnabled",false);
   frc::SmartDashboard::PutData("Auto Choices", &autoChooser_);
   checks_.ConfigureRequirements({&drive_, &rack_, &hood_, &shooter_, &intake_, &conveyor_, &bottom_, &top_});
   season::ConfigureSystemChecks(checks_, drive_, rack_, hood_, shooter_, {{"intake", &intake_}, {"conveyor", &conveyor_}, {"bottom-indexer", &bottom_}, {"top-indexer", &top_}}, [this]
@@ -301,7 +305,7 @@ void RobotContainer::ConfigureBindings()
                                                { ResetSimulation(); }));
 #endif
   (controller_.LeftBumper() && [] { return frc::DriverStation::IsTeleopEnabled(); })
-      .WhileTrue(autoDrive_->Command());
+      .WhileTrue(frc2::cmd::Either(season::OffensiveAutoDrive(*autoDrive_,drive_,Mechanisms(),field_),autoDrive_->Command(), [] {return frc::SmartDashboard::GetBoolean("AutoDrive/OffenseEnabled",false);}));
   auto m = Mechanisms();
   // Presets latch between button presses. No idle default overwrites their setpoints.
   (controller_.Start() && []
