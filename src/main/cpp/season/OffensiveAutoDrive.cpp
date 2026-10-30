@@ -14,6 +14,16 @@ using namespace units::literals;
 namespace season {
 namespace {
 void Phase(const char* phase) { frc::SmartDashboard::PutString("AutoDrive/OffensePhase", phase); }
+struct FeedTracker {
+  double last=0, elapsed=0;
+  bool active=false;
+  void Reset() {last=frc::Timer::GetFPGATimestamp().value();elapsed=0;active=false;}
+  void Update(bool ready) {
+    const double now=frc::Timer::GetFPGATimestamp().value();
+    if (active) elapsed+=std::max(0.,now-last);
+    active=ready;last=now;
+  }
+};
 }
 frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
                                     Mechanisms m, FieldGeometry field) {
@@ -152,32 +162,32 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     options.readyTimeoutSeconds=8;
     options.feedSeconds=8;
     options.totalTimeoutSeconds=15;
-    auto fed=std::make_shared<bool>(false);
-    options.readyFeedback=[fed](bool ready) {if (ready) *fed=true;};
+    auto fed=std::make_shared<FeedTracker>();
+    options.readyFeedback=[fed](bool ready) {fed->Update(ready);};
     auto target=[] {
       auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);
       return ShotTarget{ShotMode::Hub,HubPosition(alliance)};
     };
     return CoordinatedShot(m,drive,field,target,options)
         .Until([&perception] {return !perception.MatchState().ownActive.value_or(false);})
-        .BeforeStarting([fed] {*fed=false;Phase("score");})
-        .FinallyDo([estimate,fed](bool interrupted) {estimate->CompleteFeed(!interrupted && *fed);});
+        .BeforeStarting([fed] {fed->Reset();Phase("score");})
+        .FinallyDo([estimate,fed](bool interrupted) {estimate->CompleteFeed(!interrupted && fed->elapsed>=7.9);});
   };
   auto ferry = [&perception,&drive,m,field,estimate]() {
     CoordinatedShotOptions options;
     options.ownDrive=true; options.autonomous=true;
     options.simulation=frc::RobotBase::IsSimulation();
     options.readyTimeoutSeconds=8; options.feedSeconds=8; options.totalTimeoutSeconds=15;
-    auto fed=std::make_shared<bool>(false);
-    options.readyFeedback=[fed](bool ready) {if (ready) *fed=true;};
+    auto fed=std::make_shared<FeedTracker>();
+    options.readyFeedback=[fed](bool ready) {fed->Update(ready);};
     auto target=[&drive,field] {
       auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);
       return FerryTarget(alliance,drive.Pose(),field);
     };
     return CoordinatedShot(m,drive,field,target,options)
       .Until([&perception] {return !perception.MatchState().ownActive.has_value() || *perception.MatchState().ownActive;})
-      .BeforeStarting([fed] {*fed=false;Phase("ferry");})
-      .FinallyDo([estimate,fed](bool interrupted) {estimate->CompleteFeed(!interrupted && *fed);});
+      .BeforeStarting([fed] {fed->Reset();Phase("ferry");})
+      .FinallyDo([estimate,fed](bool interrupted) {estimate->CompleteFeed(!interrupted && fed->elapsed>=7.9);});
   };
   auto waitForKnown = [&perception]() {
     return frc2::cmd::WaitUntil([&perception] {
