@@ -1,5 +1,5 @@
 #include "season/AutoDrive.h"
-#include "season/PerceptionGeometry.h"
+#include "season/RobotGeometry.h"
 #include <frc/RobotBase.h>
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>
@@ -14,7 +14,7 @@
 #include <string>
 #include <utility>
 #ifndef __FRC_ROBORIO__
-#include "season/SimulationField.h"
+#include "season/Simulation.h"
 #endif
 
 namespace season {
@@ -94,7 +94,7 @@ AutoDrive::AutoDrive(base::Drive& drive, std::function<double()> extension,
     if (size>0 && size<=262144) {
       std::string contents(static_cast<std::size_t>(size),'\0');
       file.seekg(0);
-      if (file.read(contents.data(),size)) configuredFootprint_=ParseFootprintConfiguration(contents);
+      if (file.read(contents.data(),size)) configuredFootprint_=base::ParseFootprintConfiguration(contents);
     }
   }
   frc::SmartDashboard::PutString("AutoDrive/ConfiguredFootprintStatus",

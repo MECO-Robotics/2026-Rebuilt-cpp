@@ -1,4 +1,4 @@
-#include "season/FuelSimulation.h"
+#include "season/Simulation.h"
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>

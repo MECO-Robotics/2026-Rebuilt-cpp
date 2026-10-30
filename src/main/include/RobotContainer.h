@@ -3,10 +3,9 @@
 #include "base/Mechanism.h"
 #include "base/Vision.h"
 #include "base/QuestNav.h"
-#include "season/SimulatedLocalization.h"
-#include "season/SeasonCommands.h"
+#include "season/Simulation.h"
+#include "season/Mechanisms.h"
 #include "base/SystemCheck.h"
-#include "season/FuelSimulation.h"
 #include "season/AutoDrive.h"
 #include "season/MatchContext.h"
 #ifndef __FRC_ROBORIO__
@@ -29,10 +28,16 @@ public:
   RobotContainer();
   frc2::Command *GetAutonomousCommand();
   void CancelChecks();
-  void SetMatchContext(season::MatchContext context) { matchContext_ = std::move(context); if(autoDrive_) autoDrive_->PublishMatchContext(); }
+  void SetMatchContext(season::MatchContext context)
+  {
+    matchContext_ = std::move(context);
+    if (autoDrive_)
+      autoDrive_->PublishMatchContext();
+  }
   void SimulationPeriodic();
   void ResetSimulation();
-  bool SimulationResetReady() const {
+  bool SimulationResetReady() const
+  {
 #ifndef __FRC_ROBORIO__
     return simulationResetFeedbackLoops_ == 0;
 #else
@@ -75,5 +80,6 @@ private:
   season::Mechanisms Mechanisms();
   season::ShotTarget SelectTarget();
   frc2::CommandPtr HubShot(bool ownDrive = true, bool requireVision = false);
+  void ConfigureBindings();
   void DriveTeleop(bool aim);
 };

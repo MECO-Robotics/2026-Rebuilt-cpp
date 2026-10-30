@@ -1,13 +1,12 @@
-#include "season/SimulationLatency.h"
-#include "season/SimulationField.h"
-#include "season/SimulationPose.h"
+#include "base/SimulationLatency.h"
+#include "season/Simulation.h"
 #include "RobotContainer.h"
-#include "season/MechanismConstants.h"
+#include "season/Mechanisms.h"
 #include "base/ChoreoAuto.h"
 #ifndef __FRC_ROBORIO__
 #include "base/sim/SimulationTuning.h"
+#include "meco/sim/SimulationPose.h"
 #endif
-#include "season/SystemCheckSetup.h"
 #include <frc/RobotBase.h>
 #include <frc/system/plant/DCMotor.h>
 #include <frc/Timer.h>
@@ -240,20 +239,70 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   drive_.SetDefaultCommand(frc2::cmd::RunEnd([this]
                                            { DriveTeleop(false); }, [this]
                                            { drive_.Stop(); }, {&drive_}));
+  autoDrive_ = std::make_unique<season::AutoDrive>(drive_,[this] {return rack_.Position();},[this]() -> const season::MatchContext& {return matchContext_;});
+  auto m = Mechanisms();
+#ifndef __FRC_ROBORIO__
+  if (frc::RobotBase::IsSimulation())
+    simulation_ = std::make_unique<season::FuelSimulation>(m, drive_);
+#endif
+  ConfigureBindings();
+  pathplanner::NamedCommands::registerCommand("DeployIntake", frc2::cmd::RunOnce([this]
+                                                                                 { rack_.SetPosition(.3); }, {&rack_}));
+  pathplanner::NamedCommands::registerCommand("StowIntake", frc2::cmd::RunOnce([this]
+                                                                               { rack_.SetPosition(0); }, {&rack_}));
+  pathplanner::NamedCommands::registerCommand("FeedRollers", HubShot(false));
+  pathplanner::NamedCommands::registerCommand("CoordinatedHubShot", HubShot(false));
+  pathplanner::NamedCommands::registerCommand("IdleRollers", frc2::cmd::RunOnce([this]
+                                                                                {conveyor_.Stop();bottom_.Stop();top_.Stop(); }, {&conveyor_, &bottom_, &top_}));
+  pathplanner::NamedCommands::registerCommand("Agitate", frc2::cmd::RunEnd([this]
+                                                                           {bottom_.SetVoltage(-10);top_.SetVoltage(10); }, [this]
+                                                                           {bottom_.Stop();top_.Stop(); }, {&bottom_, &top_}));
+  pathplanner::NamedCommands::registerCommand("SpinIntake", frc2::cmd::RunEnd([this]
+                                                                              {intake_.SetVoltage(-10);conveyor_.SetVoltage(5); }, [this]
+                                                                              {intake_.Stop();conveyor_.Stop(); }, {&intake_, &conveyor_}));
+  auto calculatedSpinUp = [this]
+  { return frc2::cmd::RunEnd([this]
+                             {
+   auto p=drive_.Pose();auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed)==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;
+   auto shot=season::CalculateShot({p.X().value(),p.Y().value(),p.Rotation().Radians().value()},season::HubPosition(alliance),frc::RobotBase::IsSimulation());
+   hood_.SetPosition(shot.hoodRotations);shooter_.SetVelocity(shot.flywheelRps); }, [this]
+                             {hood_.Stop();shooter_.Stop(); }, {&hood_, &shooter_}); };
+  pathplanner::NamedCommands::registerCommand("AutoSpinUp", calculatedSpinUp().WithTimeout(2_s));
+  pathplanner::NamedCommands::registerCommand("Fender", season::ShooterPreset(m, 0, 30));
+  pathplanner::NamedCommands::registerCommand("AutoAim", frc2::cmd::RunEnd([this]
+                                                                           {
+   auto p=drive_.Pose();auto target=SelectTarget();auto shot=season::CalculateShot({p.X().value(),p.Y().value(),p.Rotation().Radians().value()},target,field_,frc::RobotBase::IsSimulation());
+   hood_.SetPosition(shot.hoodRotations);shooter_.SetVelocity(shot.flywheelRps);
+   double error=std::remainder(shot.headingRadians-p.Rotation().Radians().value(),2*std::numbers::pi);
+   drive_.RunVelocity(frc::ChassisSpeeds{0_mps,0_mps,units::radians_per_second_t{std::clamp(7*error,-7.,7.)}}); }, [this]
+                                                                           { drive_.Stop();hood_.Stop();shooter_.Stop(); }, {&drive_, &hood_, &shooter_}));
+  autoChooser_ = pathplanner::AutoBuilder::buildAutoChooser();
+  seasonAutos_.emplace_back(HubShot(true, true));
+  seasonAutos_.emplace_back(base::FollowChoreo<2026>(drive_, "LeftBlueBump", {10, 0, 0}, {7, 0, 0}, units::second_t{.02}).AndThen(HubShot()));
+  seasonAutos_.emplace_back(frc2::cmd::None());
+  autoChooser_.SetDefaultOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
+  autoChooser_.AddOption("Choreo LeftBlueBump + Shoot", seasonAutos_[1].get());
+  autoChooser_.AddOption("You better hit the A stop before this -Manny (none)", seasonAutos_[2].get());
+  seasonAutos_.emplace_back(autoDrive_->Command());
+  autoChooser_.AddOption("AutoDrive target", seasonAutos_.back().get());
+  frc::SmartDashboard::PutData("Auto Choices", &autoChooser_);
+  checks_.ConfigureRequirements({&drive_, &rack_, &hood_, &shooter_, &intake_, &conveyor_, &bottom_, &top_});
+  season::ConfigureSystemChecks(checks_, drive_, rack_, hood_, shooter_, {{"intake", &intake_}, {"conveyor", &conveyor_}, {"bottom-indexer", &bottom_}, {"top-indexer", &top_}}, [this]
+                                { return vision_->Inputs().connected; });
+  if (frc::RobotBase::IsSimulation())
+    ResetSimulation();
+}
+void RobotContainer::ConfigureBindings()
+{
 #ifndef __FRC_ROBORIO__
   // Full scene recovery (including an overturned body), separate from Start's
   // driver heading reset. This binding never exists on the physical robot.
   controller_.Back().OnTrue(frc2::cmd::RunOnce([this]
                                                { ResetSimulation(); }));
 #endif
-  autoDrive_ = std::make_unique<season::AutoDrive>(drive_,[this] {return rack_.Position();},[this]() -> const season::MatchContext& {return matchContext_;});
   (controller_.LeftBumper() && [] { return frc::DriverStation::IsTeleopEnabled(); })
       .WhileTrue(autoDrive_->Command());
   auto m = Mechanisms();
-#ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation())
-    simulation_ = std::make_unique<season::FuelSimulation>(m, drive_);
-#endif
   // Presets latch between button presses. No idle default overwrites their setpoints.
   (controller_.Start() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
@@ -321,51 +370,6 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   (copilot_.B() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
       .OnTrue(season::ShooterIdle(m));
-  pathplanner::NamedCommands::registerCommand("DeployIntake", frc2::cmd::RunOnce([this]
-                                                                                 { rack_.SetPosition(.3); }, {&rack_}));
-  pathplanner::NamedCommands::registerCommand("StowIntake", frc2::cmd::RunOnce([this]
-                                                                               { rack_.SetPosition(0); }, {&rack_}));
-  pathplanner::NamedCommands::registerCommand("FeedRollers", HubShot(false));
-  pathplanner::NamedCommands::registerCommand("CoordinatedHubShot", HubShot(false));
-  pathplanner::NamedCommands::registerCommand("IdleRollers", frc2::cmd::RunOnce([this]
-                                                                                {conveyor_.Stop();bottom_.Stop();top_.Stop(); }, {&conveyor_, &bottom_, &top_}));
-  pathplanner::NamedCommands::registerCommand("Agitate", frc2::cmd::RunEnd([this]
-                                                                           {bottom_.SetVoltage(-10);top_.SetVoltage(10); }, [this]
-                                                                           {bottom_.Stop();top_.Stop(); }, {&bottom_, &top_}));
-  pathplanner::NamedCommands::registerCommand("SpinIntake", frc2::cmd::RunEnd([this]
-                                                                              {intake_.SetVoltage(-10);conveyor_.SetVoltage(5); }, [this]
-                                                                              {intake_.Stop();conveyor_.Stop(); }, {&intake_, &conveyor_}));
-  auto calculatedSpinUp = [this]
-  { return frc2::cmd::RunEnd([this]
-                             {
-   auto p=drive_.Pose();auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed)==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;
-   auto shot=season::CalculateShot({p.X().value(),p.Y().value(),p.Rotation().Radians().value()},season::HubPosition(alliance),frc::RobotBase::IsSimulation());
-   hood_.SetPosition(shot.hoodRotations);shooter_.SetVelocity(shot.flywheelRps); }, [this]
-                             {hood_.Stop();shooter_.Stop(); }, {&hood_, &shooter_}); };
-  pathplanner::NamedCommands::registerCommand("AutoSpinUp", calculatedSpinUp().WithTimeout(2_s));
-  pathplanner::NamedCommands::registerCommand("Fender", season::ShooterPreset(m, 0, 30));
-  pathplanner::NamedCommands::registerCommand("AutoAim", frc2::cmd::RunEnd([this]
-                                                                           {
-   auto p=drive_.Pose();auto target=SelectTarget();auto shot=season::CalculateShot({p.X().value(),p.Y().value(),p.Rotation().Radians().value()},target,field_,frc::RobotBase::IsSimulation());
-   hood_.SetPosition(shot.hoodRotations);shooter_.SetVelocity(shot.flywheelRps);
-   double error=std::remainder(shot.headingRadians-p.Rotation().Radians().value(),2*std::numbers::pi);
-   drive_.RunVelocity(frc::ChassisSpeeds{0_mps,0_mps,units::radians_per_second_t{std::clamp(7*error,-7.,7.)}}); }, [this]
-                                                                           { drive_.Stop();hood_.Stop();shooter_.Stop(); }, {&drive_, &hood_, &shooter_}));
-  autoChooser_ = pathplanner::AutoBuilder::buildAutoChooser();
-  seasonAutos_.emplace_back(HubShot(true, true));
-  seasonAutos_.emplace_back(base::FollowChoreo<2026>(drive_, "LeftBlueBump", {10, 0, 0}, {7, 0, 0}, units::second_t{.02}).AndThen(HubShot()));
-  seasonAutos_.emplace_back(frc2::cmd::None());
-  autoChooser_.SetDefaultOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
-  autoChooser_.AddOption("Choreo LeftBlueBump + Shoot", seasonAutos_[1].get());
-  autoChooser_.AddOption("You better hit the A stop before this -Manny (none)", seasonAutos_[2].get());
-  seasonAutos_.emplace_back(autoDrive_->Command());
-  autoChooser_.AddOption("AutoDrive target", seasonAutos_.back().get());
-  frc::SmartDashboard::PutData("Auto Choices", &autoChooser_);
-  checks_.ConfigureRequirements({&drive_, &rack_, &hood_, &shooter_, &intake_, &conveyor_, &bottom_, &top_});
-  season::ConfigureSystemChecks(checks_, drive_, rack_, hood_, shooter_, {{"intake", &intake_}, {"conveyor", &conveyor_}, {"bottom-indexer", &bottom_}, {"top-indexer", &top_}}, [this]
-                                { return vision_->Inputs().connected; });
-  if (frc::RobotBase::IsSimulation())
-    ResetSimulation();
 }
 void RobotContainer::DriveTeleop(bool aim)
 {
@@ -374,7 +378,7 @@ void RobotContainer::DriveTeleop(bool aim)
   const auto deadband = [](double value) {
     return std::abs(value) < .1 ? 0. : std::copysign((std::abs(value) - .1) / .9, value);
   };
-  const double x = deadband(season::simulation::ObserveJoystick(-controller_.GetLeftY())) * drive_.Config().maxSpeed;
+  const double x = deadband(base::simulation::ObserveJoystick(-controller_.GetLeftY())) * drive_.Config().maxSpeed;
   const double y = deadband(-controller_.GetLeftX()) * drive_.Config().maxSpeed;
   double omega = deadband(-controller_.GetRightX()) * drive_.Config().maxAngularRate;
   if (aim)
@@ -442,7 +446,7 @@ void RobotContainer::SimulationPeriodic()
         units::meter_t{body.pose.position.x}, units::meter_t{body.pose.position.y}, units::meter_t{body.pose.position.z},
         frc::Rotation3d{frc::Quaternion{q.w, q.x, q.y, q.z}}};
     simulationBodyPosePublisher_.Set(bodyPose);
-    const auto visualPose = season::simulation::FloorReferencedRobotPose(bodyPose, simulationGroundedBodyHeight_);
+    const auto visualPose = meco::sim::FloorReferencedRobotPose(bodyPose, simulationGroundedBodyHeight_);
     simulationPosePublisher_.Set(visualPose);
     if (simulationResetFeedbackLoops_ == 0)
       simulatedLocalization_.Update(visualPose, frc::Timer::GetFPGATimestamp(), layout_,

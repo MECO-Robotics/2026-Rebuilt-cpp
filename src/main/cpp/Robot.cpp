@@ -2,8 +2,8 @@
 #include <string_view>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/NetworkTable.h>
-#include "season/SimulationLatency.h"
-#include "season/HubShift.h"
+#include "base/SimulationLatency.h"
+#include "season/MatchContext.h"
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <fmt/format.h>
 #include <frc/DataLogManager.h>
@@ -50,9 +50,9 @@ void Robot::RobotPeriodic()
     autonomousPending_ = false;
     if (autonomous_) autonomous_->Schedule();
   }
-  season::simulation::BeginLatencyProbe();
+  base::simulation::BeginLatencyProbe();
   frc2::CommandScheduler::GetInstance().Run();
-  season::simulation::EndLatencyProbe();
+  base::simulation::EndLatencyProbe();
   auto nt = nt::NetworkTableInstance::GetDefault().GetTable("/Match");
   nt->GetEntry("Phase").SetString(match.phase);
   nt->GetEntry("TimeKnown").SetBoolean(match.periodTime.has_value());

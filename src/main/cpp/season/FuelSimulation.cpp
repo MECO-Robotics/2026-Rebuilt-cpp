@@ -1,6 +1,6 @@
 #ifndef __FRC_ROBORIO__
-#include "season/FuelSimulation.h"
-#include "season/RobotVisualization.h"
+#include "season/Simulation.h"
+#include "season/RobotGeometry.h"
 #include <networktables/NetworkTableInstance.h>
 
 #include <frc/DriverStation.h>
@@ -39,7 +39,7 @@ std::vector<FuelPoint> FuelModel::HopperCenters(int count,double extension,Pose 
  return HopperCenters3d(count,extension,Pose3d(robot));
 }
 std::vector<FuelPoint> FuelModel::HopperCenters3d(int count,double extension,const frc::Pose3d& robot){
- std::vector<FuelPoint> centers;count=std::clamp(count,0,54);double maxX=std::max(0.,extension)*std::cos(7.5*kPi/180);int zi=0;
+ std::vector<FuelPoint> centers;count=std::clamp(count,0,54);double maxX=HopperPose(std::max(0.,extension)).X().value();int zi=0;
  for(double z=.18+radius;z<=.65-radius+1e-9;z+=std::sqrt(3.)/2*diameter,++zi){int xi=0;for(double x=-.33+radius+(zi%2?radius:0);x<=maxX-radius+1e-9;x+=diameter,++xi)for(double y=-.34+radius+((zi+xi)%2?radius:0);y<=.34-radius+1e-9;y+=diameter){if(static_cast<int>(centers.size())==count)return centers;centers.push_back(World({x,y,z},robot));}}
  return centers;
 }
