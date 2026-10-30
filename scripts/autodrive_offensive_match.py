@@ -122,7 +122,9 @@ async def run(args):
                     p = truth.get()
                     result['trace'].append({'elapsed': round(now-start, 2), 'state': current,
                         'phase': phase.get(), 'offense_phase': offense_phase.get(), 'time': remaining.get(),
-                        'pose': [p.X(), p.Y(), p.rotation().Z()], 'stored': stored.get(), 'estimated_fuel': estimated_fuel.get(),
+                        'pose': [p.X(), p.Y(), p.rotation().Z()], 'height_m': p.Z(),
+                        'roll_rad': p.rotation().X(), 'pitch_rad': p.rotation().Y(),
+                        'stored': stored.get(), 'estimated_fuel': estimated_fuel.get(),
                         'launched': launched.get(), 'scored': scored.get(), 'feeding': feeding.get(),
                         'clusters': clusters.get(), 'detections': [front.get(), rear.get()],
                         'hub_known': hub_known.get(), 'hub_active': hub_active.get()})
