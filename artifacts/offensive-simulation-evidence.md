@@ -53,8 +53,7 @@ followed by termination from `std::bad_optional_access`; no stack or core was
 retained. The original observer then lost its partial trace when websocket
 cleanup raised. That cleanup path was corrected before the repeats above.
 The subsequent debugger and non-debugger repeats passed, but neither identifies
-or fixes the exception's cause. The original process log was retained at
-`/tmp/offense-sim-red.log` on the validation host and may be transient.
+or fixes the exception's cause. The [original process log](offensive-staged-red-failure.log.gz) is retained here.
 
 A separate staged blue trace showed the robot remaining near the modeled bump
 at approximately (4.89, 2.18) m while requesting motion late in the match.
