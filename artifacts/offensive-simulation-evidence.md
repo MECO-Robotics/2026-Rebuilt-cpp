@@ -18,6 +18,13 @@ and HAL websocket endpoints. HAL websocket listens on all interfaces.
 | [Red, R inactive first, debugger](offensive-staged-red-gdb.json.gz) | Local staged MecoBase 2026.2.10, `dc109e1860b1cef28de2b445cf15e88a2c5daade2fb6ac0f38fa2dc394ccd1aa` | Complete, 8 auto scores, 54 teleop pickups, 43 teleop scores, stopped on disable. No `std::bad_optional_access` caught. |
 | [Red, R inactive first, repeat](offensive-staged-red-repeat.json.gz) | Same staged executable as above | Complete, 9 auto scores, 55 teleop pickups, 46 teleop scores, stopped on disable. |
 | [Red, R inactive first, public Release](offensive-public-release-red.json.gz) | Public MecoBase 2026.2.10, `ed397709b0b098f13a7bda81d5956330804ece6f94bf5464a96e6794282ffcdc` | Complete, 108 teleop pickups, 45 teleop scores, stopped on disable. |
+| [Red, R inactive first, patched PathPlanner](offensive-patched-pathplanner-red.json.gz) | Local PathPlanner `2026.1.2-meco1`, executable `4089237a833e15b7461a60f8114dc87b944ea6459d66c02b93753407827acb79` | Complete, 7 auto scores, 39 teleop pickups, 32 teleop scores, stopped on disable. |
+
+The patched trial used the isolated PathPlanner fix at `6a64c40` and the
+[recorded local dependency hashes](offensive-patched-pathplanner-hashes.sha256).
+The replacement package is not published. Its fix addresses a separately
+reproduced out-of-bounds defect; the earlier red crash had no stack, so its
+cause remains unconfirmed.
 
 The public Release red trial was the second practice in the same simulator
 process. Its `complete` score sample of 11 predates the reset; autonomous and
