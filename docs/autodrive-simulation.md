@@ -509,7 +509,9 @@ collection and shooting attempts and cannot reproduce upstream capacity or
 possession decisions. It estimates pickups from observations disappearing near
 the intake; occlusion and missed detections can make this count wrong. A
 completed feeding attempt clears the estimate without proving that the hopper
-is empty. A 20-second collection limit prevents indefinite collection. Its
+is empty. A 20-second collection limit prevents indefinite collection. The optional
+`AutoDrive/EstimatedCapacity` preference defaults to zero (unknown); a positive
+value ends collection when the uncertain estimate reaches that threshold. Its
 camera adapter provides confidence and capture time but lacks persistent track
 identities, velocity, teammate intent and opponent tracks. The candidate
 ranking omits obstacle-detour costs,

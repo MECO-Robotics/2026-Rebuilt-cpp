@@ -3,6 +3,7 @@
 #include <frc/DriverStation.h>
 #include <frc/RobotBase.h>
 #include <frc/Timer.h>
+#include <frc/Preferences.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
 #include <algorithm>
@@ -19,8 +20,9 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
   // Anonymous detections are only a rough pickup estimate: an observation
   // disappearing in the intake mouth may also be occluded. Never treat this
   // estimate as a measured hopper sensor or as a capacity guarantee.
-  struct Estimate {int fuel=0; std::vector<base::ObjectCluster> previous;};
-  auto estimate=std::make_shared<Estimate>();
+  auto estimate=std::make_shared<OffensiveFuelEstimate>();
+  frc::Preferences::InitDouble("AutoDrive/EstimatedCapacity",0);
+
   auto collect = [&perception, &drive, m, field, estimate]() {
     struct TargetLock {std::optional<frc::Translation2d> position; double seen=0;};
     auto lock=std::make_shared<TargetLock>();
@@ -29,14 +31,8 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
       if (!alliance || !perception.MatchState().ownActive.has_value()) return std::nullopt;
       auto points = perception.VisibleFuel();
       const auto pose=drive.Pose();
-      for (const auto& old:estimate->previous) {
-        const auto local=(old.position-pose.Translation()).RotateBy(-pose.Rotation());
-        const bool mouth=local.X().value()>=.20 && local.X().value()<=.70 && std::abs(local.Y().value())<=.4;
-        const bool stillSeen=std::any_of(points.begin(),points.end(),[&](const auto& p) {return p.position.Distance(old.position).value()<.12;});
-        if (mouth && !stillSeen) estimate->fuel=std::min(54,estimate->fuel+1);
-      }
-      estimate->previous=points;
-      frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel",estimate->fuel);
+      estimate->Observe(points,pose);
+      frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel",estimate->Count());
       const auto& match = perception.MatchState();
       // Upstream avoids collecting in its own zone while its hub is inactive.
       if (!match.ownActive.value_or(false))
@@ -56,7 +52,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
       }
       // Upstream ranks four nearby candidates by estimated pickup-and-return
       // time per nearby piece when active, and by distance while staging.
-      // Our perception exposes positions only, not track age or confidence.
+      // Candidate age and confidence come from the perception snapshot.
       const auto intake=pose.Translation()+frc::Translation2d{.58_m,pose.Rotation()};
       std::sort(points.begin(),points.end(),[&](const auto& a,const auto& b) {
         return a.position.Distance(intake)<b.position.Distance(intake);
@@ -97,8 +93,8 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     };
     return frc2::cmd::Deadline(frc2::cmd::Wait(20_s),
         base::AutoDriveTrackTarget(drive,goal), Acquire(m))
-        .Until([&perception,estimate] {return estimate->fuel>=54 || !frc::DriverStation::GetAlliance().has_value() || !perception.MatchState().ownActive.has_value();})
-        .BeforeStarting([lock,estimate] {lock->position.reset();estimate->previous.clear();Phase("collect"); });
+        .Until([&perception,estimate] {const double capacity=frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity",0);return (std::isfinite(capacity) && capacity>0 && estimate->Count()>=capacity) || !frc::DriverStation::GetAlliance().has_value() || !perception.MatchState().ownActive.has_value();})
+        .BeforeStarting([lock,estimate] {lock->position.reset();estimate->StartCollection();Phase("collect"); });
   };
   auto home = [&drive,field]() -> std::optional<frc::Pose2d> {
     auto alliance=frc::DriverStation::GetAlliance();
@@ -132,7 +128,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     return CoordinatedShot(m,drive,field,target,options)
         .Until([&perception] {return !perception.MatchState().ownActive.value_or(false);})
         .BeforeStarting([fed] {*fed=false;Phase("score");})
-        .FinallyDo([estimate,fed](bool interrupted) {if (!interrupted && *fed) estimate->fuel=0;});
+        .FinallyDo([estimate,fed](bool interrupted) {estimate->CompleteFeed(!interrupted && *fed);});
   };
   auto ferry = [&perception,&drive,m,field,estimate]() {
     CoordinatedShotOptions options;
@@ -148,7 +144,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     return CoordinatedShot(m,drive,field,target,options)
       .Until([&perception] {return !perception.MatchState().ownActive.has_value() || *perception.MatchState().ownActive;})
       .BeforeStarting([fed] {*fed=false;Phase("ferry");})
-      .FinallyDo([estimate,fed](bool interrupted) {if (!interrupted && *fed) estimate->fuel=0;});
+      .FinallyDo([estimate,fed](bool interrupted) {estimate->CompleteFeed(!interrupted && *fed);});
   };
   auto waitForKnown = [&perception]() {
     return frc2::cmd::WaitUntil([&perception] {

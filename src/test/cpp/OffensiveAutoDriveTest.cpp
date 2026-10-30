@@ -11,3 +11,22 @@ TEST(OffensiveAutoDrive, HubShotRequiresKnownActiveHubAndSettledArrival) {
   EXPECT_FALSE(season::OffensiveHubShotAllowed(true,target,target,{.5_mps,0_mps,0_rad_per_s}));
   EXPECT_TRUE(season::OffensiveHubShotAllowed(true,target,target,{}));
 }
+
+TEST(OffensiveAutoDrive, PickupEstimateIsAnExplicitAmbiguousObservation) {
+  season::OffensiveFuelEstimate estimate;
+  const base::ObjectCluster mouth{{.4_m,0_m},1,1.,0_s};
+  const base::ObjectCluster distant{{2_m,0_m},1,1.,0_s};
+  estimate.Observe({mouth,distant},{});
+  estimate.Observe({mouth,distant},{});
+  EXPECT_EQ(estimate.Count(),0);
+  // Disappearance near the intake also counts occlusion: this cannot prove pickup.
+  estimate.Observe({distant},{});
+  EXPECT_EQ(estimate.Count(),1);
+  estimate.CompleteFeed(false);
+  EXPECT_EQ(estimate.Count(),1);
+  estimate.CompleteFeed(true);
+  EXPECT_EQ(estimate.Count(),0);
+  estimate.StartCollection();
+  estimate.Observe({},{});
+  EXPECT_EQ(estimate.Count(),0);
+}
