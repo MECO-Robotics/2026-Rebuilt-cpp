@@ -7,7 +7,7 @@ The field fuel grid, cameras, game-piece contacts and hub scoring are modeled
 approximations; estimated possession is not a measured hopper sensor.
 
 The candidate was `e84cbbd` in the policy worktree, based on season commit
-`a77cf96`, plus the observed-FUEL interface. All matches used a fresh process,
+`a77cf96`, plus the observed-FUEL interface. Unless noted, matches used a fresh process,
 the configured field colliders, a 20/3/140 second practice sequence, and the
 field-aware desktop binary. The observer connects to its task-owned local NT
 and HAL websocket endpoints. HAL websocket listens on all interfaces.
@@ -22,7 +22,8 @@ and HAL websocket endpoints. HAL websocket listens on all interfaces.
 
 The patched trial used the isolated PathPlanner fix at `6a64c40` and the
 [recorded local dependency hashes](offensive-patched-pathplanner-hashes.sha256).
-The replacement package is not published. Its fix addresses a separately
+The replacement package was subsequently published and tested as described
+below. Its fix addresses a separately
 reproduced out-of-bounds defect; the earlier red crash had no stack, so its
 cause remains unconfirmed.
 
