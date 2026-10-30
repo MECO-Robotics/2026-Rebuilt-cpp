@@ -30,3 +30,25 @@ TEST(OffensiveAutoDrive, PickupEstimateIsAnExplicitAmbiguousObservation) {
   estimate.Observe({},{});
   EXPECT_EQ(estimate.Count(),0);
 }
+
+TEST(OffensiveAutoDrive, ArbitrationUsesHubZoneAndEstimatedLoad) {
+  using D=season::OffensiveDecision;
+  const season::FieldGeometry field{16.541,8.069,{},{}};
+  const auto blue=frc::DriverStation::Alliance::kBlue;
+  const frc::Pose2d neutral{6_m,4_m,frc::Rotation2d{0_rad}};
+  const frc::Pose2d home{2_m,4_m,frc::Rotation2d{0_rad}};
+  const base::ObjectCluster friendly{{2_m,4_m},1,1.,0_s};
+  const base::ObjectCluster nearby{{7_m,4_m},1,1.,0_s};
+  EXPECT_EQ(season::DecideOffense(std::nullopt,blue,neutral,field,{},3,0),D::Wait);
+  EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{nearby},3,10),D::Collect);
+  EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{nearby},10,10),D::Score);
+  EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{},3,0),D::Score);
+  EXPECT_EQ(season::DecideOffense(true,blue,home,field,{friendly},3,10),D::Collect);
+  EXPECT_EQ(season::DecideOffense(true,blue,home,field,{},3,10),D::Score);
+  EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{friendly},3,10),D::Ferry);
+  EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{nearby},3,10),D::Collect);
+  EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{nearby},10,10),D::Ferry);
+  EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{nearby},1,10,false,true),D::Ferry);
+  EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{nearby},1,0,false,false,true,13.),D::Score);
+  EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{nearby},1,0,false,false,true,14.),D::Collect);
+}

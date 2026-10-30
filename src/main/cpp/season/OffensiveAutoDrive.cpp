@@ -23,7 +23,13 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
   auto estimate=std::make_shared<OffensiveFuelEstimate>();
   frc::Preferences::InitDouble("AutoDrive/EstimatedCapacity",0);
 
-  auto collect = [&perception, &drive, m, field, estimate]() {
+  auto decision = [&perception,&drive,field,estimate] {
+    return DecideOffense(perception.MatchState().ownActive,frc::DriverStation::GetAlliance(),drive.Pose(),field,
+        perception.VisibleFuel(),estimate->Count(),frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity",0),
+        false,false,frc::DriverStation::IsAutonomousEnabled(),perception.MatchState().periodTime);
+  };
+  auto matchLost=std::make_shared<bool>(false);
+  auto collect = [&perception, &drive, m, field, estimate, decision, matchLost]() {
     struct TargetLock {std::optional<frc::Translation2d> position; double seen=0;};
     auto lock=std::make_shared<TargetLock>();
     auto goal = [&perception, &drive, field, lock, estimate]() -> std::optional<frc::Pose2d> {
@@ -93,8 +99,12 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     };
     return frc2::cmd::Deadline(frc2::cmd::Wait(20_s),
         base::AutoDriveTrackTarget(drive,goal).AndThen(frc2::cmd::Wait(.3_s)).Repeatedly(), Acquire(m))
-        .Until([&perception,estimate] {const double capacity=frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity",0);return (std::isfinite(capacity) && capacity>0 && estimate->Count()>=capacity) || !frc::DriverStation::GetAlliance().has_value() || !perception.MatchState().ownActive.has_value();})
-        .BeforeStarting([lock,estimate] {lock->position.reset();estimate->StartCollection();Phase("collect"); });
+        .Until([decision,matchLost] {
+          auto next=decision();
+          if (next==OffensiveDecision::Wait) *matchLost=true;
+          return next!=OffensiveDecision::Collect;
+        })
+        .BeforeStarting([lock,estimate,matchLost] {lock->position.reset();estimate->StartCollection();*matchLost=false;Phase("collect"); });
   };
   auto home = [&drive,field]() -> std::optional<frc::Pose2d> {
     auto alliance=frc::DriverStation::GetAlliance();
@@ -156,9 +166,17 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     const auto target=home();
     return OffensiveHubShotAllowed(perception.MatchState().ownActive,target,drive.Pose(),drive.Speeds());
   };
-  auto cycle=frc2::cmd::Sequence(waitForKnown(),collect(),waitForKnown(),
-      frc2::cmd::Either(frc2::cmd::Sequence(returnHome(),
-          frc2::cmd::Either(shot(),frc2::cmd::None(),mayShoot)),ferry(),active)).Repeatedly();
+  // Loss of match data restarts arbitration after recovery, never advances a
+  // cancelled collection directly into a shot. Return/ferry attempts are
+  // committed until finished or match state makes them invalid.
+  auto mayAct = [matchLost,&perception] {
+    return !*matchLost && frc::DriverStation::GetAlliance().has_value() && perception.MatchState().ownActive.has_value();
+  };
+  auto cycle=frc2::cmd::Sequence(waitForKnown(),collect(),
+      frc2::cmd::Either(
+        frc2::cmd::Either(frc2::cmd::Sequence(returnHome(),
+          frc2::cmd::Either(shot(),frc2::cmd::None(),mayShoot)),ferry(),active),
+        frc2::cmd::None(),mayAct)).Repeatedly();
   return std::move(cycle).FinallyDo([&drive,m](bool) {
         drive.Stop();m.rack.Stop();m.intake.Stop();m.conveyor.Stop();m.bottomIndexer.Stop();m.topIndexer.Stop();m.hood.Stop();m.shooter.Stop();Phase("idle");
       });
