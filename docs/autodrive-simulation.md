@@ -505,7 +505,8 @@ observation dropouts. Finished or failed collection navigation is retried
 after 0.3 seconds while the collection attempt remains active. The command
 commits to a return and shot or ferry attempt until completion or interruption. Return from outside the alliance zone approaches a
 fixed neutral-side trench waypoint before the shot position; it retries the
-waypoint at most three times and requires settled arrival before the final leg. This route is intended for the modeled field and has not been
+waypoint at most three times at a 1 m/s path-output limit and requires settled
+arrival before the final leg. This route is intended for the modeled field and has not been
 physically validated.
 
 This robot has no carried-FUEL sensor. The command therefore runs bounded

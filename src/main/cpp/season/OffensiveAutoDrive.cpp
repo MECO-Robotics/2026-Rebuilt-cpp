@@ -150,8 +150,13 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
       return base::AutoDriveToPose(drive,home).WithTimeout(15_s).Until(invalid);
     };
     auto stageAttempt=[&drive,trench,invalid,stageArrived] {
+      // The 2 m/s waypoint approach coasted into the field-boundary grid in
+      // desktop trials. Apply the public command's scoped path output limit;
+      // AutoDriveToPose clears that limit on completion and interruption.
+      base::AutoDriveConfig limits;
+      limits.maxSpeed=1.;
       return frc2::cmd::Either(frc2::cmd::None(),
-          base::AutoDriveToPose(drive,trench).WithTimeout(8_s).Until(invalid),stageArrived);
+          base::AutoDriveToPose(drive,trench,limits).WithTimeout(8_s).Until(invalid),stageArrived);
     };
     auto staged=frc2::cmd::Sequence(stageAttempt(),stageAttempt(),stageAttempt(),
         frc2::cmd::Either(direct(),frc2::cmd::None(),stageArrived));
