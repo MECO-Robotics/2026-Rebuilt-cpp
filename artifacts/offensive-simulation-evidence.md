@@ -96,3 +96,5 @@ with 139 teleop pickups and a normal stop. Desktop binary SHA-256 was
 `ce820a3e0fa31a3dc1be4f849f158306a70f6e3d917a95fff634e7ebf008c6b3`.
 The full local build passed on desktop and roboRIO and all 30 desktop tests
 passed in Debug and Release. This single run does not establish repeatability.
+The same binary also completed a [red timing-candidate match](offensive-red-window-candidate.json.gz)
+with 9 autonomous and 18 teleop scores, 21 teleop pickups, and a normal stop.
