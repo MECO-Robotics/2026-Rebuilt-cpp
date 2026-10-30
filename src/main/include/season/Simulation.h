@@ -24,14 +24,14 @@ namespace season
   using FuelRobotState = meco::sim::ContactBody;
   struct FuelInputs
   {
-    Pose robot;
+    frc::Pose2d robot;
     // Field relative chassis velocity, including launch inheritance.
     double vx{}, vy{}, omega{}, rackMetres{}, hoodRotations{}, flywheelRps{};
     bool collecting = false, feeding = false;
     // Scoring depends on hub state at the moment fuel crosses the opening.
     // A missing state cannot establish that a crossing earned points.
     std::optional<bool> hubActive{true};
-    Alliance alliance = Alliance::Blue;
+    frc::DriverStation::Alliance alliance = frc::DriverStation::Alliance::kBlue;
     std::optional<FuelRobotState> physics;
   };
   // Gravity-driven balls with estimated bumper and equal-mass fuel contacts.
@@ -44,7 +44,7 @@ namespace season
     explicit FuelModel(unsigned seed = 3737);
     void Reset();
     void Step(double dt, const FuelInputs &input);
-    void AddFloorFuel(Point point);
+    void AddFloorFuel(frc::Translation2d point);
     void SetStoredFuel(int count);
     int StoredFuel() const { return stored_; }
     int SuccessfulScores() const { return scored_; }
@@ -52,7 +52,7 @@ namespace season
     int PendingBurstShots() const { return pending_; }
     const std::vector<FuelParticle> &FloorFuel() const { return floor_; }
     const std::vector<FuelParticle> &Projectiles() const { return airborne_; }
-    static std::vector<FuelPoint> HopperCenters(int count, double extension, Pose robot = {});
+    static std::vector<FuelPoint> HopperCenters(int count, double extension, frc::Pose2d robot = {});
     static std::vector<FuelPoint> HopperCenters3d(int count, double extension, const frc::Pose3d &robot);
     static double LaunchPitch(double hoodRotations);
 

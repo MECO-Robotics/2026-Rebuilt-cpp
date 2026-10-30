@@ -6,9 +6,7 @@
 namespace season {
 namespace {
 constexpr double inf = std::numeric_limits<double>::infinity();
-Point Sub(Point a, Point b) { return {a.x-b.x,a.y-b.y}; }
-double Norm(Point p) { return std::hypot(p.x,p.y); }
-Point Exit(Pose p) { return {p.x-.19*std::cos(p.heading),p.y-.19*std::sin(p.heading)}; }
+frc::Translation2d Exit(frc::Pose2d p) { return p.Translation() + frc::Translation2d{units::meter_t{-.19}, units::meter_t{0}}.RotateBy(p.Rotation()); }
 double Wrap(double angle) { return std::atan2(std::sin(angle),std::cos(angle)); }
 double Pitch(double hood) { return kPi/2 - (16*kPi/180 + hood*2*kPi); }
 double Interpolate(double distance, const std::array<double,8>& values) {
@@ -21,55 +19,55 @@ double Interpolate(double distance, const std::array<double,8>& values) {
   }
   return values.back();
 }
-Point Reference(Alliance a,const FieldGeometry& f) { return a==Alliance::Blue?f.blueTrenchReference:f.redTrenchReference; }
-double SegmentDistance(Point point,Point start,Point end) {
-  Point segment=Sub(end,start); double squared=segment.x*segment.x+segment.y*segment.y;
-  if(squared<=1e-9) return Norm(Sub(point,start));
-  Point v=Sub(point,start);
-  double t=std::clamp((v.x*segment.x+v.y*segment.y)/squared,0.0,1.0);
-  return Norm(Sub(point,{start.x+t*segment.x,start.y+t*segment.y}));
+frc::Translation2d Reference(frc::DriverStation::Alliance a,const FieldGeometry& f) { return a==frc::DriverStation::Alliance::kBlue?f.blueTrenchReference:f.redTrenchReference; }
+double SegmentDistance(frc::Translation2d point,frc::Translation2d start,frc::Translation2d end) {
+  frc::Translation2d segment=(end-start); double squared=segment.X().value()*segment.X().value()+segment.Y().value()*segment.Y().value();
+  if(squared<=1e-9) return point.Distance(start).value();
+  frc::Translation2d v=(point-start);
+  double t=std::clamp((v.X().value()*segment.X().value()+v.Y().value()*segment.Y().value())/squared,0.0,1.0);
+  return point.Distance(start + segment * t).value();
 }
-double HeightAtX(Point start,Point target,double x,double hood,double rps) {
-  double dx=target.x-start.x;
+double HeightAtX(frc::Translation2d start,frc::Translation2d target,double x,double hood,double rps) {
+  double dx=target.X().value()-start.X().value();
   if(std::abs(dx)<1e-9) return -inf;
-  double fraction=(x-start.x)/dx;
+  double fraction=(x-start.X().value())/dx;
   if(fraction<0||fraction>1) return -inf;
   double pitch=Pitch(hood)-kPi/180, speed=rps*kProjectileSpeedPerRps*.99;
   double horizontal=speed*std::cos(pitch);
   if(horizontal<=0) return -inf;
-  double time=Norm(Sub(target,start))*fraction/horizontal;
+  double time=target.Distance(start).value()*fraction/horizontal;
   return kReleaseHeight+speed*std::sin(pitch)*time-.5*9.80665*time*time;
 }
 }
-Point HubPosition(Alliance a) { return {(a==Alliance::Blue?182.105:469.115)*.0254,158.845*.0254}; }
-double AllianceBoundary(Alliance a,const FieldGeometry& f) { return a==Alliance::Blue?158.6*.0254:f.length-158.6*.0254; }
-bool InAllianceZone(Alliance a,Point p,const FieldGeometry& f) { return a==Alliance::Blue?p.x<=AllianceBoundary(a,f):p.x>=AllianceBoundary(a,f); }
-bool SeesAllianceSideTag(Alliance a,const std::vector<int>& ids) {
-  int first=a==Alliance::Blue?17:1,last=a==Alliance::Blue?32:16;
+frc::Translation2d HubPosition(frc::DriverStation::Alliance a) { return {units::meter_t{(a==frc::DriverStation::Alliance::kBlue?182.105:469.115)*.0254},units::meter_t{158.845*.0254}}; }
+double AllianceBoundary(frc::DriverStation::Alliance a,const FieldGeometry& f) { return a==frc::DriverStation::Alliance::kBlue?158.6*.0254:f.length-158.6*.0254; }
+bool InAllianceZone(frc::DriverStation::Alliance a,frc::Translation2d p,const FieldGeometry& f) { return a==frc::DriverStation::Alliance::kBlue?p.X().value()<=AllianceBoundary(a,f):p.X().value()>=AllianceBoundary(a,f); }
+bool SeesAllianceSideTag(frc::DriverStation::Alliance a,const std::vector<int>& ids) {
+  int first=a==frc::DriverStation::Alliance::kBlue?17:1,last=a==frc::DriverStation::Alliance::kBlue?32:16;
   return std::any_of(ids.begin(),ids.end(),[=](int id){return id>=first&&id<=last;});
 }
-ShotTarget FerryTarget(Alliance a,Pose robot,const FieldGeometry& f) {
-  double direction=a==Alliance::Blue?-1:1;
-  Point reference{AllianceBoundary(a,f)+direction*.90,Reference(a,f).y+direction*.40};
-  double low=std::min(reference.y,f.width-reference.y),high=std::max(reference.y,f.width-reference.y);
-  return {ShotMode::Ferry,{reference.x,robot.y<=f.width/2?low:high}};
+ShotTarget FerryTarget(frc::DriverStation::Alliance a,frc::Pose2d robot,const FieldGeometry& f) {
+  double direction=a==frc::DriverStation::Alliance::kBlue?-1:1;
+  frc::Translation2d reference{units::meter_t{AllianceBoundary(a,f)+direction*.90},units::meter_t{Reference(a,f).Y().value()+direction*.40}};
+  double low=std::min(reference.Y().value(),f.width-reference.Y().value()),high=std::max(reference.Y().value(),f.width-reference.Y().value());
+  return {ShotMode::Ferry,{reference.X(),units::meter_t{robot.Y().value()<=f.width/2?low:high}}};
 }
-ShotTarget SelectTarget(Alliance a,Pose robot,const std::vector<int>& ids,const FieldGeometry& f) {
-  return InAllianceZone(a,{robot.x,robot.y},f)||SeesAllianceSideTag(a,ids)?ShotTarget{ShotMode::Hub,HubPosition(a)}:FerryTarget(a,robot,f);
+ShotTarget SelectTarget(frc::DriverStation::Alliance a,frc::Pose2d robot,const std::vector<int>& ids,const FieldGeometry& f) {
+  return InAllianceZone(a,robot.Translation(),f)||SeesAllianceSideTag(a,ids)?ShotTarget{ShotMode::Hub,HubPosition(a)}:FerryTarget(a,robot,f);
 }
 double FerryFlywheelRps(double distance,double hood) {
   double pitch=Pitch(hood),cosine=std::cos(pitch),height=kReleaseHeight+distance*std::tan(pitch);
   if(!std::isfinite(distance)||distance<0||cosine<=0||height<=0) return inf;
   return std::sqrt(9.80665*distance*distance/(2*cosine*cosine*height))/kProjectileSpeedPerRps;
 }
-FerryPlan CalculateFerry(Pose robot,ShotTarget target,const FieldGeometry& f,ShotTuning tuning) {
-  Point start=Exit(robot); double distance=Norm(Sub(start,target.position));
+FerryPlan CalculateFerry(frc::Pose2d robot,ShotTarget target,const FieldGeometry& f,ShotTuning tuning) {
+  frc::Translation2d start=Exit(robot); double distance=start.Distance(target.position).value();
   double maxHood=std::clamp(tuning.ferryHoodRotations,kHoodMin,kHoodMax), maxRps=std::max(0.0,tuning.ferryFlywheelRps);
-  Alliance a=target.position.x<f.length/2?Alliance::Blue:Alliance::Red;
-  double direction=a==Alliance::Blue?1:-1, center=Reference(a,f).x;
+  frc::DriverStation::Alliance a=target.position.X().value()<f.length/2?frc::DriverStation::Alliance::kBlue:frc::DriverStation::Alliance::kRed;
+  double direction=a==frc::DriverStation::Alliance::kBlue?1:-1, center=Reference(a,f).X().value();
   double neutral=center+direction*47*.0254/2,wall=center-direction*47*.0254/2;
   double radius=std::hypot(47*.0254/2,47*.0254/2)+5.91*.0254/2+.12+.10;
-  bool safe=InAllianceZone(a,target.position,f)&&(a==Alliance::Blue?start.x>neutral:start.x<neutral)&&SegmentDistance(HubPosition(a),start,target.position)>radius;
+  bool safe=InAllianceZone(a,target.position,f)&&(a==frc::DriverStation::Alliance::kBlue?start.X().value()>neutral:start.X().value()<neutral)&&SegmentDistance(HubPosition(a),start,target.position)>radius;
   if(safe) for(int step=0;step<=50;++step) {
     double hood=maxHood-(maxHood-kHoodMin)*step/50, rps=FerryFlywheelRps(distance,hood);
     double minHeight=40.25*.0254+5.91*.0254/2+.10;
@@ -77,11 +75,11 @@ FerryPlan CalculateFerry(Pose robot,ShotTarget target,const FieldGeometry& f,Sho
   }
   return {maxHood,std::clamp(FerryFlywheelRps(distance,maxHood),0.0,maxRps),false};
 }
-ShotSolution CalculateShot(Pose robot,Point target,bool simulation) {
-  Point delta=Sub(target,Exit(robot)); double distance=Norm(delta);
-  return {distance,Wrap(std::atan2(delta.y,delta.x)-(simulation?0:kPi)),Interpolate(distance,kHoodTable),Interpolate(distance,kFlywheelTable),distance>=kMinDistance&&distance<=kMaxDistance};
+ShotSolution CalculateShot(frc::Pose2d robot,frc::Translation2d target,bool simulation) {
+  frc::Translation2d delta=(target-Exit(robot)); double distance=delta.Norm().value();
+  return {distance,Wrap(std::atan2(delta.Y().value(),delta.X().value())-(simulation?0:kPi)),Interpolate(distance,kHoodTable),Interpolate(distance,kFlywheelTable),distance>=kMinDistance&&distance<=kMaxDistance};
 }
-ShotSolution CalculateShot(Pose robot,ShotTarget target,const FieldGeometry& field,bool simulation,ShotTuning tuning) {
+ShotSolution CalculateShot(frc::Pose2d robot,ShotTarget target,const FieldGeometry& field,bool simulation,ShotTuning tuning) {
   auto solution=CalculateShot(robot,target.position,simulation);
   if(target.mode==ShotMode::Ferry) { auto plan=CalculateFerry(robot,target,field,tuning); solution.hoodRotations=plan.hoodRotations;solution.flywheelRps=plan.flywheelRps;solution.calibrated=plan.safe; }
   return solution;

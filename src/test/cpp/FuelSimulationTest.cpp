@@ -18,7 +18,7 @@ TEST(FuelSimulation,LaunchUsesPhysicsPoseAndFullMotionInsteadOfOdometry){
    frc::Rotation3d{units::degree_t{15},units::degree_t{-20},units::degree_t{90}}},
   {1,2,.3},{.4,-.3,.5},{0,0,.30}};
  // Deliberately disagree with truth, as odometry can after reset or wheel slip.
- input.robot={20,30,-1};input.vx=10;input.physics=robot;
+ input.robot=frc::Pose2d{units::meter_t{20},units::meter_t{30},frc::Rotation2d{units::radian_t{-1}}};input.vx=10;input.physics=robot;
  physical.Step(dt,input);ASSERT_EQ(physical.Projectiles().size(),1u);
  const auto actual=physical.Projectiles()[0];
  const auto offset=(translation({-.19,-.12,kReleaseHeight})-translation(robot.centerOfMass)).RotateBy(robot.pose.Rotation());
@@ -37,8 +37,8 @@ TEST(FuelSimulation,LaunchUsesPhysicsPoseAndFullMotionInsteadOfOdometry){
 TEST(FuelSimulation,BumperPushUsesPhysicsPoseAndSurfaceVelocity){
  FuelModel model;
  // Robot faces +Y; the front bumper pushes fuel along field +Y.
- model.AddFloorFuel({2,3.48});
- FuelInputs input;input.robot={20,20,0};
+ model.AddFloorFuel({units::meter_t{2},units::meter_t{3.48}});
+ FuelInputs input;input.robot=frc::Pose2d{units::meter_t{20},units::meter_t{20},frc::Rotation2d{units::radian_t{0}}};
  input.physics=FuelRobotState{{units::meter_t{2},units::meter_t{3},units::meter_t{0},frc::Rotation3d{units::radian_t{0},units::radian_t{0},units::radian_t{kPi/2}}},{0,1,0},{},{}};
  model.Step(.02,input);
  ASSERT_EQ(model.FloorFuel().size(),1u);
@@ -47,7 +47,7 @@ TEST(FuelSimulation,BumperPushUsesPhysicsPoseAndSurfaceVelocity){
  EXPECT_GT(ball.velocity.y,1);
  EXPECT_NEAR(ball.position.x,2,1e-9);
  // Raising the chassis leaves floor fuel below the bumper, with no phantom hit.
- model.Reset();model.AddFloorFuel({2,3.48});
+ model.Reset();model.AddFloorFuel({units::meter_t{2},units::meter_t{3.48}});
  input.physics->pose=frc::Pose3d{units::meter_t{2},units::meter_t{3},units::meter_t{.4},input.physics->pose.Rotation()};
  model.Step(.02,input);
  ASSERT_EQ(model.FloorFuel().size(),1u);
@@ -55,7 +55,7 @@ TEST(FuelSimulation,BumperPushUsesPhysicsPoseAndSurfaceVelocity){
  EXPECT_NEAR(model.FloorFuel()[0].velocity.y,0,1e-9);
 }
 TEST(FuelSimulation,FuelTransfersMotionAndSeparatesOverlaps){
- FuelModel model;model.AddFloorFuel({.48,0});model.AddFloorFuel({.62,0});
+ FuelModel model;model.AddFloorFuel({units::meter_t{.48},units::meter_t{0}});model.AddFloorFuel({units::meter_t{.62},units::meter_t{0}});
  FuelInputs input;input.vx=1;
  for(int i=0;i<5;++i)model.Step(.02,input);
  ASSERT_EQ(model.FloorFuel().size(),2u);
@@ -64,7 +64,7 @@ TEST(FuelSimulation,FuelTransfersMotionAndSeparatesOverlaps){
  EXPECT_GT(balls[1].velocity.x,0);
  EXPECT_GE(balls[1].position.x-balls[0].position.x,5.5*.0254-1e-6);
  // Coincident centres must resolve without a divide-by-zero.
- model.Reset();model.AddFloorFuel({2,2});model.AddFloorFuel({2,2});model.Step(.02,{});
+ model.Reset();model.AddFloorFuel({units::meter_t{2},units::meter_t{2}});model.AddFloorFuel({units::meter_t{2},units::meter_t{2}});model.Step(.02,{});
  ASSERT_EQ(model.FloorFuel().size(),2u);
  EXPECT_NEAR(model.FloorFuel()[1].position.x-model.FloorFuel()[0].position.x,5.5*.0254,1e-9);
 }
@@ -87,10 +87,10 @@ TEST(ParticleContacts, RejectsAliasedGroupsWithoutChangingParticles) {
 }
 
 TEST(FuelSimulation, HubCrossingScoresOnlyWhenActive) {
- const auto hub=HubPosition(Alliance::Blue);
+ const auto hub=HubPosition(frc::DriverStation::Alliance::kBlue);
  for(const std::optional<bool> active : {std::optional<bool>{true}, std::optional<bool>{false}, std::optional<bool>{}}) {
    FuelModel model;model.SetStoredFuel(1);
-   FuelInputs input;input.robot={hub.x-1.24,hub.y+.12,0};input.feeding=true;input.flywheelRps=30;input.hubActive=active;
+   FuelInputs input;input.robot=frc::Pose2d{units::meter_t{hub.X().value()-1.24},units::meter_t{hub.Y().value()+.12},frc::Rotation2d{units::radian_t{0}}};input.feeding=true;input.flywheelRps=30;input.hubActive=active;
    for(int i=0;i<100;++i) model.Step(.02,input);
    EXPECT_EQ(model.LaunchedFuel(),1);
    EXPECT_EQ(model.SuccessfulScores(),active.value_or(false)?1:0);
@@ -99,10 +99,10 @@ TEST(FuelSimulation, HubCrossingScoresOnlyWhenActive) {
 }
 
 TEST(FuelSimulation, ScoringAssessmentContinuesBrieflyAfterDeactivation) {
- const auto hub=HubPosition(Alliance::Blue);
+ const auto hub=HubPosition(frc::DriverStation::Alliance::kBlue);
  for(const auto& [delay,expected] : std::array<std::pair<double,int>,2>{{{2.,1},{3.1,0}}}) {
    FuelModel model;model.SetStoredFuel(1);
-   FuelInputs input;input.robot={hub.x-1.24,hub.y+.12,0};input.flywheelRps=30;input.hubActive=true;
+   FuelInputs input;input.robot=frc::Pose2d{units::meter_t{hub.X().value()-1.24},units::meter_t{hub.Y().value()+.12},frc::Rotation2d{units::radian_t{0}}};input.flywheelRps=30;input.hubActive=true;
    model.Step(.02,input);input.hubActive=false;
    for(int i=0;i<static_cast<int>(delay/.02);++i) model.Step(.02,input);
    input.feeding=true;

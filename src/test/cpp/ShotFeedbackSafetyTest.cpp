@@ -4,7 +4,7 @@
 
 TEST(ShotFeedbackSafety, InvalidFeedbackStopsAndRearmsFeed) {
   using namespace season;
-  const auto shot = CalculateShot({3, 0, 0}, Point{0, 0});
+  const auto shot = CalculateShot(frc::Pose2d{units::meter_t{3}, units::meter_t{0}, frc::Rotation2d{}}, frc::Translation2d{});
   for (double invalid : {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::infinity()}) {
     EXPECT_NE(EvaluateReadiness(true, shot, invalid, 0, 0, shot.headingRadians, shot.hoodRotations, shot.flywheelRps), Readiness::Ready);
     EXPECT_NE(EvaluateReadiness(true, shot, 0, 0, 0, invalid, shot.hoodRotations, shot.flywheelRps), Readiness::Ready);

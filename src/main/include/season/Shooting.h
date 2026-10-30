@@ -1,25 +1,15 @@
 #pragma once
 #include <array>
 #include <vector>
+#include <frc/DriverStation.h>
+#include <frc/geometry/Translation2d.h>
+#include <frc/geometry/Pose2d.h>
 
 // Pure season algorithms. Distances are meters, angles radians, mechanism
 // positions rotations, velocities rotations/second; time is monotonic seconds.
 namespace season
 {
   inline constexpr double kPi = 3.14159265358979323846;
-  struct Point
-  {
-    double x{}, y{};
-  };
-  struct Pose
-  {
-    double x{}, y{}, heading{};
-  };
-  enum class Alliance
-  {
-    Blue,
-    Red
-  };
   enum class ShotMode
   {
     Hub,
@@ -28,7 +18,7 @@ namespace season
   struct ShotTarget
   {
     ShotMode mode;
-    Point position;
+    frc::Translation2d position;
   };
   struct ShotSolution
   {
@@ -45,7 +35,7 @@ namespace season
   struct FieldGeometry
   {
     double length, width;
-    Point blueTrenchReference, redTrenchReference;
+    frc::Translation2d blueTrenchReference, redTrenchReference;
   };
   struct ShotTuning
   {
@@ -67,16 +57,16 @@ namespace season
   inline constexpr std::array<double, 8> kHoodTable{0, .019, .020, .020, .020, .020, .020, .049};
   // Table entries are wheel-RPS targets, not ball speeds; do not scale them again.
   inline constexpr std::array<double, 8> kFlywheelTable{30, 37.9, 40, 41, 46, 47, 47, 53.7};
-  Point HubPosition(Alliance alliance);
-  double AllianceBoundary(Alliance alliance, const FieldGeometry &field);
-  bool InAllianceZone(Alliance alliance, Point point, const FieldGeometry &field);
-  bool SeesAllianceSideTag(Alliance alliance, const std::vector<int> &ids);
-  ShotTarget FerryTarget(Alliance alliance, Pose robot, const FieldGeometry &field);
-  ShotTarget SelectTarget(Alliance alliance, Pose robot, const std::vector<int> &ids, const FieldGeometry &field);
+  frc::Translation2d HubPosition(frc::DriverStation::Alliance alliance);
+  double AllianceBoundary(frc::DriverStation::Alliance alliance, const FieldGeometry &field);
+  bool InAllianceZone(frc::DriverStation::Alliance alliance, frc::Translation2d point, const FieldGeometry &field);
+  bool SeesAllianceSideTag(frc::DriverStation::Alliance alliance, const std::vector<int> &ids);
+  ShotTarget FerryTarget(frc::DriverStation::Alliance alliance, frc::Pose2d robot, const FieldGeometry &field);
+  ShotTarget SelectTarget(frc::DriverStation::Alliance alliance, frc::Pose2d robot, const std::vector<int> &ids, const FieldGeometry &field);
   double FerryFlywheelRps(double distanceMeters, double hoodRotations);
-  FerryPlan CalculateFerry(Pose robot, ShotTarget target, const FieldGeometry &field, ShotTuning tuning = {});
-  ShotSolution CalculateShot(Pose robot, Point target, bool simulation = false);
-  ShotSolution CalculateShot(Pose robot, ShotTarget target, const FieldGeometry &field, bool simulation = false, ShotTuning tuning = {});
+  FerryPlan CalculateFerry(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, ShotTuning tuning = {});
+  ShotSolution CalculateShot(frc::Pose2d robot, frc::Translation2d target, bool simulation = false);
+  ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, bool simulation = false, ShotTuning tuning = {});
   enum class Readiness
   {
     PoseNotReady,

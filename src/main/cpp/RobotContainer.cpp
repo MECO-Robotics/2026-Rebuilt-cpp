@@ -127,7 +127,7 @@ namespace
   season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
   {
     auto midpoint = [&](int a, int b)
-    {auto p=layout.GetTagPose(a).value(),q=layout.GetTagPose(b).value();return season::Point{(p.X().value()+q.X().value())/2,(p.Y().value()+q.Y().value())/2}; };
+    {auto p=layout.GetTagPose(a).value(),q=layout.GetTagPose(b).value();return frc::Translation2d{(p.X()+q.X())/2,(p.Y()+q.Y())/2}; };
     return {layout.GetFieldLength().value(), layout.GetFieldWidth().value(), midpoint(22, 23), midpoint(6, 7)};
   }
   base::QuestNavConfig QuestConfig(const frc::AprilTagFieldLayout &layout)
@@ -239,7 +239,7 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   drive_.SetDefaultCommand(frc2::cmd::RunEnd([this]
                                            { DriveTeleop(false); }, [this]
                                            { drive_.Stop(); }, {&drive_}));
-  autoDrive_ = std::make_unique<season::AutoDrive>(drive_,[this] {return rack_.Position();},[this]() -> const season::MatchContext& {return matchContext_;});
+  autoDrive_ = std::make_unique<season::AutoDrive>(drive_,[this] {return rack_.Position();},[this]() -> const base::season2026::MatchContext& {return matchContext_;});
   auto m = Mechanisms();
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
@@ -263,15 +263,15 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   auto calculatedSpinUp = [this]
   { return frc2::cmd::RunEnd([this]
                              {
-   auto p=drive_.Pose();auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed)==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;
-   auto shot=season::CalculateShot({p.X().value(),p.Y().value(),p.Rotation().Radians().value()},season::HubPosition(alliance),frc::RobotBase::IsSimulation());
+   auto p=drive_.Pose();auto alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
+   auto shot=season::CalculateShot(p,season::HubPosition(alliance),frc::RobotBase::IsSimulation());
    hood_.SetPosition(shot.hoodRotations);shooter_.SetVelocity(shot.flywheelRps); }, [this]
                              {hood_.Stop();shooter_.Stop(); }, {&hood_, &shooter_}); };
   pathplanner::NamedCommands::registerCommand("AutoSpinUp", calculatedSpinUp().WithTimeout(2_s));
   pathplanner::NamedCommands::registerCommand("Fender", season::ShooterPreset(m, 0, 30));
   pathplanner::NamedCommands::registerCommand("AutoAim", frc2::cmd::RunEnd([this]
                                                                            {
-   auto p=drive_.Pose();auto target=SelectTarget();auto shot=season::CalculateShot({p.X().value(),p.Y().value(),p.Rotation().Radians().value()},target,field_,frc::RobotBase::IsSimulation());
+   auto p=drive_.Pose();auto target=SelectTarget();auto shot=season::CalculateShot(p,target,field_,frc::RobotBase::IsSimulation());
    hood_.SetPosition(shot.hoodRotations);shooter_.SetVelocity(shot.flywheelRps);
    double error=std::remainder(shot.headingRadians-p.Rotation().Radians().value(),2*std::numbers::pi);
    drive_.RunVelocity(frc::ChassisSpeeds{0_mps,0_mps,units::radians_per_second_t{std::clamp(7*error,-7.,7.)}}); }, [this]
@@ -384,7 +384,7 @@ void RobotContainer::DriveTeleop(bool aim)
   if (aim)
   {
     const auto p = drive_.Pose();
-    const auto shot = season::CalculateShot({p.X().value(), p.Y().value(), p.Rotation().Radians().value()},
+    const auto shot = season::CalculateShot(p,
                                            SelectTarget(), field_, frc::RobotBase::IsSimulation());
     hood_.SetPosition(shot.hoodRotations);
     shooter_.SetVelocity(shot.flywheelRps);
@@ -396,7 +396,7 @@ void RobotContainer::DriveTeleop(bool aim)
 }
 season::ShotTarget RobotContainer::SelectTarget()
 {
-  auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed) == frc::DriverStation::Alliance::kBlue ? season::Alliance::Blue : season::Alliance::Red;
+  auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
   auto calibration = nt::NetworkTableInstance::GetDefault().GetEntry("/TunableNumbers/ShooterCalibration/Enabled").GetBoolean(false);
   if (calibration)
     return {season::ShotMode::Hub, season::HubPosition(alliance)};
@@ -405,13 +405,13 @@ season::ShotTarget RobotContainer::SelectTarget()
   auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
-    return season::SelectTarget(alliance, {p.X().value(), p.Y().value(), p.Rotation().Radians().value()}, simulatedLocalization_.tagIds, field_);
+    return season::SelectTarget(alliance, p, simulatedLocalization_.tagIds, field_);
 #endif
   auto raw = table->GetNumberArray("rawfiducials", {});
   if (vision_->Inputs().connected)
     for (size_t i = 0; i + 6 < raw.size(); i += 7)
       ids.push_back(static_cast<int>(raw[i]));
-  return season::SelectTarget(alliance, {p.X().value(), p.Y().value(), p.Rotation().Radians().value()}, ids, field_);
+  return season::SelectTarget(alliance, p, ids, field_);
 }
 frc2::CommandPtr RobotContainer::HubShot(bool ownDrive, bool requireVision)
 {
@@ -422,7 +422,7 @@ frc2::CommandPtr RobotContainer::HubShot(bool ownDrive, bool requireVision)
   o.poseReady = [this, requireVision]
   { return (!requireVision && frc::DriverStation::IsAutonomousEnabled()) || frc::Timer::GetFPGATimestamp().value() - lastAcceptedVision_ < .5; };
   return season::CoordinatedShot(Mechanisms(), drive_, field_, []
-                                 {auto a=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed)==frc::DriverStation::Alliance::kBlue?season::Alliance::Blue:season::Alliance::Red;return season::ShotTarget{season::ShotMode::Hub,season::HubPosition(a)}; }, o);
+                                 {auto a=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);return season::ShotTarget{season::ShotMode::Hub,season::HubPosition(a)}; }, o);
 }
 frc2::Command *RobotContainer::GetAutonomousCommand() { return autoChooser_.GetSelected(); }
 void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }

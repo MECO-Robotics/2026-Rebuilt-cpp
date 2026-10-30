@@ -2,7 +2,7 @@
 #include <base/AutoDrive.h>
 #include <cmath>
 #include <numbers>
-#include "season/MatchContext.h"
+#include <base/season2026/MatchContext.h>
 #include <base/FootprintConfiguration.h>
 #include <base/ObjectPerception.h>
 #include "season/Simulation.h"
@@ -22,12 +22,12 @@ namespace season
   {
   public:
     AutoDrive(base::Drive &drive, std::function<double()> intakeExtension,
-              std::function<const MatchContext &()> matchContext);
+              std::function<const base::season2026::MatchContext &()> matchContext);
     frc2::CommandPtr Command();
     void PublishMatchContext() const;
     // Same DriverStation-derived input on hardware and in simulation. Unknowns
     // stay explicit; this supplies timing context without selecting a strategy.
-    const MatchContext &MatchState() const { return matchContext_(); }
+    const base::season2026::MatchContext &MatchState() const { return matchContext_(); }
 #ifndef __FRC_ROBORIO__
     void UpdateSimulation(const frc::Pose3d &truth, const FuelModel &fuel, bool fieldColliders);
     void ResetSimulation();
@@ -36,7 +36,7 @@ namespace season
     frc::Transform3d Mount(size_t camera) const;
     std::optional<frc::Pose2d> Target();
     void Status(const char *value);
-    std::function<const MatchContext &()> matchContext_;
+    std::function<const base::season2026::MatchContext &()> matchContext_;
     base::Drive &drive_;
     std::function<double()> extension_;
     std::unique_ptr<base::ObjectPerception> perception_;

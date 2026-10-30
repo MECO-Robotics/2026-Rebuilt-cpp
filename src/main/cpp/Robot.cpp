@@ -3,7 +3,7 @@
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/NetworkTable.h>
 #include "base/SimulationLatency.h"
-#include "season/MatchContext.h"
+#include <base/season2026/MatchContext.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <fmt/format.h>
 #include <frc/DataLogManager.h>
@@ -44,7 +44,7 @@ Robot::Robot()
 }
 void Robot::RobotPeriodic()
 {
-  const auto match = season::ReadMatchContext();
+  const auto match = base::season2026::ReadMatchContext();
   container_.SetMatchContext(match);
   if (autonomousPending_ && frc::DriverStation::IsAutonomousEnabled() && container_.SimulationResetReady()) {
     autonomousPending_ = false;
@@ -59,8 +59,8 @@ void Robot::RobotPeriodic()
   nt->GetEntry("Time").SetDouble(match.periodTime.value_or(-1));
   nt->GetEntry("GameDataValid").SetBoolean(match.gameDataValid);
   nt->GetEntry("GameData").SetString(match.gameData);
-  nt->GetEntry("InactiveFirstAlliance").SetString(season::AllianceLabel(match.inactiveFirstAlliance));
-  nt->GetEntry("FirstActiveAlliance").SetString(season::AllianceLabel(match.firstActiveAlliance));
+  nt->GetEntry("InactiveFirstAlliance").SetString(base::season2026::AllianceLabel(match.inactiveFirstAlliance));
+  nt->GetEntry("FirstActiveAlliance").SetString(base::season2026::AllianceLabel(match.firstActiveAlliance));
   nt->GetEntry("HubNextChangeKnown").SetBoolean(match.ownNextChange.has_value());
   nt->GetEntry("HubNextChangeSeconds").SetDouble(match.ownNextChange.value_or(-1));
   nt->GetEntry("HubKnown").SetBoolean(match.ownActive.has_value());
@@ -78,10 +78,10 @@ void Robot::RobotPeriodic()
     const int seconds=static_cast<int>(*match.periodTime);
     frc::SmartDashboard::PutString("Match Time",fmt::format("{:02d}:{:02d}.{}",seconds/60,seconds%60,static_cast<int>(*match.periodTime*10)%10));
   } else frc::SmartDashboard::PutString("Match Time","unknown");
-  const auto next=match.alliance ? (*match.alliance==season::Alliance::Blue?match.blueNextChange:match.redNextChange) : std::nullopt;
+  const auto next=match.alliance ? (*match.alliance==frc::DriverStation::Alliance::kBlue?match.blueNextChange:match.redNextChange) : std::nullopt;
   frc::SmartDashboard::PutString("Shifts/Remaining Shift Time",next?fmt::format("{:.1f}",*next):"unknown");
   frc::SmartDashboard::PutBoolean("Shifts/Active First?",match.alliance&&match.gameDataValid&&
-      ((*match.alliance==season::Alliance::Blue)==(match.gameData=="R")));
+      ((*match.alliance==frc::DriverStation::Alliance::kBlue)==(match.gameData=="R")));
 
 }
 void Robot::AutonomousInit()
@@ -89,7 +89,7 @@ void Robot::AutonomousInit()
   container_.CancelChecks();
   // Scheduling initializes AutoDrive immediately, before RobotPeriodic runs.
   // Supply this packet's context for initialization as well as execution.
-  container_.SetMatchContext(season::ReadMatchContext());
+  container_.SetMatchContext(base::season2026::ReadMatchContext());
   container_.ResetSimulation();
   autonomous_ = container_.GetAutonomousCommand();
   autonomousPending_ = autonomous_ != nullptr;

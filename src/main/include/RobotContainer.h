@@ -7,7 +7,7 @@
 #include "season/Mechanisms.h"
 #include "base/SystemCheck.h"
 #include "season/AutoDrive.h"
-#include "season/MatchContext.h"
+#include <base/season2026/MatchContext.h>
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/DriveSimulationAdapter.h"
 
@@ -28,7 +28,7 @@ public:
   RobotContainer();
   frc2::Command *GetAutonomousCommand();
   void CancelChecks();
-  void SetMatchContext(season::MatchContext context)
+  void SetMatchContext(base::season2026::MatchContext context)
   {
     matchContext_ = std::move(context);
     if (autoDrive_)
@@ -46,7 +46,7 @@ public:
   }
 
 private:
-  season::MatchContext matchContext_;
+  base::season2026::MatchContext matchContext_;
   base::Drive drive_;
   base::PositionJoint rack_, hood_;
   base::Flywheel intake_, conveyor_, bottom_, top_, shooter_;

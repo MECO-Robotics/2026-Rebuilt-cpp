@@ -12,7 +12,7 @@ namespace {
 constexpr double diameter=5.5*.0254,radius=diameter/2;
 frc::Translation3d Translation(FuelPoint p){return {units::meter_t{p.x},units::meter_t{p.y},units::meter_t{p.z}};}
 FuelPoint Point3d(const frc::Translation3d& p){return {p.X().value(),p.Y().value(),p.Z().value()};}
-frc::Pose3d Pose3d(Pose p){return {units::meter_t{p.x},units::meter_t{p.y},units::meter_t{0},frc::Rotation3d{units::radian_t{0},units::radian_t{0},units::radian_t{p.heading}}};}
+frc::Pose3d Pose3d(frc::Pose2d p){return frc::Pose3d{p};}
 FuelPoint World(FuelPoint local,const frc::Pose3d& robot){return Point3d(robot.Translation()+Translation(local).RotateBy(robot.Rotation()));}
 FuelRobotState RobotState(const FuelInputs& in){return in.physics.value_or(FuelRobotState{Pose3d(in.robot),{in.vx,in.vy,0},{0,0,in.omega},{}});}
 // Four prescribed bumper boxes retain the open center of this robot.
@@ -31,11 +31,11 @@ std::vector<double> Positions(const std::vector<FuelPoint>& particles){std::vect
 }
 FuelModel::FuelModel(unsigned seed):seed_(seed),random_(seed){Reset();}
 void FuelModel::Reset(){random_.seed(seed_);floor_.clear();airborne_.clear();stored_=scored_=launched_=pending_=burstIndex_=0;time_=0;lastBurst_=nextShot_=-1e9;lastHubActive_.reset();scoringGraceUntil_.reset();}
-void FuelModel::AddFloorFuel(Point point){floor_.push_back({{point.x,point.y,radius},{}});}
+void FuelModel::AddFloorFuel(frc::Translation2d point){floor_.push_back({{point.X().value(),point.Y().value(),radius},{}});}
 void FuelModel::SetStoredFuel(int count){stored_=std::clamp(count,0,54);}
 double FuelModel::Random(double amplitude){return std::uniform_real_distribution<double>{-amplitude,amplitude}(random_);}
 double FuelModel::LaunchPitch(double hood){double deflection=std::clamp(hood*2*kPi+16*kPi/180,15*kPi/180,45*kPi/180);return kPi/2-deflection;}
-std::vector<FuelPoint> FuelModel::HopperCenters(int count,double extension,Pose robot){
+std::vector<FuelPoint> FuelModel::HopperCenters(int count,double extension,frc::Pose2d robot){
  return HopperCenters3d(count,extension,Pose3d(robot));
 }
 std::vector<FuelPoint> FuelModel::HopperCenters3d(int count,double extension,const frc::Pose3d& robot){
@@ -75,8 +75,8 @@ void FuelModel::Step(double dt,const FuelInputs& in){
  int steps=std::max(1,static_cast<int>(std::ceil(dt/.005)));double h=dt/steps;
  for(int step=0;step<steps;++step){
   for(auto it=airborne_.begin();it!=airborne_.end();){auto previous=it->position;it->position.x+=it->velocity.x*h;it->position.y+=it->velocity.y*h;it->position.z+=it->velocity.z*h-.5*9.80665*h*h;it->velocity.z-=9.80665*h;
-   Point hub=HubPosition(in.alliance);double height=72*.0254;bool crossing=previous.z>=height&&it->position.z<height&&it->velocity.z<0;double fraction=crossing?(previous.z-height)/(previous.z-it->position.z):0;double x=previous.x+(it->position.x-previous.x)*fraction,y=previous.y+(it->position.y-previous.y)*fraction;
-   if(crossing&&std::abs(x-hub.x)<=.6096&&std::abs(y-hub.y)<=.6096){if(scoring)++scored_;double direction=in.alliance==Alliance::Blue?1:-1,angle=(direction>0?0:kPi)+Random(kPi/4);floor_.push_back({{hub.x+direction*.65,hub.y,radius},{3*std::cos(angle),3*std::sin(angle),0}});it=airborne_.erase(it);}
+   frc::Translation2d hub=HubPosition(in.alliance);double height=72*.0254;bool crossing=previous.z>=height&&it->position.z<height&&it->velocity.z<0;double fraction=crossing?(previous.z-height)/(previous.z-it->position.z):0;double x=previous.x+(it->position.x-previous.x)*fraction,y=previous.y+(it->position.y-previous.y)*fraction;
+   if(crossing&&std::abs(x-hub.X().value())<=.6096&&std::abs(y-hub.Y().value())<=.6096){if(scoring)++scored_;double direction=in.alliance==frc::DriverStation::Alliance::kBlue?1:-1,angle=(direction>0?0:kPi)+Random(kPi/4);floor_.push_back({{hub.X().value()+direction*.65,hub.Y().value(),radius},{3*std::cos(angle),3*std::sin(angle),0}});it=airborne_.erase(it);}
    else if(it->position.z<=radius){floor_.push_back({{it->position.x,it->position.y,radius},{it->velocity.x*.15,it->velocity.y*.15,0}});it=airborne_.erase(it);}else ++it;
   }
   for(auto& p:floor_){p.position.x+=p.velocity.x*h;p.position.y+=p.velocity.y*h;double attenuation=std::exp(-2*h);p.velocity.x*=attenuation;p.velocity.y*=attenuation;}
@@ -95,16 +95,16 @@ FuelSimulation::FuelSimulation(Mechanisms mechanisms,base::Drive& drive):mechani
  Reset();}
 void FuelSimulation::Reset(){model_.Reset();
  // Deterministic neutral-zone grid, rather than claiming official Maple arena placement.
- for(double x=7.0;x<=9.5;x+=.25)for(double y=.75;y<=7.25;y+=.25)model_.AddFloorFuel({x,y});
+ for(double x=7.0;x<=9.5;x+=.25)for(double y=.75;y<=7.25;y+=.25)model_.AddFloorFuel({units::meter_t{x},units::meter_t{y}});
 }
 void FuelSimulation::Periodic(double dt, std::optional<FuelRobotState> physics, std::optional<bool> hubActive){auto pose=drive_.Pose();auto speed=drive_.Speeds();double heading=pose.Rotation().Radians().value(),c=std::cos(heading),s=std::sin(heading);
- FuelInputs input;input.robot={pose.X().value(),pose.Y().value(),heading};input.vx=speed.vx.value()*c-speed.vy.value()*s;input.vy=speed.vx.value()*s+speed.vy.value()*c;input.omega=speed.omega.value();input.rackMetres=mechanisms_.rack.Position();input.hoodRotations=mechanisms_.hood.Position();input.flywheelRps=mechanisms_.shooter.Velocity();input.collecting=mechanisms_.intake.Inputs().voltage<-1&&mechanisms_.conveyor.Inputs().voltage>1;input.feeding=mechanisms_.bottomIndexer.Inputs().voltage<-1&&mechanisms_.topIndexer.Inputs().voltage>1&&mechanisms_.conveyor.Inputs().voltage<-1;
+ FuelInputs input;input.robot=pose;input.vx=speed.vx.value()*c-speed.vy.value()*s;input.vy=speed.vx.value()*s+speed.vy.value()*c;input.omega=speed.omega.value();input.rackMetres=mechanisms_.rack.Position();input.hoodRotations=mechanisms_.hood.Position();input.flywheelRps=mechanisms_.shooter.Velocity();input.collecting=mechanisms_.intake.Inputs().voltage<-1&&mechanisms_.conveyor.Inputs().voltage>1;input.feeding=mechanisms_.bottomIndexer.Inputs().voltage<-1&&mechanisms_.topIndexer.Inputs().voltage>1&&mechanisms_.conveyor.Inputs().voltage<-1;
  input.physics=physics;input.hubActive=hubActive;
  frc::SmartDashboard::PutBoolean("FieldSimulation/Feeding",input.feeding);
  frc::SmartDashboard::PutNumber("FieldSimulation/BottomIndexerVolts",mechanisms_.bottomIndexer.Inputs().voltage);
  frc::SmartDashboard::PutNumber("FieldSimulation/TopIndexerVolts",mechanisms_.topIndexer.Inputs().voltage);
  frc::SmartDashboard::PutNumber("FieldSimulation/ConveyorVolts",mechanisms_.conveyor.Inputs().voltage);
- input.alliance=frc::DriverStation::GetAlliance()==frc::DriverStation::Alliance::kRed?Alliance::Red:Alliance::Blue;model_.Step(dt,input);
+ input.alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);model_.Step(dt,input);
  const auto robotPose=RobotState(input).pose;
  robotPosePublisher_.Set(robotPose);
  componentsPublisher_.Set(RemyComponentPoses(input.rackMetres,input.hoodRotations,mechanisms_.shooter.Position()));

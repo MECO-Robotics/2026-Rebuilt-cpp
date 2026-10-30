@@ -55,7 +55,7 @@ frc::Transform3d AutoDrive::Mount(size_t camera) const {
   return camera==0 ? HopperCameraMount(extension_(),local) : local;
 }
 AutoDrive::AutoDrive(base::Drive& drive, std::function<double()> extension,
-    std::function<const MatchContext&()> context)
+    std::function<const base::season2026::MatchContext&()> context)
     : matchContext_(std::move(context)),drive_(drive),extension_(std::move(extension)) {
   std::vector<base::ObjectCamera> cameras;
   for(size_t i=0;i<2;++i) {
@@ -115,8 +115,8 @@ void AutoDrive::PublishMatchContext() const {
   frc::SmartDashboard::PutBoolean("AutoDrive/HubKnown",match.ownActive.has_value());
   frc::SmartDashboard::PutBoolean("AutoDrive/HubActive",match.ownActive.value_or(false));
   frc::SmartDashboard::PutBoolean("AutoDrive/HubOrderKnown",match.gameDataValid);
-  frc::SmartDashboard::PutString("AutoDrive/InactiveFirstAlliance",AllianceLabel(match.inactiveFirstAlliance));
-  frc::SmartDashboard::PutString("AutoDrive/FirstActiveAlliance",AllianceLabel(match.firstActiveAlliance));
+  frc::SmartDashboard::PutString("AutoDrive/InactiveFirstAlliance",base::season2026::AllianceLabel(match.inactiveFirstAlliance));
+  frc::SmartDashboard::PutString("AutoDrive/FirstActiveAlliance",base::season2026::AllianceLabel(match.firstActiveAlliance));
   frc::SmartDashboard::PutBoolean("AutoDrive/HubNextChangeKnown",match.ownNextChange.has_value());
   frc::SmartDashboard::PutNumber("AutoDrive/HubNextChangeSeconds",match.ownNextChange.value_or(-1));
 }
