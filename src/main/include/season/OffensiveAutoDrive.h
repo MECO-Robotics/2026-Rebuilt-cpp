@@ -36,7 +36,8 @@ inline OffensiveDecision DecideOffense(std::optional<bool> active,
     std::optional<frc::DriverStation::Alliance> alliance, frc::Pose2d pose,
     const FieldGeometry& field, const std::vector<base::ObjectCluster>& points,
     int estimatedFuel, double capacity, bool scoreCommitted=false, bool ferryCommitted=false,
-    bool autonomous=false, std::optional<double> periodTime=std::nullopt, bool collectionExpired=false) {
+    bool autonomous=false, std::optional<double> periodTime=std::nullopt, bool collectionExpired=false,
+    bool loadUnknown=true) {
   if (!active || !alliance) return OffensiveDecision::Wait;
   bool anyEligible=false, friendlyFuel=false, nearbyMidfield=false;
   const bool inZone=InAllianceZone(*alliance,pose.Translation(),field);
@@ -51,9 +52,14 @@ inline OffensiveDecision DecideOffense(std::optional<bool> active,
       nearbyMidfield=true;
   }
   const bool autoReturn=autonomous && periodTime && std::isfinite(*periodTime) && *periodTime<=13.;
-  if (estimatedFuel>0 && *active && (scoreCommitted || full || autoReturn || collectionExpired ||
-      (inZone && !friendlyFuel) || (!inZone && !nearbyMidfield))) return OffensiveDecision::Score;
-  if (estimatedFuel>0 && !*active && (ferryCommitted || full || collectionExpired || !anyEligible)) return OffensiveDecision::Ferry;
+  // No possession sensor: zero inferred pickups is unknown, not proof of an
+  // empty hopper. Timed attempts may therefore operate on an empty hopper.
+  const bool mayCarry=estimatedFuel>0 || loadUnknown;
+  if (mayCarry && *active && (autoReturn || collectionExpired ||
+      (estimatedFuel>0 && (scoreCommitted || full ||
+        (inZone && !friendlyFuel) || (!inZone && !nearbyMidfield))))) return OffensiveDecision::Score;
+  if (mayCarry && !*active && (collectionExpired ||
+      (estimatedFuel>0 && (ferryCommitted || full || !anyEligible)))) return OffensiveDecision::Ferry;
   return OffensiveDecision::Collect;
 }
 // Runs until interrupted. Possession is not sensed on this robot; collection

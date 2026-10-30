@@ -514,8 +514,9 @@ possession decisions. It estimates pickups from observations disappearing near
 the intake; occlusion and missed detections can make this count wrong. A
 completed feeding attempt clears the estimate without proving that the hopper
 is empty. Collection reevaluates the active-HUB nearby-fuel and inactive-HUB eligibility
-rules continuously. With a positive estimate, autonomous starts returning at
-13 seconds remaining to leave time for a shot. A 20-second collection limit
+rules continuously. Autonomous starts returning at 13 seconds remaining to leave time for a
+shot, including when possession is unknown. Timed attempts can therefore
+run with an empty hopper. A 20-second collection limit
 prevents indefinite collection. The optional
 `AutoDrive/EstimatedCapacity` preference defaults to zero (unknown); a positive
 value ends collection when the uncertain estimate reaches that threshold. Its

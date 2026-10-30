@@ -199,7 +199,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     return OffensiveHubShotAllowed(perception.MatchState().ownActive,target,drive.Pose(),drive.Speeds());
   };
   // Re-evaluate after collection ends; unknown inputs restart at wait and a
-  // timeout only triggers a loaded attempt, never a speculative empty shot.
+  // timeout triggers a bounded attempt even when possession is unknown.
   auto next = [decision,matchLost,collectionStarted] {
     if (*matchLost) return OffensiveDecision::Wait;
     return decision(frc::Timer::GetFPGATimestamp().value()-*collectionStarted>=19.9);
