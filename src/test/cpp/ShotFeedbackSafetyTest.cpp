@@ -14,6 +14,28 @@ TEST(DriverAim, ChoosesFerryOutsideAllianceZoneForBothAlliances) {
   }
 }
 
+TEST(DriverAim, FerryUsesStraightAllianceZoneShotForBothAlliances) {
+  const season::FieldGeometry field{16.541, 8.069, {units::meter_t{4.6}, units::meter_t{1}},
+                                    {units::meter_t{11.94}, units::meter_t{1}}};
+  for (auto alliance : {frc::DriverStation::Alliance::kBlue, frc::DriverStation::Alliance::kRed}) {
+    const double direction = alliance == frc::DriverStation::Alliance::kBlue ? -1 : 1;
+    const double boundary = season::AllianceBoundary(alliance, field);
+    for (bool simulation : {false, true}) {
+      const frc::Pose2d near{units::meter_t{boundary - direction * 2}, units::meter_t{2},
+                             frc::Rotation2d{units::radian_t{.7}}};
+      const frc::Pose2d far{units::meter_t{boundary - direction * 4}, units::meter_t{2},
+                            frc::Rotation2d{units::radian_t{-1.2}}};
+      const auto first = season::CalculateDriverAim(alliance, near, field, simulation);
+      const auto second = season::CalculateDriverAim(alliance, far, field, simulation);
+      const double expectedHeading = direction < 0 ? (simulation ? season::kPi : 0) : (simulation ? 0 : season::kPi);
+      EXPECT_NEAR(std::cos(first.headingRadians), std::cos(expectedHeading), 1e-9);
+      EXPECT_NEAR(std::sin(first.headingRadians), std::sin(expectedHeading), 1e-9);
+      EXPECT_NEAR(second.distanceMeters - first.distanceMeters, 2, 1e-9);
+      EXPECT_GT(second.flywheelRps, first.flywheelRps);
+    }
+  }
+}
+
 TEST(ShotFeedbackSafety, InvalidFeedbackStopsAndRearmsFeed) {
   using namespace season;
   const auto shot = CalculateShot(frc::Pose2d{units::meter_t{3}, units::meter_t{0}, frc::Rotation2d{}}, frc::Translation2d{});

@@ -580,8 +580,7 @@ void RobotContainer::DriveTeleop(bool aim)
   {
     const auto p = drive_.Pose();
     const auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
-    const auto shot = season::CalculateShot(p, season::DriverAimTarget(alliance, p, field_), field_,
-                                            frc::RobotBase::IsSimulation());
+    const auto shot = season::CalculateDriverAim(alliance, p, field_, frc::RobotBase::IsSimulation());
     hood_.SetPosition(shot.hoodRotations);
     shooter_.SetVelocity(shot.flywheelRps);
     const double error = std::remainder(shot.headingRadians - p.Rotation().Radians().value(), 2 * std::numbers::pi);

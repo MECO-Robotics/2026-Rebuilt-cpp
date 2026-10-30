@@ -32,11 +32,15 @@ Controller artwork adapted from [Xbox Controller.svg](https://commons.wikimedia.
 | Left bumper | Run AutoDrive while held |
 | Right trigger / left trigger | Intake / eject fuel while held |
 | Right bumper | Agitate and feed while held; rumble indicates shooter readiness |
-| A | Assist aiming while driving: hub in the alliance zone, ferry outside it |
+| A | Assist aiming while driving: hub in the alliance zone; straight toward the alliance zone for a ferry shot outside it |
 | X / Y / B | Select hub / ferry / shooter idle |
 | POV up / down | Deploy / stow the intake while held |
 | Start | Reset the driver heading reference (the gyro and field pose are unchanged) |
 | Back / View | Reset the simulation scene (desktop only) |
+
+Hold **A** to control rotation, hood position, and flywheel speed while keeping manual translation. In the alliance zone, aim assist targets the hub. Outside the zone, it points the shooter straight toward the friendly driver station and calculates a ferry shot to a point 0.90 m inside the alliance line. The calculation updates as the robot moves. On the physical robot, the shooter faces the rear, so the robot's front faces away from the driver station during this ferry shot.
+
+A does not feed fuel; use **right bumper** to feed. The straight ferry path can cross field structures, and the driver assist does not block feeding based on the ferry path. Shot range and landing position require physical calibration.
 
 ## Where should I look?
 

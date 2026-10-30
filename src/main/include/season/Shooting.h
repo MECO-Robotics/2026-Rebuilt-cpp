@@ -74,6 +74,8 @@ FerryPlan CalculateFerry(frc::Pose2d robot, ShotTarget target, const FieldGeomet
 ShotSolution CalculateShot(frc::Pose2d robot, frc::Translation2d target, bool simulation = false);
 ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, bool simulation = false,
                            ShotTuning tuning = {});
+ShotSolution CalculateDriverAim(frc::DriverStation::Alliance alliance, frc::Pose2d robot, const FieldGeometry &field,
+                                bool simulation = false);
 // Readiness explains why coordinated feeding is permitted or blocked.
 enum class Readiness
 {

@@ -160,6 +160,22 @@ ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeom
   }
   return solution;
 }
+ShotSolution CalculateDriverAim(frc::DriverStation::Alliance a, frc::Pose2d robot, const FieldGeometry &field,
+                                bool simulation)
+{
+  auto target = DriverAimTarget(a, robot, field);
+  if (target.mode == ShotMode::Hub)
+    return CalculateShot(robot, target, field, simulation);
+
+  const double direction = a == frc::DriverStation::Alliance::kBlue ? -1.0 : 1.0;
+  const double shotHeading = direction < 0 ? kPi : 0.0;
+  const double robotHeading = Wrap(shotHeading - (simulation ? 0.0 : kPi));
+  const frc::Pose2d aligned{robot.Translation(), frc::Rotation2d{units::radian_t{robotHeading}}};
+  target.position = {units::meter_t{AllianceBoundary(a, field) + direction * .90}, robot.Y()};
+  auto solution = CalculateShot(aligned, target, field, simulation);
+  solution.headingRadians = robotHeading;
+  return solution;
+}
 const char *ReadinessName(Readiness value)
 {
   static constexpr const char *names[]{
