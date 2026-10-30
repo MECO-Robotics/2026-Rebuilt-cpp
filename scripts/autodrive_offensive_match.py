@@ -14,8 +14,8 @@ import time
 from pathlib import Path
 
 import ntcore
-from wpimath.geometry import Pose3d
-from wpimath.kinematics import SwerveModuleState
+from wpimath.geometry import Pose2d, Pose3d
+from wpimath.kinematics import ChassisSpeeds, SwerveModuleState
 from websockets.asyncio.client import connect
 from sim_evidence import running_sim_binary
 
@@ -33,6 +33,8 @@ async def run(args):
     def string(name):
         return nt.getStringTopic(name).subscribe('', opts)
     truth = nt.getStructTopic('/Simulation/RobotTruth', Pose3d).subscribe(Pose3d(), opts)
+    estimate = nt.getStructTopic('/AdvantageScope/Drive/Pose', Pose2d).subscribe(Pose2d(), opts)
+    requested = nt.getStructTopic('/AdvantageScope/Drive/RequestedChassisSpeeds', ChassisSpeeds).subscribe(ChassisSpeeds(), opts)
     modules = nt.getStructArrayTopic('/AdvantageScope/Drive/ModuleTargets', SwerveModuleState).subscribe([], opts)
     stored = number('/SmartDashboard/FieldSimulation/StoredFuelCount')
     launched = number('/SmartDashboard/FieldSimulation/LaunchedFuelCount')
@@ -120,10 +122,14 @@ async def run(args):
                 score_by_phase[current] = scored.get()
                 if now - last_sample >= .25:
                     p = truth.get()
+                    e = estimate.get()
+                    r = requested.get()
                     result['trace'].append({'elapsed': round(now-start, 2), 'state': current,
                         'phase': phase.get(), 'offense_phase': offense_phase.get(), 'time': remaining.get(),
                         'pose': [p.X(), p.Y(), p.rotation().Z()], 'height_m': p.Z(),
                         'roll_rad': p.rotation().X(), 'pitch_rad': p.rotation().Y(),
+                        'estimate': [e.X(), e.Y(), e.rotation().radians()],
+                        'requested_speeds': [r.vx, r.vy, r.omega],
                         'stored': stored.get(), 'estimated_fuel': estimated_fuel.get(),
                         'launched': launched.get(), 'scored': scored.get(), 'feeding': feeding.get(),
                         'clusters': clusters.get(), 'detections': [front.get(), rear.get()],
