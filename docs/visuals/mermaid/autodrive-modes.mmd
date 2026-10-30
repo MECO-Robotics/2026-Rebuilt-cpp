@@ -1,0 +1,12 @@
+flowchart LR
+  Controls[LB or autonomous chooser] --> Mode{Which mode?}
+  Mode -->|Target drive| Target[Dashboard pose]
+  Mode -->|Follow fuel| Perception[Perceived fuel clusters]
+  Mode -->|Offense| Strategy[Offensive strategy]
+  Perception --> Strategy
+  Match[Alliance and HUB state] --> Strategy
+  Target --> Planner[Path planner]
+  Perception --> Planner
+  Strategy --> Planner
+  Planner --> Drive[Drivetrain]
+  Strategy --> Mechanisms[Intake and shooter]

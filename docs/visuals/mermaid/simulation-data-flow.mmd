@@ -1,0 +1,10 @@
+flowchart LR
+  Commands[Drive commands] --> Physics[Drive physics]
+  Physics --> Truth[Physical pose and motion]
+  Truth --> Encoders[Simulated encoders and gyro]
+  Encoders --> Odometry[Estimated pose]
+  Truth --> Camera[Simulated localization observations]
+  Camera --> Odometry
+  Truth --> Fuel[Fuel contacts and launch]
+  Fuel --> Detections[Simulated fuel detections]
+  Detections --> Perception[AutoDrive perception]

@@ -22,16 +22,20 @@ The pinned dependencies include [MecoBase 2026.2.10](vendordeps/MecoBase.json) a
 
 These controls work in enabled teleop. Hold actions run while you hold the control; presets stay selected until changed.
 
+![Pilot controller with labeled controls and actions](docs/visuals/pilot-controls.svg)
+
+Controller artwork adapted from [Xbox Controller.svg](https://commons.wikimedia.org/wiki/File:Xbox_Controller.svg) by Jishenaz, CC0. Your controller may look different; the control names below still apply.
+
 | Control | Action |
 | --- | --- |
 | Left stick / right stick X | Drive / turn |
 | Left bumper | Run AutoDrive while held |
-| Right trigger / left trigger | Acquire / eject fuel while held |
-| Right bumper | Feed when the shooter is ready |
+| Right trigger / left trigger | Intake / eject fuel while held |
+| Right bumper | Agitate and feed while held; rumble indicates shooter readiness |
 | A | Assist aiming while driving |
 | X / Y / B | Select hub / ferry / shooter idle |
 | POV up / down | Deploy / stow the intake while held |
-| Start | Reset driver forward without resetting field position |
+| Start | Reset the driver heading reference (the gyro and field pose are unchanged) |
 | Back / View | Reset the simulation scene (desktop only) |
 
 ## Where should I look?
@@ -44,22 +48,14 @@ These controls work in enabled teleop. Hold actions run while you hold the contr
 | Understand shooting and targeting | [Shooting.h](src/main/include/season/Shooting.h) and [Shooting.cpp](src/main/cpp/season/Shooting.cpp) |
 | Try AutoDrive | [AutoDrive guide](docs/autodrive-simulation.md) |
 | Understand the simulated field and fuel | [simulation field](docs/simulation-field.md) |
-| Find a topic or a historical test | [documentation index](docs/README.md) |
+| Find a guide | [documentation index](docs/README.md) |
 
 ## How the pieces connect
 
-```mermaid
-flowchart LR
-  DS[Driver Station and controller] --> Robot[Robot loop]
-  Robot --> Commands[Commands and subsystems]
-  Commands --> IO[Motor and sensor IO]
-  IO --> Hardware[Robot hardware]
-  IO --> Sim[Desktop simulation]
-  Vision[Camera and localization] --> Commands
-```
+![Robot code and hardware flow](docs/visuals/robot-overview.png)
+
+[Diagram source](docs/visuals/mermaid/robot-overview.mmd)
 
 - **MecoBase** provides shared robot code such as drive, motor IO, and commands.
 - **MecoSimulation** provides the desktop physics and simulated sensors.
-- **This project** supplies the 2026 robot's hardware settings, controls, and game behavior. See the [boundary guide](docs/simulation-vendordep-boundary.md).
-
-For earlier build notes, experiments, and detailed evidence, see the [historical README](docs/reference/project-readme.md).
+- **This project** supplies the 2026 robot's hardware settings, controls, and game behavior. See the [vendordep guides](docs/README.md#vendordep-documentation).

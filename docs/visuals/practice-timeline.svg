@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 250" role="img" aria-labelledby="title desc">
+ <title id="title">Practice match timeline</title><desc id="desc">Twenty seconds autonomous, three seconds disabled assessment, and one hundred forty seconds teleop, ending disabled.</desc>
+ <style>text{font-family:system-ui,sans-serif;fill:#18324e}.t{font-size:17px;font-weight:700}.s{font-size:14px}.tick{stroke:#405870;stroke-width:2}</style>
+ <rect width="900" height="250" rx="18" fill="#fff"/><text x="35" y="39" font-size="23" font-weight="700">Practice match timeline</text>
+ <text x="35" y="65" class="s">Elapsed time from the start button. The assessment gap is disabled.</text>
+ <rect x="70" y="111" width="92" height="48" rx="5" fill="#cce4f7"/><rect x="162" y="111" width="14" height="48" fill="#e1e6ec"/><rect x="176" y="111" width="644" height="48" rx="5" fill="#d2ecd8"/>
+ <text x="116" y="139" class="s" text-anchor="middle">AUTO</text><text x="495" y="139" class="t" text-anchor="middle">TELEOP · 140 s</text>
+ <path d="M70 159v12 M162 159v12 M176 159v12 M820 159v12" class="tick"/>
+ <text x="70" y="192" class="s" text-anchor="middle">0 s</text><text x="150" y="192" class="s" text-anchor="end">20 s</text><text x="186" y="192" class="s">23 s</text><text x="820" y="192" class="s" text-anchor="middle">163 s</text>
+ <path d="M169 111 V87 H365" fill="none" stroke="#405870" stroke-width="2"/><text x="374" y="91" class="s">3 s assessment</text><text x="820" y="219" class="s" text-anchor="end">Match complete → disabled</text>
+</svg>

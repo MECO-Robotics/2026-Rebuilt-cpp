@@ -16,3 +16,6 @@ systemcheck-latest.json
 
 __pycache__/
 *.py[cod]
+
+# Generated documentation site
+site/

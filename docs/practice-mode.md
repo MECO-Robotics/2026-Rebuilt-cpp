@@ -1,14 +1,10 @@
 # Run a simulated practice match
 
+The reusable controller and its interface are documented in [MecoSimulation practice mode](https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/docs/practice-mode.md).
+
 Practice mode runs a 2026 match sequence on the desktop. It supplies the Driver Station state and HUB timing used by offensive AutoDrive.
 
-```mermaid
-flowchart LR
-  Idle[Disabled] --> Auto[Autonomous: 20 s]
-  Auto --> Gap[Assessment: 3 s disabled]
-  Gap --> Teleop[Teleop: 140 s]
-  Teleop --> Complete[Complete: disabled]
-```
+![Practice match: 20 seconds autonomous, 3 seconds disabled assessment, then 140 seconds teleop](visuals/practice-timeline.svg)
 
 ## Start a match
 
@@ -44,4 +40,3 @@ Settings are sampled at start. The dashboard button copies SimGUI's selected sta
 - [Practice controller lifecycle](../src/main/cpp/Robot.cpp)
 - [Start button and autonomous chooser](../src/main/cpp/RobotContainer.cpp)
 - [Practice smoke test](../scripts/practice_smoke.py)
-- [Detailed timing, topics, and validation](reference/practice-mode.md)

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 530" role="img" aria-labelledby="title desc">
+ <title id="title">Field coordinates and simulated starts</title><desc id="desc">Blue-origin field frame with approximate blue and red simulation starts. Drawing omits obstacles and is not a collision map.</desc>
+ <style>text{font-family:system-ui,sans-serif;fill:#18324e}.label{font-size:16px;font-weight:700}.small{font-size:14px}.axis{stroke:#243d57;stroke-width:2;fill:none}</style>
+ <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#243d57"/></marker></defs>
+ <rect width="920" height="530" rx="18" fill="#fff"/><text x="35" y="39" font-size="23" font-weight="700">One field frame, two starting poses</text>
+ <text x="35" y="64" class="small">Approximate default desktop starts · schematic only: obstacles and clearance are omitted</text>
+ <rect x="85" y="102" width="750" height="366" fill="#f5f8fc" stroke="#536c84" stroke-width="2"/>
+ <rect x="85" y="102" width="184" height="366" fill="#e7f2ff"/><rect x="651" y="102" width="184" height="366" fill="#ffebeb"/>
+ <text x="105" y="130" class="label" fill="#145c9d">BLUE</text><text x="815" y="130" class="label" text-anchor="end">RED</text>
+ <circle cx="250.5" cy="439" r="9" fill="#1266b0"/><path d="M263 439 h45" class="axis" marker-end="url(#arrow)"/><text x="157" y="393" class="small">Blue start</text><text x="157" y="411" class="small">(3.65, 0.64 m), 0°</text>
+ <circle cx="669.5" cy="131" r="9" fill="#c43f46"/><path d="M657 131 h-45" class="axis" marker-end="url(#arrow)"/><text x="708" y="170" class="small">Red start</text><text x="708" y="188" class="small">(12.89, 7.43 m), 180°</text>
+ <path d="M85 468 H150 M85 468 V403" class="axis" marker-end="url(#arrow)"/><text x="157" y="474" class="small">+X</text><text x="70" y="396" class="small">+Y</text><text x="88" y="493" class="small">Blue-origin (0, 0)</text>
+ <text x="835" y="493" class="small" text-anchor="end">Field: approximately 16.54 m × 8.07 m</text>
+</svg>

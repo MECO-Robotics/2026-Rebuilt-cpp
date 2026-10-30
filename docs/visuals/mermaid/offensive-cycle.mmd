@@ -1,0 +1,14 @@
+flowchart TD
+  Start[Start offense] --> Known{Alliance and HUB state known?}
+  Known -->|No| Wait[Wait for match state]
+  Wait --> Known
+  Known -->|Yes| Collect[Collect observed fuel]
+  Collect --> Choose{Strategy chooses}
+  Choose -->|HUB active| Return[Return to shot position]
+  Return --> Ready{HUB active and arrival settled?}
+  Ready -->|Yes| Score[Attempt HUB shot]
+  Ready -->|No| Retry[Wait or retry]
+  Choose -->|HUB inactive| Ferry[Attempt ferry shot]
+  Score --> Known
+  Ferry --> Known
+  Retry --> Known

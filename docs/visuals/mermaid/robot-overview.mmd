@@ -1,0 +1,8 @@
+flowchart LR
+  DS[Driver Station and controller] --> Robot[Robot loop]
+  Robot --> Commands[Commands and subsystems]
+  Commands --> Drive[Drive and mechanisms]
+  Drive --> MotorIO[Motor IO]
+  MotorIO --> Hardware[Physical hardware]
+  MotorIO --> Sim[Simulated hardware]
+  Vision[Localization observations] --> Drive

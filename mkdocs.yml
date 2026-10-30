@@ -1,0 +1,20 @@
+site_name: MECO 2026 Robot Docs
+site_description: Student-friendly guides to the 2026 robot and simulation
+site_url: https://meco-robotics.github.io/2026-Rebuilt-cpp/
+repo_url: https://github.com/MECO-Robotics/2026-Rebuilt-cpp
+repo_name: 2026-Rebuilt-cpp
+edit_uri: edit/main/docs/
+theme:
+  name: readthedocs
+extra_css:
+  - stylesheets/extra.css
+nav:
+  - Home: README.md
+  - AutoDrive: autodrive-simulation.md
+  - Practice matches: practice-mode.md
+  - Simulation field: simulation-field.md
+  - MecoBase AutoDrive: https://github.com/MECO-Robotics/MecoBase-cpp/blob/main/docs/autodrive.md
+  - MecoSimulation physics: https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/docs/jolt-simulation.md
+  - MecoSimulation bumper contact: https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/docs/compliant-bumper-contact.md
+hooks:
+  - scripts/mkdocs_links.py
