@@ -38,12 +38,14 @@ async def main(args):
    await ds(True);await joy(True);ok=await until(lambda:feeding.get() and all(abs(v.get()) > 1 for v in volts), 100);active=snap();active['feeding']=feeding.get()
    await ds(True,'');ok_unknown=await until(lambda:not known.get() and phase.get()=='wait-for-match');await asyncio.sleep(.3);unknown=snap()
    await ds(True,'R');ok_resume=await until(lambda:phase.get() not in ('wait-for-match','idle',''));await asyncio.sleep(.3);resumed=snap()
+   release_active=await until(lambda:feeding.get() and all(abs(v.get()) > 1 for v in volts), 100);before_release=snap();before_release['feeding']=feeding.get()
    await joy(False);ok_release=await until(lambda:phase.get()=='idle');await asyncio.sleep(.3);released=snap()
    await joy(True);reengaged=await until(lambda:phase.get() not in ('idle','wait-for-match',''));await asyncio.sleep(.3)
+   disable_active=await until(lambda:feeding.get() and all(abs(v.get()) > 1 for v in volts), 100);before_disable=snap();before_disable['feeding']=feeding.get()
    await ds(False,'R');disabled=await until(lambda:phase.get()=='idle');await asyncio.sleep(.3);disabled_snapshot=snap()
    def stopped(s):return max(map(abs,s['voltages']+s['request']))<.1
-   result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'active_feeding_started':ok,'active':active,'unknown_seen':ok_unknown,'unknown':unknown,'unknown_stopped':stopped(unknown),'resumed':ok_resume,'resume_snapshot':resumed,'released':ok_release,'release_snapshot':released,'release_stopped':stopped(released),'reengaged':reengaged,'disabled':disabled,'disabled_snapshot':disabled_snapshot,'disable_stopped':stopped(disabled_snapshot)}
-   result['passed']=all([ok,ok_unknown,stopped(unknown),ok_resume,ok_release,stopped(released),reengaged,disabled,stopped(disabled_snapshot)])
+   result={'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'active_feeding_started':ok,'active':active,'unknown_seen':ok_unknown,'unknown':unknown,'unknown_stopped':stopped(unknown),'resumed':ok_resume,'resume_snapshot':resumed,'release_active_feeding':release_active,'before_release':before_release,'released':ok_release,'release_snapshot':released,'release_stopped':stopped(released),'reengaged':reengaged,'disable_active_feeding':disable_active,'before_disable':before_disable,'disabled':disabled,'disabled_snapshot':disabled_snapshot,'disable_stopped':stopped(disabled_snapshot)}
+   result['passed']=all([ok,ok_unknown,stopped(unknown),ok_resume,release_active,ok_release,stopped(released),reengaged,disable_active,disabled,stopped(disabled_snapshot)])
    args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2)+'\n')
    print(json.dumps(result,indent=2));assert result['passed']
   finally:

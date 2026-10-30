@@ -521,7 +521,10 @@ is empty. Collection reevaluates the active-HUB nearby-fuel and inactive-HUB eli
 rules continuously. Autonomous starts returning at 13 seconds remaining to leave time for a
 shot, including when possession is unknown. Timed attempts can therefore
 run with an empty hopper. A 20-second collection limit
-prevents indefinite collection. The optional
+prevents indefinite collection. During an active teleop window, the command also
+starts returning when the time to the next hub change falls below an estimated
+trench-and-home travel time plus a readiness margin. This heuristic does not
+guarantee arrival or a completed volley. The optional
 `AutoDrive/EstimatedCapacity` preference defaults to zero (unknown); a positive
 value ends collection when the uncertain estimate reaches that threshold. Its
 camera adapter provides confidence and capture time but lacks persistent track

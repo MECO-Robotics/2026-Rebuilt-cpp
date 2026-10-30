@@ -35,9 +35,14 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
   frc::Preferences::InitDouble("AutoDrive/EstimatedCapacity",0);
 
   auto decision = [&perception,&drive,field,estimate](bool expired) {
+    const auto alliance=frc::DriverStation::GetAlliance();
+    const auto& match=perception.MatchState();
+    const bool windowClosing=alliance && !frc::DriverStation::IsAutonomousEnabled() &&
+        match.ownActive.value_or(false) &&
+        OffensiveScoringWindowClosing(drive.Pose(),*alliance,field,match.ownNextChange);
     return DecideOffense(perception.MatchState().ownActive,frc::DriverStation::GetAlliance(),drive.Pose(),field,
         perception.VisibleFuel(),estimate->Count(),frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity",0),
-        false,false,frc::DriverStation::IsAutonomousEnabled(),perception.MatchState().periodTime,expired);
+        false,false,frc::DriverStation::IsAutonomousEnabled(),perception.MatchState().periodTime,expired || windowClosing);
   };
   auto matchLost=std::make_shared<bool>(false);
   auto collectionStarted=std::make_shared<double>(0);

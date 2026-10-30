@@ -78,3 +78,21 @@ A separate staged blue trace showed the robot remaining near the modeled bump
 at approximately (4.89, 2.18) m while requesting motion late in the match.
 It stopped at disable. One successful trench return is not proof of reliable
 terrain traversal or recovery from field contact.
+
+A further [blue match](offensive-blue-window-failure.json.gz) on desktop binary
+`fa518239367bd6ee621f6f8bec9c9c106648141ea671fb60a276761db59af696`
+scored six in autonomous and zero in teleop despite collecting 54 in teleop.
+The shift-three return was interrupted by the hub changing inactive, and the
+endgame return reached the shot phase with about two seconds left; no teleop
+feed was observed. This is a failed trial, not proof of a single cause.
+The same simulator's [active-feed interruption probe](offensive-active-feed-interruptions.json)
+observed all three feed voltages above 1 V before match-data loss, release, and
+disable respectively, and observed those outputs and drive requests stop
+following each interruption. It does not establish physical hardware behavior.
+
+A subsequent [blue timing-candidate match](offensive-blue-window-candidate.json.gz)
+with the next-change route heuristic scored 7 in autonomous and 83 in teleop,
+with 139 teleop pickups and a normal stop. Desktop binary SHA-256 was
+`ce820a3e0fa31a3dc1be4f849f158306a70f6e3d917a95fff634e7ebf008c6b3`.
+The full local build passed on desktop and roboRIO and all 30 desktop tests
+passed in Debug and Release. This single run does not establish repeatability.

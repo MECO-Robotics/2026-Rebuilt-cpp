@@ -1,0 +1,116 @@
+{
+  "binary_sha256": "fa518239367bd6ee621f6f8bec9c9c106648141ea671fb60a276761db59af696",
+  "active_feeding_started": true,
+  "active": {
+    "phase": "score",
+    "known": true,
+    "voltages": [
+      -1.0367178547407445,
+      3.47084960788843,
+      -3.470985933090954
+    ],
+    "request": [
+      0.0,
+      0.0,
+      -0.023521098582658828
+    ],
+    "feeding": true
+  },
+  "unknown_seen": true,
+  "unknown": {
+    "phase": "wait-for-match",
+    "known": false,
+    "voltages": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "request": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "unknown_stopped": true,
+  "resumed": true,
+  "resume_snapshot": {
+    "phase": "score",
+    "known": true,
+    "voltages": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "request": [
+      0.0,
+      0.0,
+      -0.04112676422464046
+    ]
+  },
+  "release_active_feeding": true,
+  "before_release": {
+    "phase": "score",
+    "known": true,
+    "voltages": [
+      -1.032002364674535,
+      3.506297283966221,
+      -3.4979941158772787
+    ],
+    "request": [
+      0.0,
+      0.0,
+      0.011776272133852794
+    ],
+    "feeding": true
+  },
+  "released": true,
+  "release_snapshot": {
+    "phase": "idle",
+    "known": true,
+    "voltages": [
+      -0.0,
+      0.0,
+      0.0
+    ],
+    "request": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "release_stopped": true,
+  "reengaged": true,
+  "disable_active_feeding": true,
+  "before_disable": {
+    "phase": "score",
+    "known": true,
+    "voltages": [
+      -1.0376586911181989,
+      3.544323046084485,
+      -3.5287173740181013
+    ],
+    "request": [
+      0.0,
+      0.0,
+      -0.05051745047359102
+    ],
+    "feeding": true
+  },
+  "disabled": true,
+  "disabled_snapshot": {
+    "phase": "idle",
+    "known": true,
+    "voltages": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "request": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "disable_stopped": true,
+  "passed": true
+}

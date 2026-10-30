@@ -66,3 +66,13 @@ TEST(OffensiveAutoDrive, CommitmentSurvivesFailedAttemptButRespondsToHubChange) 
   EXPECT_EQ(season::ReconcileOffensiveCommitment(C::Ferry,true,false),C::None);
   EXPECT_EQ(season::ReconcileOffensiveCommitment(C::Ferry,false,true),C::None);
 }
+
+TEST(OffensiveAutoDrive, ReturnsBeforeActiveWindowClosesBasedOnRoute) {
+  const season::FieldGeometry field{16.541,8.069,{},{}};
+  const auto blue=frc::DriverStation::Alliance::kBlue;
+  const frc::Pose2d neutral{8_m, 6_m, frc::Rotation2d{0_rad}};
+  EXPECT_FALSE(season::OffensiveScoringWindowClosing(neutral,blue,field,std::nullopt));
+  EXPECT_FALSE(season::OffensiveScoringWindowClosing(neutral,blue,field,25.));
+  EXPECT_TRUE(season::OffensiveScoringWindowClosing(neutral,blue,field,12.));
+  EXPECT_FALSE(season::OffensiveScoringWindowClosing(neutral,blue,field,-1.));
+}

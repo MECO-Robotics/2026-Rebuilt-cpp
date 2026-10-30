@@ -40,6 +40,24 @@ inline OffensiveCommitment ReconcileOffensiveCommitment(OffensiveCommitment curr
       (current==OffensiveCommitment::Ferry && *hubActive)) return OffensiveCommitment::None;
   return current;
 }
+// Estimate enough time for the staged trench route and shooter readiness.
+// This is a conservative scheduling heuristic, not an arrival guarantee.
+inline bool OffensiveScoringWindowClosing(frc::Pose2d pose,
+    frc::DriverStation::Alliance alliance, const FieldGeometry& field,
+    std::optional<double> nextChange) {
+  if (!nextChange || !std::isfinite(*nextChange) || *nextChange < 0) return false;
+  const bool red=alliance==frc::DriverStation::Alliance::kRed;
+  const frc::Translation2d home{units::meter_t{red ? field.length-3.65 : 3.65},
+                               units::meter_t{red ? field.width-.75 : .75}};
+  const frc::Translation2d trench{units::meter_t{red ? field.length-6.2 : 6.2},
+                                 units::meter_t{red ? field.width-.75 : .75}};
+  const double route=InAllianceZone(alliance,pose.Translation(),field)
+      ? pose.Translation().Distance(home).value()
+      : pose.Translation().Distance(trench).value()+trench.Distance(home).value();
+  // Staged return is limited to 1 m/s; allow time for path setup, settling,
+  // aiming and at least the beginning of a volley.
+  return *nextChange <= route + 8.;
+}
 // Upstream single-robot arbitration adapted to an estimated, not measured, load.
 inline OffensiveDecision DecideOffense(std::optional<bool> active,
     std::optional<frc::DriverStation::Alliance> alliance, frc::Pose2d pose,
