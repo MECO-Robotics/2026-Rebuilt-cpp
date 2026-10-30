@@ -27,6 +27,7 @@ class RobotContainer
 public:
   RobotContainer();
   frc2::Command *GetAutonomousCommand();
+  void ScheduleAutonomous(frc2::Command *command);
   void CancelChecks();
   void SetMatchContext(base::season2026::MatchContext context)
   {
@@ -73,6 +74,8 @@ private:
   frc::Pose2d simulationResetPose_{};
   frc::Pose2d simulationResetPhysicalOrigin_{};
   bool simulationFieldCollidersEnabled_{true};
+  bool captureAutonomousPoseReset_ = false;
+  bool autonomousPoseBlocked_ = false;
 #endif
   frc2::CommandXboxController controller_{0}, copilot_{1};
   frc::SendableChooser<frc2::Command *> autoChooser_;

@@ -52,6 +52,7 @@ async def run(args):
     state = string('/Sim/Practice/State')
     running = boolean('/Sim/Practice/Running')
     command = nt.getStringTopic('/Sim/Practice/Command').publish(ntcore.PubSubOptions(keepDuplicates=True))
+    start_button = nt.getBooleanTopic('/SmartDashboard/Start Practice Match/running').publish()
     chooser = nt.getStringTopic('/SmartDashboard/Auto Choices/selected').publish()
     result = {'scenario': 'onboard-offensive-practice-match', 'alliance': args.alliance,
               'auto_result': args.auto_result, 'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
@@ -69,7 +70,8 @@ async def run(args):
         async def disable():
             await ws.send(json.dumps({'type': 'DriverStation', 'device': '', 'data': {
                 '>enabled': False, '>autonomous': False, '>test': False, '>ds': True,
-                '>fms': False, '>estop': False, '>new_data': True}}))
+                '>fms': False, '>estop': False, '>station': args.alliance + '1',
+                '>new_data': True}}))
         try:
             await asyncio.sleep(1)
             if not nt.isConnected() or not truth.getAtomic().time:
@@ -83,7 +85,10 @@ async def run(args):
             nt.getEntry('/SmartDashboard/AutoDrive/OffenseEnabled').setBoolean(True)
             nt.flush()
             await asyncio.sleep(.3)
-            command.set('start')
+            if args.dashboard_start:
+                start_button.set(True)
+            else:
+                command.set('start')
             nt.flush()
             start = time.monotonic()
             prev_state = ''
@@ -178,5 +183,7 @@ if __name__ == '__main__':
     parser.add_argument('--alliance', choices=['blue', 'red'], default='blue')
     parser.add_argument('--auto-result', choices=['R', 'B'], default='R')
     parser.add_argument('--auto-choice', default='AutoDrive offensive')
+    parser.add_argument('--dashboard-start', action='store_true',
+                        help='start using the desktop SmartDashboard command')
     parser.add_argument('--output', type=Path, required=True)
     raise SystemExit(0 if asyncio.run(run(parser.parse_args())) else 1)

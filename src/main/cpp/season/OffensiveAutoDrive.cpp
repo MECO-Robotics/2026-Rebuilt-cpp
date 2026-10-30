@@ -63,8 +63,8 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
       const double now=frc::Timer::GetFPGATimestamp().value();
       if (lock->position && !*match.ownActive && InAllianceZone(*alliance,*lock->position,field)) lock->position.reset();
       if (lock->position) {
-        const auto found=std::find_if(points.begin(),points.end(),[&](const auto& p) { return p.position.Distance(*lock->position).value()<.3; });
-        if (found!=points.end()) {lock->position=found->position;lock->seen=now;}
+        const auto found=MatchOffensiveTarget(*lock->position,points);
+        if (found) {lock->position=*found;lock->seen=now;}
         else if (now-lock->seen>.4) lock->position.reset();
       }
       if (points.empty() && !lock->position) {
@@ -112,6 +112,8 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
       }
       const auto direction=(*lock->position-pose.Translation()).Angle();
       const auto through=*lock->position + frc::Translation2d{.55_m,direction};
+      frc::SmartDashboard::PutNumber("AutoDrive/CollectionGoalX",through.X().value());
+      frc::SmartDashboard::PutNumber("AutoDrive/CollectionGoalY",through.Y().value());
       return frc::Pose2d{frc::Translation2d{units::meter_t{std::clamp(through.X().value(),.5,field.length-.5)},units::meter_t{std::clamp(through.Y().value(),.5,field.width-.5)}},direction};
     };
     return frc2::cmd::Deadline(frc2::cmd::Wait(20_s),

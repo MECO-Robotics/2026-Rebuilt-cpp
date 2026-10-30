@@ -491,7 +491,9 @@ with zero requested motion throughout the desktop check.
 `AutoDrive offensive` is an autonomous chooser entry. In teleop, set
 `AutoDrive/OffenseEnabled` and hold the pilot left bumper; releasing it cancels
 and stops the drive and mechanisms. The ordinary target-drive binding remains
-available with the toggle off. `AutoDrive/OffensePhase` reports the current
+available with the toggle off. Desktop simulation defaults to offense enabled
+and selects offensive autonomous; the robot defaults remain unchanged.
+`AutoDrive/OffensePhase` reports the current
 stage. Unknown alliance or HUB state inhibits decisions and cancels collection;
 HUB shooting requires an active HUB and a settled return to the selected shot
 pose. Ferry shots use the existing ferry trajectory safety and readiness checks.
@@ -501,8 +503,14 @@ This is an adaptation of the deterministic offense in upstream AutoDrive
 The active-HUB pickup ranking uses its acceleration-limited pickup and return
 time per confidence-weighted nearby yield; inactive-HUB pickup excludes the friendly alliance zone and uses a
 nearby target before a ferry attempt. When no fuel is visible, the command
-searches toward the neutral zone. It briefly holds a pickup target through
-observation dropouts. Finished or failed collection navigation is retried
+searches toward the neutral zone. When the HUB is inactive and the robot is
+still in its alliance zone, it keeps collecting toward neutral rather than
+attempting a ferry shot from the home side. It briefly holds a pickup target through
+observation dropouts.
+The lock matches the closest nearby observation, reducing jumps to adjacent
+FUEL when the camera changes observation order. `AutoDrive/CollectionGoalX` and
+`AutoDrive/CollectionGoalY` show the current calculated collection goal.
+Finished or failed collection navigation is retried
 after 0.3 seconds while the collection attempt remains active. The command
 retains a score or ferry commitment across failed navigation and incomplete
 feeding, retrying after a 0.5-second pause. A full feed attempt or a HUB-state
@@ -511,6 +519,24 @@ fixed neutral-side trench waypoint before the shot position; it retries the
 waypoint at most three times at a 1 m/s path-output limit and requires settled
 arrival before the final leg. This route is intended for the modeled field and has not been
 physically validated.
+
+In two partial desktop LB-driven matches, sampled collection-goal jumps of at
+least 0.3 m fell from 37 of 92 samples [before](../artifacts/offensive-target-lock-before.json.gz)
+to 3 of 77 [after](../artifacts/offensive-target-lock-after.json.gz) nearest
+matching. Zero-translation drive requests fell from 52 to 14 samples. The
+different runs are not identical and the traces were stopped early; this is not
+proof that all replanning pauses or navigation obstructions are resolved.
+A subsequent [full blue match](../artifacts/offensive-target-lock-full-match.json.gz)
+completed and scored, but the first teleop collection phase remained stationary
+with zero drive requests for about 20 seconds. Its cause remains unresolved.
+
+A [desktop manual-start match](../artifacts/offensive-manual-start-retest.json.gz)
+completed and scored after the home-side ferry change. It still spent roughly
+20 seconds collecting near the blue home-side trench support with little
+translation and no simulated pickups despite drive requests. This remains a
+navigation obstruction, not evidence of uninterrupted match operation. The
+match was started through the dashboard command and driven with simulated LB;
+the full run did not use SimGUI's joystick writer.
 
 This robot has no carried-FUEL sensor. The command therefore runs bounded
 collection and shooting attempts and cannot reproduce upstream capacity or

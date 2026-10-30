@@ -31,6 +31,16 @@ TEST(OffensiveAutoDrive, PickupEstimateIsAnExplicitAmbiguousObservation) {
   EXPECT_EQ(estimate.Count(),0);
 }
 
+TEST(OffensiveAutoDrive, TargetLockKeepsNearestObservationWhenOrderChanges) {
+  const frc::Translation2d locked{4_m,2_m};
+  const base::ObjectCluster neighbor{{4.25_m,2_m},1,1.,0_s};
+  const base::ObjectCluster same{{4.02_m,2_m},1,1.,0_s};
+  const auto matched=season::MatchOffensiveTarget(locked,{neighbor,same});
+  ASSERT_TRUE(matched);
+  EXPECT_NEAR(matched->X().value(),4.02,1e-9);
+  EXPECT_FALSE(season::MatchOffensiveTarget(locked,{{{5_m,2_m},1,1.,0_s}}));
+}
+
 TEST(OffensiveAutoDrive, ArbitrationUsesHubZoneAndEstimatedLoad) {
   using D=season::OffensiveDecision;
   const season::FieldGeometry field{16.541,8.069,{},{}};
@@ -46,6 +56,7 @@ TEST(OffensiveAutoDrive, ArbitrationUsesHubZoneAndEstimatedLoad) {
   EXPECT_EQ(season::DecideOffense(true,blue,home,field,{friendly},3,10),D::Collect);
   EXPECT_EQ(season::DecideOffense(true,blue,home,field,{},3,10),D::Score);
   EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{friendly},3,10),D::Ferry);
+  EXPECT_EQ(season::DecideOffense(false,blue,home,field,{friendly},3,10,false,false,false,std::nullopt,true),D::Collect);
   EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{nearby},3,10),D::Collect);
   EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{nearby},10,10),D::Ferry);
   EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{nearby},1,10,false,true),D::Ferry);

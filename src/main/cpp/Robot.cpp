@@ -48,7 +48,7 @@ void Robot::RobotPeriodic()
   container_.SetMatchContext(match);
   if (autonomousPending_ && frc::DriverStation::IsAutonomousEnabled() && container_.SimulationResetReady()) {
     autonomousPending_ = false;
-    if (autonomous_) autonomous_->Schedule();
+    if (autonomous_) container_.ScheduleAutonomous(autonomous_);
   }
   base::simulation::BeginLatencyProbe();
   frc2::CommandScheduler::GetInstance().Run();
@@ -95,7 +95,7 @@ void Robot::AutonomousInit()
   autonomousPending_ = autonomous_ != nullptr;
   if (autonomousPending_ && container_.SimulationResetReady()) {
     autonomousPending_ = false;
-    autonomous_->Schedule();
+    container_.ScheduleAutonomous(autonomous_);
   }
 }
 void Robot::TeleopInit()

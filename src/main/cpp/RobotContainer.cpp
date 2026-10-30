@@ -1,4 +1,8 @@
 #include "season/OffensiveAutoDrive.h"
+#include <networktables/StringTopic.h>
+#ifndef __FRC_ROBORIO__
+#include <frc/simulation/DriverStationSim.h>
+#endif
 #include "base/SimulationLatency.h"
 #include "season/Simulation.h"
 #include "RobotContainer.h"
@@ -234,6 +238,22 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
     drive_.SetSimulationAdapter(std::move(simulation));
     drive_.SetPoseResetCallback([this](const frc::Pose2d &pose)
                                 {
+     if (captureAutonomousPoseReset_) {
+       captureAutonomousPoseReset_ = false;
+       if (!simulationFieldCollidersEnabled_ || season::simulation::IsClearStartingPose(pose)) {
+         simulationResetPhysicalOrigin_ = pose;
+         simulatedLocalization_.Reset();
+         lastAcceptedVision_ = -1e9;
+         simulationResetFeedbackLoops_ = 5;
+         drive_.ResetSimulation(pose);
+         frc::SmartDashboard::PutString("Simulation/AutoStartPose", "applied");
+       } else {
+         autonomousPoseBlocked_ = true;
+         drive_.ResetPose(simulationResetPhysicalOrigin_);
+         frc::SmartDashboard::PutString("Simulation/AutoStartPose", "blocked-by-field");
+       }
+       return;
+     }
      if(simulationResetFeedbackLoops_>0)simulationResetPose_=pose; });
   }
 #endif
@@ -281,15 +301,42 @@ RobotContainer::RobotContainer() : drive_(DriveConfig()),
   seasonAutos_.emplace_back(HubShot(true, true));
   seasonAutos_.emplace_back(base::FollowChoreo<2026>(drive_, "LeftBlueBump", {10, 0, 0}, {7, 0, 0}, units::second_t{.02}).AndThen(HubShot()));
   seasonAutos_.emplace_back(frc2::cmd::None());
-  autoChooser_.SetDefaultOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
+  if (!frc::RobotBase::IsSimulation())
+    autoChooser_.SetDefaultOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
+  else
+    autoChooser_.AddOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
   autoChooser_.AddOption("Choreo LeftBlueBump + Shoot", seasonAutos_[1].get());
   autoChooser_.AddOption("You better hit the A stop before this -Manny (none)", seasonAutos_[2].get());
   seasonAutos_.emplace_back(autoDrive_->Command());
   autoChooser_.AddOption("AutoDrive target", seasonAutos_.back().get());
   seasonAutos_.emplace_back(season::OffensiveAutoDrive(*autoDrive_,drive_,m,field_));
-  autoChooser_.AddOption("AutoDrive offensive",seasonAutos_.back().get());
-  frc::SmartDashboard::PutBoolean("AutoDrive/OffenseEnabled",false);
+  if (frc::RobotBase::IsSimulation())
+    autoChooser_.SetDefaultOption("AutoDrive offensive",seasonAutos_.back().get());
+  else
+    autoChooser_.AddOption("AutoDrive offensive",seasonAutos_.back().get());
+  frc::SmartDashboard::PutBoolean("AutoDrive/OffenseEnabled",frc::RobotBase::IsSimulation());
   frc::SmartDashboard::PutData("Auto Choices", &autoChooser_);
+#ifndef __FRC_ROBORIO__
+  if (frc::RobotBase::IsSimulation()) {
+    seasonAutos_.emplace_back(frc2::cmd::RunOnce([] {
+      const char* station = "Blue1";
+      switch (frc::sim::DriverStationSim::GetAllianceStationId()) {
+        case HAL_AllianceStationID_kRed1: station = "Red1"; break;
+        case HAL_AllianceStationID_kRed2: station = "Red2"; break;
+        case HAL_AllianceStationID_kRed3: station = "Red3"; break;
+        case HAL_AllianceStationID_kBlue2: station = "Blue2"; break;
+        case HAL_AllianceStationID_kBlue3: station = "Blue3"; break;
+        default: break;
+      }
+      nt::NetworkTableInstance::GetDefault().GetTable("/Sim/Practice")
+          ->GetEntry("Config/AllianceStation").SetString(station);
+      static auto command = nt::NetworkTableInstance::GetDefault()
+          .GetStringTopic("/Sim/Practice/Command").Publish({.keepDuplicates=true});
+      command.Set("start");
+    }).IgnoringDisable(true));
+    frc::SmartDashboard::PutData("Start Practice Match", seasonAutos_.back().get());
+  }
+#endif
   checks_.ConfigureRequirements({&drive_, &rack_, &hood_, &shooter_, &intake_, &conveyor_, &bottom_, &top_});
   season::ConfigureSystemChecks(checks_, drive_, rack_, hood_, shooter_, {{"intake", &intake_}, {"conveyor", &conveyor_}, {"bottom-indexer", &bottom_}, {"top-indexer", &top_}}, [this]
                                 { return vision_->Inputs().connected; });
@@ -431,6 +478,20 @@ frc2::CommandPtr RobotContainer::HubShot(bool ownDrive, bool requireVision)
                                  {auto a=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);return season::ShotTarget{season::ShotMode::Hub,season::HubPosition(a)}; }, o);
 }
 frc2::Command *RobotContainer::GetAutonomousCommand() { return autoChooser_.GetSelected(); }
+void RobotContainer::ScheduleAutonomous(frc2::Command *command)
+{
+#ifndef __FRC_ROBORIO__
+  captureAutonomousPoseReset_ = frc::RobotBase::IsSimulation();
+  autonomousPoseBlocked_ = false;
+  if (captureAutonomousPoseReset_)
+    frc::SmartDashboard::PutString("Simulation/AutoStartPose", "not-requested");
+#endif
+  command->Schedule();
+#ifndef __FRC_ROBORIO__
+  captureAutonomousPoseReset_ = false;
+  if (autonomousPoseBlocked_) command->Cancel();
+#endif
+}
 void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 
 void RobotContainer::SimulationPeriodic()

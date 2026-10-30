@@ -32,6 +32,15 @@ class OffensiveFuelEstimate {
 };
 enum class OffensiveDecision { Wait, Collect, Score, Ferry };
 enum class OffensiveCommitment { None, Score, Ferry };
+inline std::optional<frc::Translation2d> MatchOffensiveTarget(
+    frc::Translation2d locked, const std::vector<base::ObjectCluster>& points) {
+  const auto nearest = std::min_element(points.begin(), points.end(), [&](const auto& a, const auto& b) {
+    return a.position.Distance(locked) < b.position.Distance(locked);
+  });
+  if (nearest == points.end() || nearest->position.Distance(locked).value() >= .3)
+    return std::nullopt;
+  return nearest->position;
+}
 inline OffensiveCommitment ReconcileOffensiveCommitment(OffensiveCommitment current,
     std::optional<bool> hubActive, bool fullFeedCompleted) {
   if (fullFeedCompleted) return OffensiveCommitment::None;
@@ -82,6 +91,10 @@ inline OffensiveDecision DecideOffense(std::optional<bool> active,
   // No possession sensor: zero inferred pickups is unknown, not proof of an
   // empty hopper. Timed attempts may therefore operate on an empty hopper.
   const bool mayCarry=estimatedFuel>0 || loadUnknown;
+  // Ferry trajectories must cross into the alliance zone from the neutral side.
+  // Keep collecting toward neutral rather than committing to an impossible shot
+  // while the robot is still in its own zone.
+  if (!*active && inZone) return OffensiveDecision::Collect;
   if (mayCarry && *active && (autoReturn || collectionExpired ||
       (estimatedFuel>0 && (scoreCommitted || full ||
         (inZone && !friendlyFuel) || (!inZone && !nearbyMidfield))))) return OffensiveDecision::Score;

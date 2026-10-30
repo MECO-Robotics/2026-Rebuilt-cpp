@@ -50,11 +50,18 @@ the next scene reset. Start/Menu remains only the driver heading reset.
 
 The deferred odometry reconciliation now measures motion relative to the actual
 physical reset pose, rather than `(0,0)`. This prevents double-adding the new
-spawn translation and preserves the existing handling of subsequent autonomous
-odometry seeds. An autonomous routine can still deliberately seed a different
-odometry frame; this does not teleport physical truth to that path start. Such
-routines must be aligned with physical field coordinates before collision-aware
-trajectory acceptance. This change validates driving/reset, not all season autos.
+spawn translation. When an autonomous command resets odometry during its initial
+scheduling, desktop simulation also resets physical truth to the requested pose,
+then reconciles sensor feedback. A pose intersecting field geometry is rejected
+and the autonomous command is canceled; `Simulation/AutoStartPose` reports
+`applied`, `blocked-by-field`, or `not-requested`. Later pose resets do not
+teleport the body. This does not validate every autonomous trajectory.
+
+To check the `Left Trench Bump` start on an isolated simulator, launch
+`FRC_SIM_NT_PORT=15811 HALSIMWS_PORT=13301 ./scripts/sim_headless.sh`, then run
+`python scripts/auto_start_pose_smoke.py --alliance blue` or `--alliance red`
+with the simulation Python dependencies. The check starts and aborts a practice
+match and verifies both physical truth and odometry against the auto path.
 
 `/SmartDashboard/FieldSimulation/CollidersEnabled` and `ColliderCount` report the
 installed scene.

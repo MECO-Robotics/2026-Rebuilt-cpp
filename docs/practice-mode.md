@@ -4,7 +4,11 @@ The desktop robot instantiates MecoSimulation's `PracticeMatchController` with
 20 seconds AUTO, a 3-second disabled scoring-assessment gap, and 140 seconds
 TELEOP. The gap is separate from TELEOP's first 10-second transition shift.
 No companion planner or custom GUI is required. This control interface is absent
-from roboRIO builds. Start the simulator normally; use NT4 dashboard widgets to
+from roboRIO builds. Desktop simulation selects offensive AutoDrive for
+autonomous and LB in teleop. While disabled, use the SmartDashboard
+**Start Practice Match** command to start with the SimGUI alliance station
+(Blue1 if no station is selected). Alternatively,
+use NT4 dashboard widgets to
 publish the following topics. Commands are string **updates**, so sending `start`
 again after a completed/aborted session starts another match.
 
