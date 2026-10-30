@@ -1,6 +1,7 @@
 #ifndef __FRC_ROBORIO__
 #include "season/Simulation.h"
 #include "season/RobotGeometry.h"
+#include "meco/sim/ParticleFieldContacts.h"
 #include <networktables/NetworkTableInstance.h>
 
 #include <frc/DriverStation.h>
@@ -10,6 +11,17 @@
 namespace season {
 namespace {
 constexpr double diameter=5.5*.0254,radius=diameter/2;
+const meco::sim::ParticleFieldContacts kFieldContacts{base::sim::fields::rebuilt2026::ParticleFieldColliders()};
+bool Outside(const FuelParticle& p) {
+ return p.position.x < 0 || p.position.x > base::sim::fields::rebuilt2026::kFieldLength ||
+        p.position.y < 0 || p.position.y > base::sim::fields::rebuilt2026::kFieldWidth;
+}
+void ReturnToField(FuelParticle& p) {
+ constexpr double inset = .30;
+ p.position = {std::clamp(p.position.x, inset, base::sim::fields::rebuilt2026::kFieldLength-inset),
+               std::clamp(p.position.y, inset, base::sim::fields::rebuilt2026::kFieldWidth-inset), radius};
+ p.velocity = {};
+}
 frc::Translation3d Translation(FuelPoint p){return {units::meter_t{p.x},units::meter_t{p.y},units::meter_t{p.z}};}
 FuelPoint Point3d(const frc::Translation3d& p){return {p.X().value(),p.Y().value(),p.Z().value()};}
 frc::Pose3d Pose3d(frc::Pose2d p){return frc::Pose3d{p};}
@@ -76,11 +88,20 @@ void FuelModel::Step(double dt,const FuelInputs& in){
  for(int step=0;step<steps;++step){
   for(auto it=airborne_.begin();it!=airborne_.end();){auto previous=it->position;it->position.x+=it->velocity.x*h;it->position.y+=it->velocity.y*h;it->position.z+=it->velocity.z*h-.5*9.80665*h*h;it->velocity.z-=9.80665*h;
    frc::Translation2d hub=HubPosition(in.alliance);double height=72*.0254;bool crossing=previous.z>=height&&it->position.z<height&&it->velocity.z<0;double fraction=crossing?(previous.z-height)/(previous.z-it->position.z):0;double x=previous.x+(it->position.x-previous.x)*fraction,y=previous.y+(it->position.y-previous.y)*fraction;
-   if(crossing&&std::abs(x-hub.X().value())<=.6096&&std::abs(y-hub.Y().value())<=.6096){if(scoring)++scored_;double direction=in.alliance==frc::DriverStation::Alliance::kBlue?1:-1,angle=(direction>0?0:kPi)+Random(kPi/4);floor_.push_back({{hub.X().value()+direction*.65,hub.Y().value(),radius},{3*std::cos(angle),3*std::sin(angle),0}});it=airborne_.erase(it);}
+   if(Outside(*it)){ReturnToField(*it);floor_.push_back(*it);it=airborne_.erase(it);}
+   else if(crossing&&std::abs(x-hub.X().value())<=.6096&&std::abs(y-hub.Y().value())<=.6096){if(scoring)++scored_;double direction=in.alliance==frc::DriverStation::Alliance::kBlue?1:-1,angle=(direction>0?0:kPi)+Random(kPi/4);floor_.push_back({{hub.X().value()+direction*.65,hub.Y().value(),radius},{3*std::cos(angle),3*std::sin(angle),0}});it=airborne_.erase(it);}
    else if(it->position.z<=radius){floor_.push_back({{it->position.x,it->position.y,radius},{it->velocity.x*.15,it->velocity.y*.15,0}});it=airborne_.erase(it);}else ++it;
   }
   for(auto& p:floor_){p.position.x+=p.velocity.x*h;p.position.y+=p.velocity.y*h;double attenuation=std::exp(-2*h);p.velocity.x*=attenuation;p.velocity.y*=attenuation;}
+  for (auto& p : floor_) if (Outside(p)) ReturnToField(p);
+  kFieldContacts.Resolve(floor_,radius,.25);
+  kFieldContacts.Resolve(airborne_,radius,.25);
   meco::sim::ResolveParticleContacts(floor_,airborne_,RobotState(in),radius,.25,.30,kBumpers);
+  // Particle and bumper impulses can push fuel through a boundary.
+  for (auto& p : floor_) if (Outside(p)) ReturnToField(p);
+  for (auto it=airborne_.begin();it!=airborne_.end();) {
+   if (Outside(*it)) {ReturnToField(*it);floor_.push_back(*it);it=airborne_.erase(it);} else ++it;
+  }
   // A bumper or ball may lift resting fuel back into ballistic motion.
   for(auto it=floor_.begin();it!=floor_.end();){if(it->position.z>radius+1e-6||it->velocity.z>1e-6){airborne_.push_back(*it);it=floor_.erase(it);}else{it->position.z=radius;it->velocity.z=0;++it;}}
  }

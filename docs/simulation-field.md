@@ -26,8 +26,9 @@ trench geometry avoids that map's duplicated fourth support. Unlike its default
 This is simplified collision geometry, not official CAD meshing: tower placement,
 depot frames, wall heights and chassis-contact envelopes are approximations.
 Hub openings/netting, gate/outpost details, moving arms, decorative geometry and
-mechanism collision bodies are omitted. Fuel still uses the separate season
-model, not Jolt rigid-body pieces. Trench clearance represents the current
+mechanism collision bodies are omitted. Fuel uses a separate particle model with
+simplified field contacts and an open hub top; escaped fuel returns to the carpet.
+It is not modeled as Jolt rigid-body pieces. Trench clearance represents the current
 chassis box, not the full robot/superstructure. Collision acceptance does not
 establish physical tip limits, inspection legality or full match rules.
 

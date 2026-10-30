@@ -36,7 +36,7 @@ namespace season
   };
   // Gravity-driven balls with estimated bumper and equal-mass fuel contacts.
   // Robot motion is prescribed (no fuel reaction force on the drivetrain).
-  // No field-structure contacts, drag, spin forces, or flywheel load.
+  // Field contacts are approximate; drag, spin forces and flywheel load are omitted.
   // Seeded launch randomness is repeatable.
   class FuelModel
   {
