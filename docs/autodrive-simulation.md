@@ -21,13 +21,14 @@ are not packaged as a C++ robot policy. Its pose-graph policy proposal describes
 contracts still under development, and its diagnostic strategies do not by
 themselves supply qualified executable goals. The desktop footprint route search
 and terrain speed profile cover parts of the planning problem, not trained-policy
-inference, strategic decision making, or training-system parity. A deployment
+inference or training-system parity. The experimental offensive command below
+adapts part of the upstream deterministic strategy. A deployment
 would need an explicit observation/action contract, a qualified policy artifact,
 and end-to-end validation with the target robot's localization and sensing.
 
 ## Build
 
-This project uses MecoBase `2026.2.8` and MecoSimulation `2026.0.14`
+This project uses MecoBase `2026.2.10` and MecoSimulation `2026.0.15`
 from public Maven. MecoBase provides native planning and perception; the desktop
 Simulation package supplies physics and synthetic camera rays.
 
