@@ -117,10 +117,32 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     auto bearing=(HubPosition(*alliance)-target).Angle();
     return frc::Pose2d{target,bearing};
   };
-  auto returnHome = [&perception,&drive,home]() {
-    return base::AutoDriveToPose(drive,home).WithTimeout(12_s)
-        .Until([&perception] {return !perception.MatchState().ownActive.value_or(false) || !frc::DriverStation::GetAlliance().has_value();})
-        .BeforeStarting([] {Phase("return");});
+  // The deployed 2D navgrid treats BUMPs as traversable. Approach the
+  // modeled trench from the neutral side before crossing to the shot lane.
+  auto trench = [field]() -> std::optional<frc::Pose2d> {
+    auto alliance=frc::DriverStation::GetAlliance();
+    if (!alliance) return std::nullopt;
+    const bool red=*alliance==frc::DriverStation::Alliance::kRed;
+    return frc::Pose2d{units::meter_t{red ? field.length-6.2 : 6.2},
+      units::meter_t{red ? field.width-.75 : .75},frc::Rotation2d{units::radian_t{red ? std::numbers::pi : 0}}};
+  };
+  auto returnHome = [&perception,&drive,home,trench,field]() {
+    auto invalid=[&perception] {return !perception.MatchState().ownActive.value_or(false) || !frc::DriverStation::GetAlliance().has_value();};
+    auto stageArrived=[&drive,trench,invalid] {
+      const auto goal=trench();
+      return !invalid() && goal && AutoDriveArrived(drive.Pose(),drive.Speeds(),*goal);
+    };
+    auto needsStage=[&drive,field] {
+      auto alliance=frc::DriverStation::GetAlliance();
+      return alliance && !InAllianceZone(*alliance,drive.Pose().Translation(),field);
+    };
+    auto direct=[&drive,home,invalid] {
+      return base::AutoDriveToPose(drive,home).WithTimeout(15_s).Until(invalid);
+    };
+    return frc2::cmd::Either(
+      base::AutoDriveToPose(drive,trench).WithTimeout(15_s).Until(invalid)
+        .AndThen(frc2::cmd::Either(direct(),frc2::cmd::None(),stageArrived)),
+      direct(),needsStage).BeforeStarting([] {Phase("return");});
   };
   auto shot = [&perception,&drive,m,field,estimate]() {
     CoordinatedShotOptions options;

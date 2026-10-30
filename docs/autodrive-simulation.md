@@ -503,7 +503,10 @@ nearby target before a ferry attempt. When no fuel is visible, the command
 searches toward the neutral zone. It briefly holds a pickup target through
 observation dropouts. Finished or failed collection navigation is retried
 after 0.3 seconds while the collection attempt remains active. The command
-commits to a return and shot or ferry attempt until completion or interruption.
+commits to a return and shot or ferry attempt until completion or interruption. Return from outside the alliance zone approaches a
+fixed neutral-side trench waypoint before the shot position; both legs require
+settled arrival. This route is intended for the modeled field and has not been
+physically validated.
 
 This robot has no carried-FUEL sensor. The command therefore runs bounded
 collection and shooting attempts and cannot reproduce upstream capacity or
