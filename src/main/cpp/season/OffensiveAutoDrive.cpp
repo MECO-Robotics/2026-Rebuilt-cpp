@@ -2,6 +2,7 @@
 #include <base/AutoDrive.h>
 #include <frc/DriverStation.h>
 #include <frc/RobotBase.h>
+#include <frc/Timer.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
 #include <algorithm>
@@ -16,7 +17,9 @@ void Phase(const char* phase) { frc::SmartDashboard::PutString("AutoDrive/Offens
 frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
                                     Mechanisms m, FieldGeometry field) {
   auto collect = [&perception, &drive, m, field]() {
-    auto goal = [&perception, &drive, field]() -> std::optional<frc::Pose2d> {
+    struct TargetLock {std::optional<frc::Translation2d> position; double seen=0;};
+    auto lock=std::make_shared<TargetLock>();
+    auto goal = [&perception, &drive, field, lock]() -> std::optional<frc::Pose2d> {
       const auto alliance = frc::DriverStation::GetAlliance();
       if (!alliance || !perception.MatchState().ownActive.has_value()) return std::nullopt;
       auto points = perception.VisibleFuel();
@@ -24,8 +27,20 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
       // Upstream avoids collecting in its own zone while its hub is inactive.
       if (!match.ownActive.value_or(false))
         std::erase_if(points, [alliance,field](const auto& p) { return InAllianceZone(*alliance,p,field); });
-      if (points.empty()) return std::nullopt;
+      const double now=frc::Timer::GetFPGATimestamp().value();
+      if (lock->position && !*match.ownActive && InAllianceZone(*alliance,*lock->position,field)) lock->position.reset();
+      if (lock->position) {
+        const auto found=std::find_if(points.begin(),points.end(),[&](const auto& p) { return p.Distance(*lock->position).value()<.3; });
+        if (found!=points.end()) {lock->position=*found;lock->seen=now;}
+        else if (now-lock->seen>.4) lock->position.reset();
+      }
       const auto pose=drive.Pose();
+      if (points.empty() && !lock->position) {
+        // No observations: seek the neutral zone so the cameras can reacquire.
+        const frc::Translation2d search{units::meter_t{field.length/2},
+            units::meter_t{field.width/2}};
+        return frc::Pose2d{search,(search-pose.Translation()).Angle()};
+      }
       // Upstream ranks four nearby candidates by estimated pickup-and-return
       // time per nearby piece when active, and by distance while staging.
       // Our perception exposes positions only, not track age or confidence.
@@ -44,15 +59,18 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
             std::max(0.,p.X().value()-boundary) : std::max(0.,boundary-p.X().value());
         return (outbound+back+.2)/std::max(1.,yield);
       };
-      auto chosen=std::min_element(points.begin(),points.begin()+count,[&](const auto& a,const auto& b) {return cost(a)<cost(b);});
-      const auto direction=(*chosen-pose.Translation()).Angle();
-      const auto through=*chosen + frc::Translation2d{.55_m,direction};
+      if (!lock->position) {
+        auto chosen=std::min_element(points.begin(),points.begin()+count,[&](const auto& a,const auto& b) {return cost(a)<cost(b);});
+        lock->position=*chosen;lock->seen=now;
+      }
+      const auto direction=(*lock->position-pose.Translation()).Angle();
+      const auto through=*lock->position + frc::Translation2d{.55_m,direction};
       return frc::Pose2d{frc::Translation2d{units::meter_t{std::clamp(through.X().value(),.5,field.length-.5)},units::meter_t{std::clamp(through.Y().value(),.5,field.width-.5)}},direction};
     };
     return frc2::cmd::Deadline(frc2::cmd::Wait(7_s),
         base::AutoDriveTrackTarget(drive,goal), Acquire(m))
         .Until([&perception] {return !frc::DriverStation::GetAlliance().has_value() || !perception.MatchState().ownActive.has_value();})
-        .BeforeStarting([] { Phase("collect"); });
+        .BeforeStarting([lock] {lock->position.reset();Phase("collect"); });
   };
   auto home = [&drive,field]() -> std::optional<frc::Pose2d> {
     auto alliance=frc::DriverStation::GetAlliance();
@@ -106,8 +124,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
   auto active = [&perception] {return perception.MatchState().ownActive.value_or(false);};
   auto mayShoot = [&perception,&drive,home] {
     const auto target=home();
-    return target && perception.MatchState().ownActive.value_or(false) &&
-        AutoDriveArrived(drive.Pose(),drive.Speeds(),*target);
+    return OffensiveHubShotAllowed(perception.MatchState().ownActive,target,drive.Pose(),drive.Speeds());
   };
   auto cycle=frc2::cmd::Sequence(waitForKnown(),collect(),waitForKnown(),
       frc2::cmd::Either(frc2::cmd::Sequence(returnHome(),

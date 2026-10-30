@@ -499,8 +499,10 @@ This is an adaptation of the deterministic offense in upstream AutoDrive
 [`_tensor_3v3_actions.py` at d74b0a15](https://github.com/MECO-Robotics/AutoDrive/blob/d74b0a15e25ddbc6bacfbbb864674371629bb19e/frc_defense/_tensor_3v3_actions.py).
 The active-HUB pickup ranking approximates its nearby-yield and return-distance
 preference; inactive-HUB pickup excludes the friendly alliance zone and uses a
-nearby target before a ferry attempt. Commands commit to a return and shot or
-ferry attempt until completion or interruption.
+nearby target before a ferry attempt. When no fuel is visible, the command
+searches toward the neutral zone. It briefly holds a pickup target through
+observation dropouts, and commits to a return and shot or ferry attempt until
+completion or interruption.
 
 This robot has no carried-FUEL sensor. The command therefore runs bounded
 collection and shooting attempts and cannot reproduce upstream capacity or
