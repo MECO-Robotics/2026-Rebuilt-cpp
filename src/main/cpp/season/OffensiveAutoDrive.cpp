@@ -51,6 +51,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     };
     return frc2::cmd::Deadline(frc2::cmd::Wait(7_s),
         base::AutoDriveTrackTarget(drive,goal), Acquire(m))
+        .Until([&perception] {return !frc::DriverStation::GetAlliance().has_value() || !perception.MatchState().ownActive.has_value();})
         .BeforeStarting([] { Phase("collect"); });
   };
   auto home = [&drive,field]() -> std::optional<frc::Pose2d> {
@@ -63,8 +64,9 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     auto bearing=(HubPosition(*alliance)-target).Angle();
     return frc::Pose2d{target,bearing};
   };
-  auto returnHome = [&drive,home]() {
+  auto returnHome = [&perception,&drive,home]() {
     return base::AutoDriveToPose(drive,home).WithTimeout(12_s)
+        .Until([&perception] {return !perception.MatchState().ownActive.value_or(false) || !frc::DriverStation::GetAlliance().has_value();})
         .BeforeStarting([] {Phase("return");});
   };
   auto shot = [&perception,&drive,m,field]() {
@@ -102,8 +104,14 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
     }).BeforeStarting([] {Phase("wait-for-match");});
   };
   auto active = [&perception] {return perception.MatchState().ownActive.value_or(false);};
+  auto mayShoot = [&perception,&drive,home] {
+    const auto target=home();
+    return target && perception.MatchState().ownActive.value_or(false) &&
+        AutoDriveArrived(drive.Pose(),drive.Speeds(),*target);
+  };
   auto cycle=frc2::cmd::Sequence(waitForKnown(),collect(),waitForKnown(),
-      frc2::cmd::Either(frc2::cmd::Sequence(returnHome(),shot()),ferry(),active)).Repeatedly();
+      frc2::cmd::Either(frc2::cmd::Sequence(returnHome(),
+          frc2::cmd::Either(shot(),frc2::cmd::None(),mayShoot)),ferry(),active)).Repeatedly();
   return std::move(cycle).FinallyDo([&drive,m](bool) {
         drive.Stop();m.rack.Stop();m.intake.Stop();m.conveyor.Stop();m.bottomIndexer.Stop();m.topIndexer.Stop();m.hood.Stop();m.shooter.Stop();Phase("idle");
       });
