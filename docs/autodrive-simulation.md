@@ -501,8 +501,9 @@ The active-HUB pickup ranking uses its acceleration-limited pickup and return
 time per confidence-weighted nearby yield; inactive-HUB pickup excludes the friendly alliance zone and uses a
 nearby target before a ferry attempt. When no fuel is visible, the command
 searches toward the neutral zone. It briefly holds a pickup target through
-observation dropouts, and commits to a return and shot or ferry attempt until
-completion or interruption.
+observation dropouts. Finished or failed collection navigation is retried
+after 0.3 seconds while the collection attempt remains active. The command
+commits to a return and shot or ferry attempt until completion or interruption.
 
 This robot has no carried-FUEL sensor. The command therefore runs bounded
 collection and shooting attempts and cannot reproduce upstream capacity or

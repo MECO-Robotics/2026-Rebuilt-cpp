@@ -92,7 +92,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive& perception, base::Drive& drive,
       return frc::Pose2d{frc::Translation2d{units::meter_t{std::clamp(through.X().value(),.5,field.length-.5)},units::meter_t{std::clamp(through.Y().value(),.5,field.width-.5)}},direction};
     };
     return frc2::cmd::Deadline(frc2::cmd::Wait(20_s),
-        base::AutoDriveTrackTarget(drive,goal), Acquire(m))
+        base::AutoDriveTrackTarget(drive,goal).AndThen(frc2::cmd::Wait(.3_s)).Repeatedly(), Acquire(m))
         .Until([&perception,estimate] {const double capacity=frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity",0);return (std::isfinite(capacity) && capacity>0 && estimate->Count()>=capacity) || !frc::DriverStation::GetAlliance().has_value() || !perception.MatchState().ownActive.has_value();})
         .BeforeStarting([lock,estimate] {lock->position.reset();estimate->StartCollection();Phase("collect"); });
   };
