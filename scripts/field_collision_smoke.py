@@ -160,7 +160,10 @@ async def exercise(args):
             if len(loads.get())!=25:
                 raise RuntimeError('Bump validation requires current module-load diagnostics')
             bump=[]
-            deadline=time.monotonic()+6
+            # Allow slower commanded approaches enough time to reach the far
+            # side before assessing traversal; the six-second full-speed
+            # bound otherwise stops a 1 m/s run while it is still on the bump.
+            deadline=time.monotonic()+max(6., 6. / args.bump_speed + 5.)
             while time.monotonic()<deadline:
                 bump.extend(await hold(.04,enabled=True,forward=.1+.9*args.bump_speed/5.24))
                 if bump[-1]['truth'][0]>6.2:

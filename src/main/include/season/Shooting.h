@@ -4,6 +4,7 @@
 #include <frc/DriverStation.h>
 #include <frc/geometry/Translation2d.h>
 #include <frc/geometry/Pose2d.h>
+#include <frc/kinematics/ChassisSpeeds.h>
 
 // Pure season algorithms. Distances are meters, angles radians, mechanism
 // positions rotations, velocities rotations/second; time is monotonic seconds.
@@ -74,6 +75,10 @@ FerryPlan CalculateFerry(frc::Pose2d robot, ShotTarget target, const FieldGeomet
 ShotSolution CalculateShot(frc::Pose2d robot, frc::Translation2d target, bool simulation = false);
 ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, bool simulation = false,
                            ShotTuning tuning = {});
+// Speeds are measured robot-relative. Returns an invalid solution when no
+// bounded-velocity trajectory clears the field and lands in the alliance zone.
+ShotSolution CalculateMovingFerry(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field,
+                                 frc::ChassisSpeeds robotSpeeds, bool simulation = false, ShotTuning tuning = {});
 ShotSolution CalculateDriverAim(frc::DriverStation::Alliance alliance, frc::Pose2d robot, const FieldGeometry &field,
                                 bool simulation = false);
 // Readiness explains why coordinated feeding is permitted or blocked.
@@ -92,7 +97,8 @@ enum class Readiness
 };
 const char *ReadinessName(Readiness value);
 Readiness EvaluateReadiness(bool poseReady, ShotSolution solution, double vx, double vy, double omega, double heading,
-                            double hood, double flywheel);
+                            double hood, double flywheel, double maxTranslation = .25,
+                            double maxOmega = 10 * kPi / 180);
 double ClampCalibrationHood(double value);
 double ClampCalibrationFlywheel(double value);
 // Matches WPILib rising-edge Debouncer: timer restarts on every false input.

@@ -1,5 +1,6 @@
 #ifndef __FRC_ROBORIO__
 #include "season/Simulation.h"
+#include "season/FuelConfig.h"
 #include "season/RobotGeometry.h"
 #include "meco/sim/ParticleFieldContacts.h"
 #include <networktables/NetworkTableInstance.h>
@@ -44,14 +45,14 @@ std::vector<double> Positions(const std::vector<FuelPoint>& particles){std::vect
 FuelModel::FuelModel(unsigned seed):seed_(seed),random_(seed){Reset();}
 void FuelModel::Reset(){random_.seed(seed_);floor_.clear();airborne_.clear();stored_=scored_=launched_=pending_=burstIndex_=0;time_=0;lastBurst_=nextShot_=-1e9;lastHubActive_.reset();scoringGraceUntil_.reset();}
 void FuelModel::AddFloorFuel(frc::Translation2d point){floor_.push_back({{point.X().value(),point.Y().value(),radius},{}});}
-void FuelModel::SetStoredFuel(int count){stored_=std::clamp(count,0,54);}
+void FuelModel::SetStoredFuel(int count){stored_=std::clamp(count,0,fuelconfig::kSimulationCapacity);}
 double FuelModel::Random(double amplitude){return std::uniform_real_distribution<double>{-amplitude,amplitude}(random_);}
 double FuelModel::LaunchPitch(double hood){double deflection=std::clamp(hood*2*kPi+16*kPi/180,15*kPi/180,45*kPi/180);return kPi/2-deflection;}
 std::vector<FuelPoint> FuelModel::HopperCenters(int count,double extension,frc::Pose2d robot){
  return HopperCenters3d(count,extension,Pose3d(robot));
 }
 std::vector<FuelPoint> FuelModel::HopperCenters3d(int count,double extension,const frc::Pose3d& robot){
- std::vector<FuelPoint> centers;count=std::clamp(count,0,54);double maxX=HopperPose(std::max(0.,extension)).X().value();int zi=0;
+ std::vector<FuelPoint> centers;count=std::clamp(count,0,fuelconfig::kSimulationCapacity);double maxX=HopperPose(std::max(0.,extension)).X().value();int zi=0;
  for(double z=.18+radius;z<=.65-radius+1e-9;z+=std::sqrt(3.)/2*diameter,++zi){int xi=0;for(double x=-.33+radius+(zi%2?radius:0);x<=maxX-radius+1e-9;x+=diameter,++xi)for(double y=-.34+radius+((zi+xi)%2?radius:0);y<=.34-radius+1e-9;y+=diameter){if(static_cast<int>(centers.size())==count)return centers;centers.push_back(World({x,y,z},robot));}}
  return centers;
 }
@@ -81,8 +82,8 @@ void FuelModel::Step(double dt,const FuelInputs& in){
   lastHubActive_=in.hubActive;
  }
  const bool scoring=in.hubActive && (*in.hubActive || (scoringGraceUntil_ && time_<=*scoringGraceUntil_));
- if(in.collecting&&in.rackMetres>.12&&stored_<54){const auto robot=RobotState(in).pose;for(auto it=floor_.begin();it!=floor_.end()&&stored_<54;){const auto local=(Translation(it->position)-robot.Translation()).RotateBy(-robot.Rotation());double x=local.X().value(),y=local.Y().value();if(x>=.28&&x<=.28+.20+radius&&std::abs(y)<=.35+radius){++stored_;it=floor_.erase(it);}else ++it;}}
- if(in.feeding&&std::abs(in.flywheelRps)>=5){if(!pending_&&time_-lastBurst_>=.20){pending_=4;burstIndex_=0;nextShot_=time_;lastBurst_=time_;}while(pending_&&time_>=nextShot_){if(!stored_){pending_=0;break;}--stored_;Launch(in,burstIndex_++);--pending_;if(pending_)nextShot_+=std::max(.01,.05+Random(.015));}}
+ if(in.collecting&&in.rackMetres>.12&&stored_<fuelconfig::kSimulationCapacity){const auto robot=RobotState(in).pose;for(auto it=floor_.begin();it!=floor_.end()&&stored_<fuelconfig::kSimulationCapacity;){const auto local=(Translation(it->position)-robot.Translation()).RotateBy(-robot.Rotation());double x=local.X().value(),y=local.Y().value();if(x>=.28&&x<=.28+.20+radius&&std::abs(y)<=.35+radius){++stored_;it=floor_.erase(it);}else ++it;}}
+ if(in.feeding&&std::abs(in.flywheelRps)>=5){if(!pending_&&time_-lastBurst_>=fuelconfig::kSimulationBurstPeriodSeconds){pending_=fuelconfig::kSimulationBurstSize;burstIndex_=0;lastBurst_=(time_-lastBurst_>2*fuelconfig::kSimulationBurstPeriodSeconds)?time_:lastBurst_+fuelconfig::kSimulationBurstPeriodSeconds;nextShot_=lastBurst_;}while(pending_&&time_>=nextShot_){if(!stored_){pending_=0;break;}--stored_;Launch(in,burstIndex_++);--pending_;if(pending_)nextShot_+=std::max(.01,.05+Random(.015));}}
  // Substeps resolve descending hub-height crossings even with coarse callers.
  int steps=std::max(1,static_cast<int>(std::ceil(dt/.005)));double h=dt/steps;
  for(int step=0;step<steps;++step){
@@ -106,7 +107,7 @@ void FuelModel::Step(double dt,const FuelInputs& in){
   for(auto it=floor_.begin();it!=floor_.end();){if(it->position.z>radius+1e-6||it->velocity.z>1e-6){airborne_.push_back(*it);it=floor_.erase(it);}else{it->position.z=radius;it->velocity.z=0;++it;}}
  }
 }
-FuelSimulation::FuelSimulation(Mechanisms mechanisms,base::Drive& drive):mechanisms_(mechanisms),drive_(drive){
+FuelSimulation::FuelSimulation(Mechanisms mechanisms,base::Drive& drive,std::shared_ptr<FuelMotorLoads> loads):mechanisms_(mechanisms),drive_(drive),loads_(std::move(loads)){
  auto nt=nt::NetworkTableInstance::GetDefault();
  robotPosePublisher_=nt.GetStructTopic<frc::Pose3d>("/Visualization/RobotRemy/RobotPose").Publish();
  componentsPublisher_=nt.GetStructArrayTopic<frc::Pose3d>("/Visualization/RobotRemy/ComponentPoses").Publish();
@@ -114,18 +115,34 @@ FuelSimulation::FuelSimulation(Mechanisms mechanisms,base::Drive& drive):mechani
  hopperPublisher_=nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/HopperFuelPositions").Publish();
  projectilesPublisher_=nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/FuelProjectilePositions").Publish();
  Reset();}
-void FuelSimulation::Reset(){model_.Reset();
+void FuelSimulation::Reset(){model_.Reset(); shooterLoadRemaining_=0; loadRandom_.seed(3737); if(loads_) loads_->torque.fill(0);
  // Deterministic neutral-zone grid, rather than claiming official Maple arena placement.
  for(double x=7.0;x<=9.5;x+=.25)for(double y=.75;y<=7.25;y+=.25)model_.AddFloorFuel({units::meter_t{x},units::meter_t{y}});
 }
 void FuelSimulation::Periodic(double dt, std::optional<FuelRobotState> physics, std::optional<bool> hubActive){auto pose=drive_.Pose();auto speed=drive_.Speeds();double heading=pose.Rotation().Radians().value(),c=std::cos(heading),s=std::sin(heading);
- FuelInputs input;input.robot=pose;input.vx=speed.vx.value()*c-speed.vy.value()*s;input.vy=speed.vx.value()*s+speed.vy.value()*c;input.omega=speed.omega.value();input.rackMetres=mechanisms_.rack.Position();input.hoodRotations=mechanisms_.hood.Position();input.flywheelRps=mechanisms_.shooter.Velocity();input.collecting=mechanisms_.intake.Inputs().voltage<-1&&mechanisms_.conveyor.Inputs().voltage>1;input.feeding=mechanisms_.bottomIndexer.Inputs().voltage<-1&&mechanisms_.topIndexer.Inputs().voltage>1&&mechanisms_.conveyor.Inputs().voltage<-1;
+ FuelInputs input;input.robot=pose;input.vx=speed.vx.value()*c-speed.vy.value()*s;input.vy=speed.vx.value()*s+speed.vy.value()*c;input.omega=speed.omega.value();input.rackMetres=mechanisms_.rack.Position();input.hoodRotations=mechanisms_.hood.Position();input.flywheelRps=mechanisms_.shooter.Velocity();input.collecting=mechanisms_.intake.Inputs().voltage<-1&&mechanisms_.conveyor.Inputs().voltage>1&&mechanisms_.intake.Velocity()<0&&mechanisms_.conveyor.Velocity()>0;input.feeding=SimulatedTransportFeeding(mechanisms_);
  input.physics=physics;input.hubActive=hubActive;
  frc::SmartDashboard::PutBoolean("FieldSimulation/Feeding",input.feeding);
  frc::SmartDashboard::PutNumber("FieldSimulation/BottomIndexerVolts",mechanisms_.bottomIndexer.Inputs().voltage);
  frc::SmartDashboard::PutNumber("FieldSimulation/TopIndexerVolts",mechanisms_.topIndexer.Inputs().voltage);
  frc::SmartDashboard::PutNumber("FieldSimulation/ConveyorVolts",mechanisms_.conveyor.Inputs().voltage);
- input.alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);model_.Step(dt,input);
+ frc::SmartDashboard::PutNumber("FieldSimulation/ShooterCurrentAmps",mechanisms_.shooter.Inputs().current);
+ frc::SmartDashboard::PutNumber("FieldSimulation/ConveyorCurrentAmps",mechanisms_.conveyor.Inputs().current);
+ frc::SmartDashboard::PutNumber("FieldSimulation/BottomIndexerCurrentAmps",mechanisms_.bottomIndexer.Inputs().current);
+ frc::SmartDashboard::PutNumber("FieldSimulation/TopIndexerCurrentAmps",mechanisms_.topIndexer.Inputs().current);
+ input.alliance=frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);
+ const double fill=static_cast<double>(model_.StoredFuel())/fuelconfig::kSimulationCapacity;
+ const bool fuelInTransport=(input.feeding||input.collecting)&&fill>0;
+ const int priorLaunches=model_.LaunchedFuel(); model_.Step(dt,input);
+ if(loads_){
+  // Approximate fill-dependent, noisy fuel contact and shot impulses.
+  // These torque coefficients require hardware calibration.
+  if(model_.LaunchedFuel()>priorLaunches) shooterLoadRemaining_=.08;
+  else shooterLoadRemaining_=std::max(0.,shooterLoadRemaining_-dt);
+  const auto noise=[this]{return std::uniform_real_distribution<double>{.35,1.65}(loadRandom_);};
+  const double load=fuelInTransport?.25+.75*fill:0.;
+  loads_->torque={.16*load*noise(),.12*load*noise(),.12*load*noise(),shooterLoadRemaining_>0?.35*noise():0.};
+ }
  const auto robotPose=RobotState(input).pose;
  robotPosePublisher_.Set(robotPose);
  componentsPublisher_.Set(RemyComponentPoses(input.rackMetres,input.hoodRotations,mechanisms_.shooter.Position()));
@@ -137,7 +154,7 @@ void FuelSimulation::Periodic(double dt, std::optional<FuelRobotState> physics, 
  fuel.insert(fuel.end(),hopperPoses.begin(),hopperPoses.end());
  for(const auto& p:model_.Projectiles()) projectiles.push_back(ballPose(p.position));
  fuelPublisher_.Set(fuel);hopperPublisher_.Set(hopperPoses);projectilesPublisher_.Set(projectiles);
- frc::SmartDashboard::PutNumber("FieldSimulation/StoredFuelCount",model_.StoredFuel());frc::SmartDashboard::PutNumber("FieldSimulation/HopperFuelCount",hopper.size());frc::SmartDashboard::PutNumber("FieldSimulation/HopperFillRatio",hopper.empty()?0:static_cast<double>(hopper.size())/FuelModel::HopperCenters(54,input.rackMetres).size());
+ frc::SmartDashboard::PutNumber("FieldSimulation/StoredFuelCount",model_.StoredFuel());frc::SmartDashboard::PutNumber("FieldSimulation/HopperFuelCount",hopper.size());frc::SmartDashboard::PutNumber("FieldSimulation/HopperFillRatio",hopper.empty()?0:static_cast<double>(hopper.size())/FuelModel::HopperCenters(fuelconfig::kSimulationCapacity,input.rackMetres).size());
  auto fuelPositions=Positions(model_.FloorFuel());const auto hopperPositions=Positions(hopper);fuelPositions.insert(fuelPositions.end(),hopperPositions.begin(),hopperPositions.end());
  frc::SmartDashboard::PutNumber("FieldSimulation/SuccessfulScoreCount",model_.SuccessfulScores());frc::SmartDashboard::PutNumber("FieldSimulation/LaunchedFuelCount",model_.LaunchedFuel());frc::SmartDashboard::PutNumber("FieldSimulation/FuelProjectileCount",model_.Projectiles().size());frc::SmartDashboard::PutNumberArray("FieldSimulation/FuelPositionsXYZ",fuelPositions);frc::SmartDashboard::PutNumberArray("FieldSimulation/HopperFuelPositionsXYZ",hopperPositions);frc::SmartDashboard::PutNumberArray("FieldSimulation/FuelProjectilePositionsXYZ",Positions(model_.Projectiles()));
 }

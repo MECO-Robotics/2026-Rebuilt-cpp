@@ -68,22 +68,9 @@
           }
         },
         {
-          "type": "race",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "wait",
-                "data": {
-                  "waitTime": 3.0
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "FeedRollers"
-                }
-              }
-            ]
+            "name": "AimedHubShot"
           }
         },
         {
@@ -182,22 +169,9 @@
           }
         },
         {
-          "type": "race",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "wait",
-                "data": {
-                  "waitTime": 3.0
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "FeedRollers"
-                }
-              }
-            ]
+            "name": "AimedHubShot"
           }
         },
         {
@@ -290,22 +264,9 @@
           }
         },
         {
-          "type": "race",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "wait",
-                "data": {
-                  "waitTime": 3.0
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "FeedRollers"
-                }
-              }
-            ]
+            "name": "AimedHubShot"
           }
         },
         {

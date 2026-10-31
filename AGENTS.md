@@ -3,7 +3,7 @@
 Use a **less is more** philosophy: keep the smallest set of tests that provides meaningful confidence.
 
 - Test observable behavior, important contracts, safety boundaries, and known regressions.
-- Add a regression test when fixing a meaningful bug; make it fail for the original failure.
+- Do not add regression tests unless the user explicitly requests them. When requested, make each test fail for the original failure.
 - Prefer a few representative cases and relevant boundaries over exhaustive combinations.
 - Reuse existing fixtures and parameterize closely related cases instead of duplicating tests.
 - Avoid tests that mirror implementation steps, assert incidental details, or merely repeat constants from production code.

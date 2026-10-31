@@ -2,6 +2,7 @@
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/ParticleContacts.h"
 #include "season/Mechanisms.h"
+#include "season/LoadedMotorSimulation.h"
 #include <random>
 #include <optional>
 #include <frc/geometry/struct/Pose3dStruct.h>
@@ -36,7 +37,7 @@ namespace season
   };
   // Gravity-driven balls with estimated bumper and equal-mass fuel contacts.
   // Robot motion is prescribed (no fuel reaction force on the drivetrain).
-  // Field contacts are approximate; drag, spin forces and flywheel load are omitted.
+  // Field contacts are approximate; drag and spin forces are omitted.
   // Seeded launch randomness is repeatable.
   class FuelModel
   {
@@ -72,7 +73,7 @@ namespace season
   class FuelSimulation
   {
   public:
-    FuelSimulation(Mechanisms mechanisms, base::Drive &drive);
+    FuelSimulation(Mechanisms mechanisms, base::Drive &drive, std::shared_ptr<FuelMotorLoads> loads = {});
     void Periodic(double dt = .02, std::optional<FuelRobotState> physics = std::nullopt,
                   std::optional<bool> hubActive = true);
     void Reset();
@@ -82,6 +83,9 @@ namespace season
     Mechanisms mechanisms_;
     base::Drive &drive_;
     FuelModel model_;
+    std::shared_ptr<FuelMotorLoads> loads_;
+    double shooterLoadRemaining_{};
+    std::mt19937 loadRandom_{3737};
     nt::StructPublisher<frc::Pose3d> robotPosePublisher_;
     nt::StructArrayPublisher<frc::Pose3d> componentsPublisher_;
     nt::StructArrayPublisher<frc::Pose3d> fuelPublisher_, hopperPublisher_, projectilesPublisher_;

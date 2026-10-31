@@ -75,6 +75,17 @@ struct Mechanisms
   base::PositionJoint &hood;
   base::Flywheel &shooter;
 };
+// Voltage alone does not establish roller direction during a reversal.
+// Used by desktop fuel simulation and its matching feed-time feedback.
+inline bool SimulatedTransportFeeding(Mechanisms m)
+{
+  return m.bottomIndexer.Inputs().voltage < -1 && m.topIndexer.Inputs().voltage > 1 &&
+         m.conveyor.Inputs().voltage < -1 && m.bottomIndexer.Velocity() < 0 &&
+         m.topIndexer.Velocity() > 0 && m.conveyor.Velocity() < 0;
+}
+// Full-hopper feed duration from robot preferences, with the desktop model's
+// configured values as simulation defaults. Zero means unconfigured.
+double ConfiguredFeedDurationSeconds();
 // Acquisition commands own and stop their participating mechanisms.
 frc2::CommandPtr Acquire(Mechanisms m);
 frc2::CommandPtr Eject(Mechanisms m);
@@ -94,10 +105,20 @@ struct CoordinatedShotOptions
   std::function<double()> calibrationHood = [] { return 0.; };
   std::function<double()> calibrationRps = [] { return 30.; };
   std::function<void(bool)> readyFeedback = [](bool) {};
+  // In simulation this reports measured transport activity, not just intent.
+  std::function<void(bool)> feedFeedback = [](bool) {};
   bool autonomous = false, simulation = false;
+  // Run the intake and retract the rack while a ready volley feeds.
+  bool agitate = false;
   // Markers share the path drivetrain and must not claim or command it.
   bool ownDrive = true;
   double readyTimeoutSeconds = 2, feedSeconds = 1, totalTimeoutSeconds = 3;
+  // Optional duration sampled once when the command starts.
+  std::function<double()> feedDurationSeconds;
+  // Optional feedback-based early completion after feed has started.
+  std::function<bool()> feedComplete;
+  // Field-relative translation in metres per second while aiming a moving ferry.
+  std::function<frc::Translation2d()> ferryTranslation;
 };
 // Autonomous shots end on feed completion or a bounded timeout.
 frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry field,

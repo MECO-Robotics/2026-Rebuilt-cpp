@@ -52,10 +52,10 @@ TEST(OffensiveAutoDrive, ArbitrationUsesHubZoneAndEstimatedLoad) {
   EXPECT_EQ(season::DecideOffense(std::nullopt,blue,neutral,field,{},3,0),D::Wait);
   EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{nearby},3,10),D::Collect);
   EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{nearby},10,10),D::Score);
-  EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{},3,0),D::Score);
+  EXPECT_EQ(season::DecideOffense(true,blue,neutral,field,{},3,0),D::Collect);
   EXPECT_EQ(season::DecideOffense(true,blue,home,field,{friendly},3,10),D::Collect);
-  EXPECT_EQ(season::DecideOffense(true,blue,home,field,{},3,10),D::Score);
-  EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{friendly},3,10),D::Ferry);
+  EXPECT_EQ(season::DecideOffense(true,blue,home,field,{},3,10),D::Collect);
+  EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{friendly},3,10),D::Collect);
   EXPECT_EQ(season::DecideOffense(false,blue,home,field,{friendly},3,10,false,false,false,std::nullopt,true),D::Collect);
   EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{nearby},3,10),D::Collect);
   EXPECT_EQ(season::DecideOffense(false,blue,neutral,field,{nearby},10,10),D::Ferry);

@@ -225,12 +225,28 @@ RobotContainer::RobotContainer()
                                             : season::hardware::kHoodGains),
             1, base::Gravity::Cosine),
       intake_("IntakeRoller", Motor(season::hardware::kIntake, base::Vendor::SparkMax), season::hardware::kIntakeGains),
-      conveyor_("Conveyor", Motor(season::hardware::kConveyor, base::Vendor::SparkMax),
+      conveyor_("Conveyor",
+#ifndef __FRC_ROBORIO__
+                Mode() == base::Mode::Sim ? season::MakeLoadedMotorIO(season::hardware::kConveyor.motor, base::Vendor::SparkMax, season::hardware::kConveyor.inertiaKgMetersSquared, fuelMotorLoads_, season::LoadedMotor::Conveyor) :
+#endif
+                Motor(season::hardware::kConveyor, base::Vendor::SparkMax),
                 season::hardware::kConveyorGains),
-      bottom_("BottomIndexer", Motor(season::hardware::kBottomIndexer, base::Vendor::TalonFX),
+      bottom_("BottomIndexer",
+#ifndef __FRC_ROBORIO__
+              Mode() == base::Mode::Sim ? season::MakeLoadedMotorIO(season::hardware::kBottomIndexer.motor, base::Vendor::TalonFX, season::hardware::kBottomIndexer.inertiaKgMetersSquared, fuelMotorLoads_, season::LoadedMotor::Bottom) :
+#endif
+              Motor(season::hardware::kBottomIndexer, base::Vendor::TalonFX),
               season::hardware::kIndexerGains),
-      top_("TopIndexer", Motor(season::hardware::kTopIndexer, base::Vendor::SparkMax), season::hardware::kIndexerGains),
-      shooter_("ShooterFlywheel", Motor(season::hardware::kShooter, base::Vendor::TalonFX),
+      top_("TopIndexer",
+#ifndef __FRC_ROBORIO__
+           Mode() == base::Mode::Sim ? season::MakeLoadedMotorIO(season::hardware::kTopIndexer.motor, base::Vendor::SparkMax, season::hardware::kTopIndexer.inertiaKgMetersSquared, fuelMotorLoads_, season::LoadedMotor::Top) :
+#endif
+           Motor(season::hardware::kTopIndexer, base::Vendor::SparkMax), season::hardware::kIndexerGains),
+      shooter_("ShooterFlywheel",
+#ifndef __FRC_ROBORIO__
+               Mode() == base::Mode::Sim ? season::MakeLoadedMotorIO(season::hardware::kShooter.motor, base::Vendor::TalonFX, season::hardware::kShooter.inertiaKgMetersSquared, fuelMotorLoads_, season::LoadedMotor::Shooter) :
+#endif
+               Motor(season::hardware::kShooter, base::Vendor::TalonFX),
                season::hardware::kShooterGains),
       layout_(frc::AprilTagFieldLayout::LoadField(frc::AprilTagField::kDefaultField)), field_(Geometry(layout_)),
       vision_(
@@ -330,7 +346,7 @@ RobotContainer::RobotContainer()
   auto m = Mechanisms();
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
-    simulation_ = std::make_unique<season::FuelSimulation>(m, drive_);
+    simulation_ = std::make_unique<season::FuelSimulation>(m, drive_, fuelMotorLoads_);
 #endif
   // Bind controls before registering the named autonomous actions.
   ConfigureBindings();
@@ -341,6 +357,8 @@ RobotContainer::RobotContainer()
                                               frc2::cmd::RunOnce([this] { rack_.SetPosition(0); }, {&rack_}));
   pathplanner::NamedCommands::registerCommand("FeedRollers", HubShot(false));
   pathplanner::NamedCommands::registerCommand("CoordinatedHubShot", HubShot(false));
+  // Use this marker only in auto steps that do not run a path concurrently.
+  pathplanner::NamedCommands::registerCommand("AimedHubShot", HubShot(true));
   pathplanner::NamedCommands::registerCommand("IdleRollers", frc2::cmd::RunOnce(
                                                                  [this]
                                                                  {
@@ -366,13 +384,16 @@ RobotContainer::RobotContainer()
                                                                 {
                                                                   intake_.SetVoltage(-10);
                                                                   conveyor_.SetVoltage(5);
+                                                                  fuelEstimate_->Observe(autoDrive_->VisibleFuel(), drive_.Pose());
+                                                                  frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", fuelEstimate_->Count());
                                                                 },
                                                                 [this]
                                                                 {
                                                                   intake_.Stop();
                                                                   conveyor_.Stop();
                                                                 },
-                                                                {&intake_, &conveyor_}));
+                                                                {&intake_, &conveyor_})
+                                                .BeforeStarting([this] { fuelEstimate_->StartCollection(); }));
   // Spin up from the current pose while the auto is running.
   auto calculatedSpinUp = [this]
   {
@@ -431,7 +452,7 @@ RobotContainer::RobotContainer()
   autoChooser_.AddOption("You better hit the A stop before this -Manny (none)", seasonAutos_[2].get());
   seasonAutos_.emplace_back(autoDrive_->Command());
   autoChooser_.AddOption("AutoDrive target", seasonAutos_.back().get());
-  seasonAutos_.emplace_back(season::OffensiveAutoDrive(*autoDrive_, drive_, m, field_));
+  seasonAutos_.emplace_back(season::OffensiveAutoDrive(*autoDrive_, drive_, m, field_, fuelEstimate_));
   if (frc::RobotBase::IsSimulation())
     autoChooser_.SetDefaultOption("AutoDrive offensive", seasonAutos_.back().get());
   else
@@ -507,7 +528,7 @@ void RobotContainer::ConfigureBindings()
    []
    {
      return frc::DriverStation::IsTeleopEnabled() && frc::SmartDashboard::GetBoolean("AutoDrive/OffenseEnabled", false);
-   }).WhileTrue(season::OffensiveAutoDrive(*autoDrive_, drive_, Mechanisms(), field_));
+   }).WhileTrue(season::OffensiveAutoDrive(*autoDrive_, drive_, Mechanisms(), field_, fuelEstimate_));
   auto m = Mechanisms();
   // Presets latch between button presses. No idle default overwrites their setpoints.
   (controller_.Start() && [] { return frc::DriverStation::IsTeleopEnabled(); })
@@ -618,6 +639,19 @@ frc2::CommandPtr RobotContainer::HubShot(bool ownDrive, bool requireVision)
   o.ownDrive = ownDrive;
   o.autonomous = true;
   o.simulation = frc::RobotBase::IsSimulation();
+  // A shot ends as soon as its configured feed completes. Its overall bound
+  // must also allow the rollers to reverse after the preceding intake path.
+  o.readyTimeoutSeconds = 8;
+  o.totalTimeoutSeconds = o.simulation ? 25 : 15;
+  o.feedDurationSeconds = season::ConfiguredFeedDurationSeconds;
+  struct FeedTiming { double last = 0, elapsed = 0, target = 0; bool active = false; };
+  auto timing = std::make_shared<FeedTiming>();
+  o.feedFeedback = [timing](bool active) {
+    const double now = frc::Timer::GetFPGATimestamp().value();
+    if (timing->active) timing->elapsed += std::max(0., now - timing->last);
+    timing->last = now;
+    timing->active = active;
+  };
   o.poseReady = [this, requireVision]
   {
     return (!requireVision && frc::DriverStation::IsAutonomousEnabled()) ||
@@ -630,7 +664,14 @@ frc2::CommandPtr RobotContainer::HubShot(bool ownDrive, bool requireVision)
         auto a = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
         return season::ShotTarget{season::ShotMode::Hub, season::HubPosition(a)};
       },
-      o);
+      o).BeforeStarting([timing] {
+        timing->last = frc::Timer::GetFPGATimestamp().value();
+        timing->elapsed = 0;
+        timing->active = false;
+        timing->target = season::ConfiguredFeedDurationSeconds();
+      }).FinallyDo([this, timing](bool interrupted) {
+        fuelEstimate_->CompleteFeed(!interrupted && timing->target > 0 && timing->elapsed >= timing->target);
+      });
 }
 frc2::Command *RobotContainer::GetAutonomousCommand() { return autoChooser_.GetSelected(); }
 // Capture only the initial pose reset made while the auto is scheduled.

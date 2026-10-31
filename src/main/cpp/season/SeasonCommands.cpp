@@ -1,8 +1,10 @@
 #include "season/Mechanisms.h"
+#include "season/FuelConfig.h"
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
 #include <frc/DriverStation.h>
+#include <frc/RobotBase.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
 #include <algorithm>
@@ -34,6 +36,19 @@ void StopAcquisition(Mechanisms m)
 }
 frc::Pose2d RobotPose(base::Drive &drive) { return drive.Pose(); }
 } // namespace
+double ConfiguredFeedDurationSeconds()
+{
+  double capacity = frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity", 0);
+  double rate = frc::Preferences::GetDouble("AutoDrive/FeedBallsPerSecond", 0);
+  if (frc::RobotBase::IsSimulation())
+  {
+    if (capacity == 0) capacity = fuelconfig::kSimulationCapacity;
+    if (rate == 0) rate = fuelconfig::kSimulationFeedBallsPerSecond;
+  }
+  if (!std::isfinite(capacity) || capacity <= 0 || !std::isfinite(rate) || rate <= 0) return 0;
+  const double result = capacity / rate;
+  return std::isfinite(result) && result > 0 ? result : 0;
+}
 // Run the intake and transport while the command owns them.
 frc2::CommandPtr Acquire(Mechanisms m)
 {
@@ -222,12 +237,20 @@ frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry
   struct State
   {
     ShotTarget target{ShotMode::Hub, {}};
-    double start = 0, lastFalse = 0, previous = 0, feedElapsed = 0;
-    bool started = false, feeding = false;
+    double start = 0, lastFalse = 0, previous = 0, feedElapsed = 0, feedTarget = 0;
+    bool started = false, feeding = false, transportActive = false, stationaryFerry = false;
+    ShotIntakeSettings intakeSettings;
     VolleyFeedGate volley;
   };
   auto state = std::make_shared<State>();
   std::vector<frc2::Subsystem *> requirements{&m.hood, &m.shooter, &m.bottomIndexer, &m.topIndexer, &m.conveyor};
+  if (options.agitate)
+  {
+    requirements.push_back(&m.rack);
+    requirements.push_back(&m.intake);
+    frc::Preferences::InitDouble("Intake/ShotRetractSpeedMps", .10);
+    frc::Preferences::InitDouble("Intake/ShotHoldPositionMeters", .13);
+  }
   if (options.ownDrive)
     requirements.push_back(&drive);
   auto action =
@@ -235,10 +258,15 @@ frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry
           [m, &drive, field, options, state]
           {
             double now = Now();
-            if (state->feeding)
+            if (state->transportActive)
               state->feedElapsed += now - state->previous;
             state->previous = now;
             auto pose = RobotPose(drive);
+            // If motion prevents the moving solution from settling, hold
+            // position for the remainder of this attempt instead of timing out.
+            if (state->target.mode == ShotMode::Ferry && options.ferryTranslation &&
+                !state->started && now - state->start >= 5.)
+              state->stationaryFerry = true;
             bool changed = false;
             if (state->target.mode == ShotMode::Ferry)
             {
@@ -248,8 +276,14 @@ frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry
                         selected.position.Y() != state->target.position.Y();
               state->target = selected;
             }
-            auto solution = CalculateShot(pose, state->target, field, options.simulation);
-            bool calibration = options.calibration(), poseReady = options.poseReady(), force = options.forceFeed();
+            const auto speeds = drive.Speeds();
+            const bool movingFerry = state->target.mode == ShotMode::Ferry && options.ferryTranslation;
+            auto solution = movingFerry ? CalculateMovingFerry(pose, state->target, field, speeds, options.simulation)
+                                        : CalculateShot(pose, state->target, field, options.simulation);
+            const bool durationValid = !options.autonomous ||
+                                       (std::isfinite(state->feedTarget) && state->feedTarget > 0);
+            bool calibration = options.calibration(), poseReady = options.poseReady() && durationValid,
+                 force = options.forceFeed();
             if (calibration)
             {
               solution.hoodRotations = ClampCalibrationHood(options.calibrationHood());
@@ -265,11 +299,18 @@ frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry
               m.hood.SetPosition(0);
               m.shooter.Stop();
             }
-            auto speeds = drive.Speeds();
             auto raw =
                 EvaluateReadiness(poseReady, solution, speeds.vx.value(), speeds.vy.value(), speeds.omega.value(),
-                                  pose.Rotation().Radians().value(), m.hood.Position(), m.shooter.Velocity());
-            bool readyCondition = !changed && !calibration && raw == Readiness::Ready;
+                                  pose.Rotation().Radians().value(), m.hood.Position(), m.shooter.Velocity(),
+                                  movingFerry ? 1. : .25, movingFerry ? .3 : 10 * kPi / 180);
+            // Once a volley has started, tolerate modest flywheel variation
+            // without repeatedly stopping and reversing the transport. Pose,
+            // aim, motion, and valid-feedback checks still gate every tick.
+            const bool spinningWithinVolleyBand = state->started && raw == Readiness::FlywheelSpinningUp &&
+                std::isfinite(m.shooter.Velocity()) && std::isfinite(solution.flywheelRps) &&
+                std::abs(m.shooter.Velocity() - solution.flywheelRps) <= 3.;
+            bool readyCondition = !changed && !calibration &&
+                                  (raw == Readiness::Ready || spinningWithinVolleyBand);
             if (!readyCondition)
               state->lastFalse = now;
             bool ready = options.autonomous
@@ -285,6 +326,22 @@ frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry
             frc::SmartDashboard::PutNumber("Shooter/DistanceToTargetMeters", solution.distanceMeters);
             frc::SmartDashboard::PutBoolean("Shooter/SolutionCalibrated", solution.calibrated);
             frc::SmartDashboard::PutBoolean("Shooter/CalibrationMode", calibration);
+            if (options.agitate)
+            {
+              m.intake.SetVoltage(hardware::kIntakeVolts);
+              if (ready)
+              {
+                if (!state->feeding)
+                  state->intakeSettings = ShotIntakeSettings{
+                      frc::Preferences::GetDouble("Intake/ShotRetractSpeedMps", .10),
+                      frc::Preferences::GetDouble("Intake/ShotHoldPositionMeters", .13)};
+                m.rack.SetPositionDynamic(state->intakeSettings.holdPositionMeters,
+                                          state->intakeSettings.retractSpeedMetersPerSecond, 100);
+              }
+              else
+                m.rack.SetPosition(hardware::kRackDeploy);
+              frc::SmartDashboard::PutBoolean("Shooter/Agitating", ready);
+            }
             state->feeding = ready;
             if (ready)
             {
@@ -293,35 +350,53 @@ frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry
             }
             else
               StopFeed(m);
+            // During a reversal, voltage can indicate feed while the rollers
+            // are still spinning in the collection direction.
+            state->transportActive = ready && (!options.simulation || SimulatedTransportFeeding(m));
             options.readyFeedback(ready);
+            options.feedFeedback(state->transportActive);
+            frc::SmartDashboard::PutBoolean("Shooter/TransportActive", state->transportActive);
             double error = std::atan2(std::sin(solution.headingRadians - pose.Rotation().Radians().value()),
                                       std::cos(solution.headingRadians - pose.Rotation().Radians().value()));
             if (options.ownDrive)
-              drive.RunVelocity(frc::ChassisSpeeds{
-                  units::meters_per_second_t{0}, units::meters_per_second_t{0},
-                  units::radians_per_second_t{(poseReady || force) ? std::clamp(error * 7., -7., 7.) : 0}});
+            {
+              const auto translation = movingFerry && poseReady && !state->stationaryFerry
+                                           ? options.ferryTranslation() : frc::Translation2d{};
+              drive.RunVelocity(frc::ChassisSpeeds::FromFieldRelativeSpeeds(
+                  units::meters_per_second_t{translation.X().value()}, units::meters_per_second_t{translation.Y().value()},
+                  units::radians_per_second_t{(poseReady || force) ? std::clamp(error * 7., -7., 7.) : 0}, pose.Rotation()));
+            }
             frc::SmartDashboard::PutBoolean("Shooter/Ready", ready);
             frc::SmartDashboard::PutBoolean("Shooter/Feeding", ready);
           },
           [m, &drive, options]
           {
             StopFeed(m);
+            if (options.agitate)
+            {
+              m.rack.Stop();
+              m.intake.Stop();
+              frc::SmartDashboard::PutBoolean("Shooter/Agitating", false);
+            }
             m.shooter.Stop();
             m.hood.Stop();
             if (options.ownDrive)
               drive.Stop();
             options.readyFeedback(false);
+            options.feedFeedback(false);
+            frc::SmartDashboard::PutBoolean("Shooter/TransportActive", false);
             frc::SmartDashboard::PutBoolean("Shooter/Ready", false);
             frc::SmartDashboard::PutBoolean("Shooter/Feeding", false);
           },
           frc2::Requirements{std::span<frc2::Subsystem *const>{requirements}})
           .BeforeStarting(
-              [state, supplier]
+              [state, supplier, options]
               {
                 state->target = supplier();
+                state->feedTarget = options.feedDurationSeconds ? options.feedDurationSeconds() : options.feedSeconds;
                 state->start = state->lastFalse = state->previous = Now();
                 state->feedElapsed = 0;
-                state->started = state->feeding = false;
+                state->started = state->feeding = state->transportActive = state->stationaryFerry = false;
                 state->volley.Reset(state->start);
               });
   if (options.autonomous)
@@ -329,10 +404,13 @@ frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry
         .Until(
             [state, options]
             {
-              return state->feedElapsed >= options.feedSeconds ||
-                     (!state->started && Now() - state->start >= options.readyTimeoutSeconds);
-            })
-        .WithTimeout(units::second_t{options.totalTimeoutSeconds});
+              return !std::isfinite(state->feedTarget) || state->feedTarget <= 0 ||
+                     state->feedElapsed >= state->feedTarget ||
+                     (state->transportActive && options.feedComplete && options.feedComplete()) ||
+                     (!state->started && Now() - state->start >= options.readyTimeoutSeconds) ||
+                     Now() - state->start >= std::max(options.totalTimeoutSeconds,
+                                                      options.readyTimeoutSeconds + state->feedTarget);
+            });
   return action;
 }
 } // namespace season

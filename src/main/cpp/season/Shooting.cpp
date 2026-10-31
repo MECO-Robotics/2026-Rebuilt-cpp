@@ -143,9 +143,25 @@ ShotSolution CalculateShot(frc::Pose2d robot, frc::Translation2d target, bool si
 {
   frc::Translation2d delta = (target - Exit(robot));
   double distance = delta.Norm().value();
+  double hood = Interpolate(distance, kHoodTable);
+  double rps = Interpolate(distance, kFlywheelTable);
+  bool valid = distance >= kMinDistance && distance <= kMaxDistance;
+  if (simulation)
+  {
+    // The desktop model uses a ballistic projectile without drag. Aim its
+    // nominal trajectory at the HUB opening; real shots retain the robot's
+    // measured table and require physical calibration.
+    const double pitch = Pitch(hood);
+    const double cosine = std::cos(pitch);
+    const double height = kReleaseHeight + distance * std::tan(pitch) - 72 * .0254;
+    const double divisor = 2 * cosine * cosine * height;
+    if (std::isfinite(divisor) && divisor > 0)
+      rps = std::sqrt(9.80665 * distance * distance / divisor) / kProjectileSpeedPerRps;
+    else
+      valid = false;
+  }
   return {distance, Wrap(std::atan2(delta.Y().value(), delta.X().value()) - (simulation ? 0 : kPi)),
-          Interpolate(distance, kHoodTable), Interpolate(distance, kFlywheelTable),
-          distance >= kMinDistance && distance <= kMaxDistance};
+          hood, rps, valid && std::isfinite(rps)};
 }
 ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, bool simulation,
                            ShotTuning tuning)
@@ -159,6 +175,83 @@ ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeom
     solution.calibrated = plan.safe;
   }
   return solution;
+}
+// Solve in the field frame: the projectile inherits both chassis translation
+// and rotational velocity at the shooter exit. Safety is checked on the world
+// trajectory, not on the virtual point used to compensate the shooter aim.
+ShotSolution CalculateMovingFerry(frc::Pose2d robot, ShotTarget target, const FieldGeometry &f,
+                                 frc::ChassisSpeeds robotSpeeds, bool simulation, ShotTuning tuning)
+{
+  auto invalid = CalculateShot(robot, target, f, simulation, tuning);
+  invalid.calibrated = false;
+  const auto field = frc::ChassisSpeeds::FromRobotRelativeSpeeds(robotSpeeds, robot.Rotation());
+  const double vx = field.vx.value(), vy = field.vy.value(), omega = field.omega.value();
+  if (target.mode != ShotMode::Ferry || !std::isfinite(vx) || !std::isfinite(vy) || !std::isfinite(omega) ||
+      std::hypot(vx, vy) > 1. || std::abs(omega) > .3)
+    return invalid;
+  const auto start = Exit(robot);
+  const auto offset = start - robot.Translation();
+  const double launchVx = vx - omega * offset.Y().value(), launchVy = vy + omega * offset.X().value();
+  const auto alliance = target.position.X().value() < f.length / 2 ? frc::DriverStation::Alliance::kBlue
+                                                                  : frc::DriverStation::Alliance::kRed;
+  const double direction = alliance == frc::DriverStation::Alliance::kBlue ? 1. : -1.;
+  const double center = Reference(alliance, f).X().value();
+  const double neutral = center + direction * 47 * .0254 / 2, wall = center - direction * 47 * .0254 / 2;
+  const double radius = std::hypot(47 * .0254 / 2, 47 * .0254 / 2) + 5.91 * .0254 / 2 + .12 + .10;
+  if (!InAllianceZone(alliance, target.position, f) || direction * (start.X().value() - neutral) <= 0 ||
+      SegmentDistance(HubPosition(alliance), start, target.position) <= radius)
+    return invalid;
+  const double dx = target.position.X().value() - start.X().value();
+  const double dy = target.position.Y().value() - start.Y().value();
+  const double maxHood = std::clamp(tuning.ferryHoodRotations, kHoodMin, kHoodMax);
+  const double maxRps = std::max(0., tuning.ferryFlywheelRps);
+  for (int step = 0; step <= 50; ++step)
+  {
+    const double hood = maxHood - (maxHood - kHoodMin) * step / 50.;
+    const double pitch = Pitch(hood);
+    auto residual = [&](double t)
+    {
+      return std::hypot(dx / t - launchVx, dy / t - launchVy) * std::tan(pitch) -
+             (.5 * 9.80665 * t - kReleaseHeight / t);
+    };
+    double lo = .05, hi = 5.;
+    if (!(residual(lo) > 0 && residual(hi) < 0)) continue;
+    for (int i = 0; i < 45; ++i)
+    {
+      const double mid = (lo + hi) / 2;
+      if (residual(mid) > 0) lo = mid; else hi = mid;
+    }
+    const double t = (lo + hi) / 2;
+    const double ux = dx / t - launchVx, uy = dy / t - launchVy;
+    const double horizontal = std::hypot(ux, uy);
+    const double rps = horizontal / std::cos(pitch) / kProjectileSpeedPerRps;
+    if (!std::isfinite(rps) || rps > maxRps || horizontal < 1e-6) continue;
+    // Repeat the clearance check with a one-degree lower and 1% slower launch,
+    // matching the stationary solver's margin.
+    const double conservativePitch = pitch - kPi / 180;
+    const double speed = rps * kProjectileSpeedPerRps * .99;
+    const double wx = launchVx + speed * std::cos(conservativePitch) * ux / horizontal;
+    const double wy = launchVy + speed * std::cos(conservativePitch) * uy / horizontal;
+    const double wz = speed * std::sin(conservativePitch);
+    const double landingTime = (wz + std::sqrt(wz * wz + 2 * 9.80665 * kReleaseHeight)) / 9.80665;
+    const frc::Translation2d landing{units::meter_t{start.X().value() + wx * landingTime},
+                                      units::meter_t{start.Y().value() + wy * landingTime}};
+    if (!InAllianceZone(alliance, landing, f) || landing.Y().value() < 0 || landing.Y().value() > f.width ||
+        SegmentDistance(HubPosition(alliance), start, landing) <= radius)
+      continue;
+    auto height = [&](double x)
+    {
+      if (std::abs(wx) < 1e-9) return -inf;
+      const double crossing = (x - start.X().value()) / wx;
+      if (crossing < 0 || crossing > t) return -inf;
+      return kReleaseHeight + wz * crossing - .5 * 9.80665 * crossing * crossing;
+    };
+    const double minHeight = 40.25 * .0254 + 5.91 * .0254 / 2 + .10;
+    if (height(neutral) < minHeight || height(wall) < minHeight) continue;
+    return {start.Distance(target.position).value(), Wrap(std::atan2(uy, ux) - (simulation ? 0 : kPi)),
+            hood, rps, true};
+  }
+  return invalid;
 }
 ShotSolution CalculateDriverAim(frc::DriverStation::Alliance a, frc::Pose2d robot, const FieldGeometry &field,
                                 bool simulation)
@@ -185,15 +278,15 @@ const char *ReadinessName(Readiness value)
 }
 // Check feedback and alignment before allowing feed.
 Readiness EvaluateReadiness(bool poseReady, ShotSolution s, double vx, double vy, double omega, double heading,
-                            double hood, double flywheel)
+                            double hood, double flywheel, double maxTranslation, double maxOmega)
 {
   if (!poseReady || !std::isfinite(heading))
     return Readiness::PoseNotReady;
   if (!s.calibrated || !std::isfinite(s.distanceMeters) || !std::isfinite(s.headingRadians) ||
       !std::isfinite(s.hoodRotations) || !std::isfinite(s.flywheelRps))
     return Readiness::OutOfRange;
-  if (!std::isfinite(vx) || !std::isfinite(vy) || !std::isfinite(omega) || std::hypot(vx, vy) > .25 ||
-      std::abs(omega) > 10 * kPi / 180)
+  if (!std::isfinite(vx) || !std::isfinite(vy) || !std::isfinite(omega) || std::hypot(vx, vy) > maxTranslation ||
+      std::abs(omega) > maxOmega)
     return Readiness::MovingTooFast;
   if (std::abs(Wrap(heading - s.headingRadians)) > 2 * kPi / 180)
     return Readiness::Aiming;

@@ -7,6 +7,7 @@
 #include "season/Mechanisms.h"
 #include "base/SystemCheck.h"
 #include "season/AutoDrive.h"
+#include "season/OffensiveAutoDrive.h"
 #include <base/season2026/MatchContext.h>
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/DriveSimulationAdapter.h"
@@ -52,6 +53,9 @@ public:
 private:
   base::season2026::MatchContext matchContext_;
   base::Drive drive_;
+#ifndef __FRC_ROBORIO__
+  std::shared_ptr<season::FuelMotorLoads> fuelMotorLoads_ = std::make_shared<season::FuelMotorLoads>();
+#endif
   base::PositionJoint rack_, hood_;
   base::Flywheel intake_, conveyor_, bottom_, top_, shooter_;
   frc::AprilTagFieldLayout layout_;
@@ -66,6 +70,7 @@ private:
   void AcceptVision(const base::VisionObservation &observation);
   base::SystemCheck checks_;
   std::unique_ptr<season::AutoDrive> autoDrive_;
+  std::shared_ptr<season::OffensiveFuelEstimate> fuelEstimate_ = std::make_shared<season::OffensiveFuelEstimate>();
 
 #ifndef __FRC_ROBORIO__
   std::unique_ptr<season::FuelSimulation> simulation_;
