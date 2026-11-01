@@ -1,8 +1,8 @@
 #pragma once
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/ParticleContacts.h"
-#include "season/Mechanisms.h"
-#include "season/LoadedMotorSimulation.h"
+#include "season/mechanisms/Mechanisms.h"
+#include "season/simulation/LoadedMotorSimulation.h"
 #include <random>
 #include <optional>
 #include <frc/geometry/struct/Pose3dStruct.h>

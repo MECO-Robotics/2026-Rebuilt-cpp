@@ -1,6 +1,6 @@
-#include "season/OffensiveAutoDrive.h"
-#include "season/ScoringPosition.h"
-#include "season/FuelConfig.h"
+#include "season/drive/OffensiveAutoDrive.h"
+#include "season/drive/ScoringPosition.h"
+#include "season/simulation/FuelConfig.h"
 #include <base/AutoDrive.h>
 #include <frc/DriverStation.h>
 #include <frc/RobotBase.h>

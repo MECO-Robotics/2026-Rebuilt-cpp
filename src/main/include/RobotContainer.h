@@ -3,11 +3,11 @@
 #include "base/Mechanism.h"
 #include "base/Vision.h"
 #include "base/QuestNav.h"
-#include "season/Simulation.h"
-#include "season/Mechanisms.h"
+#include "season/simulation/Simulation.h"
+#include "season/mechanisms/Mechanisms.h"
 #include "base/SystemCheck.h"
-#include "season/AutoDrive.h"
-#include "season/OffensiveAutoDrive.h"
+#include "season/drive/AutoDrive.h"
+#include "season/drive/OffensiveAutoDrive.h"
 #include <base/season2026/MatchContext.h>
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/DriveSimulationAdapter.h"

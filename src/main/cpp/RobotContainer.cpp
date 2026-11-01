@@ -1,12 +1,12 @@
-#include "season/OffensiveAutoDrive.h"
+#include "season/drive/OffensiveAutoDrive.h"
 #include <networktables/StringTopic.h>
 #ifndef __FRC_ROBORIO__
 #include <frc/simulation/DriverStationSim.h>
 #endif
 #include "base/SimulationLatency.h"
-#include "season/Simulation.h"
+#include "season/simulation/Simulation.h"
 #include "RobotContainer.h"
-#include "season/Mechanisms.h"
+#include "season/mechanisms/Mechanisms.h"
 #include "base/ChoreoAuto.h"
 #ifndef __FRC_ROBORIO__
 #include "base/sim/SimulationTuning.h"

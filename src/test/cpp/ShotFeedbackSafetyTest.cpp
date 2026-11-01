@@ -1,4 +1,4 @@
-#include "season/Shooting.h"
+#include "season/shooting/Shooting.h"
 #include <gtest/gtest.h>
 #include <limits>
 

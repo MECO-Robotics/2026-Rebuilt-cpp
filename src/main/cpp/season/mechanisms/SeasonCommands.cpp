@@ -1,5 +1,5 @@
-#include "season/Mechanisms.h"
-#include "season/FuelConfig.h"
+#include "season/mechanisms/Mechanisms.h"
+#include "season/simulation/FuelConfig.h"
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>

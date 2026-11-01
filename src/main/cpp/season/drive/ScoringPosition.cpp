@@ -1,4 +1,4 @@
-#include "season/ScoringPosition.h"
+#include "season/drive/ScoringPosition.h"
 #include <frc/Filesystem.h>
 #include <wpi/MemoryBuffer.h>
 #include <wpi/json.h>

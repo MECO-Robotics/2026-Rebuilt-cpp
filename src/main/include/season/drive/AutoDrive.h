@@ -5,7 +5,7 @@
 #include <base/season2026/MatchContext.h>
 #include <base/FootprintConfiguration.h>
 #include <base/ObjectPerception.h>
-#include "season/Simulation.h"
+#include "season/simulation/Simulation.h"
 #ifndef __FRC_ROBORIO__
 #include <meco/sim/SimulatedPieceSensor.h>
 #endif

@@ -1,4 +1,4 @@
-#include "season/Mechanisms.h"
+#include "season/mechanisms/Mechanisms.h"
 #include <cmath>
 #include <memory>
 #include <frc/RobotController.h>

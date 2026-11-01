@@ -1,5 +1,5 @@
-#include "season/AutoDrive.h"
-#include "season/RobotGeometry.h"
+#include "season/drive/AutoDrive.h"
+#include "season/mechanisms/RobotGeometry.h"
 #include <frc/RobotBase.h>
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>
@@ -14,7 +14,7 @@
 #include <string>
 #include <utility>
 #ifndef __FRC_ROBORIO__
-#include "season/Simulation.h"
+#include "season/simulation/Simulation.h"
 #endif
 
 namespace season

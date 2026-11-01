@@ -1,6 +1,6 @@
 #pragma once
-#include "season/AutoDrive.h"
-#include "season/Mechanisms.h"
+#include "season/drive/AutoDrive.h"
+#include "season/mechanisms/Mechanisms.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>

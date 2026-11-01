@@ -1,5 +1,5 @@
 #ifndef __FRC_ROBORIO__
-#include "season/Simulation.h"
+#include "season/simulation/Simulation.h"
 #include "base/sim/FootprintClearance.h"
 #include "base/sim/ColliderTerrain.h"
 #include <algorithm>

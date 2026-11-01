@@ -1,7 +1,7 @@
 #ifndef __FRC_ROBORIO__
-#include "season/Simulation.h"
-#include "season/FuelConfig.h"
-#include "season/RobotGeometry.h"
+#include "season/simulation/Simulation.h"
+#include "season/simulation/FuelConfig.h"
+#include "season/mechanisms/RobotGeometry.h"
 #include "meco/sim/ParticleFieldContacts.h"
 #include <networktables/NetworkTableInstance.h>
 

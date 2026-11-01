@@ -31,8 +31,8 @@ The scene is an approximation, not official CAD or proof of field clearance.
 ## Read the code
 
 - [Scene setup and pose resets](../src/main/cpp/RobotContainer.cpp)
-- [Field helpers](../src/main/cpp/season/SimulationField.cpp)
-- [Fuel simulation](../src/main/cpp/season/FuelSimulation.cpp) and [model interface](../src/main/include/season/Simulation.h)
+- [Field helpers](../src/main/cpp/season/simulation/SimulationField.cpp)
+- [Fuel simulation](../src/main/cpp/season/simulation/FuelSimulation.cpp) and [model interface](../src/main/include/season/simulation/Simulation.h)
 
 ## Troubleshooting
 

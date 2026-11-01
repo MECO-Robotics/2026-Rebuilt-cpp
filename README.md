@@ -48,11 +48,13 @@ A does not feed fuel; use **right bumper** to feed. The straight ferry path can 
 | --- | --- |
 | Understand buttons and autonomous choices | [RobotContainer.cpp](src/main/cpp/RobotContainer.cpp) |
 | Understand robot modes and the main loop | [Robot.cpp](src/main/cpp/Robot.cpp) |
-| Find motor settings and command interfaces | [Mechanisms.h](src/main/include/season/Mechanisms.h) and [season commands](src/main/cpp/season/SeasonCommands.cpp) |
-| Understand shooting and targeting | [Shooting.h](src/main/include/season/Shooting.h) and [Shooting.cpp](src/main/cpp/season/Shooting.cpp) |
+| Find motor settings and command interfaces | [Mechanisms.h](src/main/include/season/mechanisms/Mechanisms.h) and [season commands](src/main/cpp/season/mechanisms/SeasonCommands.cpp) |
+| Understand shooting and targeting | [Shooting.h](src/main/include/season/shooting/Shooting.h) and [Shooting.cpp](src/main/cpp/season/shooting/Shooting.cpp) |
 | Try AutoDrive | [AutoDrive guide](docs/autodrive-simulation.md) |
 | Understand the simulated field and fuel | [simulation field](docs/simulation-field.md) |
 | Find a guide | [documentation index](docs/README.md) |
+
+Season code is grouped by purpose under `src/main/cpp/season` and `src/main/include/season`: `drive` contains AutoDrive and scoring-position selection, `shooting` contains shot calculations, `mechanisms` contains robot mechanism configuration and commands, `simulation` contains the desktop field and fuel models, and `diagnostics` contains system-check setup. Source and header folders use the same names where both are needed.
 
 ## How the pieces connect
 

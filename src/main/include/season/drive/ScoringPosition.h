@@ -1,5 +1,5 @@
 #pragma once
-#include "season/Shooting.h"
+#include "season/shooting/Shooting.h"
 #include <optional>
 #include <vector>
 

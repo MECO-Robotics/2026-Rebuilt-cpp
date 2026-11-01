@@ -1,5 +1,5 @@
 #ifndef __FRC_ROBORIO__
-#include "season/LoadedMotorSimulation.h"
+#include "season/simulation/LoadedMotorSimulation.h"
 #include "base/SimulationRuntime.h"
 #include <algorithm>
 #include <cmath>
