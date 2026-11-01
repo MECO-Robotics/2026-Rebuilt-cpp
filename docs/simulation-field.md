@@ -33,7 +33,6 @@ The scene is an approximation, not official CAD or proof of field clearance.
 - [Scene setup and pose resets](../src/main/cpp/RobotContainer.cpp)
 - [Field helpers](../src/main/cpp/season/SimulationField.cpp)
 - [Fuel simulation](../src/main/cpp/season/FuelSimulation.cpp) and [model interface](../src/main/include/season/Simulation.h)
-- [Auto-start pose smoke check](../scripts/auto_start_pose_smoke.py)
 
 ## Troubleshooting
 

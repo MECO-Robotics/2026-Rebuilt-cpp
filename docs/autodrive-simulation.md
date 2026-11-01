@@ -85,4 +85,4 @@ If its current location cannot produce a valid ferry solution, offense first att
 - [Bindings and chooser](../src/main/cpp/RobotContainer.cpp)
 - [AutoDrive target and perception](../src/main/cpp/season/AutoDrive.cpp) and [interface](../src/main/include/season/AutoDrive.h)
 - [Offensive command](../src/main/cpp/season/OffensiveAutoDrive.cpp) and [decision helpers](../src/main/include/season/OffensiveAutoDrive.h)
-- [Navgrid](../src/main/deploy/pathplanner/navgrid.json) and [match test](../scripts/autodrive_offensive_match.py)
+- [Navgrid](../src/main/deploy/pathplanner/navgrid.json)

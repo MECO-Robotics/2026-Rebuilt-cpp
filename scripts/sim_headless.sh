@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launch only the desktop simulator, with local HAL websocket control for sim_smoke.py.
+# Launch the desktop simulator with local HAL websocket control.
 set -euo pipefail
 cd -- "$(dirname -- "$0")/.."
 wpilib_root="${WPILIB_ROOT:-$HOME/wpilib/2026}"

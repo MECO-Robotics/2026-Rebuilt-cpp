@@ -39,4 +39,3 @@ Settings are sampled at start. The dashboard button copies SimGUI's selected sta
 
 - [Practice controller lifecycle](../src/main/cpp/Robot.cpp)
 - [Start button and autonomous chooser](../src/main/cpp/RobotContainer.cpp)
-- [Practice smoke test](../scripts/practice_smoke.py)
