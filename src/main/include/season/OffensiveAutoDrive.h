@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <functional>
 #include <frc/Timer.h>
 #include <numbers>
 
@@ -127,8 +128,23 @@ public:
   std::optional<frc::Translation2d> Target() const { return target_; }
   std::optional<frc::Pose2d> Update(const std::vector<base::ObjectCluster> &points, frc::Pose2d pose,
                                     frc::ChassisSpeeds fieldSpeeds, double now, const FieldGeometry &field,
-                                    bool prioritizeNearby = false)
+                                    bool prioritizeNearby = false,
+                                    const std::function<bool(frc::Translation2d)> &passable = {})
   {
+    // Keep the through-point on the pickup corridor, but shorten it when the
+    // static planner grid blocks the original endpoint. The intake projects
+    // forward, so a point slightly before the observation can still collect.
+    const auto endpoint = [&](frc::Translation2d target, frc::Rotation2d direction)
+        -> std::optional<frc::Translation2d> {
+      for (int step = 8; step >= -3; --step)
+      {
+        const auto through = target + frc::Translation2d{units::meter_t{step * .1}, direction};
+        const frc::Translation2d clipped{units::meter_t{std::clamp(through.X().value(), .5, field.length - .5)},
+                                         units::meter_t{std::clamp(through.Y().value(), .5, field.width - .5)}};
+        if (!passable || passable(clipped)) return clipped;
+      }
+      return std::nullopt;
+    };
     if (target_)
     {
       const auto relative = (pose.Translation() - *target_).RotateBy(-direction_);
@@ -144,13 +160,11 @@ public:
       // Once reached, select another pickup rather than waiting for the
       // ordinary lack-of-progress timeout at the wall.
       const auto through = *target_ + frc::Translation2d{units::meter_t{.8}, direction_};
-      const double endX = std::clamp(through.X().value(), .5, field.length - .5);
-      const double endY = std::clamp(through.Y().value(), .5, field.width - .5);
-      const bool clipped = std::abs(endX - through.X().value()) > 1e-6 ||
-                           std::abs(endY - through.Y().value()) > 1e-6;
-      const bool reachedEdge = clipped && std::hypot(pose.X().value() - endX, pose.Y().value() - endY) < .12;
+      const auto end = endpoint(*target_, direction_);
+      const bool clipped = end && end->Distance(through).value() > 1e-6;
+      const bool reachedEdge = clipped && pose.Translation().Distance(*end).value() < .12;
       const bool stuck = now - progress_ > 3.;
-      if (passed || stuck || reachedEdge)
+      if (!end || passed || stuck || reachedEdge)
       {
         excluded_ = target_;
         excludeUntil_ = now + (stuck ? 2. : .8);
@@ -169,7 +183,8 @@ public:
       std::vector<const base::ObjectCluster *> candidates;
       candidates.reserve(points.size());
       for (const auto &point : points)
-        if (!excluded_ || now >= excludeUntil_ || point.position.Distance(*excluded_).value() >= .3)
+        if ((!excluded_ || now >= excludeUntil_ || point.position.Distance(*excluded_).value() >= .3) &&
+            endpoint(point.position, (point.position - pose.Translation()).Angle()))
           candidates.push_back(&point);
       const auto count = std::min<std::size_t>(4, candidates.size());
       std::partial_sort(candidates.begin(), candidates.begin() + count, candidates.end(),
@@ -209,10 +224,8 @@ public:
       progress_ = now;
       bestDistance_ = pose.Translation().Distance(*target_).value();
     }
-    const auto through = *target_ + frc::Translation2d{units::meter_t{.8}, direction_};
-    return frc::Pose2d{frc::Translation2d{units::meter_t{std::clamp(through.X().value(), .5, field.length - .5)},
-                                          units::meter_t{std::clamp(through.Y().value(), .5, field.width - .5)}},
-                       direction_};
+    const auto end = endpoint(*target_, direction_);
+    return end ? std::optional{frc::Pose2d{*end, direction_}} : std::nullopt;
   }
 private:
   std::optional<frc::Translation2d> target_, excluded_;

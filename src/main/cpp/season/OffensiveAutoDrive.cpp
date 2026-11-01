@@ -164,6 +164,8 @@ struct FeedTracker
 {
   double start = 0, last = 0, elapsed = 0;
   bool active = false, requested = false;
+  bool requestActive = false;
+  double requestedBeforeTransport = 0, requestUpdatedAt = 0;
   double quietSince = 0;
   std::array<double, 3> rollerMean{};
   bool initialized = false, empty = false, latencyRecorded = false;
@@ -174,9 +176,20 @@ struct FeedTracker
     elapsed = 0;
     active = false;
     requested = false;
+    requestActive = false;
+    requestedBeforeTransport = 0;
+    requestUpdatedAt = last;
     quietSince = last;
     initialized = empty = latencyRecorded = false;
     firstRequest.reset();
+  }
+  void ObserveRequest(bool ready)
+  {
+    const double now = frc::Timer::GetFPGATimestamp().value();
+    if (requestActive && !active)
+      requestedBeforeTransport += std::max(0., now - requestUpdatedAt);
+    requestActive = ready;
+    requestUpdatedAt = now;
   }
   void Update(bool ready, Mechanisms m)
   {
@@ -416,11 +429,14 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
   auto collect = [&perception, &drive, m, field, estimate, decision, matchLost, collectionStarted, collectionStartCount, refillSeconds, prepareForInactive, prepareForActive, canFerry, feedDuration, configuredCapacity, transportLatency, hubSetupLatency, avoidLateExit]()
   {
     auto selector = std::make_shared<OffensivePickupSelector>();
+    // Load once per collection command, rather than reading the navgrid in
+    // every target-supplier call on the scheduler thread.
+    const auto collectionGrid = std::make_shared<std::optional<ScoringGrid>>(LoadScoringGrid());
     auto lastActive = std::make_shared<std::optional<bool>>();
     auto homeSearch = std::make_shared<bool>(false);
     struct Crossing { int stage = 0, inbound = 0; double laneY = 0; };
     auto crossing = std::make_shared<Crossing>();
-    auto goal = [&perception, &drive, field, selector, lastActive, homeSearch, estimate, crossing, prepareForInactive, prepareForActive, feedDuration, configuredCapacity, transportLatency, hubSetupLatency, avoidLateExit]() -> std::optional<frc::Pose2d>
+    auto goal = [&perception, &drive, field, selector, collectionGrid, lastActive, homeSearch, estimate, crossing, prepareForInactive, prepareForActive, feedDuration, configuredCapacity, transportLatency, hubSetupLatency, avoidLateExit]() -> std::optional<frc::Pose2d>
     {
       const auto alliance = frc::DriverStation::GetAlliance();
       auto active = perception.MatchState().ownActive;
@@ -461,7 +477,16 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
         std::erase_if(points,
                       [alliance, field](const auto &p) { return InAllianceZone(*alliance, p.position, field); });
       const auto speeds = frc::ChassisSpeeds::FromRobotRelativeSpeeds(drive.Speeds(), pose.Rotation());
-      auto selected = selector->Update(points, pose, speeds, frc::Timer::GetFPGATimestamp().value(), field, *active);
+      const auto passable = [collectionGrid](frc::Translation2d p) {
+        if (!std::isfinite(p.X().value()) || !std::isfinite(p.Y().value())) return false;
+        if (!*collectionGrid) return true; // the pathfinder retains its own safety checks
+        const auto &grid = **collectionGrid;
+        const int x = static_cast<int>(std::floor(p.X().value() / grid.cellSize));
+        const int y = static_cast<int>(std::floor(p.Y().value() / grid.cellSize));
+        return y >= 0 && y < static_cast<int>(grid.blocked.size()) && x >= 0 &&
+               x < static_cast<int>(grid.blocked[y].size()) && !grid.blocked[y][x];
+      };
+      auto selected = selector->Update(points, pose, speeds, frc::Timer::GetFPGATimestamp().value(), field, *active, passable);
       if (!selected)
       {
         // During an inbound shift transition, keep searching on the home side
@@ -869,13 +894,14 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
     options.feedFeedback = [fed, m, ferryTransportLatency](bool active) {
       if (active && fed->firstRequest && !fed->latencyRecorded)
       {
-        *ferryTransportLatency = std::max(0., frc::Timer::GetFPGATimestamp().value() - *fed->firstRequest);
+        *ferryTransportLatency = fed->requestedBeforeTransport;
         fed->latencyRecorded = true;
         frc::SmartDashboard::PutNumber("AutoDrive/ObservedFerryTransportLatencySeconds", *ferryTransportLatency);
       }
       fed->Update(active, m);
     };
     options.readyFeedback = [fed](bool ready) {
+      fed->ObserveRequest(ready);
       if (ready && !fed->firstRequest) fed->firstRequest = frc::Timer::GetFPGATimestamp().value();
       fed->requested |= ready;
     };
@@ -970,8 +996,15 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
               Phase("ferry");
             })
         .FinallyDo(
-            [estimate, fed, commitment, requestedFeed, configuredCapacity, canFerry](bool interrupted)
+            [estimate, fed, commitment, requestedFeed, configuredCapacity, canFerry, ferryTransportLatency](bool interrupted)
             {
+              // A canceled reversal is a lower bound on the required motor
+              // turnaround time; do not fall back to an older, faster hub shot.
+              if (!fed->latencyRecorded && fed->requestedBeforeTransport > *ferryTransportLatency)
+              {
+                *ferryTransportLatency = fed->requestedBeforeTransport;
+                frc::SmartDashboard::PutNumber("AutoDrive/ObservedFerryTransportLatencySeconds", *ferryTransportLatency);
+              }
               const bool complete = !interrupted && *requestedFeed > 0 && (fed->elapsed >= *requestedFeed || fed->empty);
               if (complete)
                 estimate->CompleteFeed(true);

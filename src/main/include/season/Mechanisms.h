@@ -15,12 +15,15 @@ struct FlywheelConfig
   base::MotorConfig motor;
   double inertiaKgMetersSquared;
 };
-inline const FlywheelConfig kTopIndexer{{{32}, {false}, 1, 30, ""}, .025};
-inline const FlywheelConfig kBottomIndexer{{{31}, {false}, 1, 30, "MECO 2"}, .025};
-inline const FlywheelConfig kConveyor{{{23}, {true}, 1, 30, ""}, .025};
+// Estimated output inertia for lightweight transport rollers. This is a
+// simulation assumption, not a measured CAD value; it gives rapid reversals.
+inline constexpr double kTransportRollerInertia = .0002;
+inline const FlywheelConfig kTopIndexer{{{32}, {false}, 1, 30, ""}, kTransportRollerInertia};
+inline const FlywheelConfig kBottomIndexer{{{31}, {false}, 1, 30, "MECO 2"}, kTransportRollerInertia};
+inline const FlywheelConfig kConveyor{{{23}, {true}, 1, 30, ""}, kTransportRollerInertia};
 inline const FlywheelConfig kShooter{{{34, 35}, {false, true}, 22.0 / 14, 40, "MECO 2"},
                                      24 * .45359237 * .0254 * .0254};
-inline const FlywheelConfig kIntake{{{22, 53}, {true, true}, 1.5, 40, ""}, .025};
+inline const FlywheelConfig kIntake{{{22, 53}, {true, true}, 1.5, 40, ""}, kTransportRollerInertia};
 inline const base::Gains kIndexerGains{.maxVelocity = 1000, .maxAcceleration = 1000};
 inline const base::Gains kConveyorGains{.v = .065, .maxVelocity = 1000, .maxAcceleration = 1000};
 inline const base::Gains kShooterGains{
