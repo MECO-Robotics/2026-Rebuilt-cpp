@@ -15,7 +15,9 @@
 #include <networktables/DoubleArrayTopic.h>
 #include <networktables/NetworkTableInstance.h>
 #include <array>
+#include <algorithm>
 #include <charconv>
+#include <cmath>
 #include <stdexcept>
 #endif
 #include <frc2/command/CommandScheduler.h>
@@ -41,7 +43,7 @@ Robot::Robot()
 #endif
   frc::DataLogManager::Start();
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
-  frc::RobotController::SetBrownoutVoltage(units::volt_t{6});
+  frc::RobotController::SetBrownoutVoltage(units::volt_t{6.3});
 }
 // Refresh match context before running scheduled commands.
 void Robot::RobotPeriodic()
@@ -140,12 +142,47 @@ void Robot::SimulationPeriodic()
   container_.SimulationPeriodic();
 #ifndef __FRC_ROBORIO__
   auto &runtime = base::simulation::GetSimulationRuntime();
-  const double batteryVoltage = meco::sim::UpdateBatterySupply(runtime);
+  // Coulomb-count an estimated 18 Ah FRC battery for the life of this sim
+  // process. OCV falls with state of charge; the shared supply model then
+  // adds the configured internal-resistance sag under load.
+  constexpr double capacityAh = 18.0;
+  struct BatteryState
+  {
+    double remainingAh = capacityAh;
+    double previousRuntimeTime = -1.0;
+    int brownoutCount = 0;
+    bool previouslyBrownedOut = false;
+  };
+  static BatteryState battery;
+  const double now = runtime.Time();
+  const double dt = battery.previousRuntimeTime >= 0 && now >= battery.previousRuntimeTime
+                        ? now - battery.previousRuntimeTime
+                        : 0.0;
+  battery.previousRuntimeTime = now;
+  const double current = runtime.SupplyCurrent();
+  battery.remainingAh = std::max(0.0, battery.remainingAh - current * dt / 3600.0);
+  const double stateOfCharge = std::clamp(battery.remainingAh / capacityAh, 0.0, 1.0);
+  const double openCircuitVoltage = 10.5 + 2.1 * std::sqrt(stateOfCharge);
+  const double batteryVoltage = meco::sim::UpdateBatterySupply(
+      runtime, meco::sim::BatterySupplyConfig{openCircuitVoltage, 0.020, 0.0});
+  const bool brownedOut = frc::RobotController::IsBrownedOut();
+  if (brownedOut && !battery.previouslyBrownedOut)
+    ++battery.brownoutCount;
+  battery.previouslyBrownedOut = brownedOut;
   frc::SmartDashboard::PutNumber("SimulationPower/SupplyCurrentAmps", runtime.SupplyCurrent());
   frc::SmartDashboard::PutNumber("SimulationPower/BusVoltage", batteryVoltage);
+  frc::SmartDashboard::PutNumber("SimulationPower/BatteryRemainingAh", battery.remainingAh);
+  frc::SmartDashboard::PutNumber("SimulationPower/BatteryStateOfCharge", stateOfCharge);
+  frc::SmartDashboard::PutBoolean("SimulationPower/BrownedOut", brownedOut);
+  frc::SmartDashboard::PutNumber("SimulationPower/BrownoutCount", battery.brownoutCount);
   static auto powerPublisher =
       nt::NetworkTableInstance::GetDefault().GetDoubleArrayTopic("/Simulation/PowerSamples").Publish();
   powerPublisher.Set(std::array<double, 3>{static_cast<double>(nt::Now()), runtime.SupplyCurrent(), batteryVoltage});
+  static auto batteryPublisher =
+      nt::NetworkTableInstance::GetDefault().GetDoubleArrayTopic("/Simulation/BatteryState").Publish();
+  batteryPublisher.Set(std::array<double, 4>{battery.remainingAh, stateOfCharge,
+                                              brownedOut ? 1.0 : 0.0,
+                                              static_cast<double>(battery.brownoutCount)});
   meco::sim::PublishDriverStationPacket();
 #endif
 }

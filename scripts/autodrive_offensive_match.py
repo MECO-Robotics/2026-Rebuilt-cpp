@@ -98,6 +98,8 @@ async def run(args):
     estimate = nt.getStructTopic('/AdvantageScope/Drive/Pose', Pose2d).subscribe(Pose2d(), opts)
     requested = nt.getStructTopic('/AdvantageScope/Drive/RequestedChassisSpeeds', ChassisSpeeds).subscribe(ChassisSpeeds(), opts)
     modules = nt.getStructArrayTopic('/AdvantageScope/Drive/ModuleTargets', SwerveModuleState).subscribe([], opts)
+    battery_state = nt.getDoubleArrayTopic('/Simulation/BatteryState').subscribe([], opts)
+    power_samples = nt.getDoubleArrayTopic('/Simulation/PowerSamples').subscribe([], opts)
     stored = number('/SmartDashboard/FieldSimulation/StoredFuelCount')
     hopper_fill_ratio = number('/SmartDashboard/FieldSimulation/HopperFillRatio')
     motor_currents = [number('/SmartDashboard/FieldSimulation/' + name + 'CurrentAmps')
@@ -204,6 +206,8 @@ async def run(args):
             teleop_collected = 0
             previous_stored = None
             score_at_match_end = None
+            battery_trace = []
+            power_trace = []
             while time.monotonic() - start < 170:
                 now = time.monotonic()
                 current = state.get()
@@ -231,6 +235,11 @@ async def run(args):
                 saw_feed |= feeding.get()
                 teleop_feed |= current == 'teleop' and feeding.get()
                 score_by_phase[current] = scored.get()
+                if started:
+                    battery_trace.extend(list(sample.value) for sample in battery_state.readQueue()
+                                         if len(sample.value) == 4)
+                    power_trace.extend(list(sample.value) for sample in power_samples.readQueue()
+                                       if len(sample.value) == 3)
                 if now - last_sample >= .25:
                     p = truth.get()
                     e = estimate.get()
@@ -288,7 +297,15 @@ async def run(args):
                            'final_scored': scored.get(), 'score_at_match_end': score_at_match_end,
                            'teleop_collected': teleop_collected,
                            'teleop_score_delta': (score_at_match_end - teleop_start_score if score_at_match_end is not None and teleop_start_score is not None else None),
-                           'score_by_phase': score_by_phase})
+                           'score_by_phase': score_by_phase,
+                           'battery': {
+                               'capacity_ah': 18.0,
+                               'consumed_ah': (18.0 - min((s[0] for s in battery_trace), default=18.0)),
+                               'remaining_ah': min((s[0] for s in battery_trace), default=None),
+                               'minimum_state_of_charge': min((s[1] for s in battery_trace), default=None),
+                               'minimum_bus_voltage': min((s[2] for s in power_trace), default=None),
+                               'brownout_count': max((int(s[3]) for s in battery_trace), default=0),
+                               'brownout_samples': sum(s[2] > .5 for s in battery_trace)}})
             ferry_launched = any(
                 current['state'] == 'teleop' and current['offense_phase'] == 'ferry' and
                 current['hub_known'] and not current['hub_active'] and current['launched'] > previous['launched']
@@ -296,6 +313,7 @@ async def run(args):
             result['checks'] = {'match_complete': state.get() == 'complete' and not running.get(),
                 'requested_auto_selected': result['active_auto'] == args.auto_choice,
                 'score_target_met_at_match_end': score_at_match_end is not None and score_at_match_end >= 200,
+                'battery_consumption_recorded': result['battery']['consumed_ah'] > 0,
                 'ferry_launched_when_transport_active': ferry_launched or not any(
                     s['state'] == 'teleop' and s['offense_phase'] == 'ferry' and s['sim_feeding']
                     for s in result['trace']),

@@ -6,6 +6,7 @@
 #include <frc/RobotBase.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
+#include <frc/system/plant/DCMotor.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
 #include <pathplanner/lib/commands/FollowPathCommand.h>
@@ -23,6 +24,26 @@ namespace
 {
 void Phase(const char *phase) { frc::SmartDashboard::PutString("AutoDrive/OffensePhase", phase); }
 
+// Bound offensive pathfinding by the configured drivetrain and its low-speed
+// motor torque at the configured current limit. This is a theoretical ceiling;
+// the drivetrain plant, battery sag, and feedback controller may achieve less.
+base::AutoDriveConfig OffensiveMotionLimits(const base::DriveConfig &drive)
+{
+  auto limits = base::AutoDriveConfig{};
+  const auto motor = frc::DCMotor::KrakenX60FOC(1);
+  const double current = std::min(drive.driveCurrent, drive.slipCurrent);
+  if (drive.massKg > 0 && drive.wheelRadius > 0 && drive.driveRatio > 0 && current > 0)
+  {
+    const double wheelForce = 4 * motor.Kt.value() * current * drive.driveRatio / drive.wheelRadius;
+    const double torqueLimitedAcceleration = wheelForce / drive.massKg;
+    const double tractionLimitedAcceleration = drive.cof * 9.80665;
+    const double electricalFreeSpeed = motor.freeSpeed.value() * drive.wheelRadius / drive.driveRatio;
+    limits.maxSpeed = std::min(drive.maxSpeed, electricalFreeSpeed);
+    limits.maxAcceleration = std::min(torqueLimitedAcceleration, tractionLimitedAcceleration);
+  }
+  return limits;
+}
+
 // Build a short, committed spline from field-frame observations. The route
 // contains at most the remaining estimated load, then points toward the next
 // action. PathPlanner's generated curve is checked against the same static
@@ -30,8 +51,9 @@ void Phase(const char *phase) { frc::SmartDashboard::PutString("AutoDrive/Offens
 std::shared_ptr<pathplanner::PathPlannerPath> CollectionSpline(
     frc::Pose2d start, const std::vector<base::ObjectCluster> &observations,
     frc::DriverStation::Alliance alliance, const FieldGeometry &field, const ScoringGrid &grid,
-    bool active, bool ferry, int remaining, double maxSpeed)
+    bool active, bool ferry, int remaining, const base::AutoDriveConfig &limits)
 {
+  const double maxSpeed = limits.maxSpeed;
   if (remaining <= 0 || !std::isfinite(maxSpeed) || maxSpeed <= 0 || grid.cellSize <= 0 || grid.blocked.empty())
     return {};
   auto free = [&grid](frc::Translation2d p) {
@@ -90,7 +112,7 @@ std::shared_ptr<pathplanner::PathPlannerPath> CollectionSpline(
         points.emplace_back(units::meter_t{hub - sign * 1.8}, units::meter_t{lane});
     }
   }
-  const auto constraints = base::AutoDriveConfig{};
+  const auto &constraints = limits;
   auto create = [&](size_t count) -> std::shared_ptr<pathplanner::PathPlannerPath> {
     try {
     std::vector<frc::Pose2d> poses;
@@ -208,6 +230,9 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
   auto ferryTransportLatency = std::make_shared<double>(0.);
   auto hubSetupLatency = std::make_shared<double>(0.);
   auto returnLatency = std::make_shared<double>(0.);
+  auto stageLatency = std::make_shared<double>(0.);
+  auto returnTravelSpeed = std::make_shared<double>(0.);
+  auto stageTravelSpeed = std::make_shared<double>(0.);
   auto collectionStarted = std::make_shared<double>(0.);
   auto collectionStartCount = std::make_shared<int>(0);
   auto refillSeconds = std::make_shared<double>(0.);
@@ -252,14 +277,15 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
     const double toShot = canShootHere ? 0. : pose.Translation().Distance(neutral).value() + neutral.Distance(home).value();
     const double afterShot = canShootHere ? pose.Translation().Distance(home).value() + home.Distance(neutral).value()
                                          : home.Distance(neutral).value();
-    const double speed = std::min(drive.Config().maxSpeed, base::AutoDriveConfig{}.maxSpeed);
+    const double speed = OffensiveMotionLimits(drive.Config()).maxSpeed;
     const double travel = speed > 0 ? (toShot + afterShot) / speed : 0.;
     frc::SmartDashboard::PutNumber("AutoDrive/NextActionTravelSeconds", travel);
     *preparing = speed > 0 && *match.ownNextChange < duration + travel;
     return *preparing;
   };
   auto preparingActive = std::make_shared<bool>(false);
-  auto prepareForActive = [&perception, &drive, field, feedDuration, hubSetupLatency, preparingActive] {
+  auto prepareForActive = [&perception, &drive, field, hubSetupLatency, returnTravelSpeed, stageTravelSpeed,
+                           preparingActive] {
     const auto &match = perception.MatchState();
     if (!match.ownActive.has_value()) return false;
     if (*match.ownActive || frc::DriverStation::IsAutonomousEnabled())
@@ -269,19 +295,18 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
     }
     if (*preparingActive) return true;
     const auto alliance = frc::DriverStation::GetAlliance();
-    const double duration = feedDuration();
-    if (!alliance || !match.ownNextChange || !std::isfinite(*match.ownNextChange) || *match.ownNextChange < 0 ||
-        !std::isfinite(duration) || duration <= 0) return false;
+    if (!alliance || !match.ownNextChange || !std::isfinite(*match.ownNextChange) || *match.ownNextChange < 0)
+      return false;
     const auto pose = drive.Pose();
-    const double direction = *alliance == frc::DriverStation::Alliance::kBlue ? 1. : -1.;
-    const double hubX = HubPosition(*alliance).X().value();
-    const double laneY = pose.Y().value() < field.width / 2 ? .75 : field.width - .75;
-    const frc::Translation2d home{units::meter_t{hubX - direction * 1.8}, units::meter_t{laneY}};
-    const frc::Translation2d neutral{units::meter_t{hubX + direction * 1.8}, units::meter_t{laneY}};
-    const double route = InAllianceZone(*alliance, pose.Translation(), field) ? 0. :
-                         pose.Translation().Distance(neutral).value() + neutral.Distance(home).value();
-    const double speed = std::min(drive.Config().maxSpeed, base::AutoDriveConfig{}.maxSpeed);
-    *preparingActive = speed > 0 && *match.ownNextChange < duration + route / speed + *hubSetupLatency;
+    const auto grid = LoadScoringGrid();
+    const auto goal = grid ? CheapestHubScoringNode(*grid, pose, *alliance, field, frc::RobotBase::IsSimulation())
+                           : std::nullopt;
+    if (!goal) return false;
+    const double distance = pose.Translation().Distance(goal->Translation()).value();
+    const double observedSpeed = std::max(*stageTravelSpeed, *returnTravelSpeed);
+    const double estimatedSpeed = std::clamp(observedSpeed > 0 ? observedSpeed : .75, .6, 1.0);
+    const double travel = distance / estimatedSpeed;
+    *preparingActive = std::isfinite(travel) && *match.ownNextChange < travel + *hubSetupLatency + 1.5;
     return *preparingActive;
   };
 
@@ -294,7 +319,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
     const auto alliance = frc::DriverStation::GetAlliance();
     const double duration = feedDuration();
     const double reversal = *ferryTransportLatency > 0 ? *ferryTransportLatency : *transportLatency;
-    const double speed = std::min(drive.Config().maxSpeed, base::AutoDriveConfig{}.maxSpeed);
+    const double speed = OffensiveMotionLimits(drive.Config()).maxSpeed;
     if (!alliance || !match.ownActive || *match.ownActive || !match.ownNextChange ||
         !std::isfinite(*match.ownNextChange) || *match.ownNextChange <= 0 ||
         duration <= 0 || *refillSeconds <= 0 || reversal <= 0 || speed <= 0)
@@ -339,7 +364,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
     bool worthwhileWindowReturn = true;
     bool worthwhileWindowFerry = true;
     const double capacity = configuredCapacity(), duration = feedDuration();
-    const double speed = std::min(drive.Config().maxSpeed, base::AutoDriveConfig{}.maxSpeed);
+    const double speed = OffensiveMotionLimits(drive.Config()).maxSpeed;
     if (alliance && match.ownActive.has_value() && !*match.ownActive &&
         std::isfinite(capacity) && capacity > 0 && estimate->Count() >= capacity && !canFerry())
       return OffensiveDecision::Stage;
@@ -453,7 +478,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
           !InAllianceZone(*alliance, selected->Translation(), field) && match.ownNextChange &&
           std::isfinite(*match.ownNextChange) && *match.ownNextChange > 0)
       {
-        const double speed = std::min(drive.Config().maxSpeed, base::AutoDriveConfig{}.maxSpeed);
+        const double speed = OffensiveMotionLimits(drive.Config()).maxSpeed;
         const double duration = feedDuration();
         const double capacity = configuredCapacity();
         const double y = pose.Y().value() < field.width / 2 ? .75 : field.width - .75;
@@ -539,14 +564,15 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
               !prepareForInactive() && !prepareForActive() && RobotClearOfBumps(drive.Pose()))
           {
             const int remaining = std::max(0, static_cast<int>(std::ceil(capacity - estimate->Count())));
+            const auto limits = OffensiveMotionLimits(drive.Config());
             auto path = CollectionSpline(drive.Pose(), perception.VisibleFuel(), *alliance, field, *grid,
-                                         *active, !*active && canFerry(), remaining, drive.Config().maxSpeed);
+                                         *active, !*active && canFerry(), remaining, limits);
             if (path)
             {
               frc::SmartDashboard::PutString("AutoDrive/CollectionPlan", "spline");
               frc::SmartDashboard::PutNumber("AutoDrive/CollectionChainWaypoints", path->getWaypoints().size() - 1);
               const auto config = drive.Config();
-              const double maxTranslation = std::min(config.maxSpeed, base::AutoDriveConfig{}.maxSpeed);
+              const double maxTranslation = OffensiveMotionLimits(config).maxSpeed;
               auto controller = std::make_shared<pathplanner::PPHolonomicDriveController>(
                   pathplanner::PIDConstants{config.autoTranslationKP, 0, 0},
                   pathplanner::PIDConstants{config.autoRotationKP, 0, 0});
@@ -570,7 +596,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
           }
           frc::SmartDashboard::PutString("AutoDrive/CollectionPlan", "pathfinder");
           frc::SmartDashboard::PutNumber("AutoDrive/CollectionChainWaypoints", 0);
-          return base::AutoDriveTrackTarget(drive, goal, {}, tracking);
+          return base::AutoDriveTrackTarget(drive, goal, OffensiveMotionLimits(drive.Config()), tracking);
         }, {&drive}).Repeatedly();
     auto observePickups = frc2::cmd::Run([&perception, &drive, estimate, collectionStarted, collectionStartCount, refillSeconds, configuredCapacity] {
       estimate->Observe(perception.VisibleFuel(), drive.Pose());
@@ -610,9 +636,11 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
             });
   };
   auto scoringGoal = std::make_shared<std::optional<frc::Pose2d>>();
-  auto returnHome = [&perception, &drive, field, scoringGoal, prepareForInactive, returnLatency](bool staging = false)
+  auto returnHome = [&perception, &drive, field, scoringGoal, prepareForInactive, returnLatency, stageLatency,
+                     returnTravelSpeed, stageTravelSpeed](bool staging = false)
   {
     auto start = std::make_shared<double>(0.);
+    auto origin = std::make_shared<frc::Pose2d>();
     auto invalid = [&perception, prepareForInactive, staging]
     {
       const auto active = perception.MatchState().ownActive;
@@ -683,7 +711,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
         const frc::Pose2d entry{units::meter_t{hubX + direction * 1.8}, units::meter_t{laneY}, pose.Rotation()};
         const frc::Pose2d exit{units::meter_t{hubX - direction * 1.8}, units::meter_t{laneY}, pose.Rotation()};
         auto travel = [&drive](frc::Pose2d waypoint) {
-          return base::AutoDriveToPose(drive, [waypoint] { return std::optional{waypoint}; })
+          return base::AutoDriveToPose(drive, [waypoint] { return std::optional{waypoint}; }, OffensiveMotionLimits(drive.Config()))
               .Until([&drive, waypoint] { return drive.Pose().Translation().Distance(waypoint.Translation()).value() < .35; })
               .WithTimeout(8_s);
         };
@@ -692,7 +720,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
           if (!*scoringGoal) return frc2::cmd::None();
           frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalX", (*scoringGoal)->X().value());
           frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalY", (*scoringGoal)->Y().value());
-          return base::AutoDriveToPose(drive, [scoringGoal] { return *scoringGoal; }).WithTimeout(5_s);
+          return base::AutoDriveToPose(drive, [scoringGoal] { return *scoringGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(5_s);
         }, {&drive});
         // If collection left us on the neutral-facing ramp, back down it
         // before moving sideways into the trench lane. A direct path toward
@@ -713,17 +741,32 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
           (!staging || std::abs(std::remainder((pose.Rotation() - (*scoringGoal)->Rotation()).Radians().value(),
                                                2 * std::numbers::pi)) < .04))
         return frc2::cmd::None();
-      return base::AutoDriveToPose(drive, [scoringGoal] { return *scoringGoal; }).WithTimeout(15_s).Until(invalid);
+      return base::AutoDriveToPose(drive, [scoringGoal] { return *scoringGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(15_s).Until(invalid);
     }, {&drive});
-    return std::move(clearDepot).AndThen(std::move(clearBump)).AndThen(std::move(navigate)).Until(invalid).BeforeStarting([start, staging] {
+    return std::move(clearDepot).AndThen(std::move(clearBump)).AndThen(std::move(navigate)).Until(invalid).BeforeStarting([start, origin, staging, &drive] {
       *start = frc::Timer::GetFPGATimestamp().value();
+      *origin = drive.Pose();
       Phase(staging ? "stage-for-hub" : "return");
-    }).FinallyDo([&drive, scoringGoal, start, returnLatency, staging](bool interrupted) {
-      if (!staging && !interrupted && *scoringGoal &&
+    }).FinallyDo([&drive, scoringGoal, start, origin, returnLatency, stageLatency, returnTravelSpeed,
+                  stageTravelSpeed, staging](bool interrupted) {
+      if (!interrupted && *scoringGoal &&
           drive.Pose().Translation().Distance((*scoringGoal)->Translation()).value() < .15)
       {
-        *returnLatency = std::max(0., frc::Timer::GetFPGATimestamp().value() - *start);
-        frc::SmartDashboard::PutNumber("AutoDrive/ObservedReturnSeconds", *returnLatency);
+        const double elapsed = std::max(0., frc::Timer::GetFPGATimestamp().value() - *start);
+        const double distance = origin->Translation().Distance((*scoringGoal)->Translation()).value();
+        const double speed = elapsed > 0 ? distance / elapsed : 0.;
+        if (staging)
+        {
+          *stageLatency = elapsed;
+          if (speed > 0) *stageTravelSpeed = speed;
+          frc::SmartDashboard::PutNumber("AutoDrive/ObservedStageSeconds", elapsed);
+        }
+        else
+        {
+          *returnLatency = elapsed;
+          if (speed > 0) *returnTravelSpeed = speed;
+          frc::SmartDashboard::PutNumber("AutoDrive/ObservedReturnSeconds", elapsed);
+        }
       }
     });
   };
@@ -894,10 +937,10 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
       if (!RobotClearOfBumps(drive.Pose()))
       {
         const frc::Pose2d retreat{units::meter_t{hubX + direction * 1.8}, drive.Pose().Y(), drive.Pose().Rotation()};
-        return base::AutoDriveToPose(drive, [retreat] { return std::optional{retreat}; })
+        return base::AutoDriveToPose(drive, [retreat] { return std::optional{retreat}; }, OffensiveMotionLimits(drive.Config()))
             .Until([&drive] { return RobotClearOfBumps(drive.Pose()); })
             .WithTimeout(5_s)
-            .AndThen(base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }).WithTimeout(10_s)
+            .AndThen(base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(10_s)
                          .OnlyIf([&drive] { return RobotClearOfBumps(drive.Pose()); }));
       }
       // A robot alongside or on a bump must reach the alliance-side lane
@@ -906,15 +949,15 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
       if (direction * (drive.Pose().X().value() - hubX) < .8)
       {
         const frc::Pose2d entry{units::meter_t{hubX - direction * 1.8}, (*ferryGoal)->Y(), drive.Pose().Rotation()};
-        return base::AutoDriveToPose(drive, [entry] { return std::optional{entry}; })
+        return base::AutoDriveToPose(drive, [entry] { return std::optional{entry}; }, OffensiveMotionLimits(drive.Config()))
             .Until([&drive, entry] { return drive.Pose().Translation().Distance(entry.Translation()).value() < .35; })
             .WithTimeout(7_s)
-            .AndThen(base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }).WithTimeout(9_s)
+            .AndThen(base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(9_s)
                          .OnlyIf([&drive, entry] {
                            return drive.Pose().Translation().Distance(entry.Translation()).value() < .5;
                          }));
       }
-      return base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }).WithTimeout(10_s);
+      return base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(10_s);
     }, {&drive});
     return std::move(reposition).AndThen(CoordinatedShot(m, drive, field, target, options))
         .Until([&perception, fed, prepareForActive, canFerry]
@@ -989,7 +1032,7 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
       const double y = drive.Pose().Y().value() < field.width / 2 ? .75 : field.width - .75;
       const frc::Translation2d home{units::meter_t{hub - direction * 1.8}, units::meter_t{y}};
       const frc::Translation2d neutral{units::meter_t{hub + direction * 1.8}, units::meter_t{y}};
-      const double speed = std::min(drive.Config().maxSpeed, base::AutoDriveConfig{}.maxSpeed);
+      const double speed = OffensiveMotionLimits(drive.Config()).maxSpeed;
       const double duration = feedDuration();
       if (speed > 0 && duration > 0 && *match.ownNextChange <=
           *returnLatency + duration + *hubSetupLatency + *transportLatency + home.Distance(neutral).value() / speed)
@@ -1040,7 +1083,12 @@ frc2::CommandPtr OffensiveAutoDrive(AutoDrive &perception, base::Drive &drive, M
                           frc2::cmd::WaitUntil([&perception] {
                             return !perception.MatchState().ownActive.has_value() || *perception.MatchState().ownActive;
                           }),
-                          frc2::cmd::Sequence(returnHome(true), frc2::cmd::Wait(.1_s)).Repeatedly(), warmShooter())
+                          frc2::cmd::Sequence(
+                              frc2::cmd::Deadline(
+                                  frc2::cmd::WaitUntil([prepareForActive] { return prepareForActive(); })
+                                      .BeforeStarting([] { Phase("stage-wait"); }),
+                                  frc2::cmd::RunEnd([&drive] { drive.Stop(); }, [&drive] { drive.Stop(); }, {&drive})),
+                              returnHome(true), frc2::cmd::Wait(.1_s)).Repeatedly(), warmShooter())
                           .FinallyDo([&perception, commitment](bool interrupted) {
                             if (!interrupted && perception.MatchState().ownActive.value_or(false))
                               *commitment = OffensiveCommitment::Score;
