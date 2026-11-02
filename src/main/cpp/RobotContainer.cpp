@@ -272,6 +272,19 @@ RobotContainer::RobotContainer()
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
   {
+    auto ntInstance = nt::NetworkTableInstance::GetDefault();
+    ntGamepadConsumedPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/Consumed").Publish();
+    driverStationCommandPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/DriverStationCommand").Publish();
+    const char *ntGamepadMode = std::getenv("FRC_SIM_NT_GAMEPAD");
+    if (ntGamepadMode && std::string_view{ntGamepadMode} == "1")
+    {
+      ntGamepad_ = std::make_unique<season::drive::NtGamepad>(ntInstance);
+      frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Enabled", true);
+    }
+    else
+    {
+      frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Enabled", false);
+    }
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKP", drive_.Config().steerKP);
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKD", drive_.Config().steerKD);
     frc::SmartDashboard::PutNumber("SimulationTuning/AutoTranslationKP", drive_.Config().autoTranslationKP);
@@ -593,11 +606,32 @@ void RobotContainer::DriveTeleop(bool aim)
   // translation frame. FieldDrive still owns alliance perspective and gating.
   const auto deadband = [](double value)
   { return std::abs(value) < .1 ? 0. : std::copysign((std::abs(value) - .1) / .9, value); };
-  const double x = deadband(base::simulation::ObserveJoystick(-controller_.GetLeftY())) * drive_.Config().maxSpeed;
-  const double y = deadband(-controller_.GetLeftX()) * drive_.Config().maxSpeed;
-  double omega = deadband(-controller_.GetRightX()) * drive_.Config().maxAngularRate;
+  const double dsLeftY = controller_.GetLeftY();
+  const double dsLeftX = controller_.GetLeftX();
+  const double dsRightX = controller_.GetRightX();
+  double rawLeftY = dsLeftY;
+  double rawLeftX = dsLeftX;
+  double rawRightX = dsRightX;
+  bool ntInputFresh = true;
+#ifndef __FRC_ROBORIO__
+  season::drive::NtGamepad::State ntGamepadState;
+  if (ntGamepad_)
+  {
+    ntGamepadState = ntGamepad_->Read();
+    ntInputFresh = ntGamepadState.accepted;
+    rawLeftY = ntGamepadState.leftY;
+    rawLeftX = ntGamepadState.leftX;
+    rawRightX = ntGamepadState.rightX;
+  }
+#endif
+  const bool teleopAuthority = frc::DriverStation::IsTeleopEnabled() && !frc::DriverStation::IsEStopped();
+  double x = deadband(base::simulation::ObserveJoystick(-rawLeftY)) * drive_.Config().maxSpeed;
+  double y = deadband(-rawLeftX) * drive_.Config().maxSpeed;
+  double omega = deadband(-rawRightX) * drive_.Config().maxAngularRate;
+  if (!teleopAuthority || !ntInputFresh)
+    x = y = omega = 0.0;
   // Aim controls rotation and shooter targets while translation stays manual.
-  if (aim)
+  if (aim && teleopAuthority && ntInputFresh)
   {
     const auto p = drive_.Pose();
     const auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
@@ -609,6 +643,30 @@ void RobotContainer::DriveTeleop(bool aim)
   }
   drive_.FieldDrive(x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin(),
                     x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos(), omega);
+#ifndef __FRC_ROBORIO__
+  const int64_t consumeNtUs = nt::Now();
+  const double fieldX = x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin();
+  const double fieldY = x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos();
+  if (ntGamepadConsumedPublisher_)
+  {
+    const std::array<double, 7> consumed{static_cast<double>(ntGamepadState.sequence),
+                                         static_cast<double>(ntGamepadState.sourceTimestampUs),
+                                         static_cast<double>(consumeNtUs), fieldX, fieldY, omega,
+                                         ntGamepadState.accepted ? 1.0 : 0.0};
+    ntGamepadConsumedPublisher_.Set(consumed, consumeNtUs);
+  }
+  if (driverStationCommandPublisher_)
+  {
+    const std::array<double, 7> driverStation{static_cast<double>(consumeNtUs), dsLeftY, dsLeftX, dsRightX,
+                                              fieldX, fieldY, omega};
+    driverStationCommandPublisher_.Set(driverStation, consumeNtUs);
+  }
+  frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Accepted",
+                                  ntGamepad_ && ntGamepadState.accepted);
+  frc::SmartDashboard::PutNumber("Simulation/NTGamepad/AgeMs",
+                                 std::isfinite(ntGamepadState.ageMs) ? ntGamepadState.ageMs : -1.0);
+  frc::SmartDashboard::PutNumber("Simulation/NTGamepad/Sequence", ntGamepadState.sequence);
+#endif
 }
 // Select a hub or ferry target from alliance, pose, and visible tags.
 season::ShotTarget RobotContainer::SelectTarget()

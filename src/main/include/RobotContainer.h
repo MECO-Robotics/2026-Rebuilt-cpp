@@ -8,6 +8,9 @@
 #include "base/SystemCheck.h"
 #include "season/drive/AutoDrive.h"
 #include "season/drive/OffensiveAutoDrive.h"
+#ifndef __FRC_ROBORIO__
+#include "season/drive/NtGamepad.h"
+#endif
 #include <base/season2026/MatchContext.h>
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/DriveSimulationAdapter.h"
@@ -74,6 +77,9 @@ private:
 
 #ifndef __FRC_ROBORIO__
   std::unique_ptr<season::FuelSimulation> simulation_;
+  std::unique_ptr<season::drive::NtGamepad> ntGamepad_;
+  nt::DoubleArrayPublisher ntGamepadConsumedPublisher_;
+  nt::DoubleArrayPublisher driverStationCommandPublisher_;
   meco::sim::DriveSimulationSession *simulationSession_{}; // Non-owning; drive_ owns it.
   nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
   nt::StructPublisher<frc::Pose3d> simulationBodyPosePublisher_;
