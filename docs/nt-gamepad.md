@@ -15,7 +15,7 @@ Driver Station remains authoritative for enabled/teleop/E-stop state. Teleop dri
 Connect a USB gamepad to the driver laptop, install the two Python packages, then run the producer below. Substitute the team number or use `--server` for a custom NT4 host. This publishes axes only; continue using the Driver Station application to enable, disable, select mode, and operate buttons.
 
 ```sh
-python -m pip install 'pygame-ce>=2.5.8' pyntcore
+python -m pip install 'pygame-ce>=2.5.8,<3' 'pyntcore==2026.2.2'
 python scripts/nt_gamepad.py --team 8324
 ```
 
