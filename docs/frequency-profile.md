@@ -38,3 +38,5 @@ The array separates callback work from scheduling interval and lateness. It is d
 The NT gamepad adapter has an independent input selection. Its `/Simulation/NTGamepad/Consumed` telemetry carries the NT source and consumption timestamps for input-to-command age; compare those in the NT clock domain rather than subtracting them from FPGA timestamps.
 
 See [measured results and reproducible local build](frequency-results.md) for the baseline comparisons, hardware-validation limits and matching Base/Simulation development packages.
+
+Integration evidence for the configurable profile is retained in `artifacts/configurable-profile-validated.zip` and `artifacts/configurable-profile-summary.json`: roboRIO Release cross-compilation against matching local libraries, desktop build, seven existing tests and four DS/NT × 20/2 ms simulation cases passed. The USB producer was additionally exercised with an SDL virtual controller, including a nonzero trigger and removal; this is software integration evidence, not a physical USB-controller test.
