@@ -70,7 +70,7 @@ public:
                sample.value[4] == state_.leftX && sample.value[5] == state_.rightX &&
                Fresh(nowUs - lastPublisherTimeUs_) && Fresh(nowUs - state_.sourceTimestampUs))
       {
-        // Re-reading the same latest NT value is normal between 120 Hz producer updates.
+        // Re-reading the same latest NT value is normal between producer updates.
         state_.ageMs = (nowUs - lastPublisherTimeUs_) / 1000.0;
         state_.accepted = true;
         validSample = true;
