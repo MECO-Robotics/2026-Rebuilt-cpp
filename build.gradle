@@ -106,9 +106,8 @@ wpi.sim.addDriverstation()
 model {
     binaries {
         all { binary ->
-            if (project.findProperty('fastControlApi') == 'true') {
-                binary.cppCompiler.define 'MECO_FAST_CONTROL_API', '1'
-            }
+            // The pinned public Base release includes the configurable control API.
+            binary.cppCompiler.define 'MECO_FAST_CONTROL_API', '1'
         }
     }
     components {

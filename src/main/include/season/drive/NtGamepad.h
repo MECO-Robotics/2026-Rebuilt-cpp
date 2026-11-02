@@ -11,7 +11,7 @@
 
 namespace season::drive
 {
-// Simulation-only, axes-only input supplied over NT4. Buttons remain on Driver Station.
+// Axes-only input supplied over NT4. Buttons and enable authority stay on Driver Station.
 class NtGamepad
 {
 public:
@@ -24,8 +24,10 @@ public:
     bool accepted{};
   };
 
-  explicit NtGamepad(nt::NetworkTableInstance instance = nt::NetworkTableInstance::GetDefault())
-      : subscriber_(instance.GetDoubleArrayTopic("/Input/Gamepad").Subscribe(std::span<const double>{}, SubscribeOptions()))
+  explicit NtGamepad(nt::NetworkTableInstance instance = nt::NetworkTableInstance::GetDefault(),
+                     double periodMs = 5.0, double staleMs = 50.0)
+      : subscriber_(instance.GetDoubleArrayTopic("/Input/Gamepad").Subscribe(std::span<const double>{}, SubscribeOptions(periodMs))),
+        staleUs_(static_cast<int64_t>(staleMs * 1000.0))
   {
   }
 
@@ -86,10 +88,10 @@ public:
   }
 
 private:
-  static nt::PubSubOptions SubscribeOptions()
+  static nt::PubSubOptions SubscribeOptions(double periodMs)
   {
     nt::PubSubOptions options;
-    options.periodic = 0.005;
+    options.periodic = periodMs / 1000.0;
     options.sendAll = true;
     return options;
   }
@@ -98,12 +100,13 @@ private:
     return std::isfinite(value) && value >= 0.0 && value <= 9007199254740991.0 && std::floor(value) == value;
   }
   static bool Axis(double value) { return std::isfinite(value) && value >= -1.0 && value <= 1.0; }
-  static bool Fresh(int64_t ageUs) { return ageUs >= -5000 && ageUs <= 50000; }
+  bool Fresh(int64_t ageUs) const { return ageUs >= -5000 && ageUs <= staleUs_; }
 
   nt::DoubleArraySubscriber subscriber_;
   State state_;
   uint64_t lastSequence_{};
   int64_t lastPublisherTimeUs_{};
   bool hasSequence_{};
+  int64_t staleUs_{50000};
 };
 } // namespace season::drive

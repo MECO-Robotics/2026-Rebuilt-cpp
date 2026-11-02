@@ -3,8 +3,6 @@
 #include <networktables/DoubleArrayTopic.h>
 #include <cstdint>
 #include "RobotContainer.h"
-#include <networktables/DoubleArrayTopic.h>
-#include <cstdint>
 #ifndef __FRC_ROBORIO__
 #include <meco/sim/PracticeMatchController.h>
 #endif

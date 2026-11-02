@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <array>
 #include <algorithm>
+#include <cmath>
 #ifndef __FRC_ROBORIO__
 #include "base/SimulationRuntime.h"
 #include "meco/sim/BatterySupply.h"
@@ -48,18 +49,20 @@ Robot::Robot()
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
   frc::RobotController::SetBrownoutVoltage(units::volt_t{6.3});
   const char *fastControl = std::getenv("FRC_FAST_CONTROL");
-  if (fastControl && std::string_view{fastControl} == "1")
+  fastControlEnabled_ = fastControl ? std::string_view{fastControl} == "1"
+                                    : season::drive::fastcontrol::Config().enabled;
+  if (fastControlEnabled_)
   {
 #ifndef MECO_FAST_CONTROL_API
     throw std::invalid_argument(
-        "FRC_FAST_CONTROL=1 requires the opt-in local MecoBase fast-control API build");
+        "Fast control is enabled in deploy configuration but this build lacks the fast-control API");
 #else
     fastControlEnabled_ = true;
     fastControlSamplesPublisher_ = nt::NetworkTableInstance::GetDefault()
                                        .GetDoubleArrayTopic("/Simulation/FastControl/Samples")
                                        .Publish();
     AddPeriodic([this] { FastControlPeriodic(); },
-                units::second_t{season::drive::fastcontrol::kPeriodSeconds});
+                units::second_t{season::drive::fastcontrol::Config().periodMs / 1000.0});
 #endif
   }
 }
@@ -125,7 +128,7 @@ void Robot::FastControlPeriodic()
 {
   if (!fastControlEnabled_)
     return;
-  constexpr int64_t periodUs = static_cast<int64_t>(season::drive::fastcontrol::kPeriodMicroseconds);
+  const int64_t periodUs = static_cast<int64_t>(season::drive::fastcontrol::Config().periodMs * 1000.0);
   const int64_t startUs = static_cast<int64_t>(frc::RobotController::GetFPGATime());
   if (nextFastControlFpgaUs_ == 0)
     nextFastControlFpgaUs_ = startUs;

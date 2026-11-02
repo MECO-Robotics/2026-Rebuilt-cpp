@@ -42,7 +42,7 @@ bool FastControlEnabled()
 {
 #if defined(MECO_FAST_CONTROL_API)
   const char *value = std::getenv("FRC_FAST_CONTROL");
-  return value && std::string_view{value} == "1";
+  return value ? std::string_view{value} == "1" : season::drive::fastcontrol::Config().enabled;
 #else
   return false;
 #endif
@@ -52,18 +52,19 @@ base::MotorConfig MotorRates(base::MotorConfig config, base::Vendor vendor)
 #if defined(MECO_FAST_CONTROL_API)
   if (FastControlEnabled())
   {
-    config.rates.diagnosticHz = 4;
+    const auto &profile = season::drive::fastcontrol::Config();
+    config.rates.diagnosticHz = season::drive::fastcontrol::Config().diagnosticHz;
     if (vendor == base::Vendor::SparkMax)
     {
-      config.rates.positionVelocityHz = 100;
-      config.rates.controlHz = 100;
+      config.rates.positionVelocityHz = profile.sparkStatusHz;
+      config.rates.controlHz = 1000.0 / profile.sparkControlMs;
     }
     else
     {
       const bool canFd = !frc::RobotBase::IsReal() ||
                          (!config.canBus.empty() && ctre::phoenix6::CANBus{config.canBus}.IsNetworkFD());
-      config.rates.positionVelocityHz = canFd ? 250 : 100;
-      config.rates.controlHz = canFd ? 250 : 100;
+      config.rates.positionVelocityHz = canFd ? profile.talonFdStatusHz : profile.talonClassicStatusHz;
+      config.rates.controlHz = canFd ? 1000.0 / profile.talonFdControlMs : 1000.0 / profile.talonClassicControlMs;
     }
   }
 #else
@@ -101,9 +102,11 @@ base::DriveConfig DriveConfig()
 #if defined(MECO_FAST_CONTROL_API)
   if (FastControlEnabled())
   {
-    c.controlPeriodSeconds = season::drive::fastcontrol::kPeriodSeconds;
+    c.controlPeriodSeconds = season::drive::fastcontrol::Config().periodMs / 1000.0;
     c.externalSimulationScheduling = true;
-    c.odometryHz = frc::RobotBase::IsSimulation() || ctre::phoenix6::CANBus{c.bus}.IsNetworkFD() ? 500 : 100;
+    const auto &profile = season::drive::fastcontrol::Config();
+    c.odometryHz = frc::RobotBase::IsSimulation() || ctre::phoenix6::CANBus{c.bus}.IsNetworkFD()
+                       ? profile.odometryFdHz : profile.odometryClassicHz;
   }
 #endif
   c.driveRatio = 5.8909090909090915;
@@ -197,6 +200,7 @@ season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
 base::QuestNavConfig QuestConfig(const frc::AprilTagFieldLayout &layout)
 {
   base::QuestNavConfig c;
+  c.subscriptionPeriodSeconds = season::drive::fastcontrol::Config().questPeriodMs / 1000.0;
   c.fieldLength = layout.GetFieldLength().value();
   c.fieldWidth = layout.GetFieldWidth().value();
   c.robotToQuest = frc::Transform3d{units::meter_t{-13.5 * .0254}, 0_m, units::meter_t{8.5 * .0254},
@@ -339,15 +343,10 @@ RobotContainer::RobotContainer()
     ntGamepadConsumedPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/Consumed").Publish();
     driverStationCommandPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/DriverStationCommand").Publish();
     const char *ntGamepadMode = std::getenv("FRC_SIM_NT_GAMEPAD");
-    if (ntGamepadMode && std::string_view{ntGamepadMode} == "1")
-    {
-      ntGamepad_ = std::make_unique<season::drive::NtGamepad>(ntInstance);
-      frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Enabled", true);
-    }
-    else
-    {
-      frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Enabled", false);
-    }
+    const bool simNtEnabled = ntGamepadMode ? std::string_view{ntGamepadMode} == "1"
+                                            : fastControlProfile_.ntGamepadEnabled &&
+                                                  fastControlProfile_.driverInput == "nt";
+    frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Enabled", simNtEnabled);
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKP", drive_.Config().steerKP);
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKD", drive_.Config().steerKD);
     frc::SmartDashboard::PutNumber("SimulationTuning/AutoTranslationKP", drive_.Config().autoTranslationKP);
@@ -413,13 +412,28 @@ RobotContainer::RobotContainer()
         });
   }
 #endif
+  const bool ntInputSelected = fastControlProfile_.driverInput == "nt" && fastControlProfile_.ntGamepadEnabled;
+#ifndef __FRC_ROBORIO__
+  const char *simNtOverride = std::getenv("FRC_SIM_NT_GAMEPAD");
+  const bool useNtInput = frc::RobotBase::IsSimulation() && simNtOverride
+                              ? std::string_view{simNtOverride} == "1"
+                              : ntInputSelected;
+#else
+  const bool useNtInput = ntInputSelected;
+#endif
+  if (useNtInput)
+    ntGamepad_ = std::make_unique<season::drive::NtGamepad>(nt::NetworkTableInstance::GetDefault(),
+                                                           fastControlProfile_.ntPeriodMs,
+                                                           fastControlProfile_.ntStaleMs);
+  frc::SmartDashboard::PutString("Input/DriverSource", useNtInput ? "nt" : "driverstation");
+  frc::SmartDashboard::PutBoolean("Input/NTGamepadEnabled", useNtInput);
   // Manual driving resumes whenever no other command owns the drivetrain.
   drive_.SetDefaultCommand(frc2::cmd::RunEnd([this] { DriveTeleop(false); }, [this] { drive_.Stop(); }, {&drive_}));
   // Perception uses the live intake extension and the shared match snapshot.
   autoDrive_ = std::make_unique<season::AutoDrive>(
       drive_, [this] { return rack_.Position(); },
       [this]() -> const base::season2026::MatchContext & { return matchContext_; },
-      FastControlEnabled() ? units::second_t{.005} : units::second_t{.1});
+      units::second_t{season::drive::fastcontrol::Config().detectionPeriodMs / 1000.0});
   auto m = Mechanisms();
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
@@ -591,6 +605,13 @@ RobotContainer::RobotContainer()
 // drivetrain/command-scheduler cadence. Call from the 20 ms TimedRobot loop.
 void RobotContainer::ControlMechanisms20ms()
 {
+  if (ntGamepad_)
+  {
+    const auto state = ntGamepad_->Read();
+    frc::SmartDashboard::PutBoolean("Input/NTAccepted", state.accepted);
+    frc::SmartDashboard::PutNumber("Input/NTAgeMs", std::isfinite(state.ageMs) ? state.ageMs : -1.0);
+    frc::SmartDashboard::PutNumber("Input/NTSequence", static_cast<double>(state.sequence));
+  }
   if (fastControlEnabled_)
     return;
   ++sparkControlCount_;
@@ -611,21 +632,24 @@ void RobotContainer::ControlMechanismsFast()
   if (!fastControlEnabled_)
     return;
   ++fastMechanismControlTick_;
-  if (fastMechanismControlTick_ % 5 == 0)
+  const auto &profile = fastControlProfile_;
+  const uint64_t sparkDivider = static_cast<uint64_t>(std::llround(profile.sparkControlMs / profile.periodMs));
+  if (fastMechanismControlTick_ % sparkDivider == 0)
   {
     ++sparkControlCount_;
-    constexpr units::second_t kSparkControlPeriod{.01};
+    const units::second_t kSparkControlPeriod{profile.sparkControlMs / 1000.0};
     rack_.Control(kSparkControlPeriod);
     hood_.Control(kSparkControlPeriod);
     intake_.Control(kSparkControlPeriod);
     conveyor_.Control(kSparkControlPeriod);
     top_.Control(kSparkControlPeriod);
   }
-  const uint64_t talonDivider = fastMechanismCanFd_ ? 2 : 5;
+  const double talonPeriodMs = fastMechanismCanFd_ ? profile.talonFdControlMs : profile.talonClassicControlMs;
+  const uint64_t talonDivider = static_cast<uint64_t>(std::llround(talonPeriodMs / profile.periodMs));
   if (fastMechanismControlTick_ % talonDivider == 0)
   {
     ++talonControlCount_;
-    const units::second_t talonControlPeriod{fastMechanismCanFd_ ? .004 : .01};
+    const units::second_t talonControlPeriod{talonPeriodMs / 1000.0};
     bottom_.Control(talonControlPeriod);
     shooter_.Control(talonControlPeriod);
   }
@@ -722,7 +746,6 @@ void RobotContainer::DriveTeleop(bool aim)
   double rawLeftX = dsLeftX;
   double rawRightX = dsRightX;
   bool ntInputFresh = true;
-#ifndef __FRC_ROBORIO__
   season::drive::NtGamepad::State ntGamepadState;
   if (ntGamepad_)
   {
@@ -732,7 +755,6 @@ void RobotContainer::DriveTeleop(bool aim)
     rawLeftX = ntGamepadState.leftX;
     rawRightX = ntGamepadState.rightX;
   }
-#endif
   const bool teleopAuthority = frc::DriverStation::IsTeleopEnabled() && !frc::DriverStation::IsEStopped();
   double x = deadband(base::simulation::ObserveJoystick(-rawLeftY)) * drive_.Config().maxSpeed;
   double y = deadband(-rawLeftX) * drive_.Config().maxSpeed;

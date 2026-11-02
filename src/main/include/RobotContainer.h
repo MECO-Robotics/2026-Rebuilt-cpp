@@ -8,9 +8,8 @@
 #include "base/SystemCheck.h"
 #include "season/drive/AutoDrive.h"
 #include "season/drive/OffensiveAutoDrive.h"
-#ifndef __FRC_ROBORIO__
 #include "season/drive/NtGamepad.h"
-#endif
+#include "season/drive/FastControlProfile.h"
 #include <base/season2026/MatchContext.h>
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/DriveSimulationAdapter.h"
@@ -72,6 +71,7 @@ private:
   frc::Rotation2d driverHeadingOffset_{};
   double lastAcceptedVision_ = -1e9;
   bool fastControlEnabled_{};
+  season::drive::fastcontrol::Profile fastControlProfile_ = season::drive::fastcontrol::Config();
   bool fastMechanismCanFd_{};
   uint64_t fastMechanismControlTick_{};
   uint64_t sparkControlCount_{}, talonControlCount_{};
@@ -87,7 +87,6 @@ private:
 
 #ifndef __FRC_ROBORIO__
   std::unique_ptr<season::FuelSimulation> simulation_;
-  std::unique_ptr<season::drive::NtGamepad> ntGamepad_;
   nt::DoubleArrayPublisher ntGamepadConsumedPublisher_;
   nt::DoubleArrayPublisher driverStationCommandPublisher_;
   meco::sim::DriveSimulationSession *simulationSession_{}; // Non-owning; drive_ owns it.
@@ -101,6 +100,7 @@ private:
   bool captureAutonomousPoseReset_ = false;
   bool autonomousPoseBlocked_ = false;
 #endif
+  std::unique_ptr<season::drive::NtGamepad> ntGamepad_;
   frc2::CommandXboxController controller_{0}, copilot_{1};
   frc::SendableChooser<frc2::Command *> autoChooser_;
   std::vector<frc2::CommandPtr> seasonAutos_;

@@ -220,7 +220,7 @@ def main() -> int:
             if fast:
                 env["FRC_FAST_CONTROL"] = "1"
             else:
-                env.pop("FRC_FAST_CONTROL", None)
+                env["FRC_FAST_CONTROL"] = "0"
             case_deadline = time.monotonic() + args.timeout_seconds
             with sim_log.open("wb") as log:
                 proc = subprocess.Popen([str(SIM_LAUNCHER)], cwd=ROOT, env=env,

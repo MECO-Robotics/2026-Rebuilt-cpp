@@ -1,5 +1,7 @@
 # Optimized mixed-hardware profile: laptop results
 
+The following results were collected before the production configuration/release integration. For the current enabled defaults and roboRIO build, see [configurable profile](frequency-profile.md).
+
 All eight cases passed. Each measured eight seconds of the full native desktop robot, with separate process-owned localhost endpoints and safe disable/cleanup. The baseline is this branch with the optimized profile disabled, not a physical Driver Station or radio measurement. Input events are spaced 73 ms apart; latency is from the scheduled event through input publication to the timestamped teleop drive command.
 
 | Input | Control period | Extra NT traffic | Median ms | p95 ms | p99 ms |
@@ -46,7 +48,7 @@ The actual `MakeNtObjectDetectionIO` factory was exercised over NT4 with a 60 Hz
 
 ## Build and reproduce
 
-Two development worktrees are required: `../mecobase-fast-control` at public tag v2026.2.11 plus this patch, and `../mecosim-fast-control` at public tag v2026.0.16. The latter has no source edits: its adapter must be rebuilt against the development Base headers because the public configuration layout changed. The packaging script retains unchanged published Jolt objects, replaces all three adapter objects, checks membership, and uses hashed development coordinates. Public vendordeps/releases are not overwritten.
+To reproduce the archived development build exactly, two development worktrees are required: `../mecobase-fast-control` at public tag v2026.2.11 plus this patch, and `../mecosim-fast-control` at public tag v2026.0.16. The latter has no source edits: its adapter must be rebuilt against the development Base headers because the public configuration layout changed. The packaging script retains unchanged published Jolt objects, replaces all three adapter objects, checks membership, and uses hashed development coordinates. Public vendordeps/releases are not overwritten.
 
 ```sh
 scripts/build_fast_profile.sh

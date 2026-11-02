@@ -1,14 +1,45 @@
-# Simulation NetworkTables gamepad
+# NetworkTables gamepad input
 
-The axes-only NT4 adapter is opt-in for desktop simulation: set `FRC_SIM_NT_GAMEPAD=1` before starting the simulator. Without that exact value, teleop continues to use the Driver Station controller. The adapter is compiled out of the roboRIO target. Buttons and command bindings always remain on Driver Station.
+The axes-only NT4 adapter is selected by the persistent roboRIO deploy configuration (`src/main/deploy/fast-control.json`, `driverInput: "nt"`). Set `driverInput` to `"driverstation"` to use Driver Station joystick axes instead. Desktop simulation reads the same setting; `FRC_SIM_NT_GAMEPAD=1` and `=0` remain available as explicit simulation overrides. Buttons and command bindings always remain on Driver Station.
 
 Publish `/Input/Gamepad` as a NetworkTables `double[]` with this layout:
 
 `[1, sequence, sourceNTtimestampUs, leftY, leftX, rightX]`
 
-Use a monotonically increasing nonnegative integer sequence and finite axes in `[-1, 1]`. `sourceNTtimestampUs` is the synchronized NT clock in microseconds. Set the NT publisher timestamp to the same `nt::Now()` value. The robot subscribes at a requested 5 ms update period and consumes the latest value on its normal robot loop. A sample is valid only when its sequence increases, the embedded source time and NT publisher server time are fresh within 50 ms, the two timestamps agree within 20 ms, and all axes are valid. Re-reading the last accepted sequence holds its axes only while fresh. Invalid, stale, malformed, or regressed input commands zero translation and rotation; it never falls back to Driver Station axes while the adapter is enabled.
+Use a monotonically increasing nonnegative integer sequence and finite axes in `[-1, 1]`. `sourceNTtimestampUs` is the synchronized NT clock in microseconds. Embed that server-time value in the payload, but pass the client-local `nt::Now()` value as the NT publisher timestamp; NTCore converts it to server time. The robot subscribes at a requested 5 ms update period and consumes the latest value at the configured command scheduler cadence (2 ms by default). A sample is valid only when its sequence increases, the embedded source time and NT publisher server time are fresh within 50 ms, the two timestamps agree within 20 ms, and all axes are valid. Re-reading the last accepted sequence holds its axes only while fresh. Invalid, stale, malformed, or regressed input commands zero translation and rotation; it never falls back to Driver Station axes while the adapter is enabled.
 
 Driver Station remains authoritative for enabled/teleop/E-stop state. Teleop drivetrain output is zero when disabled, stopped, or the NT sample is invalid. The adapter changes only the three axes; Driver Station buttons and bindings are unchanged. NetworkTables polling does not make the robot command loop run faster.
+
+## Use a USB controller with the roboRIO
+
+Connect a USB gamepad to the driver laptop, install the two Python packages, then run the producer below. Substitute the team number or use `--server` for a custom NT4 host. This publishes axes only; continue using the Driver Station application to enable, disable, select mode, and operate buttons.
+
+```sh
+python -m pip install 'pygame-ce>=2.5.8' pyntcore
+python scripts/nt_gamepad.py --team 8324
+```
+
+The script uses joystick 0, SDL's standardized left stick Y/X for translation, and right stick X for rotation; it publishes at 200 Hz to match the robot's requested 5 ms input period. A controller needs an SDL GameController mapping. If none is available, the script exits with instructions rather than guessing: inspect raw axes using `--print-only --raw-axes`, then pass `--raw-axes --left-y N --left-x N --right-x N`. Supplying any raw axis option also selects raw mode. Use `--help` for other overrides. Inversion and `--deadband 0.05` are configurable; deadband rescales the remaining range. `--print-only` inspects input without sending commands and needs `pygame` but not `pyntcore`. The producer keeps reading when its window is unfocused. On USB removal it stops publishing and exits; Ctrl-C also stops publishing. In either case, robot-side freshness checks then zero the commanded axes. Reconnect and restart the script after a disconnect. Configure a controller and verify the directions with the robot safely disabled before enabling.
+
+An optional JSON file can hold laptop-specific settings, with explicit command-line options taking precedence:
+
+```json
+{
+  "team": 8324,
+  "rate": 200,
+  "joystick": 0,
+  "raw_axes": false,
+  "invert_left_y": false,
+  "invert_left_x": false,
+  "invert_right_x": false,
+  "deadband": 0.05,
+  "topic": "/Input/Gamepad"
+}
+```
+
+For a device without an SDL mapping, set `"raw_axes": true` and provide its `left_y`, `left_x`, and `right_x` axis indices. Supplying raw indices in the file enables raw mode unless `raw_axes` is explicitly set to `false`.
+
+Run it with `python scripts/nt_gamepad.py --config gamepad.json`. The producer starts only after it can connect to the configured NT4 server and obtain the synchronized server-time offset. It places the synchronized server timestamp in the payload and passes client-local time to NTCore for the publisher timestamp conversion; sequence numbers are seeded from synchronized server time so restarting the laptop script does not regress the robot's monotonic sequence check.
 
 For comparison, `/Simulation/NTGamepad/Consumed` publishes `[sequence, sourceNTtimestampUs, consumeNTUs, commandX_mps, commandY_mps, commandOmega_radps, accepted]` once per `DriveTeleop` execution. `/Simulation/NTGamepad/DriverStationCommand` publishes `[consumeNTUs, rawLeftY, rawLeftX, rawRightX, commandX_mps, commandY_mps, commandOmega_radps]` as a Driver Station baseline. The baseline contains no separate controller-device timestamp, so it cannot establish physical USB input latency. SmartDashboard status entries report adapter enabled state, acceptance, age, and sequence.
 
