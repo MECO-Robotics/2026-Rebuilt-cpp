@@ -34,9 +34,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--topic", help="NT4 topic (default: /Input/Gamepad)")
     parser.add_argument("--print-only", action="store_true", help="read and display controller without connecting to NT")
     args = parser.parse_args()
-    cli_team = "--team" in sys.argv
-    cli_server = "--server" in sys.argv
-    cli_axis_map = any(flag in sys.argv for flag in ("--left-y", "--left-x", "--right-x"))
+    def explicit(flag: str) -> bool:
+        return any(arg == flag or arg.startswith(flag + "=") for arg in sys.argv[1:])
+
+    cli_team = explicit("--team")
+    cli_server = explicit("--server")
+    cli_axis_map = any(explicit(flag) for flag in ("--left-y", "--left-x", "--right-x"))
 
     cfg: dict = {}
     config_path = args.config or (Path(os.environ["FRC_NT_GAMEPAD_CONFIG"]) if os.getenv("FRC_NT_GAMEPAD_CONFIG") else None)
@@ -200,7 +203,7 @@ def main() -> int:
             removed = False
             for event in pygame.event.get():
                 if event.type in (pygame.JOYDEVICEREMOVED,
-                                  getattr(sdl_controller, "CONTROLLERDEVICEREMOVED", -1) if gamepad is not None else -1) and \
+                                  getattr(pygame, "CONTROLLERDEVICEREMOVED", -1) if gamepad is not None else -1) and \
                         getattr(event, "instance_id", None) == instance_id:
                     removed = True
             controller_detached = gamepad is not None and (not gamepad.get_init() or not gamepad.attached())
