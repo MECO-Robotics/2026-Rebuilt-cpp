@@ -51,6 +51,8 @@ Robot::Robot()
   const char *fastControl = std::getenv("FRC_FAST_CONTROL");
   fastControlEnabled_ = fastControl ? std::string_view{fastControl} == "1"
                                     : season::drive::fastcontrol::Config().enabled;
+  frc2::CommandScheduler::GetInstance().SetPeriod(units::second_t{
+      fastControlEnabled_ ? season::drive::fastcontrol::Config().periodMs / 1000.0 : .02});
   if (fastControlEnabled_)
   {
 #ifndef MECO_FAST_CONTROL_API

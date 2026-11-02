@@ -1,6 +1,6 @@
 # Configurable control profile
 
-The checked-in profile enables a 2 ms command scheduler on desktop and roboRIO 2. `TimedRobot` retains its 20 ms callbacks for match context, telemetry and simulation physics. The scheduler callback runs on the same main thread; it does not create a worker thread. This is a requested cadence, not a hard deadline guarantee.
+The checked-in profile enables a 2 ms command scheduler on desktop and roboRIO 2. `TimedRobot` retains its 20 ms callbacks for match context, telemetry and simulation physics. The scheduler callback runs on the same main thread; it does not create a worker thread. The command scheduler watchdog uses the selected period so slow callbacks report against the configured budget. This is a requested cadence, not a hard deadline guarantee.
 
 Edit `src/main/deploy/fast-control.json` before deployment. The robot loads it once at startup; changes require a robot-program restart. Unknown keys, invalid types and out-of-range values stop startup with an error. A missing file uses the checked-in defaults. The ordinary Gradle build uses matching public Base 2026.2.12 and Simulation 2026.0.17 packages; no local Maven override is needed.
 
