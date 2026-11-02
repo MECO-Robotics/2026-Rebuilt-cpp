@@ -50,3 +50,5 @@ Eight seconds and 110 simulated input transitions per case, using the full deskt
 | NT axes | On | 13.61 | 23.20 | 24.17 |
 
 The synthetic load publishes compact results at QuestNav-like 120 Hz, two gamepiece-camera-like 60 Hz streams, and one AprilTag-like 60 Hz stream. These are additional NT topics; they are not real headset/camera pipelines and do not exercise vision inference CPU work. Small differences between load cases are host scheduling/phase effects, not evidence that traffic improves latency. The baseline uses simulated DS/HAL writes, not the physical Driver Station UDP protocol or controller USB stack. No radio, real CAN or mechanical latency is included. All four cases passed source-rate, robot-period, telemetry and command-response checks. Raw traces and summary are under `artifacts/nt-gamepad/`.
+
+For the complete optimized profile, including the 2 ms scheduler and separately scheduled mechanism/physics updates, see [frequency results](frequency-results.md). The earlier table above remains the original 20 ms-loop comparison.

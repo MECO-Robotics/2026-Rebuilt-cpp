@@ -1,4 +1,5 @@
 #include "Robot.h"
+#include "season/drive/FastControlProfile.h"
 #include <string_view>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/NetworkTable.h>
@@ -9,16 +10,18 @@
 #include <frc/DataLogManager.h>
 #include <frc/DriverStation.h>
 #include <frc/RobotController.h>
+#include <cstdlib>
+#include <units/time.h>
+#include <stdexcept>
+#include <array>
+#include <algorithm>
 #ifndef __FRC_ROBORIO__
 #include "base/SimulationRuntime.h"
 #include "meco/sim/BatterySupply.h"
 #include <networktables/DoubleArrayTopic.h>
 #include <networktables/NetworkTableInstance.h>
-#include <array>
-#include <algorithm>
 #include <charconv>
 #include <cmath>
-#include <stdexcept>
 #endif
 #include <frc2/command/CommandScheduler.h>
 // Construct simulation services before the robot loop starts.
@@ -44,21 +47,41 @@ Robot::Robot()
   frc::DataLogManager::Start();
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
   frc::RobotController::SetBrownoutVoltage(units::volt_t{6.3});
+  const char *fastControl = std::getenv("FRC_FAST_CONTROL");
+  if (fastControl && std::string_view{fastControl} == "1")
+  {
+#ifndef MECO_FAST_CONTROL_API
+    throw std::invalid_argument(
+        "FRC_FAST_CONTROL=1 requires the opt-in local MecoBase fast-control API build");
+#else
+    fastControlEnabled_ = true;
+    fastControlSamplesPublisher_ = nt::NetworkTableInstance::GetDefault()
+                                       .GetDoubleArrayTopic("/Simulation/FastControl/Samples")
+                                       .Publish();
+    AddPeriodic([this] { FastControlPeriodic(); },
+                units::second_t{season::drive::fastcontrol::kPeriodSeconds});
+#endif
+  }
 }
 // Refresh match context before running scheduled commands.
 void Robot::RobotPeriodic()
 {
   const auto match = base::season2026::ReadMatchContext();
   container_.SetMatchContext(match);
+  // Baseline mechanism control is 20 ms; the optimized callback owns its faster ticks.
+  container_.ControlMechanisms20ms();
   if (autonomousPending_ && frc::DriverStation::IsAutonomousEnabled() && container_.SimulationResetReady())
   {
     autonomousPending_ = false;
     if (autonomous_)
       container_.ScheduleAutonomous(autonomous_);
   }
-  base::simulation::BeginLatencyProbe();
-  frc2::CommandScheduler::GetInstance().Run();
-  base::simulation::EndLatencyProbe();
+  if (!fastControlEnabled_)
+  {
+    base::simulation::BeginLatencyProbe();
+    frc2::CommandScheduler::GetInstance().Run();
+    base::simulation::EndLatencyProbe();
+  }
   auto nt = nt::NetworkTableInstance::GetDefault().GetTable("/Match");
   nt->GetEntry("Phase").SetString(match.phase);
   nt->GetEntry("TimeKnown").SetBoolean(match.periodTime.has_value());
@@ -96,6 +119,36 @@ void Robot::RobotPeriodic()
       "Shifts/Active First?",
       match.alliance && match.gameDataValid &&
           ((*match.alliance == frc::DriverStation::Alliance::kBlue) == (match.gameData == "R")));
+}
+// Run command decisions faster while TimedRobot and physics stay at 20 ms.
+void Robot::FastControlPeriodic()
+{
+  if (!fastControlEnabled_)
+    return;
+  constexpr int64_t periodUs = static_cast<int64_t>(season::drive::fastcontrol::kPeriodMicroseconds);
+  const int64_t startUs = static_cast<int64_t>(frc::RobotController::GetFPGATime());
+  if (nextFastControlFpgaUs_ == 0)
+    nextFastControlFpgaUs_ = startUs;
+  const int64_t scheduledUs = nextFastControlFpgaUs_;
+  const int64_t latenessUs = std::max<int64_t>(0, startUs - scheduledUs);
+  nextFastControlFpgaUs_ = scheduledUs + periodUs;
+  if (latenessUs >= periodUs)
+    nextFastControlFpgaUs_ += (latenessUs / periodUs) * periodUs;
+
+  frc::DriverStation::RefreshData();
+  base::simulation::BeginLatencyProbe();
+  frc2::CommandScheduler::GetInstance().Run();
+  container_.ControlMechanismsFast();
+  base::simulation::EndLatencyProbe();
+  const int64_t finishUs = static_cast<int64_t>(frc::RobotController::GetFPGATime());
+  const std::array<double, 7> sample{static_cast<double>(fastControlSequence_++),
+                                     static_cast<double>(scheduledUs),
+                                     static_cast<double>(startUs),
+                                     static_cast<double>(finishUs),
+                                     static_cast<double>(finishUs - startUs),
+                                     static_cast<double>(latenessUs),
+                                     frc::DriverStation::IsEnabled() ? 1.0 : 0.0};
+  fastControlSamplesPublisher_.Set(sample, nt::Now());
 }
 // Reset the scene before scheduling the selected autonomous command.
 void Robot::AutonomousInit()
@@ -142,6 +195,10 @@ void Robot::SimulationPeriodic()
   container_.SimulationPeriodic();
 #ifndef __FRC_ROBORIO__
   auto &runtime = base::simulation::GetSimulationRuntime();
+  static auto physicsClockPublisher = nt::NetworkTableInstance::GetDefault()
+      .GetDoubleArrayTopic("/Simulation/Physics/Samples").Publish();
+  physicsClockPublisher.Set(std::array<double, 3>{static_cast<double>(nt::Now()),
+      static_cast<double>(frc::RobotController::GetFPGATime()), runtime.Time()});
   // Coulomb-count an estimated 18 Ah FRC battery for the life of this sim
   // process. OCV falls with state of charge; the shared supply model then
   // adds the configured internal-resistance sag under load.

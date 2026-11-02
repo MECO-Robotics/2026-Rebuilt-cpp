@@ -76,7 +76,8 @@ frc::Transform3d AutoDrive::Mount(size_t camera) const
   return camera == 0 ? HopperCameraMount(extension_(), local) : local;
 }
 AutoDrive::AutoDrive(base::Drive &drive, std::function<double()> extension,
-                     std::function<const base::season2026::MatchContext &()> context)
+                     std::function<const base::season2026::MatchContext &()> context,
+                     units::second_t detectionUpdatePeriod)
     : matchContext_(std::move(context)), drive_(drive), extension_(std::move(extension))
 {
   std::vector<base::ObjectCamera> cameras;
@@ -105,7 +106,14 @@ AutoDrive::AutoDrive(base::Drive &drive, std::function<double()> extension,
     }
     else
 #endif
+    {
+#if defined(MECO_FAST_CONTROL_API)
+      io = base::MakeNtObjectDetectionIO("/Perception/" + name + "/detections", detectionUpdatePeriod);
+#else
+      (void)detectionUpdatePeriod;
       io = base::MakeNtObjectDetectionIO("/Perception/" + name + "/detections");
+#endif
+    }
     cameras.push_back({name, std::move(io), [this, i]() -> std::optional<frc::Transform3d> { return Mount(i); }});
   }
   base::ObjectPerceptionConfig perceptionConfig;

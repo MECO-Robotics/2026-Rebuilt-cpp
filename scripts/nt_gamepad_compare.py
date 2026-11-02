@@ -3,8 +3,8 @@
 
 This script controls only the local WPILib HAL simulation server at
 127.0.0.1:3300 and the local robot NT4 server at 127.0.0.1:5810. It never
-starts the robot and refuses non-loopback connections. Run after launching the
-headless robot with the requested telemetry build and environment flags.
+starts the robot and only connects to loopback. Run after launching the headless
+robot with the requested telemetry build and environment flags.
 """
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ import argparse
 import json
 import math
 import socket
-import struct
 import threading
 import time
 from collections import defaultdict
@@ -29,13 +28,15 @@ except ImportError as exc:
 
 WS_HOST = "127.0.0.1"
 WS_PORT = 3300
-WS_URI = f"ws://{WS_HOST}:{WS_PORT}/wpilibws"
 NT_HOST = "127.0.0.1"
-NT_PORT = 5810
+DEFAULT_NT_PORT = 5810
 INPUT_TOPIC = "/Input/Gamepad"
 PROBE_TOPIC = "/Diagnostics/Latency/RobotLoop"
 NT_COMMAND_TOPIC = "/Simulation/NTGamepad/Consumed"
 DS_COMMAND_TOPIC = "/Simulation/NTGamepad/DriverStationCommand"
+FAST_LOOP_TOPIC = "/Simulation/FastControl/Samples"
+PHYSICS_TOPIC = "/Simulation/Physics/Samples"
+MECHANISM_CADENCE_TOPIC = "/Simulation/MechanismCadence"
 DRIVE_MAX_MPS = 5.24
 STEP_PERIOD_S = 0.073
 STEP_VALUES = (-0.65, 0.65, 0.0, 0.35, -0.35, 0.0)
@@ -89,9 +90,10 @@ def wait_until(predicate, timeout_s: float, detail: str) -> None:
 
 
 class HalSession:
-    def __init__(self, server_now_us):
+    def __init__(self, server_now_us, ws_port: int):
         self.server_now_us = server_now_us
-        self.ws = ws_connect(WS_URI, open_timeout=3, close_timeout=2,
+        self.ws_uri = f"ws://{WS_HOST}:{ws_port}/wpilibws"
+        self.ws = ws_connect(self.ws_uri, open_timeout=3, close_timeout=2,
                              ping_interval=10, proxy=None, max_queue=64)
         self.stop_reader = threading.Event()
         self.reader_error: str | None = None
@@ -154,28 +156,34 @@ class HalSession:
 
 
 class NtSession:
-    def __init__(self):
+    def __init__(self, nt_port: int):
         self.inst = ntcore.NetworkTableInstance.create()
         self.inst.startClient4("nt-gamepad-compare")
-        self.inst.setServer(NT_HOST, NT_PORT)
+        self.nt_port = nt_port
+        self.inst.setServer(NT_HOST, nt_port)
         wait_until(lambda: self.inst.isConnected(), 5,
-                   f"No local robot NT4 server at {NT_HOST}:{NT_PORT}")
+                   f"No local robot NT4 server at {NT_HOST}:{nt_port}")
         wait_until(lambda: self.inst.getServerTimeOffset() is not None, 5,
                    "NT4 client/server clock synchronization did not complete")
         self.initial_server_offset_us = self.inst.getServerTimeOffset()
-        self.gamepad = self.inst.getDoubleArrayTopic(INPUT_TOPIC).publish(
-            ntcore.PubSubOptions(periodic=0.005, sendAll=True)
-        )
+        self.gamepad = None
         opts = ntcore.PubSubOptions(periodic=0.005, sendAll=True, pollStorage=20000)
         self.robot_probe = self.inst.getDoubleArrayTopic(PROBE_TOPIC).subscribe([], opts)
         self.nt_command = self.inst.getDoubleArrayTopic(NT_COMMAND_TOPIC).subscribe([], opts)
         self.ds_command = self.inst.getDoubleArrayTopic(DS_COMMAND_TOPIC).subscribe([], opts)
+        self.fast_loop = self.inst.getDoubleArrayTopic(FAST_LOOP_TOPIC).subscribe([], opts)
+        self.physics_samples = self.inst.getDoubleArrayTopic(PHYSICS_TOPIC).subscribe([], opts)
+        self.mechanism_cadence = self.inst.getDoubleArrayTopic(MECHANISM_CADENCE_TOPIC).subscribe([], opts)
         self.load_publishers = {}
         self.load_sequences = defaultdict(int)
         self.load_stop = threading.Event()
         self.load_thread: threading.Thread | None = None
 
     def set_gamepad(self, seq: int, left_y: float, left_x: float, right_x: float) -> int:
+        if self.gamepad is None:
+            self.gamepad = self.inst.getDoubleArrayTopic(INPUT_TOPIC).publish(
+                ntcore.PubSubOptions(periodic=0.005, sendAll=True)
+            )
         local_us = ntcore._now()
         offset = self.inst.getServerTimeOffset()
         if offset is None:
@@ -232,7 +240,8 @@ class NtSession:
     def close(self) -> None:
         self.stop_load()
         try:
-            self.gamepad.close()
+            if self.gamepad is not None:
+                self.gamepad.close()
             for pub in self.load_publishers.values():
                 pub.close()
             self.inst.stopClient()
@@ -254,6 +263,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("ds", "nt"), required=True,
                         help="simulated Driver Station joystick or NT4 gamepad publisher")
+    parser.add_argument("--nt-port", type=int, default=DEFAULT_NT_PORT)
+    parser.add_argument("--ws-port", type=int, default=WS_PORT)
+    parser.add_argument("--robot-period-ms", type=int, choices=(2, 20), default=20,
+                        help="expected active robot command cadence; physics remains on its 20 ms loop")
     parser.add_argument("--load", choices=("none", "vision"), default="none",
                         help="optional concurrent synthetic NT4 vision-rate traffic")
     parser.add_argument("--seconds", type=float, default=8.0,
@@ -263,16 +276,16 @@ def main() -> int:
     if not 6 <= args.seconds <= 30:
         parser.error("--seconds must be between 6 and 30")
 
-    nt = NtSession()
+    nt = NtSession(args.nt_port)
     hal: HalSession | None = None
     result: dict = {
         "experiment": "actual local WPILib robot HAL DS-vs-NT gamepad comparison",
         "mode": args.mode,
         "synthetic_vision_traffic": args.load == "vision",
-        "robot_period_ms": 20,
+        "robot_period_ms": args.robot_period_ms,
         "nt4_input_publish_period_ms": 5,
-        "nt_server": f"{NT_HOST}:{NT_PORT}",
-        "hal_websocket": WS_URI,
+        "nt_server": f"{NT_HOST}:{args.nt_port}",
+        "hal_websocket": f"ws://{WS_HOST}:{args.ws_port}/wpilibws",
         "clock": "NT server monotonic timestamp in microseconds, client local time adjusted by getServerTimeOffset()",
         "duration_s": args.seconds,
         "steps": [],
@@ -283,28 +296,28 @@ def main() -> int:
         "errors": [],
     }
     try:
-        nt_bindings = listener_bindings(NT_PORT)
-        hal_bindings = listener_bindings(WS_PORT)
-        result["listener_bind_addresses"] = {str(NT_PORT): nt_bindings, str(WS_PORT): hal_bindings}
+        nt_bindings = listener_bindings(args.nt_port)
+        hal_bindings = listener_bindings(args.ws_port)
+        result["listener_bind_addresses"] = {str(args.nt_port): nt_bindings, str(args.ws_port): hal_bindings}
         result["listener_scope_note"] = (
             "The harness connects only to 127.0.0.1. HALSim's bundled server may bind beyond loopback; "
             "verify the owning robot process before running this input harness."
         )
         result["nt_time_sync_offset_us_at_start"] = nt.initial_server_offset_us
-        hal = HalSession(nt.server_now_us)
+        hal = HalSession(nt.server_now_us, args.ws_port)
         # Ensure clean neutral input before authorizing teleop.
         hal.set_joystick(0.0, new_data=True, enabled=False)
-        if args.load == "vision":
-            nt.start_load()
-
         # Require the actual robot loop diagnostics before enabling. The
         # environment must opt in with FRC_SIM_LATENCY_PROBE=1.
         wait_until(lambda: bool(drain(nt.robot_probe)), 5,
                    f"Robot telemetry {PROBE_TOPIC} missing; launch with FRC_SIM_LATENCY_PROBE=1")
 
         probe_rows: list[list[float]] = []
+        physics_rows: list[list[float]] = []
+        mechanism_rows: list[list[float]] = []
         ds_rows: list[list[float]] = []
         nt_rows: list[list[float]] = []
+        fast_rows: list[list[float]] = []
         hal.set_joystick(0.0, new_data=True, enabled=True)
         wait_until(lambda: any(len(row) >= 9 and row[7] >= 0.5 and row[8] >= 0.5
                                for row in drain(nt.robot_probe)), 3,
@@ -312,6 +325,8 @@ def main() -> int:
         command_sub = nt.nt_command if args.mode == "nt" else nt.ds_command
         wait_until(lambda: bool(drain(command_sub)), 3,
                    "Robot command telemetry did not appear; confirm the comparison build is running")
+        if args.load == "vision":
+            nt.start_load()
 
         source_period_s = 0.020 if args.mode == "ds" else 0.005
         started_us = nt.server_now_us()
@@ -364,6 +379,9 @@ def main() -> int:
 
             probes = drain(nt.robot_probe)
             probe_rows.extend(probes)
+            physics_rows.extend(drain(nt.physics_samples))
+            mechanism_rows.extend(drain(nt.mechanism_cadence))
+            fast_rows.extend(drain(nt.fast_loop))
             ds_confirmed = ds_confirmed or any(len(row) >= 9 and row[7] >= 0.5 and row[8] >= 0.5
                                                 for row in probes)
             if args.mode == "nt":
@@ -424,6 +442,9 @@ def main() -> int:
 
         # Capture the final queued robot samples before making the input safe.
         probe_rows.extend(drain(nt.robot_probe))
+        physics_rows.extend(drain(nt.physics_samples))
+        mechanism_rows.extend(drain(nt.mechanism_cadence))
+        fast_rows.extend(drain(nt.fast_loop))
         if args.mode == "nt":
             nt_rows.extend(drain(nt.nt_command))
         else:
@@ -432,6 +453,32 @@ def main() -> int:
             "samples": len(probe_rows),
             "ds_attached_and_enabled": ds_confirmed,
         }
+        enabled_fast_rows = [row for row in fast_rows if len(row) >= 7 and row[6] >= 0.5]
+        enabled_fast_rows.sort(key=lambda row: int(row[0]))
+        fast_periods_ms = [(float(b[2]) - float(a[2])) / 1000.0
+                           for a, b in zip(enabled_fast_rows, enabled_fast_rows[1:])
+                           if b[2] > a[2]]
+        fast_schedule_delays_ms = [(float(row[2]) - float(row[1])) / 1000.0
+                                   for row in enabled_fast_rows]
+        fast_work_ms = [float(row[4]) / 1000.0 for row in enabled_fast_rows]
+        fast_lateness_ms = [float(row[5]) / 1000.0 for row in enabled_fast_rows]
+        result["fast_loop"] = {
+            "topic": FAST_LOOP_TOPIC,
+            "sample_layout": ["sequence", "scheduledFpgaUs", "actualStartFpgaUs",
+                              "finishFpgaUs", "workUs", "latenessUs", "enabled"],
+            "samples_total": len(fast_rows),
+            "samples_enabled": len(enabled_fast_rows),
+            "sequence_gaps": max(0, int(enabled_fast_rows[-1][0] - enabled_fast_rows[0][0] + 1 - len(enabled_fast_rows)))
+                if len(enabled_fast_rows) > 1 else 0,
+            "actual_start_period_ms": {"samples": len(fast_periods_ms),
+                "p50": pct(fast_periods_ms, .50), "p95": pct(fast_periods_ms, .95),
+                "p99": pct(fast_periods_ms, .99)},
+            "schedule_delay_ms": {"p50": pct(fast_schedule_delays_ms, .50),
+                "p95": pct(fast_schedule_delays_ms, .95)},
+            "work_ms": {"p50": pct(fast_work_ms, .50), "p95": pct(fast_work_ms, .95)},
+            "lateness_ms": {"p50": pct(fast_lateness_ms, .50), "p95": pct(fast_lateness_ms, .95)},
+        }
+        result["fast_loop_trace"] = [list(row) for row in fast_rows if len(row) >= 7]
         result["robot_command_samples"] = len(nt_rows if args.mode == "nt" else ds_rows)
         result["hal_websocket_messages_received"] = hal.received_messages if hal else 0
         if hal and hal.reader_error:
@@ -446,17 +493,81 @@ def main() -> int:
             "period_ms_p95": pct(send_intervals_ms, .95),
         }
         result["steps_observed_by_robot"] = sum(e["command_nt_us"] is not None for e in result["steps"])
-        loop_periods_ms = [(float(b[0]) - float(a[0])) / 1000.0 for a, b in zip(probe_rows, probe_rows[1:])
-                           if len(a) >= 2 and len(b) >= 2 and b[0] > a[0]]
-        result["robot_loop_period_ms"] = {"samples": len(loop_periods_ms),
-            "p50": pct(loop_periods_ms, .50), "p95": pct(loop_periods_ms, .95),
-            "p99": pct(loop_periods_ms, .99)}
+        control_rows = sorted((row for row in probe_rows if len(row) >= 2), key=lambda row: row[0])
+        control_periods_ms = [(float(b[0]) - float(a[0])) / 1000.0
+                              for a, b in zip(control_rows, control_rows[1:]) if b[0] > a[0]]
+        result["control_loop_period_ms"] = {"samples": len(control_periods_ms),
+            "p50": pct(control_periods_ms, .50), "p95": pct(control_periods_ms, .95),
+            "p99": pct(control_periods_ms, .99)}
+        physics_rows = sorted((row for row in physics_rows if len(row) >= 3), key=lambda row: row[0])
+        physics_periods_ms = [(float(b[1]) - float(a[1])) / 1000.0
+                              for a, b in zip(physics_rows, physics_rows[1:]) if b[1] > a[1]]
+        physics_runtime_rate = None
+        if len(physics_rows) >= 2:
+            nt_elapsed_s = (float(physics_rows[-1][0]) - float(physics_rows[0][0])) / 1e6
+            runtime_elapsed_s = float(physics_rows[-1][2]) - float(physics_rows[0][2])
+            if nt_elapsed_s > 0:
+                physics_runtime_rate = runtime_elapsed_s / nt_elapsed_s
+        result["physics_samples"] = {
+            "topic": PHYSICS_TOPIC,
+            "sample_layout": ["ntNowUs", "fpgaUs", "runtimeTimeSeconds"],
+            "samples": len(physics_rows),
+            "period_ms": {"samples": len(physics_periods_ms),
+                "p50": pct(physics_periods_ms, .50), "p95": pct(physics_periods_ms, .95),
+                "p99": pct(physics_periods_ms, .99)},
+            "runtime_elapsed_s": (float(physics_rows[-1][2]) - float(physics_rows[0][2]))
+                if len(physics_rows) >= 2 else None,
+            "nt_elapsed_s": (float(physics_rows[-1][0]) - float(physics_rows[0][0])) / 1e6
+                if len(physics_rows) >= 2 else None,
+            "runtime_rate_vs_nt_wall": physics_runtime_rate,
+        }
+        mechanism_rows = sorted((row for row in mechanism_rows if len(row) >= 3), key=lambda row: row[0])
+        mechanism_elapsed_s = ((float(mechanism_rows[-1][0]) - float(mechanism_rows[0][0])) / 1e6
+                               if len(mechanism_rows) >= 2 else None)
+        spark_callbacks_hz = talon_callbacks_hz = None
+        if mechanism_elapsed_s and mechanism_elapsed_s > 0:
+            spark_callbacks_hz = (float(mechanism_rows[-1][1]) - float(mechanism_rows[0][1])) / mechanism_elapsed_s
+            talon_callbacks_hz = (float(mechanism_rows[-1][2]) - float(mechanism_rows[0][2])) / mechanism_elapsed_s
+        expected_spark_hz = 100.0 if args.robot_period_ms == 2 else 50.0
+        expected_talon_hz = 250.0 if args.robot_period_ms == 2 else 50.0
+        result["mechanism_cadence"] = {
+            "topic": MECHANISM_CADENCE_TOPIC,
+            "sample_layout": ["ntNowUs", "sparkControlCount", "talonControlCount"],
+            "samples": len(mechanism_rows),
+            "nt_elapsed_s": mechanism_elapsed_s,
+            "spark_control_count_delta": ((float(mechanism_rows[-1][1]) - float(mechanism_rows[0][1]))
+                                            if len(mechanism_rows) >= 2 else None),
+            "talon_control_count_delta": ((float(mechanism_rows[-1][2]) - float(mechanism_rows[0][2]))
+                                            if len(mechanism_rows) >= 2 else None),
+            "spark_control_callbacks_hz": spark_callbacks_hz,
+            "talon_control_callbacks_hz": talon_callbacks_hz,
+            "expected_spark_hz": expected_spark_hz,
+            "expected_talon_hz": expected_talon_hz,
+        }
+        command_times_us = sorted({int(row["command_nt_us"]) for row in result["command_trace"]})
+        command_periods_ms = [(b - a) / 1000.0 for a, b in zip(command_times_us, command_times_us[1:])]
+        result["active_command_period_ms"] = {"samples": len(command_periods_ms),
+            "p50": pct(command_periods_ms, .50), "p95": pct(command_periods_ms, .95),
+            "p99": pct(command_periods_ms, .99)}
         result["quality"] = {
             "robot_telemetry_observed": bool(probe_rows),
             "driver_station_enabled_teleop_confirmed": ds_confirmed,
             "robot_command_telemetry_observed": bool(nt_rows if args.mode == "nt" else ds_rows),
-            "robot_loop_p50_within_10pct_of_20ms": result["robot_loop_period_ms"]["p50"] is not None and
-                abs(result["robot_loop_period_ms"]["p50"] - 20.0) <= 2.0,
+            "control_loop_p50_within_10pct_of_target": result["control_loop_period_ms"]["p50"] is not None and
+                abs(result["control_loop_period_ms"]["p50"] - args.robot_period_ms) <= args.robot_period_ms * 0.10,
+            "physics_loop_p50_within_10pct_of_20ms": result["physics_samples"]["period_ms"]["p50"] is not None and
+                abs(result["physics_samples"]["period_ms"]["p50"] - 20.0) <= 2.0,
+            "physics_runtime_rate_within_10pct_of_wall": result["physics_samples"]["runtime_rate_vs_nt_wall"] is not None and
+                abs(result["physics_samples"]["runtime_rate_vs_nt_wall"] - 1.0) <= 0.10,
+            "spark_mechanism_rate_within_10pct_of_expected": spark_callbacks_hz is not None and
+                abs(spark_callbacks_hz - expected_spark_hz) <= expected_spark_hz * 0.10,
+            "talon_mechanism_rate_within_10pct_of_expected": talon_callbacks_hz is not None and
+                abs(talon_callbacks_hz - expected_talon_hz) <= expected_talon_hz * 0.10,
+            "active_command_period_within_10pct_of_target": result["active_command_period_ms"]["p50"] is not None and
+                abs(result["active_command_period_ms"]["p50"] - args.robot_period_ms) <= args.robot_period_ms * 0.10,
+            "fast_loop_period_within_10pct_of_target": args.robot_period_ms != 2 or
+                result["fast_loop"]["actual_start_period_ms"]["p50"] is not None and
+                abs(result["fast_loop"]["actual_start_period_ms"]["p50"] - 2.0) <= 0.2,
             "source_cadence_within_10pct": abs((seq - first_sequence) / args.seconds - requested_rate) <= requested_rate * 0.10,
             "latencies_finite": bool(result["input_to_command_ms"]) and
                                 all(math.isfinite(x) for x in result["input_to_command_ms"]),
@@ -491,7 +602,11 @@ def main() -> int:
         summary = {
             "mode": result["mode"], "load": result["synthetic_load"],
             "input_publish_rate": result["input_publish_rate"],
-            "robot_loop_period_ms": result["robot_loop_period_ms"],
+            "control_loop_period_ms": result["control_loop_period_ms"],
+            "physics_samples": result["physics_samples"],
+            "mechanism_cadence": result["mechanism_cadence"],
+            "active_command_period_ms": result["active_command_period_ms"],
+            "fast_loop": result["fast_loop"],
             "latency_summary_ms": result["latency_summary_ms"],
             "steps_observed_by_robot": result["steps_observed_by_robot"],
             "quality": result["quality"], "output": str(args.output),

@@ -19,3 +19,7 @@ __pycache__/
 
 # Generated documentation site
 site/
+
+# Unpacked frequency-run traces; validated records are retained in the ZIP artifact.
+/artifacts/frequency-matrix/
+/artifacts/fast-final-smoke.json

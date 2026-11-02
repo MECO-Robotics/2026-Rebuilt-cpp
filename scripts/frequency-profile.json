@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "default": {
+    "runtime_loop_ms": 20,
+    "command_scheduler_ms": 20,
+    "drive_discretization_ms": 20,
+    "mechanism_control_and_io_ms": 20,
+    "simulation_clock_ms": 20
+  },
+  "fast_control": {
+    "runtime_opt_in": "FRC_FAST_CONTROL=1",
+    "required_compile_definition": "MECO_FAST_CONTROL_API",
+    "command_scheduler_ms": 2,
+    "timed_robot_period_ms": 20,
+    "drive_discretization_ms": 2,
+    "simulation_clock_ms": 20,
+    "spark_control_ms": 10,
+    "talon_control_can_fd_ms": 4,
+    "talon_control_classic_ms": 10,
+    "drive_odometry_can_fd_hz": 500,
+    "drive_odometry_classic_hz": 100,
+    "spark_feedback_hz": 100,
+    "talon_feedback_can_fd_hz": 250,
+    "talon_feedback_classic_hz": 100,
+    "perception_nt_period_ms": 5,
+    "nt_gamepad_publish_ms": 5
+  },
+  "telemetry": {
+    "topic": "/Simulation/FastControl/Samples",
+    "format": "double[]",
+    "fields": [
+      "sequence",
+      "scheduledFpgaUs",
+      "actualStartFpgaUs",
+      "finishFpgaUs",
+      "workUs",
+      "latenessUs",
+      "enabled"
+    ]
+  },
+  "scope": "Opt-in local native development Base and matching Simulation adapter; measured laptop scheduling, configured CAN targets awaiting physical bus validation."
+}

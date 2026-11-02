@@ -1,0 +1,1199 @@
+{
+  "scope": "local robot input/control frequency matrix",
+  "cases": [
+    {
+      "name": "ds-robot20-load-none",
+      "mode": "ds",
+      "robot_period_ms": 20,
+      "nt_input_period_ms": 20,
+      "fast_control_enabled": false,
+      "physics_period_ms": 20,
+      "synthetic_load": "none",
+      "nt_port": 5810,
+      "ws_port": 3300,
+      "result": "artifacts/frequency-matrix/20261102T070138Z/ds-robot20-load-none.json",
+      "sim_log": "artifacts/frequency-matrix/20261102T070138Z/ds-robot20-load-none.sim.log",
+      "compare_log": "artifacts/frequency-matrix/20261102T070138Z/ds-robot20-load-none.compare.log",
+      "started_utc": "2026-11-02T07:01:38.792330+00:00",
+      "simulator_pid": 611661,
+      "listener_addresses": [
+        {
+          "port": 5810,
+          "address": "0.0.0.0"
+        },
+        {
+          "port": 3300,
+          "address": "0.0.0.0"
+        }
+      ],
+      "listener_owner_pids_by_port": {
+        "5810": [
+          611668
+        ],
+        "3300": [
+          611668
+        ]
+      },
+      "compare_exit_code": 0,
+      "status": "complete",
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "control_loop_p50_within_10pct_of_target": true,
+        "physics_loop_p50_within_10pct_of_20ms": true,
+        "physics_runtime_rate_within_10pct_of_wall": true,
+        "spark_mechanism_rate_within_10pct_of_expected": true,
+        "talon_mechanism_rate_within_10pct_of_expected": true,
+        "active_command_period_within_10pct_of_target": true,
+        "fast_loop_period_within_10pct_of_target": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      },
+      "latency_summary_ms": {
+        "input_to_actual_command": {
+          "samples": 110,
+          "p50": 13.370000000000001,
+          "p95": 14.0342,
+          "p99": 14.06873,
+          "max": 14.17
+        },
+        "scheduled_step_to_actual_command": {
+          "samples": 110,
+          "p50": 22.616500000000002,
+          "p95": 32.11815,
+          "p99": 33.01737,
+          "max": 33.221
+        }
+      },
+      "control_loop_period_ms": {
+        "samples": 399,
+        "p50": 19.997,
+        "p95": 20.0741,
+        "p99": 20.10302
+      },
+      "physics_samples": {
+        "topic": "/Simulation/Physics/Samples",
+        "sample_layout": [
+          "ntNowUs",
+          "fpgaUs",
+          "runtimeTimeSeconds"
+        ],
+        "samples": 403,
+        "period_ms": {
+          "samples": 402,
+          "p50": 19.9815,
+          "p95": 20.773,
+          "p99": 21.55893
+        },
+        "runtime_elapsed_s": 8.039999999999424,
+        "nt_elapsed_s": 8.039752,
+        "runtime_rate_vs_nt_wall": 1.0000308467225636
+      },
+      "mechanism_cadence": {
+        "topic": "/Simulation/MechanismCadence",
+        "sample_layout": [
+          "ntNowUs",
+          "sparkControlCount",
+          "talonControlCount"
+        ],
+        "samples": 403,
+        "nt_elapsed_s": 8.039747,
+        "spark_control_count_delta": 402.0,
+        "talon_control_count_delta": 402.0,
+        "spark_control_callbacks_hz": 50.00157343259682,
+        "talon_control_callbacks_hz": 50.00157343259682,
+        "expected_spark_hz": 50.0,
+        "expected_talon_hz": 50.0
+      },
+      "active_command_period_ms": {
+        "samples": 398,
+        "p50": 19.993499999999997,
+        "p95": 20.7303,
+        "p99": 20.891389999999998
+      },
+      "fast_loop": {
+        "topic": "/Simulation/FastControl/Samples",
+        "sample_layout": [
+          "sequence",
+          "scheduledFpgaUs",
+          "actualStartFpgaUs",
+          "finishFpgaUs",
+          "workUs",
+          "latenessUs",
+          "enabled"
+        ],
+        "samples_total": 0,
+        "samples_enabled": 0,
+        "sequence_gaps": 0,
+        "actual_start_period_ms": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "p99": null
+        },
+        "schedule_delay_ms": {
+          "p50": null,
+          "p95": null
+        },
+        "work_ms": {
+          "p50": null,
+          "p95": null
+        },
+        "lateness_ms": {
+          "p50": null,
+          "p95": null
+        }
+      },
+      "finished_utc": "2026-11-02T07:01:49.850176+00:00"
+    },
+    {
+      "name": "ds-robot20-load-vision",
+      "mode": "ds",
+      "robot_period_ms": 20,
+      "nt_input_period_ms": 20,
+      "fast_control_enabled": false,
+      "physics_period_ms": 20,
+      "synthetic_load": "vision",
+      "nt_port": 5812,
+      "ws_port": 3301,
+      "result": "artifacts/frequency-matrix/20261102T070138Z/ds-robot20-load-vision.json",
+      "sim_log": "artifacts/frequency-matrix/20261102T070138Z/ds-robot20-load-vision.sim.log",
+      "compare_log": "artifacts/frequency-matrix/20261102T070138Z/ds-robot20-load-vision.compare.log",
+      "started_utc": "2026-11-02T07:01:49.850751+00:00",
+      "simulator_pid": 611783,
+      "listener_addresses": [
+        {
+          "port": 3301,
+          "address": "0.0.0.0"
+        },
+        {
+          "port": 5812,
+          "address": "127.0.0.1"
+        }
+      ],
+      "listener_owner_pids_by_port": {
+        "5812": [
+          611791
+        ],
+        "3301": [
+          611791
+        ]
+      },
+      "compare_exit_code": 0,
+      "status": "complete",
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "control_loop_p50_within_10pct_of_target": true,
+        "physics_loop_p50_within_10pct_of_20ms": true,
+        "physics_runtime_rate_within_10pct_of_wall": true,
+        "spark_mechanism_rate_within_10pct_of_expected": true,
+        "talon_mechanism_rate_within_10pct_of_expected": true,
+        "active_command_period_within_10pct_of_target": true,
+        "fast_loop_period_within_10pct_of_target": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      },
+      "latency_summary_ms": {
+        "input_to_actual_command": {
+          "samples": 110,
+          "p50": 6.8105,
+          "p95": 7.5596,
+          "p99": 7.882039999999999,
+          "max": 8.731
+        },
+        "scheduled_step_to_actual_command": {
+          "samples": 110,
+          "p50": 16.0905,
+          "p95": 25.4424,
+          "p99": 26.08543,
+          "max": 26.668
+        }
+      },
+      "control_loop_period_ms": {
+        "samples": 400,
+        "p50": 19.997500000000002,
+        "p95": 20.069,
+        "p99": 20.091060000000002
+      },
+      "physics_samples": {
+        "topic": "/Simulation/Physics/Samples",
+        "sample_layout": [
+          "ntNowUs",
+          "fpgaUs",
+          "runtimeTimeSeconds"
+        ],
+        "samples": 404,
+        "period_ms": {
+          "samples": 403,
+          "p50": 19.978,
+          "p95": 20.7777,
+          "p99": 21.47162
+        },
+        "runtime_elapsed_s": 8.059999999999532,
+        "nt_elapsed_s": 8.059767,
+        "runtime_rate_vs_nt_wall": 1.000028909024235
+      },
+      "mechanism_cadence": {
+        "topic": "/Simulation/MechanismCadence",
+        "sample_layout": [
+          "ntNowUs",
+          "sparkControlCount",
+          "talonControlCount"
+        ],
+        "samples": 404,
+        "nt_elapsed_s": 8.059702,
+        "spark_control_count_delta": 403.0,
+        "talon_control_count_delta": 403.0,
+        "spark_control_callbacks_hz": 50.00184870358731,
+        "talon_control_callbacks_hz": 50.00184870358731,
+        "expected_spark_hz": 50.0,
+        "expected_talon_hz": 50.0
+      },
+      "active_command_period_ms": {
+        "samples": 399,
+        "p50": 19.991,
+        "p95": 20.588,
+        "p99": 20.74366
+      },
+      "fast_loop": {
+        "topic": "/Simulation/FastControl/Samples",
+        "sample_layout": [
+          "sequence",
+          "scheduledFpgaUs",
+          "actualStartFpgaUs",
+          "finishFpgaUs",
+          "workUs",
+          "latenessUs",
+          "enabled"
+        ],
+        "samples_total": 0,
+        "samples_enabled": 0,
+        "sequence_gaps": 0,
+        "actual_start_period_ms": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "p99": null
+        },
+        "schedule_delay_ms": {
+          "p50": null,
+          "p95": null
+        },
+        "work_ms": {
+          "p50": null,
+          "p95": null
+        },
+        "lateness_ms": {
+          "p50": null,
+          "p95": null
+        }
+      },
+      "finished_utc": "2026-11-02T07:01:59.925795+00:00"
+    },
+    {
+      "name": "nt-robot20-load-none",
+      "mode": "nt",
+      "robot_period_ms": 20,
+      "nt_input_period_ms": 5,
+      "fast_control_enabled": false,
+      "physics_period_ms": 20,
+      "synthetic_load": "none",
+      "nt_port": 5814,
+      "ws_port": 3302,
+      "result": "artifacts/frequency-matrix/20261102T070138Z/nt-robot20-load-none.json",
+      "sim_log": "artifacts/frequency-matrix/20261102T070138Z/nt-robot20-load-none.sim.log",
+      "compare_log": "artifacts/frequency-matrix/20261102T070138Z/nt-robot20-load-none.compare.log",
+      "started_utc": "2026-11-02T07:01:59.926180+00:00",
+      "simulator_pid": 611847,
+      "listener_addresses": [
+        {
+          "port": 3302,
+          "address": "0.0.0.0"
+        },
+        {
+          "port": 5814,
+          "address": "127.0.0.1"
+        }
+      ],
+      "listener_owner_pids_by_port": {
+        "5814": [
+          611854
+        ],
+        "3302": [
+          611854
+        ]
+      },
+      "compare_exit_code": 0,
+      "status": "complete",
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "control_loop_p50_within_10pct_of_target": true,
+        "physics_loop_p50_within_10pct_of_20ms": true,
+        "physics_runtime_rate_within_10pct_of_wall": true,
+        "spark_mechanism_rate_within_10pct_of_expected": true,
+        "talon_mechanism_rate_within_10pct_of_expected": true,
+        "active_command_period_within_10pct_of_target": true,
+        "fast_loop_period_within_10pct_of_target": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      },
+      "latency_summary_ms": {
+        "input_to_actual_command": {
+          "samples": 400,
+          "p50": 0.959,
+          "p95": 4.9921999999999995,
+          "p99": 9.668649999999998,
+          "max": 9.964
+        },
+        "scheduled_step_to_actual_command": {
+          "samples": 110,
+          "p50": 13.081,
+          "p95": 23.19005,
+          "p99": 24.289930000000002,
+          "max": 27.183
+        }
+      },
+      "control_loop_period_ms": {
+        "samples": 400,
+        "p50": 19.999499999999998,
+        "p95": 20.0671,
+        "p99": 20.0871
+      },
+      "physics_samples": {
+        "topic": "/Simulation/Physics/Samples",
+        "sample_layout": [
+          "ntNowUs",
+          "fpgaUs",
+          "runtimeTimeSeconds"
+        ],
+        "samples": 404,
+        "period_ms": {
+          "samples": 403,
+          "p50": 20.005,
+          "p95": 20.762400000000003,
+          "p99": 21.477100000000004
+        },
+        "runtime_elapsed_s": 8.059999999999535,
+        "nt_elapsed_s": 8.059896,
+        "runtime_rate_vs_nt_wall": 1.000012903392244
+      },
+      "mechanism_cadence": {
+        "topic": "/Simulation/MechanismCadence",
+        "sample_layout": [
+          "ntNowUs",
+          "sparkControlCount",
+          "talonControlCount"
+        ],
+        "samples": 404,
+        "nt_elapsed_s": 8.059925,
+        "spark_control_count_delta": 403.0,
+        "talon_control_count_delta": 403.0,
+        "spark_control_callbacks_hz": 50.000465264875295,
+        "talon_control_callbacks_hz": 50.000465264875295,
+        "expected_spark_hz": 50.0,
+        "expected_talon_hz": 50.0
+      },
+      "active_command_period_ms": {
+        "samples": 399,
+        "p50": 19.999,
+        "p95": 20.5964,
+        "p99": 20.90028
+      },
+      "fast_loop": {
+        "topic": "/Simulation/FastControl/Samples",
+        "sample_layout": [
+          "sequence",
+          "scheduledFpgaUs",
+          "actualStartFpgaUs",
+          "finishFpgaUs",
+          "workUs",
+          "latenessUs",
+          "enabled"
+        ],
+        "samples_total": 0,
+        "samples_enabled": 0,
+        "sequence_gaps": 0,
+        "actual_start_period_ms": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "p99": null
+        },
+        "schedule_delay_ms": {
+          "p50": null,
+          "p95": null
+        },
+        "work_ms": {
+          "p50": null,
+          "p95": null
+        },
+        "lateness_ms": {
+          "p50": null,
+          "p95": null
+        }
+      },
+      "finished_utc": "2026-11-02T07:02:09.953366+00:00"
+    },
+    {
+      "name": "nt-robot20-load-vision",
+      "mode": "nt",
+      "robot_period_ms": 20,
+      "nt_input_period_ms": 5,
+      "fast_control_enabled": false,
+      "physics_period_ms": 20,
+      "synthetic_load": "vision",
+      "nt_port": 5816,
+      "ws_port": 3303,
+      "result": "artifacts/frequency-matrix/20261102T070138Z/nt-robot20-load-vision.json",
+      "sim_log": "artifacts/frequency-matrix/20261102T070138Z/nt-robot20-load-vision.sim.log",
+      "compare_log": "artifacts/frequency-matrix/20261102T070138Z/nt-robot20-load-vision.compare.log",
+      "started_utc": "2026-11-02T07:02:09.954089+00:00",
+      "simulator_pid": 611924,
+      "listener_addresses": [
+        {
+          "port": 3303,
+          "address": "0.0.0.0"
+        },
+        {
+          "port": 5816,
+          "address": "127.0.0.1"
+        }
+      ],
+      "listener_owner_pids_by_port": {
+        "5816": [
+          611931
+        ],
+        "3303": [
+          611931
+        ]
+      },
+      "compare_exit_code": 0,
+      "status": "complete",
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "control_loop_p50_within_10pct_of_target": true,
+        "physics_loop_p50_within_10pct_of_20ms": true,
+        "physics_runtime_rate_within_10pct_of_wall": true,
+        "spark_mechanism_rate_within_10pct_of_expected": true,
+        "talon_mechanism_rate_within_10pct_of_expected": true,
+        "active_command_period_within_10pct_of_target": true,
+        "fast_loop_period_within_10pct_of_target": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      },
+      "latency_summary_ms": {
+        "input_to_actual_command": {
+          "samples": 400,
+          "p50": 4.194000000000001,
+          "p95": 9.007349999999999,
+          "p99": 9.71082,
+          "max": 9.868
+        },
+        "scheduled_step_to_actual_command": {
+          "samples": 110,
+          "p50": 14.438500000000001,
+          "p95": 22.8737,
+          "p99": 23.54456,
+          "max": 23.803
+        }
+      },
+      "control_loop_period_ms": {
+        "samples": 400,
+        "p50": 19.999,
+        "p95": 20.06005,
+        "p99": 20.083129999999997
+      },
+      "physics_samples": {
+        "topic": "/Simulation/Physics/Samples",
+        "sample_layout": [
+          "ntNowUs",
+          "fpgaUs",
+          "runtimeTimeSeconds"
+        ],
+        "samples": 403,
+        "period_ms": {
+          "samples": 402,
+          "p50": 19.974,
+          "p95": 20.687,
+          "p99": 21.06892
+        },
+        "runtime_elapsed_s": 8.039999999999534,
+        "nt_elapsed_s": 8.039846,
+        "runtime_rate_vs_nt_wall": 1.0000191545956891
+      },
+      "mechanism_cadence": {
+        "topic": "/Simulation/MechanismCadence",
+        "sample_layout": [
+          "ntNowUs",
+          "sparkControlCount",
+          "talonControlCount"
+        ],
+        "samples": 403,
+        "nt_elapsed_s": 8.039899,
+        "spark_control_count_delta": 402.0,
+        "talon_control_count_delta": 402.0,
+        "spark_control_callbacks_hz": 50.00062811734326,
+        "talon_control_callbacks_hz": 50.00062811734326,
+        "expected_spark_hz": 50.0,
+        "expected_talon_hz": 50.0
+      },
+      "active_command_period_ms": {
+        "samples": 399,
+        "p50": 19.996,
+        "p95": 20.650399999999998,
+        "p99": 20.94474
+      },
+      "fast_loop": {
+        "topic": "/Simulation/FastControl/Samples",
+        "sample_layout": [
+          "sequence",
+          "scheduledFpgaUs",
+          "actualStartFpgaUs",
+          "finishFpgaUs",
+          "workUs",
+          "latenessUs",
+          "enabled"
+        ],
+        "samples_total": 0,
+        "samples_enabled": 0,
+        "sequence_gaps": 0,
+        "actual_start_period_ms": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "p99": null
+        },
+        "schedule_delay_ms": {
+          "p50": null,
+          "p95": null
+        },
+        "work_ms": {
+          "p50": null,
+          "p95": null
+        },
+        "lateness_ms": {
+          "p50": null,
+          "p95": null
+        }
+      },
+      "finished_utc": "2026-11-02T07:02:19.928121+00:00"
+    },
+    {
+      "name": "ds-robot2-load-none",
+      "mode": "ds",
+      "robot_period_ms": 2,
+      "nt_input_period_ms": 20,
+      "fast_control_enabled": true,
+      "physics_period_ms": 20,
+      "synthetic_load": "none",
+      "nt_port": 5818,
+      "ws_port": 3304,
+      "result": "artifacts/frequency-matrix/20261102T070138Z/ds-robot2-load-none.json",
+      "sim_log": "artifacts/frequency-matrix/20261102T070138Z/ds-robot2-load-none.sim.log",
+      "compare_log": "artifacts/frequency-matrix/20261102T070138Z/ds-robot2-load-none.compare.log",
+      "started_utc": "2026-11-02T07:02:19.928754+00:00",
+      "simulator_pid": 612011,
+      "listener_addresses": [
+        {
+          "port": 3304,
+          "address": "0.0.0.0"
+        },
+        {
+          "port": 5818,
+          "address": "127.0.0.1"
+        }
+      ],
+      "listener_owner_pids_by_port": {
+        "5818": [
+          612018
+        ],
+        "3304": [
+          612018
+        ]
+      },
+      "compare_exit_code": 0,
+      "status": "complete",
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "control_loop_p50_within_10pct_of_target": true,
+        "physics_loop_p50_within_10pct_of_20ms": true,
+        "physics_runtime_rate_within_10pct_of_wall": true,
+        "spark_mechanism_rate_within_10pct_of_expected": true,
+        "talon_mechanism_rate_within_10pct_of_expected": true,
+        "active_command_period_within_10pct_of_target": true,
+        "fast_loop_period_within_10pct_of_target": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      },
+      "latency_summary_ms": {
+        "input_to_actual_command": {
+          "samples": 110,
+          "p50": 1.8295,
+          "p95": 2.09975,
+          "p99": 2.147,
+          "max": 2.178
+        },
+        "scheduled_step_to_actual_command": {
+          "samples": 110,
+          "p50": 11.203,
+          "p95": 20.26615,
+          "p99": 21.219099999999997,
+          "max": 21.289
+        }
+      },
+      "control_loop_period_ms": {
+        "samples": 3960,
+        "p50": 2.0,
+        "p95": 4.36105,
+        "p99": 5.4931299999999865
+      },
+      "physics_samples": {
+        "topic": "/Simulation/Physics/Samples",
+        "sample_layout": [
+          "ntNowUs",
+          "fpgaUs",
+          "runtimeTimeSeconds"
+        ],
+        "samples": 403,
+        "period_ms": {
+          "samples": 402,
+          "p50": 19.9825,
+          "p95": 20.583099999999998,
+          "p99": 21.425330000000002
+        },
+        "runtime_elapsed_s": 8.039999999999534,
+        "nt_elapsed_s": 8.038094,
+        "runtime_rate_vs_nt_wall": 1.000237120889546
+      },
+      "mechanism_cadence": {
+        "topic": "/Simulation/MechanismCadence",
+        "sample_layout": [
+          "ntNowUs",
+          "sparkControlCount",
+          "talonControlCount"
+        ],
+        "samples": 403,
+        "nt_elapsed_s": 8.039058,
+        "spark_control_count_delta": 796.0,
+        "talon_control_count_delta": 1991.0,
+        "spark_control_callbacks_hz": 99.0165763202604,
+        "talon_control_callbacks_hz": 247.66583348447043,
+        "expected_spark_hz": 100.0,
+        "expected_talon_hz": 250.0
+      },
+      "active_command_period_ms": {
+        "samples": 3960,
+        "p50": 1.999,
+        "p95": 4.3961999999999986,
+        "p99": 5.510869999999984
+      },
+      "fast_loop": {
+        "topic": "/Simulation/FastControl/Samples",
+        "sample_layout": [
+          "sequence",
+          "scheduledFpgaUs",
+          "actualStartFpgaUs",
+          "finishFpgaUs",
+          "workUs",
+          "latenessUs",
+          "enabled"
+        ],
+        "samples_total": 3979,
+        "samples_enabled": 3967,
+        "sequence_gaps": 0,
+        "actual_start_period_ms": {
+          "samples": 3966,
+          "p50": 2.0,
+          "p95": 4.35925,
+          "p99": 5.486299999999991
+        },
+        "schedule_delay_ms": {
+          "p50": -2.57,
+          "p95": -0.11560000000000037
+        },
+        "work_ms": {
+          "p50": 0.059,
+          "p95": 0.135
+        },
+        "lateness_ms": {
+          "p50": 0.0,
+          "p95": 0.0
+        }
+      },
+      "finished_utc": "2026-11-02T07:02:30.020495+00:00"
+    },
+    {
+      "name": "ds-robot2-load-vision",
+      "mode": "ds",
+      "robot_period_ms": 2,
+      "nt_input_period_ms": 20,
+      "fast_control_enabled": true,
+      "physics_period_ms": 20,
+      "synthetic_load": "vision",
+      "nt_port": 5820,
+      "ws_port": 3305,
+      "result": "artifacts/frequency-matrix/20261102T070138Z/ds-robot2-load-vision.json",
+      "sim_log": "artifacts/frequency-matrix/20261102T070138Z/ds-robot2-load-vision.sim.log",
+      "compare_log": "artifacts/frequency-matrix/20261102T070138Z/ds-robot2-load-vision.compare.log",
+      "started_utc": "2026-11-02T07:02:30.020983+00:00",
+      "simulator_pid": 612067,
+      "listener_addresses": [
+        {
+          "port": 3305,
+          "address": "0.0.0.0"
+        },
+        {
+          "port": 5820,
+          "address": "127.0.0.1"
+        }
+      ],
+      "listener_owner_pids_by_port": {
+        "5820": [
+          612075
+        ],
+        "3305": [
+          612075
+        ]
+      },
+      "compare_exit_code": 0,
+      "status": "complete",
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "control_loop_p50_within_10pct_of_target": true,
+        "physics_loop_p50_within_10pct_of_20ms": true,
+        "physics_runtime_rate_within_10pct_of_wall": true,
+        "spark_mechanism_rate_within_10pct_of_expected": true,
+        "talon_mechanism_rate_within_10pct_of_expected": true,
+        "active_command_period_within_10pct_of_target": true,
+        "fast_loop_period_within_10pct_of_target": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      },
+      "latency_summary_ms": {
+        "input_to_actual_command": {
+          "samples": 110,
+          "p50": 1.8855,
+          "p95": 2.12655,
+          "p99": 2.15046,
+          "max": 2.19
+        },
+        "scheduled_step_to_actual_command": {
+          "samples": 110,
+          "p50": 11.278500000000001,
+          "p95": 19.32165,
+          "p99": 20.307389999999998,
+          "max": 21.285
+        }
+      },
+      "control_loop_period_ms": {
+        "samples": 3968,
+        "p50": 2.0,
+        "p95": 4.169299999999999,
+        "p99": 5.161
+      },
+      "physics_samples": {
+        "topic": "/Simulation/Physics/Samples",
+        "sample_layout": [
+          "ntNowUs",
+          "fpgaUs",
+          "runtimeTimeSeconds"
+        ],
+        "samples": 403,
+        "period_ms": {
+          "samples": 402,
+          "p50": 19.9865,
+          "p95": 20.5826,
+          "p99": 21.844929999999998
+        },
+        "runtime_elapsed_s": 8.039999999999534,
+        "nt_elapsed_s": 8.040039,
+        "runtime_rate_vs_nt_wall": 0.999995149277203
+      },
+      "mechanism_cadence": {
+        "topic": "/Simulation/MechanismCadence",
+        "sample_layout": [
+          "ntNowUs",
+          "sparkControlCount",
+          "talonControlCount"
+        ],
+        "samples": 403,
+        "nt_elapsed_s": 8.040025,
+        "spark_control_count_delta": 798.0,
+        "talon_control_count_delta": 1995.0,
+        "spark_control_callbacks_hz": 99.25342271945672,
+        "talon_control_callbacks_hz": 248.1335567986418,
+        "expected_spark_hz": 100.0,
+        "expected_talon_hz": 250.0
+      },
+      "active_command_period_ms": {
+        "samples": 3968,
+        "p50": 1.998,
+        "p95": 4.193,
+        "p99": 5.231819999999996
+      },
+      "fast_loop": {
+        "topic": "/Simulation/FastControl/Samples",
+        "sample_layout": [
+          "sequence",
+          "scheduledFpgaUs",
+          "actualStartFpgaUs",
+          "finishFpgaUs",
+          "workUs",
+          "latenessUs",
+          "enabled"
+        ],
+        "samples_total": 3992,
+        "samples_enabled": 3981,
+        "sequence_gaps": 0,
+        "actual_start_period_ms": {
+          "samples": 3980,
+          "p50": 2.0,
+          "p95": 4.1701,
+          "p99": 5.15547
+        },
+        "schedule_delay_ms": {
+          "p50": -2.649,
+          "p95": -0.172
+        },
+        "work_ms": {
+          "p50": 0.058,
+          "p95": 0.125
+        },
+        "lateness_ms": {
+          "p50": 0.0,
+          "p95": 0.0
+        }
+      },
+      "finished_utc": "2026-11-02T07:02:40.023217+00:00"
+    },
+    {
+      "name": "nt-robot2-load-none",
+      "mode": "nt",
+      "robot_period_ms": 2,
+      "nt_input_period_ms": 5,
+      "fast_control_enabled": true,
+      "physics_period_ms": 20,
+      "synthetic_load": "none",
+      "nt_port": 5822,
+      "ws_port": 3306,
+      "result": "artifacts/frequency-matrix/20261102T070138Z/nt-robot2-load-none.json",
+      "sim_log": "artifacts/frequency-matrix/20261102T070138Z/nt-robot2-load-none.sim.log",
+      "compare_log": "artifacts/frequency-matrix/20261102T070138Z/nt-robot2-load-none.compare.log",
+      "started_utc": "2026-11-02T07:02:40.023691+00:00",
+      "simulator_pid": 612128,
+      "listener_addresses": [
+        {
+          "port": 3306,
+          "address": "0.0.0.0"
+        },
+        {
+          "port": 5822,
+          "address": "127.0.0.1"
+        }
+      ],
+      "listener_owner_pids_by_port": {
+        "5822": [
+          612135
+        ],
+        "3306": [
+          612135
+        ]
+      },
+      "compare_exit_code": 0,
+      "status": "complete",
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "control_loop_p50_within_10pct_of_target": true,
+        "physics_loop_p50_within_10pct_of_20ms": true,
+        "physics_runtime_rate_within_10pct_of_wall": true,
+        "spark_mechanism_rate_within_10pct_of_expected": true,
+        "talon_mechanism_rate_within_10pct_of_expected": true,
+        "active_command_period_within_10pct_of_target": true,
+        "fast_loop_period_within_10pct_of_target": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      },
+      "latency_summary_ms": {
+        "input_to_actual_command": {
+          "samples": 3987,
+          "p50": 2.643,
+          "p95": 4.942,
+          "p99": 7.6479599999999985,
+          "max": 9.669
+        },
+        "scheduled_step_to_actual_command": {
+          "samples": 110,
+          "p50": 3.439,
+          "p95": 6.2075499999999995,
+          "p99": 7.131889999999998,
+          "max": 7.568
+        }
+      },
+      "control_loop_period_ms": {
+        "samples": 3992,
+        "p50": 2.0,
+        "p95": 4.2439,
+        "p99": 4.661260000000002
+      },
+      "physics_samples": {
+        "topic": "/Simulation/Physics/Samples",
+        "sample_layout": [
+          "ntNowUs",
+          "fpgaUs",
+          "runtimeTimeSeconds"
+        ],
+        "samples": 402,
+        "period_ms": {
+          "samples": 401,
+          "p50": 19.999,
+          "p95": 20.497,
+          "p99": 20.969
+        },
+        "runtime_elapsed_s": 8.019999999999536,
+        "nt_elapsed_s": 8.020594,
+        "runtime_rate_vs_nt_wall": 0.999925940647231
+      },
+      "mechanism_cadence": {
+        "topic": "/Simulation/MechanismCadence",
+        "sample_layout": [
+          "ntNowUs",
+          "sparkControlCount",
+          "talonControlCount"
+        ],
+        "samples": 402,
+        "nt_elapsed_s": 8.020623,
+        "spark_control_count_delta": 801.0,
+        "talon_control_count_delta": 2003.0,
+        "spark_control_callbacks_hz": 99.8675539294142,
+        "talon_control_callbacks_hz": 249.73122412062003,
+        "expected_spark_hz": 100.0,
+        "expected_talon_hz": 250.0
+      },
+      "active_command_period_ms": {
+        "samples": 3992,
+        "p50": 1.998,
+        "p95": 4.286,
+        "p99": 4.684350000000002
+      },
+      "fast_loop": {
+        "topic": "/Simulation/FastControl/Samples",
+        "sample_layout": [
+          "sequence",
+          "scheduledFpgaUs",
+          "actualStartFpgaUs",
+          "finishFpgaUs",
+          "workUs",
+          "latenessUs",
+          "enabled"
+        ],
+        "samples_total": 4006,
+        "samples_enabled": 3997,
+        "sequence_gaps": 0,
+        "actual_start_period_ms": {
+          "samples": 3996,
+          "p50": 2.0,
+          "p95": 4.24475,
+          "p99": 4.661600000000002
+        },
+        "schedule_delay_ms": {
+          "p50": -2.107,
+          "p95": 0.1441999999999998
+        },
+        "work_ms": {
+          "p50": 0.058,
+          "p95": 0.125
+        },
+        "lateness_ms": {
+          "p50": 0.0,
+          "p95": 0.1441999999999998
+        }
+      },
+      "finished_utc": "2026-11-02T07:02:50.209501+00:00"
+    },
+    {
+      "name": "nt-robot2-load-vision",
+      "mode": "nt",
+      "robot_period_ms": 2,
+      "nt_input_period_ms": 5,
+      "fast_control_enabled": true,
+      "physics_period_ms": 20,
+      "synthetic_load": "vision",
+      "nt_port": 5824,
+      "ws_port": 3307,
+      "result": "artifacts/frequency-matrix/20261102T070138Z/nt-robot2-load-vision.json",
+      "sim_log": "artifacts/frequency-matrix/20261102T070138Z/nt-robot2-load-vision.sim.log",
+      "compare_log": "artifacts/frequency-matrix/20261102T070138Z/nt-robot2-load-vision.compare.log",
+      "started_utc": "2026-11-02T07:02:50.210047+00:00",
+      "simulator_pid": 612188,
+      "listener_addresses": [
+        {
+          "port": 3307,
+          "address": "0.0.0.0"
+        },
+        {
+          "port": 5824,
+          "address": "127.0.0.1"
+        }
+      ],
+      "listener_owner_pids_by_port": {
+        "5824": [
+          612195
+        ],
+        "3307": [
+          612195
+        ]
+      },
+      "compare_exit_code": 0,
+      "status": "complete",
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "control_loop_p50_within_10pct_of_target": true,
+        "physics_loop_p50_within_10pct_of_20ms": true,
+        "physics_runtime_rate_within_10pct_of_wall": true,
+        "spark_mechanism_rate_within_10pct_of_expected": true,
+        "talon_mechanism_rate_within_10pct_of_expected": true,
+        "active_command_period_within_10pct_of_target": true,
+        "fast_loop_period_within_10pct_of_target": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      },
+      "latency_summary_ms": {
+        "input_to_actual_command": {
+          "samples": 3970,
+          "p50": 3.1315,
+          "p95": 6.88455,
+          "p99": 8.78017,
+          "max": 10.166
+        },
+        "scheduled_step_to_actual_command": {
+          "samples": 110,
+          "p50": 4.186,
+          "p95": 7.848299999999998,
+          "p99": 10.128049999999998,
+          "max": 12.022
+        }
+      },
+      "control_loop_period_ms": {
+        "samples": 3972,
+        "p50": 2.0,
+        "p95": 4.14145,
+        "p99": 4.75687
+      },
+      "physics_samples": {
+        "topic": "/Simulation/Physics/Samples",
+        "sample_layout": [
+          "ntNowUs",
+          "fpgaUs",
+          "runtimeTimeSeconds"
+        ],
+        "samples": 403,
+        "period_ms": {
+          "samples": 402,
+          "p50": 19.9985,
+          "p95": 20.56465,
+          "p99": 21.84392
+        },
+        "runtime_elapsed_s": 8.03999999999953,
+        "nt_elapsed_s": 8.03989,
+        "runtime_rate_vs_nt_wall": 1.0000136817791698
+      },
+      "mechanism_cadence": {
+        "topic": "/Simulation/MechanismCadence",
+        "sample_layout": [
+          "ntNowUs",
+          "sparkControlCount",
+          "talonControlCount"
+        ],
+        "samples": 403,
+        "nt_elapsed_s": 8.039928,
+        "spark_control_count_delta": 799.0,
+        "talon_control_count_delta": 1997.0,
+        "spark_control_callbacks_hz": 99.3789994139251,
+        "talon_control_callbacks_hz": 248.3853089231645,
+        "expected_spark_hz": 100.0,
+        "expected_talon_hz": 250.0
+      },
+      "active_command_period_ms": {
+        "samples": 3972,
+        "p50": 1.998,
+        "p95": 4.1739,
+        "p99": 4.81616
+      },
+      "fast_loop": {
+        "topic": "/Simulation/FastControl/Samples",
+        "sample_layout": [
+          "sequence",
+          "scheduledFpgaUs",
+          "actualStartFpgaUs",
+          "finishFpgaUs",
+          "workUs",
+          "latenessUs",
+          "enabled"
+        ],
+        "samples_total": 3995,
+        "samples_enabled": 3980,
+        "sequence_gaps": 0,
+        "actual_start_period_ms": {
+          "samples": 3979,
+          "p50": 2.0,
+          "p95": 4.140199999999999,
+          "p99": 4.757
+        },
+        "schedule_delay_ms": {
+          "p50": -0.736,
+          "p95": 0.1762999999999711
+        },
+        "work_ms": {
+          "p50": 0.049,
+          "p95": 0.132
+        },
+        "lateness_ms": {
+          "p50": 0.0,
+          "p95": 0.1762999999999711
+        }
+      },
+      "finished_utc": "2026-11-02T07:03:00.243089+00:00"
+    }
+  ],
+  "status": "complete",
+  "source_records": "artifacts/frequency-matrix/20261102T070138Z"
+}

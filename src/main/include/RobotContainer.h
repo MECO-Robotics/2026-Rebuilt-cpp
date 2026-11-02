@@ -26,11 +26,17 @@
 #include <frc/geometry/struct/Pose3dStruct.h>
 #endif
 #include <vector>
+#include <cstdint>
 // Owns season subsystems, command bindings, and simulation adapters.
 class RobotContainer
 {
 public:
   RobotContainer();
+  // Run the mechanisms' control loops at their original 20 ms cadence when
+  // the command scheduler is configured to run faster than the TimedRobot loop.
+  void ControlMechanisms20ms();
+  // Run the selected mechanism groups at their opt-in fast-control periods.
+  void ControlMechanismsFast();
   frc2::Command *GetAutonomousCommand();
   void ScheduleAutonomous(frc2::Command *command);
   void CancelChecks();
@@ -65,6 +71,10 @@ private:
   season::FieldGeometry field_;
   frc::Rotation2d driverHeadingOffset_{};
   double lastAcceptedVision_ = -1e9;
+  bool fastControlEnabled_{};
+  bool fastMechanismCanFd_{};
+  uint64_t fastMechanismControlTick_{};
+  uint64_t sparkControlCount_{}, talonControlCount_{};
 #ifndef __FRC_ROBORIO__
   season::simulation::SimulatedLocalization simulatedLocalization_;
 #endif

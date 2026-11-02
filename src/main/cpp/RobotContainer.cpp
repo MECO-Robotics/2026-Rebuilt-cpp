@@ -22,6 +22,10 @@
 #include <pathplanner/lib/auto/AutoBuilder.h>
 #include <pathplanner/lib/auto/NamedCommands.h>
 #include <networktables/NetworkTableInstance.h>
+#if defined(MECO_FAST_CONTROL_API)
+#include "season/drive/FastControlProfile.h"
+#include <ctre/phoenix6/CANBus.hpp>
+#endif
 #include <array>
 #include <numbers>
 #include <algorithm>
@@ -34,6 +38,39 @@ namespace
 {
 // Select hardware IO only on a real robot.
 base::Mode Mode() { return frc::RobotBase::IsReal() ? base::Mode::Real : base::Mode::Sim; }
+bool FastControlEnabled()
+{
+#if defined(MECO_FAST_CONTROL_API)
+  const char *value = std::getenv("FRC_FAST_CONTROL");
+  return value && std::string_view{value} == "1";
+#else
+  return false;
+#endif
+}
+base::MotorConfig MotorRates(base::MotorConfig config, base::Vendor vendor)
+{
+#if defined(MECO_FAST_CONTROL_API)
+  if (FastControlEnabled())
+  {
+    config.rates.diagnosticHz = 4;
+    if (vendor == base::Vendor::SparkMax)
+    {
+      config.rates.positionVelocityHz = 100;
+      config.rates.controlHz = 100;
+    }
+    else
+    {
+      const bool canFd = !frc::RobotBase::IsReal() ||
+                         (!config.canBus.empty() && ctre::phoenix6::CANBus{config.canBus}.IsNetworkFD());
+      config.rates.positionVelocityHz = canFd ? 250 : 100;
+      config.rates.controlHz = canFd ? 250 : 100;
+    }
+  }
+#else
+  (void)vendor;
+#endif
+  return config;
+}
 #ifndef __FRC_ROBORIO__
 meco::sim::RobotContactConfig RobotContacts()
 {
@@ -61,6 +98,14 @@ base::DriveConfig DriveConfig()
   base::DriveConfig c;
   c.bus = "MECO CANIvore";
   c.pigeon = 13;
+#if defined(MECO_FAST_CONTROL_API)
+  if (FastControlEnabled())
+  {
+    c.controlPeriodSeconds = season::drive::fastcontrol::kPeriodSeconds;
+    c.externalSimulationScheduling = true;
+    c.odometryHz = frc::RobotBase::IsSimulation() || ctre::phoenix6::CANBus{c.bus}.IsNetworkFD() ? 500 : 100;
+  }
+#endif
   c.driveRatio = 5.8909090909090915;
   c.steerRatio = 12.1;
   c.couplingRatio = 4.909090909090909;
@@ -136,7 +181,7 @@ base::DriveConfig DriveConfig()
 // Construct flywheel motor IO using the season configuration and inertia.
 std::unique_ptr<base::MotorIO> Motor(const season::hardware::FlywheelConfig &c, base::Vendor vendor)
 {
-  return base::MakeMotorIO(Mode(), vendor, c.motor, c.inertiaKgMetersSquared);
+  return base::MakeMotorIO(Mode(), vendor, MotorRates(c.motor, vendor), c.inertiaKgMetersSquared);
 }
 // Derive trench references from the official field tag layout.
 season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
@@ -211,16 +256,19 @@ RobotContainer::RobotContainer()
       rack_("IntakeRack",
             base::MakeMotorIO(
                 Mode(), base::Vendor::SparkMax,
-                {{21},
-                 {false},
-                 season::hardware::kRackGearRatio * 2 * std::numbers::pi * season::hardware::kRackDrumRadius,
-                 40,
-                 ""},
+                MotorRates({{21},
+                            {false},
+                            season::hardware::kRackGearRatio * 2 * std::numbers::pi *
+                                season::hardware::kRackDrumRadius,
+                            40,
+                            ""},
+                           base::Vendor::SparkMax),
                 15 * .45359237 * .0127 * .0127),
             (frc::RobotBase::IsSimulation() ? season::hardware::SimulationGainsFor(season::hardware::kRackGains)
                                             : season::hardware::kRackGains),
             2 * std::numbers::pi * season::hardware::kRackDrumRadius),
-      hood_("Hood", base::MakeMotorIO(Mode(), base::Vendor::SparkMax, {{33}, {false}, 105, 40, ""}, .01),
+      hood_("Hood", base::MakeMotorIO(Mode(), base::Vendor::SparkMax,
+                                       MotorRates({{33}, {false}, 105, 40, ""}, base::Vendor::SparkMax), .01),
             (frc::RobotBase::IsSimulation() ? season::hardware::SimulationGainsFor(season::hardware::kHoodGains)
                                             : season::hardware::kHoodGains),
             1, base::Gravity::Cosine),
@@ -266,6 +314,21 @@ RobotContainer::RobotContainer()
           frc::RobotBase::IsReal() ? "/home/lvuser/systemcheck-latest.json" : "systemcheck-latest.json",
           {.setupPrompt = "Confirm robot on blocks, no fuel, clear personnel and Disable operator ready"})
 {
+  fastControlEnabled_ = FastControlEnabled();
+#if defined(MECO_FAST_CONTROL_API)
+  fastMechanismCanFd_ = !frc::RobotBase::IsReal() ||
+                       (!season::hardware::kBottomIndexer.motor.canBus.empty() &&
+                        ctre::phoenix6::CANBus{season::hardware::kBottomIndexer.motor.canBus}.IsNetworkFD());
+#endif
+  // The command scheduler may run faster than the mechanisms' validated
+  // 20 ms controller interval. Keep their feedback/control cadence explicit.
+  rack_.UseExternalScheduling();
+  hood_.UseExternalScheduling();
+  intake_.UseExternalScheduling();
+  conveyor_.UseExternalScheduling();
+  bottom_.UseExternalScheduling();
+  top_.UseExternalScheduling();
+  shooter_.UseExternalScheduling();
   // Install the pathfinder before constructing commands that use it.
   base::ConfigureNativeAutoDrivePathfinder();
   drive_.ConfigureAuto();
@@ -355,7 +418,8 @@ RobotContainer::RobotContainer()
   // Perception uses the live intake extension and the shared match snapshot.
   autoDrive_ = std::make_unique<season::AutoDrive>(
       drive_, [this] { return rack_.Position(); },
-      [this]() -> const base::season2026::MatchContext & { return matchContext_; });
+      [this]() -> const base::season2026::MatchContext & { return matchContext_; },
+      FastControlEnabled() ? units::second_t{.005} : units::second_t{.1});
   auto m = Mechanisms();
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
@@ -522,6 +586,51 @@ RobotContainer::RobotContainer()
   if (frc::RobotBase::IsSimulation())
     ResetSimulation();
 }
+
+// Maintain mechanism feedback and control at 50 Hz independently of the
+// drivetrain/command-scheduler cadence. Call from the 20 ms TimedRobot loop.
+void RobotContainer::ControlMechanisms20ms()
+{
+  if (fastControlEnabled_)
+    return;
+  ++sparkControlCount_;
+  ++talonControlCount_;
+  constexpr units::second_t kControlPeriod{.02};
+  rack_.Control(kControlPeriod);
+  hood_.Control(kControlPeriod);
+  intake_.Control(kControlPeriod);
+  conveyor_.Control(kControlPeriod);
+  bottom_.Control(kControlPeriod);
+  top_.Control(kControlPeriod);
+  shooter_.Control(kControlPeriod);
+}
+
+// Tick the selected groups at exact integer submultiples of the 2 ms scheduler.
+void RobotContainer::ControlMechanismsFast()
+{
+  if (!fastControlEnabled_)
+    return;
+  ++fastMechanismControlTick_;
+  if (fastMechanismControlTick_ % 5 == 0)
+  {
+    ++sparkControlCount_;
+    constexpr units::second_t kSparkControlPeriod{.01};
+    rack_.Control(kSparkControlPeriod);
+    hood_.Control(kSparkControlPeriod);
+    intake_.Control(kSparkControlPeriod);
+    conveyor_.Control(kSparkControlPeriod);
+    top_.Control(kSparkControlPeriod);
+  }
+  const uint64_t talonDivider = fastMechanismCanFd_ ? 2 : 5;
+  if (fastMechanismControlTick_ % talonDivider == 0)
+  {
+    ++talonControlCount_;
+    const units::second_t talonControlPeriod{fastMechanismCanFd_ ? .004 : .01};
+    bottom_.Control(talonControlPeriod);
+    shooter_.Control(talonControlPeriod);
+  }
+}
+
 // Bind controls to commands with explicit ownership and cleanup.
 void RobotContainer::ConfigureBindings()
 {
@@ -754,6 +863,15 @@ void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 void RobotContainer::SimulationPeriodic()
 {
 #ifndef __FRC_ROBORIO__
+#if defined(MECO_FAST_CONTROL_API)
+  // The fast command scheduler does not own the 20 ms simulation clock.
+  if (fastControlEnabled_)
+    drive_.StepSimulationPeriod();
+#endif
+  static auto mechanismCadence = nt::NetworkTableInstance::GetDefault()
+      .GetDoubleArrayTopic("/Simulation/MechanismCadence").Publish();
+  mechanismCadence.Set(std::array<double, 3>{static_cast<double>(nt::Now()),
+      static_cast<double>(sparkControlCount_), static_cast<double>(talonControlCount_)});
   std::optional<season::FuelRobotState> fuelRobotState;
   if (auto truth = drive_.SimulationTruth())
   {

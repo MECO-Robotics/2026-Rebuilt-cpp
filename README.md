@@ -51,6 +51,7 @@ A does not feed fuel; use **right bumper** to feed. The straight ferry path can 
 | Find motor settings and command interfaces | [Mechanisms.h](src/main/include/season/mechanisms/Mechanisms.h) and [season commands](src/main/cpp/season/mechanisms/SeasonCommands.cpp) |
 | Understand shooting and targeting | [Shooting.h](src/main/include/season/shooting/Shooting.h) and [Shooting.cpp](src/main/cpp/season/shooting/Shooting.cpp) |
 | Try AutoDrive | [AutoDrive guide](docs/autodrive-simulation.md) |
+| Compare optimized control and NT input | [frequency results and local build](docs/frequency-results.md) |
 | Understand the simulated field and fuel | [simulation field](docs/simulation-field.md) |
 | Find a guide | [documentation index](docs/README.md) |
 

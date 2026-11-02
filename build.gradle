@@ -104,6 +104,13 @@ if (System.getProperty("os.name").toLowerCase().contains("linux")) {
 wpi.sim.addDriverstation()
 
 model {
+    binaries {
+        all { binary ->
+            if (project.findProperty('fastControlApi') == 'true') {
+                binary.cppCompiler.define 'MECO_FAST_CONTROL_API', '1'
+            }
+        }
+    }
     components {
         frcUserProgram(NativeExecutableSpec) {
             targetPlatform wpi.platforms.roborio

@@ -25,7 +25,8 @@ class AutoDrive
 {
 public:
   AutoDrive(base::Drive &drive, std::function<double()> intakeExtension,
-            std::function<const base::season2026::MatchContext &()> matchContext);
+            std::function<const base::season2026::MatchContext &()> matchContext,
+            units::second_t detectionUpdatePeriod = units::second_t{.1});
   // Create a fresh drivetrain-owning navigation command.
   frc2::CommandPtr Command();
   // Fresh, estimated field-frame observations from the camera perception path.
