@@ -917,5 +917,13 @@
         "p99": 6.573200000000001
       }
     }
-  ]
+  ],
+  "public_release_validation": {
+    "base": "2026.2.12",
+    "simulation": "2026.0.17",
+    "verified_maven_artifacts": 16,
+    "build": "ordinary Gradle, no local Maven overrides, roboRIO and desktop Release passed",
+    "tests_passed": 7,
+    "robot_executable_sha256": "dfca280f7874cb48adad6c051350aedc73347d019665f3edd39b7c1648d02d4d"
+  }
 }
