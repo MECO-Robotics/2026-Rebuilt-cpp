@@ -1,0 +1,84 @@
+{
+  "scope": "Actual desktop Rebuilt DriveTeleop command path; HAL websocket simulated DS vs opt-in NT axes, fixed20ms robotloop; no physical USB/radio/CAN/actuator latency. Extra load is synthetic NT traffic, not camera inference.",
+  "duration_per_case_seconds": 8,
+  "branch": "codex/nt-gamepad",
+  "parent": "1c9362a",
+  "rows": [
+    {
+      "case": "ds-none",
+      "steps": 110,
+      "median_ms": 22.180500000000002,
+      "p95_ms": 31.14155,
+      "p99_ms": 32.08653,
+      "max_ms": 32.286,
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "robot_loop_p50_within_10pct_of_20ms": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      }
+    },
+    {
+      "case": "ds-vision",
+      "steps": 110,
+      "median_ms": 20.802,
+      "p95_ms": 29.842299999999998,
+      "p99_ms": 30.38315,
+      "max_ms": 30.422,
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "robot_loop_p50_within_10pct_of_20ms": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      }
+    },
+    {
+      "case": "nt-none",
+      "steps": 110,
+      "median_ms": 11.475999999999999,
+      "p95_ms": 22.059499999999993,
+      "p99_ms": 24.905559999999998,
+      "max_ms": 25.444,
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "robot_loop_p50_within_10pct_of_20ms": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      }
+    },
+    {
+      "case": "nt-vision",
+      "steps": 110,
+      "median_ms": 13.613,
+      "p95_ms": 23.198,
+      "p99_ms": 24.16588,
+      "max_ms": 24.241,
+      "quality": {
+        "robot_telemetry_observed": true,
+        "driver_station_enabled_teleop_confirmed": true,
+        "robot_command_telemetry_observed": true,
+        "robot_loop_p50_within_10pct_of_20ms": true,
+        "source_cadence_within_10pct": true,
+        "latencies_finite": true,
+        "steps_observed": true,
+        "all_robot_commands_after_first_input_accepted": true,
+        "no_errors": true
+      }
+    }
+  ]
+}

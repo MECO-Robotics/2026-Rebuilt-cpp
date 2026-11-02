@@ -1,0 +1,123 @@
+{
+  "experiment": "actual local WPILib robot HAL DS-vs-NT gamepad comparison",
+  "mode": "nt",
+  "robot_period_ms": 2,
+  "duration_s": 8.0,
+  "latency_summary_ms": {
+    "input_to_actual_command": {
+      "samples": 3939,
+      "p50": 2.095,
+      "p95": 4.927,
+      "p99": 5.05562,
+      "max": 8.057
+    },
+    "scheduled_step_to_actual_command": {
+      "samples": 110,
+      "p50": 3.3185000000000002,
+      "p95": 5.82975,
+      "p99": 6.36538,
+      "max": 7.421
+    }
+  },
+  "control_loop_period_ms": {
+    "samples": 3944,
+    "p50": 2.0,
+    "p95": 4.2208499999999995,
+    "p99": 6.032
+  },
+  "active_command_period_ms": {
+    "samples": 3944,
+    "p50": 1.998,
+    "p95": 4.259,
+    "p99": 6.074120000000003
+  },
+  "physics_samples": {
+    "topic": "/Simulation/Physics/Samples",
+    "sample_layout": [
+      "ntNowUs",
+      "fpgaUs",
+      "runtimeTimeSeconds"
+    ],
+    "samples": 403,
+    "period_ms": {
+      "samples": 402,
+      "p50": 19.9895,
+      "p95": 20.676949999999998,
+      "p99": 21.56637
+    },
+    "runtime_elapsed_s": 8.039999999999115,
+    "nt_elapsed_s": 8.03969,
+    "runtime_rate_vs_nt_wall": 1.0000385587005363
+  },
+  "mechanism_cadence": {
+    "topic": "/Simulation/MechanismCadence",
+    "sample_layout": [
+      "ntNowUs",
+      "sparkControlCount",
+      "talonControlCount"
+    ],
+    "samples": 403,
+    "nt_elapsed_s": 8.039743,
+    "spark_control_count_delta": 793.0,
+    "talon_control_count_delta": 1983.0,
+    "spark_control_callbacks_hz": 98.63499368076816,
+    "talon_control_callbacks_hz": 246.64967524459428,
+    "expected_spark_hz": 100.0,
+    "expected_talon_hz": 250.0
+  },
+  "fast_loop": {
+    "topic": "/Simulation/FastControl/Samples",
+    "sample_layout": [
+      "sequence",
+      "scheduledFpgaUs",
+      "actualStartFpgaUs",
+      "finishFpgaUs",
+      "workUs",
+      "latenessUs",
+      "enabled"
+    ],
+    "samples_total": 3966,
+    "samples_enabled": 3949,
+    "sequence_gaps": 0,
+    "actual_start_period_ms": {
+      "samples": 3948,
+      "p50": 2.0,
+      "p95": 4.22,
+      "p99": 6.027
+    },
+    "schedule_delay_ms": {
+      "p50": -2.9,
+      "p95": -0.25700000000000045
+    },
+    "work_ms": {
+      "p50": 0.062,
+      "p95": 0.148
+    },
+    "lateness_ms": {
+      "p50": 0.0,
+      "p95": 0.0
+    }
+  },
+  "quality": {
+    "robot_telemetry_observed": true,
+    "driver_station_enabled_teleop_confirmed": true,
+    "robot_command_telemetry_observed": true,
+    "control_loop_p50_within_10pct_of_target": true,
+    "physics_loop_p50_within_10pct_of_20ms": true,
+    "physics_runtime_rate_within_10pct_of_wall": true,
+    "spark_mechanism_rate_within_10pct_of_expected": true,
+    "talon_mechanism_rate_within_10pct_of_expected": true,
+    "active_command_period_within_10pct_of_target": true,
+    "fast_loop_period_within_10pct_of_target": true,
+    "source_cadence_within_10pct": true,
+    "latencies_finite": true,
+    "steps_observed": true,
+    "all_robot_commands_after_first_input_accepted": true,
+    "no_errors": true
+  },
+  "limitations": [
+    "This exercises the full local desktop robot loop and its command telemetry; it is not physical Driver Station, USB, radio, roboRIO, motor controller, or field evidence.",
+    "Synthetic vision load is NT4 traffic only; the robot's simulation vision sources are injected local callbacks, so this does not reproduce camera processing or perception CPU work.",
+    "DS input-to-command time uses the harness HAL write timestamp; NT input-to-command time uses the embedded source NT timestamp and robot consumer command timestamp."
+  ]
+}

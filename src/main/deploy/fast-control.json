@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "periodMs": 2,
+  "ntGamepadEnabled": true,
+  "driverInput": "nt",
+  "ntPeriodMs": 5,
+  "ntStaleMs": 50,
+  "sparkControlMs": 10,
+  "talonFdControlMs": 4,
+  "talonClassicControlMs": 10,
+  "detectionPeriodMs": 5,
+  "diagnosticHz": 4,
+  "sparkStatusHz": 100,
+  "talonFdStatusHz": 250,
+  "talonClassicStatusHz": 100,
+  "odometryFdHz": 500,
+  "odometryClassicHz": 100,
+  "questPeriodMs": 5
+}

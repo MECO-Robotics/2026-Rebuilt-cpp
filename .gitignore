@@ -19,3 +19,10 @@ __pycache__/
 
 # Generated documentation site
 site/
+
+# Unpacked frequency-run traces; validated records are retained in the ZIP artifact.
+/artifacts/frequency-matrix/
+/artifacts/fast-final-smoke.json
+
+# Raw integration trials are retained locally; validated evidence is archived separately.
+/artifacts/configurable-profile-validation/

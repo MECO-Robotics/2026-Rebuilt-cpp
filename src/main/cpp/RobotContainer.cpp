@@ -22,6 +22,10 @@
 #include <pathplanner/lib/auto/AutoBuilder.h>
 #include <pathplanner/lib/auto/NamedCommands.h>
 #include <networktables/NetworkTableInstance.h>
+#if defined(MECO_FAST_CONTROL_API)
+#include "season/drive/FastControlProfile.h"
+#include <ctre/phoenix6/CANBus.hpp>
+#endif
 #include <array>
 #include <numbers>
 #include <algorithm>
@@ -34,6 +38,40 @@ namespace
 {
 // Select hardware IO only on a real robot.
 base::Mode Mode() { return frc::RobotBase::IsReal() ? base::Mode::Real : base::Mode::Sim; }
+bool FastControlEnabled()
+{
+#if defined(MECO_FAST_CONTROL_API)
+  const char *value = std::getenv("FRC_FAST_CONTROL");
+  return value ? std::string_view{value} == "1" : season::drive::fastcontrol::Config().enabled;
+#else
+  return false;
+#endif
+}
+base::MotorConfig MotorRates(base::MotorConfig config, base::Vendor vendor)
+{
+#if defined(MECO_FAST_CONTROL_API)
+  if (FastControlEnabled())
+  {
+    const auto &profile = season::drive::fastcontrol::Config();
+    config.rates.diagnosticHz = season::drive::fastcontrol::Config().diagnosticHz;
+    if (vendor == base::Vendor::SparkMax)
+    {
+      config.rates.positionVelocityHz = profile.sparkStatusHz;
+      config.rates.controlHz = 1000.0 / profile.sparkControlMs;
+    }
+    else
+    {
+      const bool canFd = !frc::RobotBase::IsReal() ||
+                         (!config.canBus.empty() && ctre::phoenix6::CANBus{config.canBus}.IsNetworkFD());
+      config.rates.positionVelocityHz = canFd ? profile.talonFdStatusHz : profile.talonClassicStatusHz;
+      config.rates.controlHz = canFd ? 1000.0 / profile.talonFdControlMs : 1000.0 / profile.talonClassicControlMs;
+    }
+  }
+#else
+  (void)vendor;
+#endif
+  return config;
+}
 #ifndef __FRC_ROBORIO__
 meco::sim::RobotContactConfig RobotContacts()
 {
@@ -61,6 +99,16 @@ base::DriveConfig DriveConfig()
   base::DriveConfig c;
   c.bus = "MECO CANIvore";
   c.pigeon = 13;
+#if defined(MECO_FAST_CONTROL_API)
+  if (FastControlEnabled())
+  {
+    c.controlPeriodSeconds = season::drive::fastcontrol::Config().periodMs / 1000.0;
+    c.externalSimulationScheduling = true;
+    const auto &profile = season::drive::fastcontrol::Config();
+    c.odometryHz = frc::RobotBase::IsSimulation() || ctre::phoenix6::CANBus{c.bus}.IsNetworkFD()
+                       ? profile.odometryFdHz : profile.odometryClassicHz;
+  }
+#endif
   c.driveRatio = 5.8909090909090915;
   c.steerRatio = 12.1;
   c.couplingRatio = 4.909090909090909;
@@ -136,7 +184,7 @@ base::DriveConfig DriveConfig()
 // Construct flywheel motor IO using the season configuration and inertia.
 std::unique_ptr<base::MotorIO> Motor(const season::hardware::FlywheelConfig &c, base::Vendor vendor)
 {
-  return base::MakeMotorIO(Mode(), vendor, c.motor, c.inertiaKgMetersSquared);
+  return base::MakeMotorIO(Mode(), vendor, MotorRates(c.motor, vendor), c.inertiaKgMetersSquared);
 }
 // Derive trench references from the official field tag layout.
 season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
@@ -152,6 +200,7 @@ season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
 base::QuestNavConfig QuestConfig(const frc::AprilTagFieldLayout &layout)
 {
   base::QuestNavConfig c;
+  c.subscriptionPeriodSeconds = season::drive::fastcontrol::Config().questPeriodMs / 1000.0;
   c.fieldLength = layout.GetFieldLength().value();
   c.fieldWidth = layout.GetFieldWidth().value();
   c.robotToQuest = frc::Transform3d{units::meter_t{-13.5 * .0254}, 0_m, units::meter_t{8.5 * .0254},
@@ -211,16 +260,19 @@ RobotContainer::RobotContainer()
       rack_("IntakeRack",
             base::MakeMotorIO(
                 Mode(), base::Vendor::SparkMax,
-                {{21},
-                 {false},
-                 season::hardware::kRackGearRatio * 2 * std::numbers::pi * season::hardware::kRackDrumRadius,
-                 40,
-                 ""},
+                MotorRates({{21},
+                            {false},
+                            season::hardware::kRackGearRatio * 2 * std::numbers::pi *
+                                season::hardware::kRackDrumRadius,
+                            40,
+                            ""},
+                           base::Vendor::SparkMax),
                 15 * .45359237 * .0127 * .0127),
             (frc::RobotBase::IsSimulation() ? season::hardware::SimulationGainsFor(season::hardware::kRackGains)
                                             : season::hardware::kRackGains),
             2 * std::numbers::pi * season::hardware::kRackDrumRadius),
-      hood_("Hood", base::MakeMotorIO(Mode(), base::Vendor::SparkMax, {{33}, {false}, 105, 40, ""}, .01),
+      hood_("Hood", base::MakeMotorIO(Mode(), base::Vendor::SparkMax,
+                                       MotorRates({{33}, {false}, 105, 40, ""}, base::Vendor::SparkMax), .01),
             (frc::RobotBase::IsSimulation() ? season::hardware::SimulationGainsFor(season::hardware::kHoodGains)
                                             : season::hardware::kHoodGains),
             1, base::Gravity::Cosine),
@@ -266,12 +318,35 @@ RobotContainer::RobotContainer()
           frc::RobotBase::IsReal() ? "/home/lvuser/systemcheck-latest.json" : "systemcheck-latest.json",
           {.setupPrompt = "Confirm robot on blocks, no fuel, clear personnel and Disable operator ready"})
 {
+  fastControlEnabled_ = FastControlEnabled();
+#if defined(MECO_FAST_CONTROL_API)
+  fastMechanismCanFd_ = !frc::RobotBase::IsReal() ||
+                       (!season::hardware::kBottomIndexer.motor.canBus.empty() &&
+                        ctre::phoenix6::CANBus{season::hardware::kBottomIndexer.motor.canBus}.IsNetworkFD());
+#endif
+  // The command scheduler may run faster than the mechanisms' validated
+  // 20 ms controller interval. Keep their feedback/control cadence explicit.
+  rack_.UseExternalScheduling();
+  hood_.UseExternalScheduling();
+  intake_.UseExternalScheduling();
+  conveyor_.UseExternalScheduling();
+  bottom_.UseExternalScheduling();
+  top_.UseExternalScheduling();
+  shooter_.UseExternalScheduling();
   // Install the pathfinder before constructing commands that use it.
   base::ConfigureNativeAutoDrivePathfinder();
   drive_.ConfigureAuto();
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
   {
+    auto ntInstance = nt::NetworkTableInstance::GetDefault();
+    ntGamepadConsumedPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/Consumed").Publish();
+    driverStationCommandPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/DriverStationCommand").Publish();
+    const char *ntGamepadMode = std::getenv("FRC_SIM_NT_GAMEPAD");
+    const bool simNtEnabled = ntGamepadMode ? std::string_view{ntGamepadMode} == "1"
+                                            : fastControlProfile_.ntGamepadEnabled &&
+                                                  fastControlProfile_.driverInput == "nt";
+    frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Enabled", simNtEnabled);
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKP", drive_.Config().steerKP);
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKD", drive_.Config().steerKD);
     frc::SmartDashboard::PutNumber("SimulationTuning/AutoTranslationKP", drive_.Config().autoTranslationKP);
@@ -337,12 +412,28 @@ RobotContainer::RobotContainer()
         });
   }
 #endif
+  const bool ntInputSelected = fastControlProfile_.driverInput == "nt" && fastControlProfile_.ntGamepadEnabled;
+#ifndef __FRC_ROBORIO__
+  const char *simNtOverride = std::getenv("FRC_SIM_NT_GAMEPAD");
+  const bool useNtInput = frc::RobotBase::IsSimulation() && simNtOverride
+                              ? std::string_view{simNtOverride} == "1"
+                              : ntInputSelected;
+#else
+  const bool useNtInput = ntInputSelected;
+#endif
+  if (useNtInput)
+    ntGamepad_ = std::make_unique<season::drive::NtGamepad>(nt::NetworkTableInstance::GetDefault(),
+                                                           fastControlProfile_.ntPeriodMs,
+                                                           fastControlProfile_.ntStaleMs);
+  frc::SmartDashboard::PutString("Input/DriverSource", useNtInput ? "nt" : "driverstation");
+  frc::SmartDashboard::PutBoolean("Input/NTGamepadEnabled", useNtInput);
   // Manual driving resumes whenever no other command owns the drivetrain.
   drive_.SetDefaultCommand(frc2::cmd::RunEnd([this] { DriveTeleop(false); }, [this] { drive_.Stop(); }, {&drive_}));
   // Perception uses the live intake extension and the shared match snapshot.
   autoDrive_ = std::make_unique<season::AutoDrive>(
       drive_, [this] { return rack_.Position(); },
-      [this]() -> const base::season2026::MatchContext & { return matchContext_; });
+      [this]() -> const base::season2026::MatchContext & { return matchContext_; },
+      units::second_t{season::drive::fastcontrol::Config().detectionPeriodMs / 1000.0});
   auto m = Mechanisms();
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
@@ -509,6 +600,61 @@ RobotContainer::RobotContainer()
   if (frc::RobotBase::IsSimulation())
     ResetSimulation();
 }
+
+// Maintain mechanism feedback and control at 50 Hz independently of the
+// drivetrain/command-scheduler cadence. Call from the 20 ms TimedRobot loop.
+void RobotContainer::ControlMechanisms20ms()
+{
+  if (ntGamepad_)
+  {
+    const auto state = ntGamepad_->Read();
+    frc::SmartDashboard::PutBoolean("Input/NTAccepted", state.accepted);
+    frc::SmartDashboard::PutNumber("Input/NTAgeMs", std::isfinite(state.ageMs) ? state.ageMs : -1.0);
+    frc::SmartDashboard::PutNumber("Input/NTSequence", static_cast<double>(state.sequence));
+  }
+  if (fastControlEnabled_)
+    return;
+  ++sparkControlCount_;
+  ++talonControlCount_;
+  constexpr units::second_t kControlPeriod{.02};
+  rack_.Control(kControlPeriod);
+  hood_.Control(kControlPeriod);
+  intake_.Control(kControlPeriod);
+  conveyor_.Control(kControlPeriod);
+  bottom_.Control(kControlPeriod);
+  top_.Control(kControlPeriod);
+  shooter_.Control(kControlPeriod);
+}
+
+// Tick the selected groups at exact integer submultiples of the 2 ms scheduler.
+void RobotContainer::ControlMechanismsFast()
+{
+  if (!fastControlEnabled_)
+    return;
+  ++fastMechanismControlTick_;
+  const auto &profile = fastControlProfile_;
+  const uint64_t sparkDivider = static_cast<uint64_t>(std::llround(profile.sparkControlMs / profile.periodMs));
+  if (fastMechanismControlTick_ % sparkDivider == 0)
+  {
+    ++sparkControlCount_;
+    const units::second_t kSparkControlPeriod{profile.sparkControlMs / 1000.0};
+    rack_.Control(kSparkControlPeriod);
+    hood_.Control(kSparkControlPeriod);
+    intake_.Control(kSparkControlPeriod);
+    conveyor_.Control(kSparkControlPeriod);
+    top_.Control(kSparkControlPeriod);
+  }
+  const double talonPeriodMs = fastMechanismCanFd_ ? profile.talonFdControlMs : profile.talonClassicControlMs;
+  const uint64_t talonDivider = static_cast<uint64_t>(std::llround(talonPeriodMs / profile.periodMs));
+  if (fastMechanismControlTick_ % talonDivider == 0)
+  {
+    ++talonControlCount_;
+    const units::second_t talonControlPeriod{talonPeriodMs / 1000.0};
+    bottom_.Control(talonControlPeriod);
+    shooter_.Control(talonControlPeriod);
+  }
+}
+
 // Bind controls to commands with explicit ownership and cleanup.
 void RobotContainer::ConfigureBindings()
 {
@@ -593,11 +739,30 @@ void RobotContainer::DriveTeleop(bool aim)
   // translation frame. FieldDrive still owns alliance perspective and gating.
   const auto deadband = [](double value)
   { return std::abs(value) < .1 ? 0. : std::copysign((std::abs(value) - .1) / .9, value); };
-  const double x = deadband(base::simulation::ObserveJoystick(-controller_.GetLeftY())) * drive_.Config().maxSpeed;
-  const double y = deadband(-controller_.GetLeftX()) * drive_.Config().maxSpeed;
-  double omega = deadband(-controller_.GetRightX()) * drive_.Config().maxAngularRate;
+  const double dsLeftY = controller_.GetLeftY();
+  const double dsLeftX = controller_.GetLeftX();
+  const double dsRightX = controller_.GetRightX();
+  double rawLeftY = dsLeftY;
+  double rawLeftX = dsLeftX;
+  double rawRightX = dsRightX;
+  bool ntInputFresh = true;
+  season::drive::NtGamepad::State ntGamepadState;
+  if (ntGamepad_)
+  {
+    ntGamepadState = ntGamepad_->Read();
+    ntInputFresh = ntGamepadState.accepted;
+    rawLeftY = ntGamepadState.leftY;
+    rawLeftX = ntGamepadState.leftX;
+    rawRightX = ntGamepadState.rightX;
+  }
+  const bool teleopAuthority = frc::DriverStation::IsTeleopEnabled() && !frc::DriverStation::IsEStopped();
+  double x = deadband(base::simulation::ObserveJoystick(-rawLeftY)) * drive_.Config().maxSpeed;
+  double y = deadband(-rawLeftX) * drive_.Config().maxSpeed;
+  double omega = deadband(-rawRightX) * drive_.Config().maxAngularRate;
+  if (!teleopAuthority || !ntInputFresh)
+    x = y = omega = 0.0;
   // Aim controls rotation and shooter targets while translation stays manual.
-  if (aim)
+  if (aim && teleopAuthority && ntInputFresh)
   {
     const auto p = drive_.Pose();
     const auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
@@ -609,6 +774,30 @@ void RobotContainer::DriveTeleop(bool aim)
   }
   drive_.FieldDrive(x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin(),
                     x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos(), omega);
+#ifndef __FRC_ROBORIO__
+  const int64_t consumeNtUs = nt::Now();
+  const double fieldX = x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin();
+  const double fieldY = x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos();
+  if (ntGamepadConsumedPublisher_)
+  {
+    const std::array<double, 7> consumed{static_cast<double>(ntGamepadState.sequence),
+                                         static_cast<double>(ntGamepadState.sourceTimestampUs),
+                                         static_cast<double>(consumeNtUs), fieldX, fieldY, omega,
+                                         ntGamepadState.accepted ? 1.0 : 0.0};
+    ntGamepadConsumedPublisher_.Set(consumed, consumeNtUs);
+  }
+  if (driverStationCommandPublisher_)
+  {
+    const std::array<double, 7> driverStation{static_cast<double>(consumeNtUs), dsLeftY, dsLeftX, dsRightX,
+                                              fieldX, fieldY, omega};
+    driverStationCommandPublisher_.Set(driverStation, consumeNtUs);
+  }
+  frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Accepted",
+                                  ntGamepad_ && ntGamepadState.accepted);
+  frc::SmartDashboard::PutNumber("Simulation/NTGamepad/AgeMs",
+                                 std::isfinite(ntGamepadState.ageMs) ? ntGamepadState.ageMs : -1.0);
+  frc::SmartDashboard::PutNumber("Simulation/NTGamepad/Sequence", ntGamepadState.sequence);
+#endif
 }
 // Select a hub or ferry target from alliance, pose, and visible tags.
 season::ShotTarget RobotContainer::SelectTarget()
@@ -696,6 +885,15 @@ void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 void RobotContainer::SimulationPeriodic()
 {
 #ifndef __FRC_ROBORIO__
+#if defined(MECO_FAST_CONTROL_API)
+  // The fast command scheduler does not own the 20 ms simulation clock.
+  if (fastControlEnabled_)
+    drive_.StepSimulationPeriod();
+#endif
+  static auto mechanismCadence = nt::NetworkTableInstance::GetDefault()
+      .GetDoubleArrayTopic("/Simulation/MechanismCadence").Publish();
+  mechanismCadence.Set(std::array<double, 3>{static_cast<double>(nt::Now()),
+      static_cast<double>(sparkControlCount_), static_cast<double>(talonControlCount_)});
   std::optional<season::FuelRobotState> fuelRobotState;
   if (auto truth = drive_.SimulationTruth())
   {

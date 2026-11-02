@@ -8,6 +8,8 @@
 #include "base/SystemCheck.h"
 #include "season/drive/AutoDrive.h"
 #include "season/drive/OffensiveAutoDrive.h"
+#include "season/drive/NtGamepad.h"
+#include "season/drive/FastControlProfile.h"
 #include <base/season2026/MatchContext.h>
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/DriveSimulationAdapter.h"
@@ -23,11 +25,17 @@
 #include <frc/geometry/struct/Pose3dStruct.h>
 #endif
 #include <vector>
+#include <cstdint>
 // Owns season subsystems, command bindings, and simulation adapters.
 class RobotContainer
 {
 public:
   RobotContainer();
+  // Run the mechanisms' control loops at their original 20 ms cadence when
+  // the command scheduler is configured to run faster than the TimedRobot loop.
+  void ControlMechanisms20ms();
+  // Run the selected mechanism groups at their opt-in fast-control periods.
+  void ControlMechanismsFast();
   frc2::Command *GetAutonomousCommand();
   void ScheduleAutonomous(frc2::Command *command);
   void CancelChecks();
@@ -62,6 +70,11 @@ private:
   season::FieldGeometry field_;
   frc::Rotation2d driverHeadingOffset_{};
   double lastAcceptedVision_ = -1e9;
+  bool fastControlEnabled_{};
+  season::drive::fastcontrol::Profile fastControlProfile_ = season::drive::fastcontrol::Config();
+  bool fastMechanismCanFd_{};
+  uint64_t fastMechanismControlTick_{};
+  uint64_t sparkControlCount_{}, talonControlCount_{};
 #ifndef __FRC_ROBORIO__
   season::simulation::SimulatedLocalization simulatedLocalization_;
 #endif
@@ -74,6 +87,8 @@ private:
 
 #ifndef __FRC_ROBORIO__
   std::unique_ptr<season::FuelSimulation> simulation_;
+  nt::DoubleArrayPublisher ntGamepadConsumedPublisher_;
+  nt::DoubleArrayPublisher driverStationCommandPublisher_;
   meco::sim::DriveSimulationSession *simulationSession_{}; // Non-owning; drive_ owns it.
   nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
   nt::StructPublisher<frc::Pose3d> simulationBodyPosePublisher_;
@@ -85,6 +100,7 @@ private:
   bool captureAutonomousPoseReset_ = false;
   bool autonomousPoseBlocked_ = false;
 #endif
+  std::unique_ptr<season::drive::NtGamepad> ntGamepad_;
   frc2::CommandXboxController controller_{0}, copilot_{1};
   frc::SendableChooser<frc2::Command *> autoChooser_;
   std::vector<frc2::CommandPtr> seasonAutos_;

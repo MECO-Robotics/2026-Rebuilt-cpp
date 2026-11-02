@@ -11,6 +11,9 @@ extra_css:
 nav:
   - Home: README.md
   - AutoDrive: autodrive-simulation.md
+  - Control rates: frequency-profile.md
+  - NT gamepad: nt-gamepad.md
+  - Timing measurements: frequency-results.md
   - Practice matches: practice-mode.md
   - Simulation field: simulation-field.md
   - MecoBase AutoDrive: https://github.com/MECO-Robotics/MecoBase-cpp/blob/main/docs/autodrive.md
