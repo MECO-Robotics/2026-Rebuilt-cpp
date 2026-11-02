@@ -15,5 +15,6 @@
   "talonClassicStatusHz": 100,
   "odometryFdHz": 500,
   "odometryClassicHz": 100,
-  "questPeriodMs": 5
+  "questPeriodMs": 5,
+  "ntFallbackToDriverStation": true
 }

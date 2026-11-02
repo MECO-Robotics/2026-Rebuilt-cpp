@@ -1,0 +1,78 @@
+{
+  "result": "PASS",
+  "scope": "Local HAL + NT4 full robot; no hardware",
+  "cases": [
+    {
+      "fallback": true,
+      "phase": "missing NT",
+      "expected": "ds",
+      "observed_x_mps": 3.202222083409627
+    },
+    {
+      "fallback": true,
+      "phase": "fresh NT priority",
+      "expected": "nt",
+      "observed_x_mps": -3.2022222222222227
+    },
+    {
+      "fallback": true,
+      "phase": "stale NT",
+      "expected": "ds",
+      "observed_x_mps": 3.202222083409627
+    },
+    {
+      "fallback": true,
+      "phase": "NT recovery",
+      "expected": "nt",
+      "observed_x_mps": -3.2022222222222227
+    },
+    {
+      "fallback": true,
+      "phase": "invalid NT",
+      "expected": "ds",
+      "observed_x_mps": 3.202222083409627
+    },
+    {
+      "fallback": true,
+      "phase": "neither source available",
+      "expected": "zero",
+      "observed_x_mps": 0.0
+    },
+    {
+      "fallback": false,
+      "phase": "missing NT",
+      "expected": "zero",
+      "observed_x_mps": 0.0
+    },
+    {
+      "fallback": false,
+      "phase": "fresh NT priority",
+      "expected": "nt",
+      "observed_x_mps": -3.2022222222222227
+    },
+    {
+      "fallback": false,
+      "phase": "stale NT",
+      "expected": "zero",
+      "observed_x_mps": 0.0
+    },
+    {
+      "fallback": false,
+      "phase": "NT recovery",
+      "expected": "nt",
+      "observed_x_mps": -3.2022222222222227
+    },
+    {
+      "fallback": false,
+      "phase": "invalid NT",
+      "expected": "zero",
+      "observed_x_mps": 0.0
+    },
+    {
+      "fallback": false,
+      "phase": "neither source available",
+      "expected": "zero",
+      "observed_x_mps": 0.0
+    }
+  ]
+}
