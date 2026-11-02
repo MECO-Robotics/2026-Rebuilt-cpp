@@ -1,8 +1,11 @@
 {
-  "scope": "Laptop integration; matching local development libraries; no physical motor or CAN validation",
+  "scope": "Laptop integration with published Base 2026.2.12 and Simulation 2026.0.17 CI candidate; no physical motor/CAN timing validation",
+  "robot_source": "905792b31032fe0ab2a4e4bb8e3d69d15eb1c83b",
+  "base": "2026.2.12",
+  "simulation_candidate_source": "6c3c121aa8322333c764a6668ced42e2430fa6da",
   "matrix": {
     "experiment": "local robot input/control frequency matrix",
-    "created_utc": "2026-11-02T21:47:07.845744+00:00",
+    "created_utc": "2026-11-02T22:26:39.602568+00:00",
     "worktree": "/home/brian/Documents/Codex/2026-10-28/i-w/work/rebuilt-nt-gamepad",
     "duration_s": 6.0,
     "per_simulator_timeout_s": 150.0,
@@ -18,11 +21,11 @@
         "synthetic_load": "none",
         "nt_port": 5810,
         "ws_port": 3300,
-        "result": "artifacts/configurable-profile-validation/20261102T214707Z/ds-robot20-load-none.json",
-        "sim_log": "artifacts/configurable-profile-validation/20261102T214707Z/ds-robot20-load-none.sim.log",
-        "compare_log": "artifacts/configurable-profile-validation/20261102T214707Z/ds-robot20-load-none.compare.log",
-        "started_utc": "2026-11-02T21:47:07.845794+00:00",
-        "simulator_pid": 728764,
+        "result": "artifacts/configurable-profile-validation/20261102T222639Z/ds-robot20-load-none.json",
+        "sim_log": "artifacts/configurable-profile-validation/20261102T222639Z/ds-robot20-load-none.sim.log",
+        "compare_log": "artifacts/configurable-profile-validation/20261102T222639Z/ds-robot20-load-none.compare.log",
+        "started_utc": "2026-11-02T22:26:39.602652+00:00",
+        "simulator_pid": 781691,
         "listener_addresses": [
           {
             "port": 5810,
@@ -35,10 +38,10 @@
         ],
         "listener_owner_pids_by_port": {
           "5810": [
-            728774
+            781698
           ],
           "3300": [
-            728774
+            781698
           ]
         },
         "compare_exit_code": 0,
@@ -63,24 +66,24 @@
         "latency_summary_ms": {
           "input_to_actual_command": {
             "samples": 82,
-            "p50": 4.141500000000001,
-            "p95": 4.9168,
-            "p99": 5.24176,
-            "max": 5.326
+            "p50": 6.6575,
+            "p95": 7.4632000000000005,
+            "p99": 7.814229999999999,
+            "max": 7.909
           },
           "scheduled_step_to_actual_command": {
             "samples": 82,
-            "p50": 13.841000000000001,
-            "p95": 22.47655,
-            "p99": 23.75411,
-            "max": 23.972
+            "p50": 16.5935,
+            "p95": 25.34385,
+            "p99": 26.244359999999997,
+            "max": 26.685
           }
         },
         "control_loop_period_ms": {
           "samples": 300,
-          "p50": 20.0015,
-          "p95": 20.09935,
-          "p99": 20.196060000000003
+          "p50": 19.9955,
+          "p95": 20.13935,
+          "p99": 20.20113
         },
         "physics_samples": {
           "topic": "/Simulation/Physics/Samples",
@@ -92,13 +95,13 @@
           "samples": 304,
           "period_ms": {
             "samples": 303,
-            "p50": 19.972,
-            "p95": 21.0508,
-            "p99": 22.262000000000008
+            "p50": 20.015,
+            "p95": 21.0394,
+            "p99": 21.601320000000005
           },
-          "runtime_elapsed_s": 6.059999999999641,
-          "nt_elapsed_s": 6.061503,
-          "runtime_rate_vs_nt_wall": 0.9997520416965299
+          "runtime_elapsed_s": 6.059999999999643,
+          "nt_elapsed_s": 6.060141,
+          "runtime_rate_vs_nt_wall": 0.9999767332145643
         },
         "mechanism_cadence": {
           "topic": "/Simulation/MechanismCadence",
@@ -108,19 +111,19 @@
             "talonControlCount"
           ],
           "samples": 304,
-          "nt_elapsed_s": 6.061408,
+          "nt_elapsed_s": 6.060103,
           "spark_control_count_delta": 303.0,
           "talon_control_count_delta": 303.0,
-          "spark_control_callbacks_hz": 49.98838553682577,
-          "talon_control_callbacks_hz": 49.98838553682577,
+          "spark_control_callbacks_hz": 49.99915017946065,
+          "talon_control_callbacks_hz": 49.99915017946065,
           "expected_spark_hz": 50.0,
           "expected_talon_hz": 50.0
         },
         "active_command_period_ms": {
           "samples": 299,
-          "p50": 20.003,
-          "p95": 20.5679,
-          "p99": 21.13264
+          "p50": 19.998,
+          "p95": 20.7817,
+          "p99": 21.026039999999995
         },
         "fast_loop": {
           "topic": "/Simulation/FastControl/Samples",
@@ -155,7 +158,7 @@
             "p95": null
           }
         },
-        "finished_utc": "2026-11-02T21:47:17.532990+00:00"
+        "finished_utc": "2026-11-02T22:26:49.186967+00:00"
       },
       {
         "name": "nt-robot20-load-none",
@@ -167,11 +170,11 @@
         "synthetic_load": "none",
         "nt_port": 5812,
         "ws_port": 3301,
-        "result": "artifacts/configurable-profile-validation/20261102T214707Z/nt-robot20-load-none.json",
-        "sim_log": "artifacts/configurable-profile-validation/20261102T214707Z/nt-robot20-load-none.sim.log",
-        "compare_log": "artifacts/configurable-profile-validation/20261102T214707Z/nt-robot20-load-none.compare.log",
-        "started_utc": "2026-11-02T21:47:17.533655+00:00",
-        "simulator_pid": 729142,
+        "result": "artifacts/configurable-profile-validation/20261102T222639Z/nt-robot20-load-none.json",
+        "sim_log": "artifacts/configurable-profile-validation/20261102T222639Z/nt-robot20-load-none.sim.log",
+        "compare_log": "artifacts/configurable-profile-validation/20261102T222639Z/nt-robot20-load-none.compare.log",
+        "started_utc": "2026-11-02T22:26:49.187837+00:00",
+        "simulator_pid": 781756,
         "listener_addresses": [
           {
             "port": 3301,
@@ -184,10 +187,10 @@
         ],
         "listener_owner_pids_by_port": {
           "5812": [
-            729152
+            781763
           ],
           "3301": [
-            729152
+            781763
           ]
         },
         "compare_exit_code": 0,
@@ -212,24 +215,24 @@
         "latency_summary_ms": {
           "input_to_actual_command": {
             "samples": 300,
-            "p50": 1.4915,
-            "p95": 2.26175,
-            "p99": 6.3822699999999974,
-            "max": 6.897
+            "p50": 1.3485,
+            "p95": 6.138,
+            "p99": 6.362769999999999,
+            "max": 7.266
           },
           "scheduled_step_to_actual_command": {
             "samples": 83,
-            "p50": 11.276,
-            "p95": 20.250700000000002,
-            "p99": 21.130319999999998,
-            "max": 21.396
+            "p50": 10.888,
+            "p95": 19.947999999999997,
+            "p99": 20.75144,
+            "max": 20.758
           }
         },
         "control_loop_period_ms": {
           "samples": 300,
-          "p50": 20.001,
-          "p95": 20.167150000000003,
-          "p99": 20.27113
+          "p50": 19.999499999999998,
+          "p95": 20.1022,
+          "p99": 20.2282
         },
         "physics_samples": {
           "topic": "/Simulation/Physics/Samples",
@@ -241,13 +244,13 @@
           "samples": 304,
           "period_ms": {
             "samples": 303,
-            "p50": 19.987,
-            "p95": 20.9758,
-            "p99": 21.721860000000003
+            "p50": 20.02,
+            "p95": 20.9905,
+            "p99": 21.86176
           },
-          "runtime_elapsed_s": 6.059999999999749,
-          "nt_elapsed_s": 6.060455,
-          "runtime_rate_vs_nt_wall": 0.9999249231286675
+          "runtime_elapsed_s": 6.059999999999754,
+          "nt_elapsed_s": 6.06323,
+          "runtime_rate_vs_nt_wall": 0.9994672806408059
         },
         "mechanism_cadence": {
           "topic": "/Simulation/MechanismCadence",
@@ -257,19 +260,19 @@
             "talonControlCount"
           ],
           "samples": 304,
-          "nt_elapsed_s": 6.060192,
+          "nt_elapsed_s": 6.062025,
           "spark_control_count_delta": 303.0,
           "talon_control_count_delta": 303.0,
-          "spark_control_callbacks_hz": 49.998415891773725,
-          "talon_control_callbacks_hz": 49.998415891773725,
+          "spark_control_callbacks_hz": 49.98329766043525,
+          "talon_control_callbacks_hz": 49.98329766043525,
           "expected_spark_hz": 50.0,
           "expected_talon_hz": 50.0
         },
         "active_command_period_ms": {
           "samples": 299,
-          "p50": 19.996,
-          "p95": 20.578,
-          "p99": 21.107679999999995
+          "p50": 20.003,
+          "p95": 20.6462,
+          "p99": 21.433799999999998
         },
         "fast_loop": {
           "topic": "/Simulation/FastControl/Samples",
@@ -304,7 +307,7 @@
             "p95": null
           }
         },
-        "finished_utc": "2026-11-02T21:47:26.416985+00:00"
+        "finished_utc": "2026-11-02T22:26:58.393184+00:00"
       },
       {
         "name": "ds-robot2-load-none",
@@ -316,11 +319,11 @@
         "synthetic_load": "none",
         "nt_port": 5814,
         "ws_port": 3302,
-        "result": "artifacts/configurable-profile-validation/20261102T214707Z/ds-robot2-load-none.json",
-        "sim_log": "artifacts/configurable-profile-validation/20261102T214707Z/ds-robot2-load-none.sim.log",
-        "compare_log": "artifacts/configurable-profile-validation/20261102T214707Z/ds-robot2-load-none.compare.log",
-        "started_utc": "2026-11-02T21:47:26.418138+00:00",
-        "simulator_pid": 729461,
+        "result": "artifacts/configurable-profile-validation/20261102T222639Z/ds-robot2-load-none.json",
+        "sim_log": "artifacts/configurable-profile-validation/20261102T222639Z/ds-robot2-load-none.sim.log",
+        "compare_log": "artifacts/configurable-profile-validation/20261102T222639Z/ds-robot2-load-none.compare.log",
+        "started_utc": "2026-11-02T22:26:58.394017+00:00",
+        "simulator_pid": 781820,
         "listener_addresses": [
           {
             "port": 3302,
@@ -333,10 +336,10 @@
         ],
         "listener_owner_pids_by_port": {
           "5814": [
-            729490
+            781827
           ],
           "3302": [
-            729490
+            781827
           ]
         },
         "compare_exit_code": 0,
@@ -361,24 +364,24 @@
         "latency_summary_ms": {
           "input_to_actual_command": {
             "samples": 82,
-            "p50": 1.0635,
-            "p95": 1.25735,
-            "p99": 1.31114,
-            "max": 1.316
+            "p50": 0.6635,
+            "p95": 2.2511,
+            "p99": 2.44899,
+            "max": 2.466
           },
           "scheduled_step_to_actual_command": {
             "samples": 82,
-            "p50": 10.289000000000001,
-            "p95": 19.356,
-            "p99": 20.407519999999998,
-            "max": 20.414
+            "p50": 9.968499999999999,
+            "p95": 19.7542,
+            "p99": 20.313409999999994,
+            "max": 21.803
           }
         },
         "control_loop_period_ms": {
-          "samples": 2717,
+          "samples": 2764,
           "p50": 2.0,
-          "p95": 6.3191999999999995,
-          "p99": 7.901240000000001
+          "p95": 6.2814,
+          "p99": 6.780659999999998
         },
         "physics_samples": {
           "topic": "/Simulation/Physics/Samples",
@@ -390,13 +393,13 @@
           "samples": 303,
           "period_ms": {
             "samples": 302,
-            "p50": 19.999000000000002,
-            "p95": 20.8437,
-            "p99": 21.94601
+            "p50": 20.000500000000002,
+            "p95": 20.6239,
+            "p99": 21.388840000000002
           },
           "runtime_elapsed_s": 6.039999999999751,
-          "nt_elapsed_s": 6.041771,
-          "runtime_rate_vs_nt_wall": 0.9997068740274584
+          "nt_elapsed_s": 6.042104,
+          "runtime_rate_vs_nt_wall": 0.9996517769306439
         },
         "mechanism_cadence": {
           "topic": "/Simulation/MechanismCadence",
@@ -406,19 +409,19 @@
             "talonControlCount"
           ],
           "samples": 303,
-          "nt_elapsed_s": 6.041332,
-          "spark_control_count_delta": 548.0,
-          "talon_control_count_delta": 1370.0,
-          "spark_control_callbacks_hz": 90.70847289968503,
-          "talon_control_callbacks_hz": 226.77118224921261,
+          "nt_elapsed_s": 6.041565,
+          "spark_control_count_delta": 557.0,
+          "talon_control_count_delta": 1393.0,
+          "spark_control_callbacks_hz": 92.19465486177836,
+          "talon_control_callbacks_hz": 230.5693971677868,
           "expected_spark_hz": 100.0,
           "expected_talon_hz": 250.0
         },
         "active_command_period_ms": {
-          "samples": 2717,
-          "p50": 1.998,
-          "p95": 6.353399999999999,
-          "p99": 7.96152
+          "samples": 2764,
+          "p50": 1.999,
+          "p95": 6.27185,
+          "p99": 6.83737
         },
         "fast_loop": {
           "topic": "/Simulation/FastControl/Samples",
@@ -431,29 +434,29 @@
             "latenessUs",
             "enabled"
           ],
-          "samples_total": 2741,
-          "samples_enabled": 2727,
+          "samples_total": 2788,
+          "samples_enabled": 2774,
           "sequence_gaps": 0,
           "actual_start_period_ms": {
-            "samples": 2726,
+            "samples": 2773,
             "p50": 2.0,
-            "p95": 6.3165000000000004,
-            "p99": 7.8995
+            "p95": 6.2816,
+            "p99": 6.780040000000004
           },
           "schedule_delay_ms": {
-            "p50": -1.955,
-            "p95": 2.5283999999999995
+            "p50": -1.336,
+            "p95": 2.9223999999999997
           },
           "work_ms": {
-            "p50": 0.141,
-            "p95": 0.28
+            "p50": 0.138,
+            "p95": 0.2663499999999999
           },
           "lateness_ms": {
             "p50": 0.0,
-            "p95": 2.5283999999999995
+            "p95": 2.9223999999999997
           }
         },
-        "finished_utc": "2026-11-02T21:47:34.979703+00:00"
+        "finished_utc": "2026-11-02T22:27:06.750693+00:00"
       },
       {
         "name": "nt-robot2-load-none",
@@ -465,11 +468,11 @@
         "synthetic_load": "none",
         "nt_port": 5816,
         "ws_port": 3303,
-        "result": "artifacts/configurable-profile-validation/20261102T214707Z/nt-robot2-load-none.json",
-        "sim_log": "artifacts/configurable-profile-validation/20261102T214707Z/nt-robot2-load-none.sim.log",
-        "compare_log": "artifacts/configurable-profile-validation/20261102T214707Z/nt-robot2-load-none.compare.log",
-        "started_utc": "2026-11-02T21:47:34.980761+00:00",
-        "simulator_pid": 729731,
+        "result": "artifacts/configurable-profile-validation/20261102T222639Z/nt-robot2-load-none.json",
+        "sim_log": "artifacts/configurable-profile-validation/20261102T222639Z/nt-robot2-load-none.sim.log",
+        "compare_log": "artifacts/configurable-profile-validation/20261102T222639Z/nt-robot2-load-none.compare.log",
+        "started_utc": "2026-11-02T22:27:06.751670+00:00",
+        "simulator_pid": 782227,
         "listener_addresses": [
           {
             "port": 3303,
@@ -482,10 +485,10 @@
         ],
         "listener_owner_pids_by_port": {
           "5816": [
-            729739
+            782234
           ],
           "3303": [
-            729739
+            782234
           ]
         },
         "compare_exit_code": 0,
@@ -509,25 +512,25 @@
         },
         "latency_summary_ms": {
           "input_to_actual_command": {
-            "samples": 2737,
-            "p50": 2.405,
-            "p95": 7.3204,
-            "p99": 9.196839999999998,
-            "max": 9.625
+            "samples": 2819,
+            "p50": 2.885,
+            "p95": 5.0541,
+            "p99": 5.23064,
+            "max": 5.461
           },
           "scheduled_step_to_actual_command": {
             "samples": 82,
-            "p50": 3.6965000000000003,
-            "p95": 8.672700000000004,
-            "p99": 10.243449999999996,
-            "max": 11.827
+            "p50": 4.305,
+            "p95": 8.758500000000002,
+            "p99": 9.369709999999998,
+            "max": 10.106
           }
         },
         "control_loop_period_ms": {
-          "samples": 2741,
+          "samples": 2821,
           "p50": 2.0,
-          "p95": 6.152,
-          "p99": 7.531799999999998
+          "p95": 5.818,
+          "p99": 6.516600000000006
         },
         "physics_samples": {
           "topic": "/Simulation/Physics/Samples",
@@ -536,16 +539,16 @@
             "fpgaUs",
             "runtimeTimeSeconds"
           ],
-          "samples": 303,
+          "samples": 302,
           "period_ms": {
-            "samples": 302,
-            "p50": 19.9465,
-            "p95": 21.1664,
-            "p99": 22.454670000000004
+            "samples": 301,
+            "p50": 19.993,
+            "p95": 20.823,
+            "p99": 21.697
           },
-          "runtime_elapsed_s": 6.039999999999751,
-          "nt_elapsed_s": 6.040822,
-          "runtime_rate_vs_nt_wall": 0.9998639258034339
+          "runtime_elapsed_s": 6.019999999999756,
+          "nt_elapsed_s": 6.021649,
+          "runtime_rate_vs_nt_wall": 0.9997261547459435
         },
         "mechanism_cadence": {
           "topic": "/Simulation/MechanismCadence",
@@ -554,20 +557,20 @@
             "sparkControlCount",
             "talonControlCount"
           ],
-          "samples": 303,
-          "nt_elapsed_s": 6.040374,
-          "spark_control_count_delta": 553.0,
-          "talon_control_count_delta": 1382.0,
-          "spark_control_callbacks_hz": 91.55062252767792,
-          "talon_control_callbacks_hz": 228.79377998779546,
+          "samples": 302,
+          "nt_elapsed_s": 6.02055,
+          "spark_control_count_delta": 569.0,
+          "talon_control_count_delta": 1422.0,
+          "spark_control_callbacks_hz": 94.50963782378686,
+          "talon_control_callbacks_hz": 236.1910456685851,
           "expected_spark_hz": 100.0,
           "expected_talon_hz": 250.0
         },
         "active_command_period_ms": {
-          "samples": 2741,
+          "samples": 2821,
           "p50": 1.999,
-          "p95": 6.162,
-          "p99": 7.584199999999998
+          "p95": 5.848,
+          "p99": 6.573200000000001
         },
         "fast_loop": {
           "topic": "/Simulation/FastControl/Samples",
@@ -580,34 +583,35 @@
             "latenessUs",
             "enabled"
           ],
-          "samples_total": 2765,
-          "samples_enabled": 2747,
+          "samples_total": 2845,
+          "samples_enabled": 2834,
           "sequence_gaps": 0,
           "actual_start_period_ms": {
-            "samples": 2746,
+            "samples": 2833,
             "p50": 2.0,
-            "p95": 6.15325,
-            "p99": 7.529350000000003
+            "p95": 5.8164,
+            "p99": 6.511759999999995
           },
           "schedule_delay_ms": {
-            "p50": -1.991,
-            "p95": 2.4193999999999996
+            "p50": -1.945,
+            "p95": 2.0010999999999997
           },
           "work_ms": {
-            "p50": 0.127,
-            "p95": 0.268
+            "p50": 0.111,
+            "p95": 0.248
           },
           "lateness_ms": {
             "p50": 0.0,
-            "p95": 2.4193999999999996
+            "p95": 2.0010999999999997
           }
         },
-        "finished_utc": "2026-11-02T21:47:43.530988+00:00"
+        "finished_utc": "2026-11-02T22:27:15.310607+00:00"
       }
     ],
-    "completed_utc": "2026-11-02T21:47:43.531911+00:00",
+    "completed_utc": "2026-11-02T22:27:15.311560+00:00",
     "status": "complete"
   },
+  "scheduler_watchdog": "Configured to selected command period; isolated overrun warning in each 2ms case",
   "cases": [
     {
       "case": "ds-robot20-load-none",
@@ -631,17 +635,17 @@
       "latency_summary_ms": {
         "input_to_actual_command": {
           "samples": 82,
-          "p50": 4.141500000000001,
-          "p95": 4.9168,
-          "p99": 5.24176,
-          "max": 5.326
+          "p50": 6.6575,
+          "p95": 7.4632000000000005,
+          "p99": 7.814229999999999,
+          "max": 7.909
         },
         "scheduled_step_to_actual_command": {
           "samples": 82,
-          "p50": 13.841000000000001,
-          "p95": 22.47655,
-          "p99": 23.75411,
-          "max": 23.972
+          "p50": 16.5935,
+          "p95": 25.34385,
+          "p99": 26.244359999999997,
+          "max": 26.685
         }
       },
       "mechanism_cadence": {
@@ -652,11 +656,11 @@
           "talonControlCount"
         ],
         "samples": 304,
-        "nt_elapsed_s": 6.061408,
+        "nt_elapsed_s": 6.060103,
         "spark_control_count_delta": 303.0,
         "talon_control_count_delta": 303.0,
-        "spark_control_callbacks_hz": 49.98838553682577,
-        "talon_control_callbacks_hz": 49.98838553682577,
+        "spark_control_callbacks_hz": 49.99915017946065,
+        "talon_control_callbacks_hz": 49.99915017946065,
         "expected_spark_hz": 50.0,
         "expected_talon_hz": 50.0
       },
@@ -670,19 +674,19 @@
         "samples": 304,
         "period_ms": {
           "samples": 303,
-          "p50": 19.972,
-          "p95": 21.0508,
-          "p99": 22.262000000000008
+          "p50": 20.015,
+          "p95": 21.0394,
+          "p99": 21.601320000000005
         },
-        "runtime_elapsed_s": 6.059999999999641,
-        "nt_elapsed_s": 6.061503,
-        "runtime_rate_vs_nt_wall": 0.9997520416965299
+        "runtime_elapsed_s": 6.059999999999643,
+        "nt_elapsed_s": 6.060141,
+        "runtime_rate_vs_nt_wall": 0.9999767332145643
       },
       "active_command_period_ms": {
         "samples": 299,
-        "p50": 20.003,
-        "p95": 20.5679,
-        "p99": 21.13264
+        "p50": 19.998,
+        "p95": 20.7817,
+        "p99": 21.026039999999995
       }
     },
     {
@@ -707,17 +711,17 @@
       "latency_summary_ms": {
         "input_to_actual_command": {
           "samples": 300,
-          "p50": 1.4915,
-          "p95": 2.26175,
-          "p99": 6.3822699999999974,
-          "max": 6.897
+          "p50": 1.3485,
+          "p95": 6.138,
+          "p99": 6.362769999999999,
+          "max": 7.266
         },
         "scheduled_step_to_actual_command": {
           "samples": 83,
-          "p50": 11.276,
-          "p95": 20.250700000000002,
-          "p99": 21.130319999999998,
-          "max": 21.396
+          "p50": 10.888,
+          "p95": 19.947999999999997,
+          "p99": 20.75144,
+          "max": 20.758
         }
       },
       "mechanism_cadence": {
@@ -728,11 +732,11 @@
           "talonControlCount"
         ],
         "samples": 304,
-        "nt_elapsed_s": 6.060192,
+        "nt_elapsed_s": 6.062025,
         "spark_control_count_delta": 303.0,
         "talon_control_count_delta": 303.0,
-        "spark_control_callbacks_hz": 49.998415891773725,
-        "talon_control_callbacks_hz": 49.998415891773725,
+        "spark_control_callbacks_hz": 49.98329766043525,
+        "talon_control_callbacks_hz": 49.98329766043525,
         "expected_spark_hz": 50.0,
         "expected_talon_hz": 50.0
       },
@@ -746,19 +750,19 @@
         "samples": 304,
         "period_ms": {
           "samples": 303,
-          "p50": 19.987,
-          "p95": 20.9758,
-          "p99": 21.721860000000003
+          "p50": 20.02,
+          "p95": 20.9905,
+          "p99": 21.86176
         },
-        "runtime_elapsed_s": 6.059999999999749,
-        "nt_elapsed_s": 6.060455,
-        "runtime_rate_vs_nt_wall": 0.9999249231286675
+        "runtime_elapsed_s": 6.059999999999754,
+        "nt_elapsed_s": 6.06323,
+        "runtime_rate_vs_nt_wall": 0.9994672806408059
       },
       "active_command_period_ms": {
         "samples": 299,
-        "p50": 19.996,
-        "p95": 20.578,
-        "p99": 21.107679999999995
+        "p50": 20.003,
+        "p95": 20.6462,
+        "p99": 21.433799999999998
       }
     },
     {
@@ -783,17 +787,17 @@
       "latency_summary_ms": {
         "input_to_actual_command": {
           "samples": 82,
-          "p50": 1.0635,
-          "p95": 1.25735,
-          "p99": 1.31114,
-          "max": 1.316
+          "p50": 0.6635,
+          "p95": 2.2511,
+          "p99": 2.44899,
+          "max": 2.466
         },
         "scheduled_step_to_actual_command": {
           "samples": 82,
-          "p50": 10.289000000000001,
-          "p95": 19.356,
-          "p99": 20.407519999999998,
-          "max": 20.414
+          "p50": 9.968499999999999,
+          "p95": 19.7542,
+          "p99": 20.313409999999994,
+          "max": 21.803
         }
       },
       "mechanism_cadence": {
@@ -804,11 +808,11 @@
           "talonControlCount"
         ],
         "samples": 303,
-        "nt_elapsed_s": 6.041332,
-        "spark_control_count_delta": 548.0,
-        "talon_control_count_delta": 1370.0,
-        "spark_control_callbacks_hz": 90.70847289968503,
-        "talon_control_callbacks_hz": 226.77118224921261,
+        "nt_elapsed_s": 6.041565,
+        "spark_control_count_delta": 557.0,
+        "talon_control_count_delta": 1393.0,
+        "spark_control_callbacks_hz": 92.19465486177836,
+        "talon_control_callbacks_hz": 230.5693971677868,
         "expected_spark_hz": 100.0,
         "expected_talon_hz": 250.0
       },
@@ -822,19 +826,19 @@
         "samples": 303,
         "period_ms": {
           "samples": 302,
-          "p50": 19.999000000000002,
-          "p95": 20.8437,
-          "p99": 21.94601
+          "p50": 20.000500000000002,
+          "p95": 20.6239,
+          "p99": 21.388840000000002
         },
         "runtime_elapsed_s": 6.039999999999751,
-        "nt_elapsed_s": 6.041771,
-        "runtime_rate_vs_nt_wall": 0.9997068740274584
+        "nt_elapsed_s": 6.042104,
+        "runtime_rate_vs_nt_wall": 0.9996517769306439
       },
       "active_command_period_ms": {
-        "samples": 2717,
-        "p50": 1.998,
-        "p95": 6.353399999999999,
-        "p99": 7.96152
+        "samples": 2764,
+        "p50": 1.999,
+        "p95": 6.27185,
+        "p99": 6.83737
       }
     },
     {
@@ -858,18 +862,18 @@
       },
       "latency_summary_ms": {
         "input_to_actual_command": {
-          "samples": 2737,
-          "p50": 2.405,
-          "p95": 7.3204,
-          "p99": 9.196839999999998,
-          "max": 9.625
+          "samples": 2819,
+          "p50": 2.885,
+          "p95": 5.0541,
+          "p99": 5.23064,
+          "max": 5.461
         },
         "scheduled_step_to_actual_command": {
           "samples": 82,
-          "p50": 3.6965000000000003,
-          "p95": 8.672700000000004,
-          "p99": 10.243449999999996,
-          "max": 11.827
+          "p50": 4.305,
+          "p95": 8.758500000000002,
+          "p99": 9.369709999999998,
+          "max": 10.106
         }
       },
       "mechanism_cadence": {
@@ -879,12 +883,12 @@
           "sparkControlCount",
           "talonControlCount"
         ],
-        "samples": 303,
-        "nt_elapsed_s": 6.040374,
-        "spark_control_count_delta": 553.0,
-        "talon_control_count_delta": 1382.0,
-        "spark_control_callbacks_hz": 91.55062252767792,
-        "talon_control_callbacks_hz": 228.79377998779546,
+        "samples": 302,
+        "nt_elapsed_s": 6.02055,
+        "spark_control_count_delta": 569.0,
+        "talon_control_count_delta": 1422.0,
+        "spark_control_callbacks_hz": 94.50963782378686,
+        "talon_control_callbacks_hz": 236.1910456685851,
         "expected_spark_hz": 100.0,
         "expected_talon_hz": 250.0
       },
@@ -895,22 +899,22 @@
           "fpgaUs",
           "runtimeTimeSeconds"
         ],
-        "samples": 303,
+        "samples": 302,
         "period_ms": {
-          "samples": 302,
-          "p50": 19.9465,
-          "p95": 21.1664,
-          "p99": 22.454670000000004
+          "samples": 301,
+          "p50": 19.993,
+          "p95": 20.823,
+          "p99": 21.697
         },
-        "runtime_elapsed_s": 6.039999999999751,
-        "nt_elapsed_s": 6.040822,
-        "runtime_rate_vs_nt_wall": 0.9998639258034339
+        "runtime_elapsed_s": 6.019999999999756,
+        "nt_elapsed_s": 6.021649,
+        "runtime_rate_vs_nt_wall": 0.9997261547459435
       },
       "active_command_period_ms": {
-        "samples": 2741,
+        "samples": 2821,
         "p50": 1.999,
-        "p95": 6.162,
-        "p99": 7.584199999999998
+        "p95": 5.848,
+        "p99": 6.573200000000001
       }
     }
   ]
