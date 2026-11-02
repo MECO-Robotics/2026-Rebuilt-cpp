@@ -17,6 +17,7 @@ struct Profile
   bool enabled = true;
   double periodMs = 2.0;
   bool ntGamepadEnabled = true;
+  bool ntFallbackToDriverStation = true;
   std::string driverInput = "nt"; // Buttons and enable authority always remain on Driver Station.
   double ntPeriodMs = 5.0;
   double ntStaleMs = 50.0;
@@ -41,8 +42,8 @@ struct Profile
     try
     {
       const auto j = wpi::json::parse(file.value()->GetCharBuffer());
-      static const std::array<const char *, 17> known{
-          "enabled", "periodMs", "ntGamepadEnabled", "driverInput", "ntPeriodMs", "ntStaleMs",
+      static const std::array<const char *, 18> known{
+          "enabled", "periodMs", "ntGamepadEnabled", "ntFallbackToDriverStation", "driverInput", "ntPeriodMs", "ntStaleMs",
           "sparkControlMs", "talonFdControlMs", "talonClassicControlMs", "detectionPeriodMs", "questPeriodMs", "diagnosticHz",
           "sparkStatusHz", "talonFdStatusHz", "talonClassicStatusHz", "odometryFdHz", "odometryClassicHz"};
       for (const auto &[key, value] : j.items())
@@ -54,6 +55,7 @@ struct Profile
       p.enabled = j.value("enabled", p.enabled);
       p.periodMs = j.value("periodMs", p.periodMs);
       p.ntGamepadEnabled = j.value("ntGamepadEnabled", p.ntGamepadEnabled);
+      p.ntFallbackToDriverStation = j.value("ntFallbackToDriverStation", p.ntFallbackToDriverStation);
       p.driverInput = j.value("driverInput", p.driverInput);
       p.ntPeriodMs = j.value("ntPeriodMs", p.ntPeriodMs);
       p.ntStaleMs = j.value("ntStaleMs", p.ntStaleMs);

@@ -199,7 +199,7 @@ def main() -> int:
             pygame.event.pump()
             # pygame can keep returning cached axis values after USB removal.
             # Stop publishing at the removal event so the robot freshness gate
-            # drops the sample and commands zero.
+            # drops the sample and selects the configured DS fallback or zero.
             removed = False
             for event in pygame.event.get():
                 if event.type in (pygame.JOYDEVICEREMOVED,

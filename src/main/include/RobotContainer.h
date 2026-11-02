@@ -26,6 +26,7 @@
 #endif
 #include <vector>
 #include <cstdint>
+#include <string_view>
 // Owns season subsystems, command bindings, and simulation adapters.
 class RobotContainer
 {
@@ -101,6 +102,7 @@ private:
   bool autonomousPoseBlocked_ = false;
 #endif
   std::unique_ptr<season::drive::NtGamepad> ntGamepad_;
+  std::string_view activeDriverInput_ = "none";
   frc2::CommandXboxController controller_{0}, copilot_{1};
   frc::SendableChooser<frc2::Command *> autoChooser_;
   std::vector<frc2::CommandPtr> seasonAutos_;

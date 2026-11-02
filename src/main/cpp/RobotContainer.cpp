@@ -605,6 +605,7 @@ RobotContainer::RobotContainer()
 // drivetrain/command-scheduler cadence. Call from the 20 ms TimedRobot loop.
 void RobotContainer::ControlMechanisms20ms()
 {
+  frc::SmartDashboard::PutString("Input/ActiveSource", activeDriverInput_);
   if (ntGamepad_)
   {
     const auto state = ntGamepad_->Read();
@@ -739,30 +740,43 @@ void RobotContainer::DriveTeleop(bool aim)
   // translation frame. FieldDrive still owns alliance perspective and gating.
   const auto deadband = [](double value)
   { return std::abs(value) < .1 ? 0. : std::copysign((std::abs(value) - .1) / .9, value); };
-  const double dsLeftY = controller_.GetLeftY();
-  const double dsLeftX = controller_.GetLeftX();
-  const double dsRightX = controller_.GetRightX();
-  double rawLeftY = dsLeftY;
-  double rawLeftX = dsLeftX;
-  double rawRightX = dsRightX;
-  bool ntInputFresh = true;
+  const bool dsConnected = controller_.GetHID().IsConnected() && controller_.GetHID().GetAxisCount() >= 5;
+  const double dsLeftY = dsConnected ? controller_.GetLeftY() : 0.0;
+  const double dsLeftX = dsConnected ? controller_.GetLeftX() : 0.0;
+  const double dsRightX = dsConnected ? controller_.GetRightX() : 0.0;
+  const auto validAxis = [](double value) { return std::isfinite(value) && std::abs(value) <= 1.0; };
+  const bool dsInputValid = dsConnected &&
+                            validAxis(dsLeftY) && validAxis(dsLeftX) && validAxis(dsRightX);
+  double rawLeftY = 0.0, rawLeftX = 0.0, rawRightX = 0.0;
+  bool inputAvailable = false;
+  activeDriverInput_ = "none";
   season::drive::NtGamepad::State ntGamepadState;
   if (ntGamepad_)
-  {
     ntGamepadState = ntGamepad_->Read();
-    ntInputFresh = ntGamepadState.accepted;
+  if (ntGamepad_ && ntGamepadState.accepted)
+  {
     rawLeftY = ntGamepadState.leftY;
     rawLeftX = ntGamepadState.leftX;
     rawRightX = ntGamepadState.rightX;
+    inputAvailable = true;
+    activeDriverInput_ = "nt";
+  }
+  else if (dsInputValid && (!ntGamepad_ || fastControlProfile_.ntFallbackToDriverStation))
+  {
+    rawLeftY = dsLeftY;
+    rawLeftX = dsLeftX;
+    rawRightX = dsRightX;
+    inputAvailable = true;
+    activeDriverInput_ = "driverstation";
   }
   const bool teleopAuthority = frc::DriverStation::IsTeleopEnabled() && !frc::DriverStation::IsEStopped();
   double x = deadband(base::simulation::ObserveJoystick(-rawLeftY)) * drive_.Config().maxSpeed;
   double y = deadband(-rawLeftX) * drive_.Config().maxSpeed;
   double omega = deadband(-rawRightX) * drive_.Config().maxAngularRate;
-  if (!teleopAuthority || !ntInputFresh)
+  if (!teleopAuthority || !inputAvailable)
     x = y = omega = 0.0;
   // Aim controls rotation and shooter targets while translation stays manual.
-  if (aim && teleopAuthority && ntInputFresh)
+  if (aim && teleopAuthority && inputAvailable)
   {
     const auto p = drive_.Pose();
     const auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
