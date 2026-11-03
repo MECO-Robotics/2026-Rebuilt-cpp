@@ -5,8 +5,8 @@
 #include "season/auto/RobotAutos.h"
 #include "season/mechanisms/RobotPlatform.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/mechanisms/RobotConfiguration.h"
-#include "season/mechanisms/MechanismConfig.h"
+#include "season/drive/DriveConfig.h"
+#include "season/RobotControlConfig.h"
 #include <frc/Timer.h>
 #include <frc/DriverStation.h>
 #include <frc/GenericHID.h>
@@ -17,9 +17,7 @@
 #include <numbers>
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
 #include <string_view>
-#include <stdexcept>
 using namespace units::literals;
 namespace
 {
@@ -48,7 +46,7 @@ season::Mechanisms RobotContainer::Mechanisms() { return {rack_, intake_, convey
 RobotContainer::~RobotContainer() = default;
 RobotContainer::RobotContainer()
     : simulationRuntime_(std::make_unique<season::simulation::RobotRuntime>(*this)),
-      drive_(season::hardware::DriveConfig(season::hardware::FastControlEnabled())),
+      drive_(season::hardware::DriveConfig()),
       rack_("IntakeRack",
             base::MakeMotorIO(
                 season::hardware::Mode(), base::Vendor::SparkMax,
@@ -97,10 +95,7 @@ RobotContainer::RobotContainer()
           season::hardware::SystemCheckPath(),
           {.setupPrompt = "Confirm robot on blocks, no fuel, clear personnel and Disable operator ready"})
 {
-  fastControlEnabled_ = season::hardware::FastControlEnabled();
-  fastMechanismCanFd_ = season::hardware::MechanismCanFd();
-  // The command scheduler may run faster than the mechanisms' validated
-  // 20 ms controller interval. Keep their feedback/control cadence explicit.
+  // Keep mechanism feedback and control tied to the standard robot loop.
   rack_.UseExternalScheduling();
   hood_.UseExternalScheduling();
   intake_.UseExternalScheduling();
@@ -111,12 +106,12 @@ RobotContainer::RobotContainer()
   // Install the pathfinder before constructing commands that use it.
   season::autonomous::RobotAutos::ConfigureDrive(drive_);
   simulationRuntime_->Initialize();
-  const bool ntInputSelected = fastControlProfile_.driverInput == "nt" && fastControlProfile_.ntGamepadEnabled;
+  const bool ntInputSelected = season::drive::ntgamepadconfig::kEnabled;
   const bool useNtInput = simulationRuntime_->UseNtInput(ntInputSelected);
   if (useNtInput)
     ntGamepad_ = std::make_unique<season::drive::NtGamepad>(nt::NetworkTableInstance::GetDefault(),
-                                                            fastControlProfile_.ntPeriodMs,
-                                                            fastControlProfile_.ntStaleMs);
+                                                            season::drive::ntgamepadconfig::kDefaultPeriodMs,
+                                                            season::drive::ntgamepadconfig::kDefaultStaleMs);
   frc::SmartDashboard::PutString("Input/DriverSource", useNtInput ? "nt" : "driverstation");
   frc::SmartDashboard::PutBoolean("Input/NTGamepadEnabled", useNtInput);
   // Manual driving resumes whenever no other command owns the drivetrain.
@@ -129,7 +124,7 @@ RobotContainer::RobotContainer()
       { return rack_.Position(); },
       [this]() -> const base::season2026::MatchContext &
       { return matchContext_; },
-      units::second_t{season::drive::fastcontrol::Config().detectionPeriodMs / 1000.0});
+      units::second_t{season::autodriveconfig::kDetectionPeriodSeconds});
   simulationRuntime_->InitializeFuel();
   // Bind controls before registering the named autonomous actions.
   ConfigureBindings();
@@ -145,9 +140,8 @@ RobotContainer::RobotContainer()
   simulationRuntime_->ResetIfSimulation();
 }
 
-// Maintain mechanism feedback and control at 50 Hz independently of the
-// drivetrain/command-scheduler cadence. Call from the 20 ms TimedRobot loop.
-void RobotContainer::ControlMechanisms20ms()
+// Maintain mechanism feedback and control at the standard robot-loop cadence.
+void RobotContainer::ControlMechanisms()
 {
   frc::SmartDashboard::PutString("Input/ActiveSource", activeDriverInput_);
   if (ntGamepad_)
@@ -157,10 +151,6 @@ void RobotContainer::ControlMechanisms20ms()
     frc::SmartDashboard::PutNumber("Input/NTAgeMs", std::isfinite(state.ageMs) ? state.ageMs : -1.0);
     frc::SmartDashboard::PutNumber("Input/NTSequence", static_cast<double>(state.sequence));
   }
-  if (fastControlEnabled_)
-    return;
-  ++sparkControlCount_;
-  ++talonControlCount_;
   const auto kControlPeriod = season::hardware::kControlPeriod;
   rack_.Control(kControlPeriod);
   hood_.Control(kControlPeriod);
@@ -169,35 +159,6 @@ void RobotContainer::ControlMechanisms20ms()
   bottom_.Control(kControlPeriod);
   top_.Control(kControlPeriod);
   shooter_.Control(kControlPeriod);
-}
-
-// Tick the selected groups at exact integer submultiples of the 2 ms scheduler.
-void RobotContainer::ControlMechanismsFast()
-{
-  if (!fastControlEnabled_)
-    return;
-  ++fastMechanismControlTick_;
-  const auto &profile = fastControlProfile_;
-  const uint64_t sparkDivider = static_cast<uint64_t>(std::llround(profile.sparkControlMs / profile.periodMs));
-  if (fastMechanismControlTick_ % sparkDivider == 0)
-  {
-    ++sparkControlCount_;
-    const units::second_t kSparkControlPeriod{profile.sparkControlMs / 1000.0};
-    rack_.Control(kSparkControlPeriod);
-    hood_.Control(kSparkControlPeriod);
-    intake_.Control(kSparkControlPeriod);
-    conveyor_.Control(kSparkControlPeriod);
-    top_.Control(kSparkControlPeriod);
-  }
-  const double talonPeriodMs = fastMechanismCanFd_ ? profile.talonFdControlMs : profile.talonClassicControlMs;
-  const uint64_t talonDivider = static_cast<uint64_t>(std::llround(talonPeriodMs / profile.periodMs));
-  if (fastMechanismControlTick_ % talonDivider == 0)
-  {
-    ++talonControlCount_;
-    const units::second_t talonControlPeriod{talonPeriodMs / 1000.0};
-    bottom_.Control(talonControlPeriod);
-    shooter_.Control(talonControlPeriod);
-  }
 }
 
 // Bind controls to commands with explicit ownership and cleanup.
@@ -335,7 +296,7 @@ void RobotContainer::DriveTeleop(bool aim)
     inputAvailable = true;
     activeDriverInput_ = "nt";
   }
-  else if (dsInputValid && (!ntGamepad_ || fastControlProfile_.ntFallbackToDriverStation))
+  else if (dsInputValid && (!ntGamepad_ || season::drive::ntgamepadconfig::kFallbackToDriverStation))
   {
     rawLeftY = dsLeftY;
     rawLeftX = dsLeftX;

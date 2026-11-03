@@ -1,9 +1,9 @@
-#include "season/simulation/RobotRuntime.h"
+#include "RobotRuntime.h"
 #include "RobotContainer.h"
-#include "season/mechanisms/RobotPlatform.h"
-#include "season/mechanisms/RobotConfiguration.h"
-#include "season/mechanisms/MechanismConfig.h"
-#include "season/simulation/RuntimeConfig.h"
+#include "../mechanisms/RobotPlatform.h"
+#include "season/vision/VisionConfig.h"
+#include "season/mechanisms/Mechanisms.h"
+#include "season/simulation/SimulationConfig.h"
 #include <frc/RobotBase.h>
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
@@ -72,8 +72,7 @@ void season::simulation::RobotRuntime::Initialize() {
     driverStationCommandPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/DriverStationCommand").Publish();
     const char *ntGamepadMode = std::getenv("FRC_SIM_NT_GAMEPAD");
     const bool simNtEnabled = ntGamepadMode ? std::string_view{ntGamepadMode} == "1"
-                                            : owner_.fastControlProfile_.ntGamepadEnabled &&
-                                                  owner_.fastControlProfile_.driverInput == "nt";
+                                            : drive::ntgamepadconfig::kEnabled;
     frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Enabled", simNtEnabled);
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKP", owner_.drive_.Config().steerKP);
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKD", owner_.drive_.Config().steerKD);
@@ -222,14 +221,6 @@ void season::simulation::RobotRuntime::Schedule(frc2::Command *command)
 void season::simulation::RobotRuntime::Periodic()
 {
 #ifndef __FRC_ROBORIO__
-  // The fast command scheduler does not own the 20 ms simulation clock.
-  if (owner_.fastControlEnabled_)
-    owner_.drive_.StepSimulationPeriod();
-  static auto mechanismCadence = nt::NetworkTableInstance::GetDefault()
-                                     .GetDoubleArrayTopic("/Simulation/MechanismCadence")
-                                     .Publish();
-  mechanismCadence.Set(std::array<double, 3>{static_cast<double>(nt::Now()),
-                                             static_cast<double>(owner_.sparkControlCount_), static_cast<double>(owner_.talonControlCount_)});
   std::optional<season::FuelRobotState> fuelRobotState;
   if (auto truth = owner_.drive_.SimulationTruth())
   {

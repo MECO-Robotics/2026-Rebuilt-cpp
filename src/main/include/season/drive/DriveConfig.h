@@ -1,12 +1,9 @@
 #pragma once
 #include "base/Drive.h"
-#include "base/QuestNav.h"
-#include "base/Vision.h"
-#include "season/drive/FastControlProfile.h"
-#include "season/simulation/RobotContactConfig.h"
+#include "season/RobotControlConfig.h"
+#include "season/simulation/SimulationConfig.h"
 #include <array>
 #include <frc/RobotBase.h>
-#include <frc/apriltag/AprilTagFieldLayout.h>
 #include <frc/system/plant/DCMotor.h>
 #include <ctre/phoenix6/CANBus.hpp>
 #ifndef __FRC_ROBORIO__
@@ -15,23 +12,18 @@
 
 namespace season::hardware
 {
-  inline constexpr int kPilotControllerPort = 0, kCopilotControllerPort = 1;
+  // Requested odometry update rates by CAN network type.
+  inline constexpr double kSwerveOdometryFdHz = 500, kSwerveOdometryClassicHz = 100;
   using namespace units::literals;
-  // Configure the swerve hardware, geometry, and simulation model.
-  inline base::DriveConfig DriveConfig(bool fastControlEnabled)
+  inline base::DriveConfig DriveConfig()
   {
     base::DriveConfig c;
     c.bus = "MECO CANIvore";
     c.pigeon = 13;
-    const auto &profile = season::drive::fastcontrol::Config();
     c.odometryHz = frc::RobotBase::IsSimulation() || ctre::phoenix6::CANBus{c.bus}.IsNetworkFD()
-                       ? profile.odometryFdHz
-                       : profile.odometryClassicHz;
-    if (fastControlEnabled)
-    {
-      c.controlPeriodSeconds = profile.periodMs / 1000.0;
-      c.externalSimulationScheduling = true;
-    }
+                       ? kSwerveOdometryFdHz
+                       : kSwerveOdometryClassicHz;
+    c.controlPeriodSeconds = kControlPeriod.value();
     c.driveRatio = 5.8909090909090915;
     c.steerRatio = 12.1;
     c.couplingRatio = 4.909090909090909;
@@ -102,27 +94,6 @@ namespace season::hardware
       c.autoRotationKP = tuned.autoRotationKP;
     }
 #endif
-    return c;
-  }
-  // Express the headset mount relative to the robot frame.
-  inline base::QuestNavConfig QuestConfig(const frc::AprilTagFieldLayout &layout)
-  {
-    base::QuestNavConfig c;
-    c.subscriptionPeriodSeconds = season::drive::fastcontrol::Config().questPeriodMs / 1000.0;
-    c.fieldLength = layout.GetFieldLength().value();
-    c.fieldWidth = layout.GetFieldWidth().value();
-    c.robotToQuest = frc::Transform3d{units::meter_t{-13.5 * .0254}, 0_m, units::meter_t{8.5 * .0254},
-                                      frc::Rotation3d{180_deg, 0_deg, 180_deg}};
-    return c;
-  }
-  // Express the Limelight mount relative to the robot frame.
-  inline base::VisionConfig VisionConfig(const frc::AprilTagFieldLayout &layout)
-  {
-    base::VisionConfig c;
-    c.name = "limelight";
-    c.fieldLength = layout.GetFieldLength().value();
-    c.fieldWidth = layout.GetFieldWidth().value();
-    c.robotToCamera = frc::Transform3d{0_m, 0_m, units::meter_t{21.25 * .0254}, frc::Rotation3d{0_deg, -30_deg, 0_deg}};
     return c;
   }
 }

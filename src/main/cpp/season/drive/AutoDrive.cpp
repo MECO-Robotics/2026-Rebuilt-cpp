@@ -1,6 +1,6 @@
 #include "season/drive/AutoDrive.h"
-#include "season/simulation/RuntimeConfig.h"
-#include "season/mechanisms/RobotGeometry.h"
+#include "season/simulation/SimulationConfig.h"
+#include "season/RobotGeometry.h"
 #include <frc/RobotBase.h>
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>

@@ -1,8 +1,8 @@
 #include "season/auto/RobotAutos.h"
+#include "season/RobotControlConfig.h"
 #include "RobotContainer.h"
-#include "season/simulation/RobotRuntime.h"
+#include "../simulation/RobotRuntime.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/mechanisms/MechanismConfig.h"
 #include "base/ChoreoAuto.h"
 #include <frc/RobotBase.h>
 #include <frc/DriverStation.h>

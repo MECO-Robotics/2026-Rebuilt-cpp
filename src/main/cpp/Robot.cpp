@@ -1,8 +1,7 @@
 #include "Robot.h"
-#include "season/drive/FastControlProfile.h"
-#include "season/simulation/RuntimeConfig.h"
+#include "season/simulation/SimulationConfig.h"
+#include "season/RobotControlConfig.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/mechanisms/MechanismConfig.h"
 #include "season/mechanisms/RobotPlatform.h"
 #include <string_view>
 #include <networktables/NetworkTableInstance.h>
@@ -23,14 +22,13 @@
 #ifndef __FRC_ROBORIO__
 #include "base/SimulationRuntime.h"
 #include "meco/sim/BatterySupply.h"
-#include <networktables/DoubleArrayTopic.h>
 #include <networktables/NetworkTableInstance.h>
 #include <charconv>
 #include <cmath>
 #endif
 #include <frc2/command/CommandScheduler.h>
 // Construct simulation services before the robot loop starts.
-Robot::Robot()
+Robot::Robot() : frc::TimedRobot{season::hardware::kControlPeriod}
 {
 #ifndef __FRC_ROBORIO__
   if (const char *text = std::getenv("FRC_SIM_NT_PORT"))
@@ -52,38 +50,23 @@ Robot::Robot()
   frc::DataLogManager::Start();
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
   frc::RobotController::SetBrownoutVoltage(season::hardware::kBrownoutVoltage);
-  fastControlEnabled_ = season::hardware::FastControlEnabled();
-  frc2::CommandScheduler::GetInstance().SetPeriod(units::second_t{
-      fastControlEnabled_ ? season::drive::fastcontrol::Config().periodMs / 1000.0 : season::hardware::kControlPeriod.value()});
-  if (fastControlEnabled_)
-  {
-    fastControlSamplesPublisher_ = nt::NetworkTableInstance::GetDefault()
-                                       .GetDoubleArrayTopic("/Simulation/FastControl/Samples")
-                                       .Publish();
-    AddPeriodic([this]
-                { FastControlPeriodic(); },
-                units::second_t{season::drive::fastcontrol::Config().periodMs / 1000.0});
-  }
+  frc2::CommandScheduler::GetInstance().SetPeriod(season::hardware::kControlPeriod);
 }
 // Refresh match context before running scheduled commands.
 void Robot::RobotPeriodic()
 {
   const auto match = base::season2026::ReadMatchContext();
   container_.SetMatchContext(match);
-  // Baseline mechanism control is 20 ms; the optimized callback owns its faster ticks.
-  container_.ControlMechanisms20ms();
+  container_.ControlMechanisms();
   if (autonomousPending_ && frc::DriverStation::IsAutonomousEnabled() && container_.SimulationResetReady())
   {
     autonomousPending_ = false;
     if (autonomous_)
       container_.ScheduleAutonomous(autonomous_);
   }
-  if (!fastControlEnabled_)
-  {
-    base::simulation::BeginLatencyProbe();
-    frc2::CommandScheduler::GetInstance().Run();
-    base::simulation::EndLatencyProbe();
-  }
+  base::simulation::BeginLatencyProbe();
+  frc2::CommandScheduler::GetInstance().Run();
+  base::simulation::EndLatencyProbe();
   auto nt = nt::NetworkTableInstance::GetDefault().GetTable("/Match");
   nt->GetEntry("Phase").SetString(match.phase);
   nt->GetEntry("TimeKnown").SetBoolean(match.periodTime.has_value());
@@ -121,36 +104,6 @@ void Robot::RobotPeriodic()
       "Shifts/Active First?",
       match.alliance && match.gameDataValid &&
           ((*match.alliance == frc::DriverStation::Alliance::kBlue) == (match.gameData == "R")));
-}
-// Run command decisions faster while TimedRobot and physics stay at 20 ms.
-void Robot::FastControlPeriodic()
-{
-  if (!fastControlEnabled_)
-    return;
-  const int64_t periodUs = static_cast<int64_t>(season::drive::fastcontrol::Config().periodMs * 1000.0);
-  const int64_t startUs = static_cast<int64_t>(frc::RobotController::GetFPGATime());
-  if (nextFastControlFpgaUs_ == 0)
-    nextFastControlFpgaUs_ = startUs;
-  const int64_t scheduledUs = nextFastControlFpgaUs_;
-  const int64_t latenessUs = std::max<int64_t>(0, startUs - scheduledUs);
-  nextFastControlFpgaUs_ = scheduledUs + periodUs;
-  if (latenessUs >= periodUs)
-    nextFastControlFpgaUs_ += (latenessUs / periodUs) * periodUs;
-
-  frc::DriverStation::RefreshData();
-  base::simulation::BeginLatencyProbe();
-  frc2::CommandScheduler::GetInstance().Run();
-  container_.ControlMechanismsFast();
-  base::simulation::EndLatencyProbe();
-  const int64_t finishUs = static_cast<int64_t>(frc::RobotController::GetFPGATime());
-  const std::array<double, 7> sample{static_cast<double>(fastControlSequence_++),
-                                     static_cast<double>(scheduledUs),
-                                     static_cast<double>(startUs),
-                                     static_cast<double>(finishUs),
-                                     static_cast<double>(finishUs - startUs),
-                                     static_cast<double>(latenessUs),
-                                     frc::DriverStation::IsEnabled() ? 1.0 : 0.0};
-  fastControlSamplesPublisher_.Set(sample, nt::Now());
 }
 // Reset the scene before scheduling the selected autonomous command.
 void Robot::AutonomousInit()

@@ -1,4 +1,4 @@
-#include "season/simulation/RuntimeConfig.h"
+#include "season/simulation/SimulationConfig.h"
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/Simulation.h"
 #include "base/sim/FootprintClearance.h"

@@ -1,6 +1,6 @@
 #include "season/mechanisms/Mechanisms.h"
-#include "season/mechanisms/MechanismConfig.h"
-#include "season/simulation/FuelConfig.h"
+#include "season/mechanisms/Mechanisms.h"
+#include "season/simulation/SimulationConfig.h"
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
