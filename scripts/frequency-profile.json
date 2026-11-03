@@ -1,7 +1,6 @@
 {
   "schema": 1,
   "fast_control": {
-    "required_compile_definition": "MECO_FAST_CONTROL_API",
     "command_scheduler_ms": 2,
     "timed_robot_period_ms": 20,
     "drive_discretization_ms": 2,

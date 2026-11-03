@@ -11,9 +11,7 @@
 #ifndef __FRC_ROBORIO__
 #include "base/sim/SimulationTuning.h"
 #endif
-#if defined(MECO_FAST_CONTROL_API)
 #include <ctre/phoenix6/CANBus.hpp>
-#endif
 
 namespace season::hardware
 {
@@ -24,17 +22,15 @@ namespace season::hardware
     base::DriveConfig c;
     c.bus = "MECO CANIvore";
     c.pigeon = 13;
-#if defined(MECO_FAST_CONTROL_API)
+    const auto &profile = season::drive::fastcontrol::Config();
+    c.odometryHz = frc::RobotBase::IsSimulation() || ctre::phoenix6::CANBus{c.bus}.IsNetworkFD()
+                       ? profile.odometryFdHz
+                       : profile.odometryClassicHz;
     if (fastControlEnabled)
     {
-      c.controlPeriodSeconds = season::drive::fastcontrol::Config().periodMs / 1000.0;
+      c.controlPeriodSeconds = profile.periodMs / 1000.0;
       c.externalSimulationScheduling = true;
-      const auto &profile = season::drive::fastcontrol::Config();
-      c.odometryHz = frc::RobotBase::IsSimulation() || ctre::phoenix6::CANBus{c.bus}.IsNetworkFD()
-                         ? profile.odometryFdHz
-                         : profile.odometryClassicHz;
     }
-#endif
     c.driveRatio = 5.8909090909090915;
     c.steerRatio = 12.1;
     c.couplingRatio = 4.909090909090909;

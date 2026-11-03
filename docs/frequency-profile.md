@@ -6,7 +6,7 @@ Edit `src/main/deploy/fast-control.json` before deployment. The robot loads it o
 
 | Setting | Default | Meaning |
 |---|---:|---|
-| `enabled` | `true` | Fast scheduler, mechanism and CAN profile; false restores 20 ms scheduling/default CAN rates |
+| `enabled` | `true` | Enable the fast scheduler and mechanism callbacks; false uses the 20 ms robot loop |
 | `periodMs` | 2 | Command scheduler period, 1–20 ms |
 | `ntGamepadEnabled` | `true` | Permit NT axes, independently of fast scheduling |
 | `ntFallbackToDriverStation` | `true` | Use connected DS joystick axes when selected NT input is unavailable |
@@ -18,13 +18,12 @@ Edit `src/main/deploy/fast-control.json` before deployment. The robot loads it o
 | `sparkStatusHz` | 100 | SPARK position/velocity request |
 | `talonFdStatusHz` / `talonClassicStatusHz` | 250 / 100 | Kraken position/velocity request |
 | `odometryFdHz` / `odometryClassicHz` | 500 / 100 | Drivetrain odometry request |
-| `diagnosticHz` | 4 | Noncritical mechanism diagnostics; fault and follower-critical frames retain protected rates |
 | `questPeriodMs` | 5 | QuestNav NT subscription period, 5–1000 ms |
 | `detectionPeriodMs` | 5 | Gamepiece detection NT subscription request |
 
-Mechanism control periods must be integer multiples of `periodMs`. CAN FD selection is detected for each configured bus, with classic CAN fallbacks; bus names, motor IDs, Pigeon and existing wiring are retained. These are requested CAN rates, not measured physical delivery or utilization. Controller-internal PID frequency is separate. QuestNav defaults to 5 ms transport; its measurement rate remains limited by the headset. Camera publishers must also use the faster transport, for example through `scripts/perception_publisher.py`; changing the subscriber does not accelerate inference.
+Mechanism control periods must be integer multiples of `periodMs` when the fast scheduler runs. When it is disabled, mechanisms run at the 20 ms robot-loop cadence; the configured CAN feedback, control resend, odometry, QuestNav, and detection rates remain independent. MecoBase owns diagnostic signal rates; this project leaves its diagnostic-rate setting at the vendordep default. Remove `diagnosticHz` from any older deployed profile because unknown keys are rejected. CAN FD selection is detected for each configured bus, with classic CAN fallbacks; bus names, motor IDs, Pigeon and existing wiring are retained. These are requested CAN rates, not measured physical delivery or utilization. Controller-internal PID frequency is separate. QuestNav defaults to 5 ms transport; its measurement rate remains limited by the headset. Camera publishers must also use the faster transport, for example through `scripts/perception_publisher.py`; changing the subscriber does not accelerate inference.
 
-For the original baseline, set `enabled: false`, `driverInput: "driverstation"` and `ntGamepadEnabled: false`, and `detectionPeriodMs: 100`; retain the default period fields. For a 4 ms scheduler, also choose mechanism periods divisible by 4 (for example SPARK/classic 12 ms, FD 4 ms). Desktop benchmark scripts can override fast scheduling with `FRC_FAST_CONTROL=0|1` and NT selection with `FRC_SIM_NT_GAMEPAD=0|1`; these are benchmark overrides. On hardware use the deploy configuration.
+For 20 ms scheduler and mechanism callbacks, set `enabled: false`. To select Driver Station axes, set `driverInput: "driverstation"` and `ntGamepadEnabled: false`. These settings do not restore vendor-default CAN or odometry rates; set the individual rates explicitly. For a 4 ms scheduler, also choose mechanism periods divisible by 4 (for example SPARK/classic 12 ms, FD 4 ms). Desktop benchmark scripts can override fast scheduling with `FRC_FAST_CONTROL=0|1` and NT selection with `FRC_SIM_NT_GAMEPAD=0|1`; these are benchmark overrides. On hardware use the deploy configuration.
 
 With NT input selected, fresh valid NT axes take priority. Missing, invalid or stale NT input falls back to a connected Driver Station joystick by default, and fresh NT input automatically resumes priority. `ntFallbackToDriverStation: false` restores zero axes on NT failure. Disconnected or invalid DS axes produce zero if no valid NT input is available. `Input/ActiveSource` reports `nt`, `driverstation`, or `none`. Driver Station continues to own buttons, enable/disable and E-stop. See [controller setup](nt-gamepad.md).
 

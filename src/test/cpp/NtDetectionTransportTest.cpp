@@ -1,4 +1,3 @@
-#ifdef MECO_FAST_CONTROL_API
 #include <base/ObjectPerception.h>
 #include <frc/Timer.h>
 #include <networktables/NetworkTableInstance.h>
@@ -56,4 +55,3 @@ TEST(NtDetectionTransport, FastProfilePreservesMoreCameraFrames) {
   EXPECT_GT(fast.received,baseline.received*3);
   EXPECT_GT(fast.received,fast.sent*.75);
 }
-#endif

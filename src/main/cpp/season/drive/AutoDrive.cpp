@@ -109,12 +109,7 @@ namespace season
       else
 #endif
       {
-#if defined(MECO_FAST_CONTROL_API)
         io = base::MakeNtObjectDetectionIO("/Perception/" + name + "/detections", detectionUpdatePeriod);
-#else
-        (void)detectionUpdatePeriod;
-        io = base::MakeNtObjectDetectionIO("/Perception/" + name + "/detections");
-#endif
       }
       cameras.push_back({name, std::move(io), [this, i]() -> std::optional<frc::Transform3d>
                          { return Mount(i); }});

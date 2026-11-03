@@ -221,11 +221,9 @@ void season::simulation::RobotRuntime::Schedule(frc2::Command *command)
 void season::simulation::RobotRuntime::Periodic()
 {
 #ifndef __FRC_ROBORIO__
-#if defined(MECO_FAST_CONTROL_API)
   // The fast command scheduler does not own the 20 ms simulation clock.
   if (owner_.fastControlEnabled_)
     owner_.drive_.StepSimulationPeriod();
-#endif
   static auto mechanismCadence = nt::NetworkTableInstance::GetDefault()
                                      .GetDoubleArrayTopic("/Simulation/MechanismCadence")
                                      .Publish();

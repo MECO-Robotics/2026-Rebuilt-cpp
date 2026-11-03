@@ -55,7 +55,7 @@ scripts/build_fast_profile.sh
 /home/brian/.cache/rebuilt-latency-venv/bin/python scripts/frequency_matrix.py --seconds 8 --include-vision-load
 ```
 
-Enable both `FRC_FAST_CONTROL=1` and `FRC_SIM_NT_GAMEPAD=1` for optimized simulation. Without the compile-time fast API flag, selecting fast mode fails explicitly. The standard public-dependency build remains a baseline build. The native development packages are not roboRIO/Windows releases or a hardware deployment.
+These commands and development-package details describe the archived run above. In the current public-dependency build, `FRC_FAST_CONTROL=1` selects fast scheduling and `FRC_SIM_NT_GAMEPAD=1` selects the simulated NT input; CAN and odometry rates are configured independently. The native development packages used for the archived run were not roboRIO/Windows releases or a hardware deployment.
 
 Framework tests: 138 passed and one acceptance fixture skipped. Consumer safety/transport tests: three passed. Physical CAN utilization, delivered signal age, hardware trajectories, USB controller sampling, radios and mechanical response remain unmeasured. Preserve the Pigeon and existing bus topology; no speculative split-bus or gyro replacement was included.
 

@@ -27,7 +27,6 @@ namespace season::drive::fastcontrol
     double talonClassicControlMs = 10.0;
     double detectionPeriodMs = 5.0;
     double questPeriodMs = 5.0;
-    double diagnosticHz = 4.0;
     double sparkStatusHz = 100.0;
     double talonFdStatusHz = 250.0;
     double talonClassicStatusHz = 100.0;
@@ -43,9 +42,9 @@ namespace season::drive::fastcontrol
       try
       {
         const auto j = wpi::json::parse(file.value()->GetCharBuffer());
-        static const std::array<const char *, 18> known{
+        static const std::array<const char *, 17> known{
             "enabled", "periodMs", "ntGamepadEnabled", "ntFallbackToDriverStation", "driverInput", "ntPeriodMs", "ntStaleMs",
-            "sparkControlMs", "talonFdControlMs", "talonClassicControlMs", "detectionPeriodMs", "questPeriodMs", "diagnosticHz",
+            "sparkControlMs", "talonFdControlMs", "talonClassicControlMs", "detectionPeriodMs", "questPeriodMs",
             "sparkStatusHz", "talonFdStatusHz", "talonClassicStatusHz", "odometryFdHz", "odometryClassicHz"};
         for (const auto &[key, value] : j.items())
         {
@@ -65,7 +64,6 @@ namespace season::drive::fastcontrol
         p.talonClassicControlMs = j.value("talonClassicControlMs", p.talonClassicControlMs);
         p.detectionPeriodMs = j.value("detectionPeriodMs", p.detectionPeriodMs);
         p.questPeriodMs = j.value("questPeriodMs", p.questPeriodMs);
-        p.diagnosticHz = j.value("diagnosticHz", p.diagnosticHz);
         p.sparkStatusHz = j.value("sparkStatusHz", p.sparkStatusHz);
         p.talonFdStatusHz = j.value("talonFdStatusHz", p.talonFdStatusHz);
         p.talonClassicStatusHz = j.value("talonClassicStatusHz", p.talonClassicStatusHz);
@@ -89,7 +87,6 @@ namespace season::drive::fastcontrol
       bounded(p.talonClassicControlMs, 5, 100, "talonClassicControlMs");
       bounded(p.detectionPeriodMs, 5, 1000, "detectionPeriodMs");
       bounded(p.questPeriodMs, 5, 1000, "questPeriodMs");
-      bounded(p.diagnosticHz, 4, 20, "diagnosticHz");
       bounded(p.sparkStatusHz, 10, 100, "sparkStatusHz");
       bounded(p.talonFdStatusHz, 10, 500, "talonFdStatusHz");
       bounded(p.talonClassicStatusHz, 10, 100, "talonClassicStatusHz");

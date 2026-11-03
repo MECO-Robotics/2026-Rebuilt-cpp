@@ -2,6 +2,7 @@
 #include "season/drive/FastControlProfile.h"
 #include "season/simulation/RuntimeConfig.h"
 #include "season/mechanisms/Mechanisms.h"
+#include "season/mechanisms/RobotPlatform.h"
 #include <string_view>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/NetworkTable.h>
@@ -50,25 +51,17 @@ Robot::Robot()
   frc::DataLogManager::Start();
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
   frc::RobotController::SetBrownoutVoltage(season::hardware::kBrownoutVoltage);
-  const char *fastControl = std::getenv("FRC_FAST_CONTROL");
-  fastControlEnabled_ = fastControl ? std::string_view{fastControl} == "1"
-                                    : season::drive::fastcontrol::Config().enabled;
+  fastControlEnabled_ = season::hardware::FastControlEnabled();
   frc2::CommandScheduler::GetInstance().SetPeriod(units::second_t{
       fastControlEnabled_ ? season::drive::fastcontrol::Config().periodMs / 1000.0 : season::hardware::kControlPeriod.value()});
   if (fastControlEnabled_)
   {
-#ifndef MECO_FAST_CONTROL_API
-    throw std::invalid_argument(
-        "Fast control is enabled in deploy configuration but this build lacks the fast-control API");
-#else
-    fastControlEnabled_ = true;
     fastControlSamplesPublisher_ = nt::NetworkTableInstance::GetDefault()
                                        .GetDoubleArrayTopic("/Simulation/FastControl/Samples")
                                        .Publish();
     AddPeriodic([this]
                 { FastControlPeriodic(); },
                 units::second_t{season::drive::fastcontrol::Config().periodMs / 1000.0});
-#endif
   }
 }
 // Refresh match context before running scheduled commands.

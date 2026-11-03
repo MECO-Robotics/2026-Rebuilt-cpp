@@ -9,7 +9,6 @@
   "talonFdControlMs": 4,
   "talonClassicControlMs": 10,
   "detectionPeriodMs": 5,
-  "diagnosticHz": 4,
   "sparkStatusHz": 100,
   "talonFdStatusHz": 250,
   "talonClassicStatusHz": 100,
