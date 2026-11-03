@@ -1,5 +1,7 @@
 # Robot documentation
 
+- [Where to make changes](student-editing-guide.md): find the files for autos, mechanisms, controls, and constants.
+
 - [AutoDrive](autodrive-simulation.md): controls, modes, and offensive behavior.
 - [Practice match](practice-mode.md): start and troubleshoot a simulated match.
 - [Simulation field](simulation-field.md): starting pose, fuel, contact settings, and troubleshooting.

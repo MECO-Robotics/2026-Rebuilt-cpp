@@ -16,7 +16,7 @@ This is MECO Robotics' 2026 robot code. It runs on the roboRIO and in a desktop 
    If Gradle can't find Java, set `JAVA_HOME` to the WPILib 2026 JDK first.
 4. Connect a controller in SimGUI. See [practice matches](docs/practice-mode.md) to run a match or [AutoDrive](docs/autodrive-simulation.md) to try autonomous driving.
 
-The pinned dependencies include [MecoBase 2026.2.11](vendordeps/MecoBase.json) and [MecoSimulation 2026.0.16](vendordeps/MecoSimulation.json). Building and simulating do **not** prove that a physical robot is safe or calibrated. Deploying with `./gradlew deploy` writes to team 8324's roboRIO.
+The pinned dependencies include [MecoBase 2026.2.12](vendordeps/MecoBase.json) and [MecoSimulation 2026.0.16](vendordeps/MecoSimulation.json). Building and simulating do **not** prove that a physical robot is safe or calibrated. Deploying with `./gradlew deploy` writes to team 8324's roboRIO.
 
 ## Pilot controls
 
@@ -44,11 +44,13 @@ A does not feed fuel; use **right bumper** to feed. The straight ferry path can 
 
 ## Where should I look?
 
+New to the code? Start with the [student editing guide](docs/student-editing-guide.md) to find the files for autos, mechanisms, and constants.
+
 | I want to… | Start here |
 | --- | --- |
-| Understand buttons and autonomous choices | [RobotContainer.cpp](src/main/cpp/RobotContainer.cpp) |
+| Understand buttons and autonomous choices | [RobotContainer.cpp](src/main/cpp/RobotContainer.cpp) and [RobotAutos.cpp](src/main/cpp/season/auto/RobotAutos.cpp) |
 | Understand robot modes and the main loop | [Robot.cpp](src/main/cpp/Robot.cpp) |
-| Find motor settings and command interfaces | [Mechanisms.h](src/main/include/season/mechanisms/Mechanisms.h) and [season commands](src/main/cpp/season/mechanisms/SeasonCommands.cpp) |
+| Find motor settings and command interfaces | [MechanismConfig.h](src/main/include/season/mechanisms/MechanismConfig.h), [Mechanisms.h](src/main/include/season/mechanisms/Mechanisms.h), and [season commands](src/main/cpp/season/mechanisms/SeasonCommands.cpp) |
 | Understand shooting and targeting | [Shooting.h](src/main/include/season/shooting/Shooting.h) and [Shooting.cpp](src/main/cpp/season/shooting/Shooting.cpp) |
 | Try AutoDrive | [AutoDrive guide](docs/autodrive-simulation.md) |
 | Configure enabled control/CAN/NT rates | [control profile](docs/frequency-profile.md) |
@@ -58,6 +60,8 @@ A does not feed fuel; use **right bumper** to feed. The straight ferry path can 
 | Find a guide | [documentation index](docs/README.md) |
 
 Season code is grouped by purpose under `src/main/cpp/season` and `src/main/include/season`: `drive` contains AutoDrive and scoring-position selection, `shooting` contains shot calculations, `mechanisms` contains robot mechanism configuration and commands, `simulation` contains the desktop field and fuel models, and `diagnostics` contains system-check setup. Source and header folders use the same names where both are needed.
+
+Robot and simulation settings are in configuration headers alongside those components, including `MechanismConfig.h`, `ShootingConfig.h`, `AutoDriveConfig.h`, `OffensiveConfig.h`, and the simulation configuration headers.
 
 ## How the pieces connect
 

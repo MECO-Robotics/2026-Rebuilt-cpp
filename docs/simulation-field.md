@@ -14,7 +14,7 @@ The desktop simulator builds a simplified REBUILT field around the robot. The dr
 - Fuel as particles, including approximate field and robot contacts. Escaped fuel returns to the carpet; fuel is not a collection of Jolt rigid bodies.
 - A low chassis and bumper envelope. Decorative geometry and full mechanism collisions are omitted.
 
-The robot supplies contact construction estimates in [RobotContainer.cpp](../src/main/cpp/RobotContainer.cpp): a 2-inch pan clearance and a 0.5-inch flush foam and backing floor gap. The reusable [bumper contact model](https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/docs/compliant-bumper-contact.md) belongs to MecoSimulation. These are simulation estimates, not physical measurements.
+The robot supplies contact construction estimates in [RobotContactConfig.h](../src/main/include/season/simulation/RobotContactConfig.h): a 2-inch pan clearance and a 0.5-inch flush foam and backing floor gap. The reusable [bumper contact model](https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/docs/compliant-bumper-contact.md) belongs to MecoSimulation. These are simulation estimates, not physical measurements.
 
 The scene is an approximation, not official CAD or proof of field clearance.
 
@@ -30,7 +30,7 @@ The scene is an approximation, not official CAD or proof of field clearance.
 
 ## Read the code
 
-- [Scene setup and pose resets](../src/main/cpp/RobotContainer.cpp)
+- [Scene setup and pose resets](../src/main/cpp/season/simulation/RobotRuntime.cpp)
 - [Field helpers](../src/main/cpp/season/simulation/SimulationField.cpp)
 - [Fuel simulation](../src/main/cpp/season/simulation/FuelSimulation.cpp) and [model interface](../src/main/include/season/simulation/Simulation.h)
 

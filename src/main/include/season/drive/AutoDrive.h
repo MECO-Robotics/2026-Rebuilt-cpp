@@ -1,4 +1,5 @@
 #pragma once
+#include "season/drive/OffensiveConfig.h"
 #include <base/AutoDrive.h>
 #include <cmath>
 #include <numbers>
@@ -15,10 +16,10 @@ namespace season
 // Arrival requires both pose tolerance and low measured motion.
 inline bool AutoDriveArrived(const frc::Pose2d &pose, const frc::ChassisSpeeds &speeds, const frc::Pose2d &goal)
 {
-  return pose.Translation().Distance(goal.Translation()).value() < .05 &&
+  return pose.Translation().Distance(goal.Translation()).value() < offenseconfig::kArrivalDistanceMetres &&
          std::abs(std::remainder((goal.Rotation().Radians() - pose.Rotation().Radians()).value(),
-                                 2 * std::numbers::pi)) < .06 &&
-         std::hypot(speeds.vx.value(), speeds.vy.value()) < .2 && std::abs(speeds.omega.value()) < .2;
+                                 2 * std::numbers::pi)) < offenseconfig::kArrivalHeadingRadians &&
+         std::hypot(speeds.vx.value(), speeds.vy.value()) < offenseconfig::kArrivalLinearSpeed && std::abs(speeds.omega.value()) < offenseconfig::kArrivalAngularSpeed;
 }
 // Bridges season perception and match state to reusable navigation.
 class AutoDrive
@@ -26,11 +27,12 @@ class AutoDrive
 public:
   AutoDrive(base::Drive &drive, std::function<double()> intakeExtension,
             std::function<const base::season2026::MatchContext &()> matchContext,
-            units::second_t detectionUpdatePeriod = units::second_t{.1});
+            units::second_t detectionUpdatePeriod = units::second_t{offenseconfig::kDetectionPeriodSeconds});
   // Create a fresh drivetrain-owning navigation command.
   frc2::CommandPtr Command();
   // Fresh, estimated field-frame observations from the camera perception path.
-  std::vector<base::ObjectCluster> VisibleFuel() const;
+  // Reference is valid until perception is updated or cleared.
+  const std::vector<base::ObjectCluster> &VisibleFuel() const;
   void PublishMatchContext() const;
   // Same DriverStation-derived input on hardware and in simulation. Unknowns
   // stay explicit; this supplies timing context without selecting a strategy.

@@ -10,6 +10,7 @@ extra_css:
   - stylesheets/extra.css
 nav:
   - Home: README.md
+  - Where to make changes: student-editing-guide.md
   - AutoDrive: autodrive-simulation.md
   - Control rates: frequency-profile.md
   - NT gamepad: nt-gamepad.md

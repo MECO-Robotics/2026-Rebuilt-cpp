@@ -1,31 +1,17 @@
 #include "season/drive/OffensiveAutoDrive.h"
-#include <networktables/StringTopic.h>
-#ifndef __FRC_ROBORIO__
-#include <frc/simulation/DriverStationSim.h>
-#endif
 #include "base/SimulationLatency.h"
-#include "season/simulation/Simulation.h"
 #include "RobotContainer.h"
+#include "season/simulation/RobotRuntime.h"
+#include "season/auto/RobotAutos.h"
+#include "season/mechanisms/RobotPlatform.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "base/ChoreoAuto.h"
-#ifndef __FRC_ROBORIO__
-#include "base/sim/SimulationTuning.h"
-#include "meco/sim/SimulationPose.h"
-#endif
-#include <frc/RobotBase.h>
-#include <frc/system/plant/DCMotor.h>
+#include "season/mechanisms/RobotConfiguration.h"
 #include <frc/Timer.h>
 #include <frc/DriverStation.h>
 #include <frc/GenericHID.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
-#include <pathplanner/lib/auto/AutoBuilder.h>
-#include <pathplanner/lib/auto/NamedCommands.h>
 #include <networktables/NetworkTableInstance.h>
-#if defined(MECO_FAST_CONTROL_API)
-#include "season/drive/FastControlProfile.h"
-#include <ctre/phoenix6/CANBus.hpp>
-#endif
 #include <array>
 #include <numbers>
 #include <algorithm>
@@ -36,214 +22,17 @@
 using namespace units::literals;
 namespace
 {
-// Select hardware IO only on a real robot.
-base::Mode Mode() { return frc::RobotBase::IsReal() ? base::Mode::Real : base::Mode::Sim; }
-bool FastControlEnabled()
-{
-#if defined(MECO_FAST_CONTROL_API)
-  const char *value = std::getenv("FRC_FAST_CONTROL");
-  return value ? std::string_view{value} == "1" : season::drive::fastcontrol::Config().enabled;
-#else
-  return false;
-#endif
-}
-base::MotorConfig MotorRates(base::MotorConfig config, base::Vendor vendor)
-{
-#if defined(MECO_FAST_CONTROL_API)
-  if (FastControlEnabled())
+  // Derive trench references from the official field tag layout.
+  season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
   {
-    const auto &profile = season::drive::fastcontrol::Config();
-    config.rates.diagnosticHz = season::drive::fastcontrol::Config().diagnosticHz;
-    if (vendor == base::Vendor::SparkMax)
+    auto midpoint = [&](int a, int b)
     {
-      config.rates.positionVelocityHz = profile.sparkStatusHz;
-      config.rates.controlHz = 1000.0 / profile.sparkControlMs;
-    }
-    else
-    {
-      const bool canFd = !frc::RobotBase::IsReal() ||
-                         (!config.canBus.empty() && ctre::phoenix6::CANBus{config.canBus}.IsNetworkFD());
-      config.rates.positionVelocityHz = canFd ? profile.talonFdStatusHz : profile.talonClassicStatusHz;
-      config.rates.controlHz = canFd ? 1000.0 / profile.talonFdControlMs : 1000.0 / profile.talonClassicControlMs;
-    }
+      auto p = layout.GetTagPose(a).value(), q = layout.GetTagPose(b).value();
+      return frc::Translation2d{(p.X() + q.X()) / 2, (p.Y() + q.Y()) / 2};
+    };
+    return {layout.GetFieldLength().value(), layout.GetFieldWidth().value(), midpoint(22, 23), midpoint(6, 7)};
   }
-#else
-  (void)vendor;
-#endif
-  return config;
-}
-#ifndef __FRC_ROBORIO__
-meco::sim::RobotContactConfig RobotContacts()
-{
-  constexpr double inchesToMetres = .0254;
-  meco::sim::RobotContactConfig c;
-  // Unmeasured construction/material estimates: replace with loaded measurements.
-  c.chassisClearance = 2.0 * inchesToMetres;
-  c.panThickness = .125 * inchesToMetres;
-  c.panHalfLength = c.panHalfWidth = .43 - 3.5 * inchesToMetres;
-  c.bumperFloorGap = .5 * inchesToMetres; // User-confirmed flush foam/plywood floor gap.
-  c.noodleDiameter = 2.75 * inchesToMetres;
-  c.backingThickness = .75 * inchesToMetres;
-  c.backingHeight = 5.0 * inchesToMetres;
-  c.backingFloorGap = c.bumperFloorGap; // Selected flush plywood bottom is rigid.
-  c.compressionStrain = {0, .25, .5, .7, .8};
-  c.compressionStressPa = {0, 10000, 35000, 100000, 250000};
-  // Overdamped foam dissipates more impact energy and reduces rebound.
-  c.dampingRatio = 1.2;
-  return c;
-}
-#endif
-// Configure the swerve hardware, geometry, and simulation model.
-base::DriveConfig DriveConfig()
-{
-  base::DriveConfig c;
-  c.bus = "MECO CANIvore";
-  c.pigeon = 13;
-#if defined(MECO_FAST_CONTROL_API)
-  if (FastControlEnabled())
-  {
-    c.controlPeriodSeconds = season::drive::fastcontrol::Config().periodMs / 1000.0;
-    c.externalSimulationScheduling = true;
-    const auto &profile = season::drive::fastcontrol::Config();
-    c.odometryHz = frc::RobotBase::IsSimulation() || ctre::phoenix6::CANBus{c.bus}.IsNetworkFD()
-                       ? profile.odometryFdHz : profile.odometryClassicHz;
-  }
-#endif
-  c.driveRatio = 5.8909090909090915;
-  c.steerRatio = 12.1;
-  c.couplingRatio = 4.909090909090909;
-  c.maxSpeed = 5.24;
-  c.maxAngularRate = 7;
-  c.driveKP = .15;
-  c.driveKS = .1;
-  c.driveKV = .124;
-  const bool simulation = frc::RobotBase::IsSimulation();
-  c.steerKP = 100;
-  c.steerKD = .5;
-  c.steerKS = .2;
-  c.steerKV = 1.5;
-  c.driveCurrent = 55;
-  c.slipCurrent = 50;
-  c.steerCurrent = 30;
-  // Simulation ready-to-drive maximum: robot, bumpers and battery (67.6 kg).
-  // The real configuration remains unchanged. The yaw MOI is the existing
-  // PathPlanner estimate; replace it when a measured or CAD value is available.
-  c.massKg = simulation ? 67.6 : 53;
-  c.moi = 6.883;
-  c.cof = simulation ? 2.1 : 2.9;
-  c.simulation.wheelInertia = .01;
-  c.simulation.steerInertia = .01;
-  if (simulation)
-  {
-    // Bumper envelope: user-confirmed 0.5 inch floor gap, estimated 5.5 inch height.
-    // Move the body origin to bumper centre; preserve the assumed world CoM at .30 m.
-#ifndef __FRC_ROBORIO__
-    const auto contact = RobotContacts();
-    c.simulation.bumperHalfHeight = contact.noodleDiameter;
-    c.simulation.rideHeight = contact.bumperFloorGap + c.simulation.bumperHalfHeight;
-#endif
-    c.simulation.centerOfMassZ = .30 - c.simulation.rideHeight;
-  }
-  c.autoConfigFromGUI = true;
-  c.autoTranslationKP = 15;
-  c.autoRotationKP = 10;
-  // Module order is front-left, front-right, back-left, back-right.
-  c.modules = {{{2, 1, 9, .3076171875, .2794, .2794, false, true, false},
-                {8, 3, 10, .304931640625, .2794, -.2794, true, true, false},
-                {6, 5, 11, -.083740234375, -.2794, .2794, false, true, false},
-                {4, 7, 12, -.346435546875, -.2794, -.2794, true, true, false}}};
-  // Physical mounting directions measured from the current module geometry.
-  // These describe the simulated rotor/encoder axes, independently of the
-  // Phoenix electrical inversion settings above.
-  using Orientation = base::SimulationDeviceOrientation;
-  c.simulation.modules = {
-      {{Orientation::CounterClockwisePositive, Orientation::ClockwisePositive, Orientation::CounterClockwisePositive},
-       {Orientation::ClockwisePositive, Orientation::ClockwisePositive, Orientation::CounterClockwisePositive},
-       {Orientation::CounterClockwisePositive, Orientation::ClockwisePositive, Orientation::CounterClockwisePositive},
-       {Orientation::ClockwisePositive, Orientation::ClockwisePositive, Orientation::CounterClockwisePositive}}};
-#ifndef __FRC_ROBORIO__
-  if (simulation)
-  {
-    // Native Phoenix swerve requests enable FOC. Use the same electrical
-    // plant and stator torque limit as the simulation adapter, not supply amps.
-    const auto motor = frc::DCMotor::KrakenX60FOC(1);
-    const double motorTorqueConstant = motor.Kt.value();
-    std::array<base::sim::ModuleLocation, 4> locations{};
-    for (std::size_t i = 0; i < locations.size(); ++i)
-      locations[i] = {c.modules[i].xMeters, c.modules[i].yMeters};
-    const auto tuned = base::sim::DeriveSimulationTuning(
-        {c.massKg, c.moi, c.cof, c.wheelRadius, c.driveRatio, c.slipCurrent, motorTorqueConstant, locations, .08, .50});
-    // The contact-loaded plant uses the configured robot steering gains.
-    // The old simulation-only pole estimate assumed an unloaded azimuth motor.
-    c.autoTranslationKP = tuned.autoTranslationKP;
-    c.autoRotationKP = tuned.autoRotationKP;
-  }
-#endif
-  return c;
-}
-// Construct flywheel motor IO using the season configuration and inertia.
-std::unique_ptr<base::MotorIO> Motor(const season::hardware::FlywheelConfig &c, base::Vendor vendor)
-{
-  return base::MakeMotorIO(Mode(), vendor, MotorRates(c.motor, vendor), c.inertiaKgMetersSquared);
-}
-// Derive trench references from the official field tag layout.
-season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
-{
-  auto midpoint = [&](int a, int b)
-  {
-    auto p = layout.GetTagPose(a).value(), q = layout.GetTagPose(b).value();
-    return frc::Translation2d{(p.X() + q.X()) / 2, (p.Y() + q.Y()) / 2};
-  };
-  return {layout.GetFieldLength().value(), layout.GetFieldWidth().value(), midpoint(22, 23), midpoint(6, 7)};
-}
-// Express the headset mount relative to the robot frame.
-base::QuestNavConfig QuestConfig(const frc::AprilTagFieldLayout &layout)
-{
-  base::QuestNavConfig c;
-  c.subscriptionPeriodSeconds = season::drive::fastcontrol::Config().questPeriodMs / 1000.0;
-  c.fieldLength = layout.GetFieldLength().value();
-  c.fieldWidth = layout.GetFieldWidth().value();
-  c.robotToQuest = frc::Transform3d{units::meter_t{-13.5 * .0254}, 0_m, units::meter_t{8.5 * .0254},
-                                    frc::Rotation3d{180_deg, 0_deg, 180_deg}};
-  return c;
-}
-// Express the Limelight mount relative to the robot frame.
-base::VisionConfig VisionConfig(const frc::AprilTagFieldLayout &layout)
-{
-  base::VisionConfig c;
-  c.name = "limelight";
-  c.fieldLength = layout.GetFieldLength().value();
-  c.fieldWidth = layout.GetFieldWidth().value();
-  c.robotToCamera = frc::Transform3d{0_m, 0_m, units::meter_t{21.25 * .0254}, frc::Rotation3d{0_deg, -30_deg, 0_deg}};
-  return c;
-}
 } // namespace
-// Select simulated observations or physical localization devices.
-std::vector<std::unique_ptr<base::VisionIO>> RobotContainer::LocalizationSources()
-{
-  std::vector<std::unique_ptr<base::VisionIO>> sources;
-#ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation())
-  {
-    sources.push_back(std::make_unique<base::InjectedVisionIO>(
-        [this](auto &inputs)
-        {
-          inputs = std::move(simulatedLocalization_.limelight);
-          simulatedLocalization_.limelight.observations.clear();
-        }));
-    sources.push_back(std::make_unique<base::InjectedVisionIO>(
-        [this](auto &inputs)
-        {
-          inputs = std::move(simulatedLocalization_.quest);
-          simulatedLocalization_.quest.observations.clear();
-        }));
-    return sources;
-  }
-#endif
-  sources.push_back(base::MakeLimelightVisionIO(VisionConfig(layout_), [this] { return drive_.Pose().Rotation(); }));
-  sources.push_back(base::MakeQuestNavVisionIO(QuestConfig(layout_)));
-  return sources;
-}
 // Fuse accepted observations into the drivetrain pose estimate.
 void RobotContainer::AcceptVision(const base::VisionObservation &observation)
 {
@@ -255,54 +44,43 @@ void RobotContainer::AcceptVision(const base::VisionObservation &observation)
 }
 // Pass non-owning subsystem references to season command factories.
 season::Mechanisms RobotContainer::Mechanisms() { return {rack_, intake_, conveyor_, bottom_, top_, hood_, shooter_}; }
+RobotContainer::~RobotContainer() = default;
 RobotContainer::RobotContainer()
-    : drive_(DriveConfig()),
+    : simulationRuntime_(std::make_unique<season::simulation::RobotRuntime>(*this)),
+      drive_(season::hardware::DriveConfig(season::hardware::FastControlEnabled())),
       rack_("IntakeRack",
             base::MakeMotorIO(
-                Mode(), base::Vendor::SparkMax,
-                MotorRates({{21},
+                season::hardware::Mode(), base::Vendor::SparkMax,
+                season::hardware::MotorRates({{season::hardware::kRackCanId},
                             {false},
                             season::hardware::kRackGearRatio * 2 * std::numbers::pi *
                                 season::hardware::kRackDrumRadius,
-                            40,
+                            season::hardware::kRackMotorCurrent,
                             ""},
                            base::Vendor::SparkMax),
-                15 * .45359237 * .0127 * .0127),
-            (frc::RobotBase::IsSimulation() ? season::hardware::SimulationGainsFor(season::hardware::kRackGains)
-                                            : season::hardware::kRackGains),
+                season::hardware::kRackMotorInertia),
+            season::hardware::JointGains(season::hardware::kRackGains),
             2 * std::numbers::pi * season::hardware::kRackDrumRadius),
-      hood_("Hood", base::MakeMotorIO(Mode(), base::Vendor::SparkMax,
-                                       MotorRates({{33}, {false}, 105, 40, ""}, base::Vendor::SparkMax), .01),
-            (frc::RobotBase::IsSimulation() ? season::hardware::SimulationGainsFor(season::hardware::kHoodGains)
-                                            : season::hardware::kHoodGains),
+      hood_("Hood", base::MakeMotorIO(season::hardware::Mode(), base::Vendor::SparkMax, season::hardware::MotorRates({{season::hardware::kHoodCanId}, {false}, season::hardware::kHoodGearRatio, season::hardware::kHoodMotorCurrent, ""}, base::Vendor::SparkMax), season::hardware::kHoodMotorInertia),
+            season::hardware::JointGains(season::hardware::kHoodGains),
             1, base::Gravity::Cosine),
-      intake_("IntakeRoller", Motor(season::hardware::kIntake, base::Vendor::SparkMax), season::hardware::kIntakeGains),
+      intake_("IntakeRoller", simulationRuntime_->MakeMotor(season::hardware::kIntake, base::Vendor::SparkMax, season::simulation::MotorLoad::None), season::hardware::kIntakeGains),
       conveyor_("Conveyor",
-#ifndef __FRC_ROBORIO__
-                Mode() == base::Mode::Sim ? season::MakeLoadedMotorIO(season::hardware::kConveyor.motor, base::Vendor::SparkMax, season::hardware::kConveyor.inertiaKgMetersSquared, fuelMotorLoads_, season::LoadedMotor::Conveyor) :
-#endif
-                Motor(season::hardware::kConveyor, base::Vendor::SparkMax),
+                simulationRuntime_->MakeMotor(season::hardware::kConveyor, base::Vendor::SparkMax, season::simulation::MotorLoad::Conveyor),
                 season::hardware::kConveyorGains),
       bottom_("BottomIndexer",
-#ifndef __FRC_ROBORIO__
-              Mode() == base::Mode::Sim ? season::MakeLoadedMotorIO(season::hardware::kBottomIndexer.motor, base::Vendor::TalonFX, season::hardware::kBottomIndexer.inertiaKgMetersSquared, fuelMotorLoads_, season::LoadedMotor::Bottom) :
-#endif
-              Motor(season::hardware::kBottomIndexer, base::Vendor::TalonFX),
+                simulationRuntime_->MakeMotor(season::hardware::kBottomIndexer, base::Vendor::TalonFX, season::simulation::MotorLoad::Bottom),
               season::hardware::kIndexerGains),
       top_("TopIndexer",
-#ifndef __FRC_ROBORIO__
-           Mode() == base::Mode::Sim ? season::MakeLoadedMotorIO(season::hardware::kTopIndexer.motor, base::Vendor::SparkMax, season::hardware::kTopIndexer.inertiaKgMetersSquared, fuelMotorLoads_, season::LoadedMotor::Top) :
-#endif
-           Motor(season::hardware::kTopIndexer, base::Vendor::SparkMax), season::hardware::kIndexerGains),
+                simulationRuntime_->MakeMotor(season::hardware::kTopIndexer, base::Vendor::SparkMax, season::simulation::MotorLoad::Top),
+           season::hardware::kIndexerGains),
       shooter_("ShooterFlywheel",
-#ifndef __FRC_ROBORIO__
-               Mode() == base::Mode::Sim ? season::MakeLoadedMotorIO(season::hardware::kShooter.motor, base::Vendor::TalonFX, season::hardware::kShooter.inertiaKgMetersSquared, fuelMotorLoads_, season::LoadedMotor::Shooter) :
-#endif
-               Motor(season::hardware::kShooter, base::Vendor::TalonFX),
+                simulationRuntime_->MakeMotor(season::hardware::kShooter, base::Vendor::TalonFX, season::simulation::MotorLoad::Shooter),
                season::hardware::kShooterGains),
       layout_(frc::AprilTagFieldLayout::LoadField(frc::AprilTagField::kDefaultField)), field_(Geometry(layout_)),
       vision_(
-          std::make_unique<base::VisionSystem>(LocalizationSources(), [this](const auto &obs) { AcceptVision(obs); })),
+          std::make_unique<base::VisionSystem>(simulationRuntime_->LocalizationSources(), [this](const auto &obs)
+                                               { AcceptVision(obs); })),
       checks_(
           [this]
           {
@@ -315,15 +93,11 @@ RobotContainer::RobotContainer()
             top_.Stop();
             shooter_.Stop();
           },
-          frc::RobotBase::IsReal() ? "/home/lvuser/systemcheck-latest.json" : "systemcheck-latest.json",
+          season::hardware::SystemCheckPath(),
           {.setupPrompt = "Confirm robot on blocks, no fuel, clear personnel and Disable operator ready"})
 {
-  fastControlEnabled_ = FastControlEnabled();
-#if defined(MECO_FAST_CONTROL_API)
-  fastMechanismCanFd_ = !frc::RobotBase::IsReal() ||
-                       (!season::hardware::kBottomIndexer.motor.canBus.empty() &&
-                        ctre::phoenix6::CANBus{season::hardware::kBottomIndexer.motor.canBus}.IsNetworkFD());
-#endif
+  fastControlEnabled_ = season::hardware::FastControlEnabled();
+  fastMechanismCanFd_ = season::hardware::MechanismCanFd();
   // The command scheduler may run faster than the mechanisms' validated
   // 20 ms controller interval. Keep their feedback/control cadence explicit.
   rack_.UseExternalScheduling();
@@ -334,271 +108,40 @@ RobotContainer::RobotContainer()
   top_.UseExternalScheduling();
   shooter_.UseExternalScheduling();
   // Install the pathfinder before constructing commands that use it.
-  base::ConfigureNativeAutoDrivePathfinder();
-  drive_.ConfigureAuto();
-#ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation())
-  {
-    auto ntInstance = nt::NetworkTableInstance::GetDefault();
-    ntGamepadConsumedPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/Consumed").Publish();
-    driverStationCommandPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/DriverStationCommand").Publish();
-    const char *ntGamepadMode = std::getenv("FRC_SIM_NT_GAMEPAD");
-    const bool simNtEnabled = ntGamepadMode ? std::string_view{ntGamepadMode} == "1"
-                                            : fastControlProfile_.ntGamepadEnabled &&
-                                                  fastControlProfile_.driverInput == "nt";
-    frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Enabled", simNtEnabled);
-    frc::SmartDashboard::PutNumber("SimulationTuning/SteerKP", drive_.Config().steerKP);
-    frc::SmartDashboard::PutNumber("SimulationTuning/SteerKD", drive_.Config().steerKD);
-    frc::SmartDashboard::PutNumber("SimulationTuning/AutoTranslationKP", drive_.Config().autoTranslationKP);
-    frc::SmartDashboard::PutNumber("SimulationTuning/AutoRotationKP", drive_.Config().autoRotationKP);
-    simulationPosePublisher_ =
-        nt::NetworkTableInstance::GetDefault().GetStructTopic<frc::Pose3d>("/Simulation/RobotTruth").Publish();
-    simulationBodyPosePublisher_ =
-        nt::NetworkTableInstance::GetDefault().GetStructTopic<frc::Pose3d>("/Simulation/PhysicsBodyTruth").Publish();
-    // The drive owns one physics adapter and its optional field arena.
-    const auto backend = base::sim::BackendFromEnvironment();
-    const auto &physics = drive_.Config().simulation;
-    // Hard-mounted wheels have a fixed geometric body-to-floor offset.
-    simulationGroundedBodyHeight_ = units::meter_t{physics.rideHeight};
-    frc::SmartDashboard::PutNumber("FieldSimulation/GroundedBodyHeight", physics.rideHeight);
-    frc::SmartDashboard::PutNumber("FieldSimulation/BumperCornerRadius", backend == base::sim::Backend::Full3D
-                                                                             ? RobotContacts().noodleDiameter / 2
-                                                                             : base::sim::kBumperCornerRadius);
-    frc::SmartDashboard::PutNumber("FieldSimulation/BumperBottomHeight", physics.rideHeight - physics.bumperHalfHeight);
-    frc::SmartDashboard::PutNumber("FieldSimulation/BumperTopHeight", physics.rideHeight + physics.bumperHalfHeight);
-    auto simulation = backend == base::sim::Backend::Full3D
-                          ? meco::sim::CreateDriveSimulationAdapter(drive_.Config(), backend, RobotContacts())
-                          : meco::sim::CreateDriveSimulationAdapter(drive_.Config(), backend);
-    const char *fieldMode = std::getenv("FRC_SIM_FIELD_COLLIDERS");
-    simulationFieldCollidersEnabled_ = !fieldMode || std::string_view{fieldMode} != "0";
-    if (simulationFieldCollidersEnabled_)
-    {
-      auto &arena = simulation->CreateArena(base::sim::ArenaScene::Empty);
-      season::simulation::InstallField(arena);
-    }
-    frc::SmartDashboard::PutBoolean("FieldSimulation/CollidersEnabled", simulationFieldCollidersEnabled_);
-    frc::SmartDashboard::PutNumber("FieldSimulation/ColliderCount",
-                                   simulationFieldCollidersEnabled_ ? season::simulation::FieldColliders().size() : 0);
-    simulationSession_ = simulation.get(); // Drive owns the session for this container lifetime.
-    drive_.SetSimulationAdapter(std::move(simulation));
-    // A starting auto pose must move both simulation truth and odometry.
-    drive_.SetPoseResetCallback(
-        [this](const frc::Pose2d &pose)
-        {
-          if (captureAutonomousPoseReset_)
-          {
-            captureAutonomousPoseReset_ = false;
-            if (!simulationFieldCollidersEnabled_ || season::simulation::IsClearStartingPose(pose))
-            {
-              simulationResetPhysicalOrigin_ = pose;
-              simulatedLocalization_.Reset();
-              lastAcceptedVision_ = -1e9;
-              // Allow simulated encoders and gyro to catch up after teleporting.
-              simulationResetFeedbackLoops_ = 5;
-              drive_.ResetSimulation(pose);
-              frc::SmartDashboard::PutString("Simulation/AutoStartPose", "applied");
-            }
-            else
-            {
-              // Reject overlapping starts and restore the prior simulation origin.
-              autonomousPoseBlocked_ = true;
-              drive_.ResetPose(simulationResetPhysicalOrigin_);
-              frc::SmartDashboard::PutString("Simulation/AutoStartPose", "blocked-by-field");
-            }
-            return;
-          }
-          if (simulationResetFeedbackLoops_ > 0)
-            simulationResetPose_ = pose;
-        });
-  }
-#endif
+  season::autonomous::RobotAutos::ConfigureDrive(drive_);
+  simulationRuntime_->Initialize();
   const bool ntInputSelected = fastControlProfile_.driverInput == "nt" && fastControlProfile_.ntGamepadEnabled;
-#ifndef __FRC_ROBORIO__
-  const char *simNtOverride = std::getenv("FRC_SIM_NT_GAMEPAD");
-  const bool useNtInput = frc::RobotBase::IsSimulation() && simNtOverride
-                              ? std::string_view{simNtOverride} == "1"
-                              : ntInputSelected;
-#else
-  const bool useNtInput = ntInputSelected;
-#endif
+  const bool useNtInput = simulationRuntime_->UseNtInput(ntInputSelected);
   if (useNtInput)
     ntGamepad_ = std::make_unique<season::drive::NtGamepad>(nt::NetworkTableInstance::GetDefault(),
-                                                           fastControlProfile_.ntPeriodMs,
-                                                           fastControlProfile_.ntStaleMs);
+                                                            fastControlProfile_.ntPeriodMs,
+                                                            fastControlProfile_.ntStaleMs);
   frc::SmartDashboard::PutString("Input/DriverSource", useNtInput ? "nt" : "driverstation");
   frc::SmartDashboard::PutBoolean("Input/NTGamepadEnabled", useNtInput);
   // Manual driving resumes whenever no other command owns the drivetrain.
-  drive_.SetDefaultCommand(frc2::cmd::RunEnd([this] { DriveTeleop(false); }, [this] { drive_.Stop(); }, {&drive_}));
+  drive_.SetDefaultCommand(frc2::cmd::RunEnd([this]
+                                             { DriveTeleop(false); }, [this]
+                                             { drive_.Stop(); }, {&drive_}));
   // Perception uses the live intake extension and the shared match snapshot.
   autoDrive_ = std::make_unique<season::AutoDrive>(
-      drive_, [this] { return rack_.Position(); },
-      [this]() -> const base::season2026::MatchContext & { return matchContext_; },
+      drive_, [this]
+      { return rack_.Position(); },
+      [this]() -> const base::season2026::MatchContext &
+      { return matchContext_; },
       units::second_t{season::drive::fastcontrol::Config().detectionPeriodMs / 1000.0});
-  auto m = Mechanisms();
-#ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation())
-    simulation_ = std::make_unique<season::FuelSimulation>(m, drive_, fuelMotorLoads_);
-#endif
+  simulationRuntime_->InitializeFuel();
   // Bind controls before registering the named autonomous actions.
   ConfigureBindings();
-  // PathPlanner markers reuse commands with explicit mechanism requirements.
-  pathplanner::NamedCommands::registerCommand("DeployIntake",
-                                              frc2::cmd::RunOnce([this] { rack_.SetPosition(.3); }, {&rack_}));
-  pathplanner::NamedCommands::registerCommand("StowIntake",
-                                              frc2::cmd::RunOnce([this] { rack_.SetPosition(0); }, {&rack_}));
-  pathplanner::NamedCommands::registerCommand("FeedRollers", HubShot(false));
-  pathplanner::NamedCommands::registerCommand("CoordinatedHubShot", HubShot(false));
-  // Use this marker only in auto steps that do not run a path concurrently.
-  pathplanner::NamedCommands::registerCommand("AimedHubShot", HubShot(true));
-  pathplanner::NamedCommands::registerCommand("IdleRollers", frc2::cmd::RunOnce(
-                                                                 [this]
-                                                                 {
-                                                                   conveyor_.Stop();
-                                                                   bottom_.Stop();
-                                                                   top_.Stop();
-                                                                 },
-                                                                 {&conveyor_, &bottom_, &top_}));
-  pathplanner::NamedCommands::registerCommand("Agitate", frc2::cmd::RunEnd(
-                                                             [this]
-                                                             {
-                                                               bottom_.SetVoltage(-10);
-                                                               top_.SetVoltage(10);
-                                                             },
-                                                             [this]
-                                                             {
-                                                               bottom_.Stop();
-                                                               top_.Stop();
-                                                             },
-                                                             {&bottom_, &top_}));
-  pathplanner::NamedCommands::registerCommand("SpinIntake", frc2::cmd::RunEnd(
-                                                                [this]
-                                                                {
-                                                                  intake_.SetVoltage(-10);
-                                                                  conveyor_.SetVoltage(5);
-                                                                  fuelEstimate_->Observe(autoDrive_->VisibleFuel(), drive_.Pose());
-                                                                  frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", fuelEstimate_->Count());
-                                                                },
-                                                                [this]
-                                                                {
-                                                                  intake_.Stop();
-                                                                  conveyor_.Stop();
-                                                                },
-                                                                {&intake_, &conveyor_})
-                                                .BeforeStarting([this] { fuelEstimate_->StartCollection(); }));
-  // Spin up from the current pose while the auto is running.
-  auto calculatedSpinUp = [this]
-  {
-    return frc2::cmd::RunEnd(
-        [this]
-        {
-          auto p = drive_.Pose();
-          auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
-          auto shot = season::CalculateShot(p, season::HubPosition(alliance), frc::RobotBase::IsSimulation());
-          hood_.SetPosition(shot.hoodRotations);
-          shooter_.SetVelocity(shot.flywheelRps);
-        },
-        [this]
-        {
-          hood_.Stop();
-          shooter_.Stop();
-        },
-        {&hood_, &shooter_});
-  };
-  pathplanner::NamedCommands::registerCommand("AutoSpinUp", calculatedSpinUp().WithTimeout(2_s));
-  pathplanner::NamedCommands::registerCommand("Fender", season::ShooterPreset(m, 0, 30));
-  // AutoAim owns the drivetrain while it rotates toward the selected target.
-  pathplanner::NamedCommands::registerCommand(
-      "AutoAim",
-      frc2::cmd::RunEnd(
-          [this]
-          {
-            auto p = drive_.Pose();
-            auto target = SelectTarget();
-            auto shot = season::CalculateShot(p, target, field_, frc::RobotBase::IsSimulation());
-            hood_.SetPosition(shot.hoodRotations);
-            shooter_.SetVelocity(shot.flywheelRps);
-            double error = std::remainder(shot.headingRadians - p.Rotation().Radians().value(), 2 * std::numbers::pi);
-            drive_.RunVelocity(
-                frc::ChassisSpeeds{0_mps, 0_mps, units::radians_per_second_t{std::clamp(7 * error, -7., 7.)}});
-          },
-          [this]
-          {
-            drive_.Stop();
-            hood_.Stop();
-            shooter_.Stop();
-          },
-          {&drive_, &hood_, &shooter_}));
-  // Combine deployed PathPlanner autos with season-specific options.
-  autoChooser_ = pathplanner::AutoBuilder::buildAutoChooser();
-  seasonAutos_.emplace_back(HubShot(true, true));
-  seasonAutos_.emplace_back(
-      base::FollowChoreo<2026>(drive_, "LeftBlueBump", {10, 0, 0}, {7, 0, 0}, units::second_t{.02}).AndThen(HubShot()));
-  seasonAutos_.emplace_back(frc2::cmd::None());
-  // Hardware and desktop simulation intentionally choose different defaults.
-  if (!frc::RobotBase::IsSimulation())
-    autoChooser_.SetDefaultOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
-  else
-    autoChooser_.AddOption("Fender I HARDLY KNOW HER -JAVI", seasonAutos_[0].get());
-  autoChooser_.AddOption("Choreo LeftBlueBump + Shoot", seasonAutos_[1].get());
-  autoChooser_.AddOption("You better hit the A stop before this -Manny (none)", seasonAutos_[2].get());
-  seasonAutos_.emplace_back(autoDrive_->Command());
-  autoChooser_.AddOption("AutoDrive target", seasonAutos_.back().get());
-  seasonAutos_.emplace_back(season::OffensiveAutoDrive(*autoDrive_, drive_, m, field_, fuelEstimate_));
-  if (frc::RobotBase::IsSimulation())
-    autoChooser_.SetDefaultOption("AutoDrive offensive", seasonAutos_.back().get());
-  else
-    autoChooser_.AddOption("AutoDrive offensive", seasonAutos_.back().get());
-  frc::SmartDashboard::PutBoolean("AutoDrive/OffenseEnabled", frc::RobotBase::IsSimulation());
-  frc::SmartDashboard::PutData("Auto Choices", &autoChooser_);
-#ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation())
-  {
-    // The dashboard command starts practice using the selected sim station.
-    seasonAutos_.emplace_back(frc2::cmd::RunOnce(
-                                  []
-                                  {
-                                    const char *station = "Blue1";
-                                    switch (frc::sim::DriverStationSim::GetAllianceStationId())
-                                    {
-                                    case HAL_AllianceStationID_kRed1:
-                                      station = "Red1";
-                                      break;
-                                    case HAL_AllianceStationID_kRed2:
-                                      station = "Red2";
-                                      break;
-                                    case HAL_AllianceStationID_kRed3:
-                                      station = "Red3";
-                                      break;
-                                    case HAL_AllianceStationID_kBlue2:
-                                      station = "Blue2";
-                                      break;
-                                    case HAL_AllianceStationID_kBlue3:
-                                      station = "Blue3";
-                                      break;
-                                    default:
-                                      break;
-                                    }
-                                    nt::NetworkTableInstance::GetDefault()
-                                        .GetTable("/Sim/Practice")
-                                        ->GetEntry("Config/AllianceStation")
-                                        .SetString(station);
-                                    static auto command = nt::NetworkTableInstance::GetDefault()
-                                                              .GetStringTopic("/Sim/Practice/Command")
-                                                              .Publish({.keepDuplicates = true});
-                                    command.Set("start");
-                                  })
-                                  .IgnoringDisable(true));
-    frc::SmartDashboard::PutData("Start Practice Match", seasonAutos_.back().get());
-  }
-#endif
+  autonomous_ = std::make_unique<season::autonomous::RobotAutos>(*this);
+  autonomous_->Configure();
   // Reserve all controlled mechanisms during a diagnostic run.
   checks_.ConfigureRequirements({&drive_, &rack_, &hood_, &shooter_, &intake_, &conveyor_, &bottom_, &top_});
   season::ConfigureSystemChecks(
       checks_, drive_, rack_, hood_, shooter_,
       {{"intake", &intake_}, {"conveyor", &conveyor_}, {"bottom-indexer", &bottom_}, {"top-indexer", &top_}},
-      [this] { return vision_->Inputs().connected; });
-  if (frc::RobotBase::IsSimulation())
-    ResetSimulation();
+      [this]
+      { return vision_->Inputs().connected; });
+  simulationRuntime_->ResetIfSimulation();
 }
 
 // Maintain mechanism feedback and control at 50 Hz independently of the
@@ -617,7 +160,7 @@ void RobotContainer::ControlMechanisms20ms()
     return;
   ++sparkControlCount_;
   ++talonControlCount_;
-  constexpr units::second_t kControlPeriod{.02};
+  const auto kControlPeriod = season::hardware::kControlPeriod;
   rack_.Control(kControlPeriod);
   hood_.Control(kControlPeriod);
   intake_.Control(kControlPeriod);
@@ -659,11 +202,7 @@ void RobotContainer::ControlMechanismsFast()
 // Bind controls to commands with explicit ownership and cleanup.
 void RobotContainer::ConfigureBindings()
 {
-#ifndef __FRC_ROBORIO__
-  // Full scene recovery (including an overturned body), separate from Start's
-  // driver heading reset. This binding never exists on the physical robot.
-  controller_.Back().OnTrue(frc2::cmd::RunOnce([this] { ResetSimulation(); }));
-#endif
+  simulationRuntime_->BindReset();
   // LB selects target driving or offense according to the dashboard toggle.
   (controller_.LeftBumper() &&
    []
@@ -678,7 +217,8 @@ void RobotContainer::ConfigureBindings()
    }).WhileTrue(season::OffensiveAutoDrive(*autoDrive_, drive_, Mechanisms(), field_, fuelEstimate_));
   auto m = Mechanisms();
   // Presets latch between button presses. No idle default overwrites their setpoints.
-  (controller_.Start() && [] { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.Start() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
       .OnTrue(frc2::cmd::RunOnce(
           [this]
           {
@@ -689,34 +229,52 @@ void RobotContainer::ConfigureBindings()
           },
           {&drive_}));
   // Triggers acquire and eject while held.
-  (controller_.RightTrigger() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Acquire(m));
-  (controller_.LeftTrigger() && [] { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.RightTrigger() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .WhileTrue(season::Acquire(m));
+  (controller_.LeftTrigger() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
       .WhileTrue(season::Eject(m).AlongWith(
-          frc2::cmd::RunEnd([this] { rack_.SetPosition(.30); }, [this] { rack_.Stop(); }, {&rack_})));
+          frc2::cmd::RunEnd([this]
+                            { rack_.SetPosition(season::hardware::kRackDeploy); }, [this]
+                            { rack_.Stop(); }, {&rack_})));
   // Feed while held; rumble reports shooter readiness.
-  (controller_.RightBumper() && [] { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.RightBumper() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
       .WhileTrue(season::AgitateAndFeed(
           m, [this](double intensity)
           { controller_.GetHID().SetRumble(frc::GenericHID::RumbleType::kBothRumble, intensity); }));
   // Either operator can hold the rack deploy and stow commands.
-  (controller_.POVUp() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Deploy(m));
-  (copilot_.POVUp() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Deploy(m));
-  (controller_.POVDown() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Stow(m));
-  (copilot_.POVDown() && [] { return frc::DriverStation::IsTeleopEnabled(); }).WhileTrue(season::Stow(m));
+  (controller_.POVUp() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .WhileTrue(season::Deploy(m));
+  (copilot_.POVUp() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .WhileTrue(season::Deploy(m));
+  (controller_.POVDown() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .WhileTrue(season::Stow(m));
+  (copilot_.POVDown() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .WhileTrue(season::Stow(m));
   // Copilot left/right latches the rack position.
   (copilot_.POVLeft() &&
    []
    {
      return frc::DriverStation::IsTeleopEnabled();
-   }).OnTrue(frc2::cmd::RunOnce([this] { rack_.SetPosition(.30); }, {&rack_}));
+   }).OnTrue(frc2::cmd::RunOnce([this]
+                                { rack_.SetPosition(season::hardware::kRackDeploy); }, {&rack_}));
   (copilot_.POVRight() &&
    []
    {
      return frc::DriverStation::IsTeleopEnabled();
-   }).OnTrue(frc2::cmd::RunOnce([this] { rack_.SetPosition(0); }, {&rack_}));
+   }).OnTrue(frc2::cmd::RunOnce([this]
+                                { rack_.SetPosition(season::hardware::kRackStow); }, {&rack_}));
   // A assists aiming while retaining driver translation.
-  (controller_.A() && [] { return frc::DriverStation::IsTeleopEnabled(); })
-      .WhileTrue(frc2::cmd::RunEnd([this] { DriveTeleop(true); },
+  (controller_.A() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .WhileTrue(frc2::cmd::RunEnd([this]
+                                   { DriveTeleop(true); },
                                    [this]
                                    {
                                      drive_.Stop();
@@ -725,13 +283,27 @@ void RobotContainer::ConfigureBindings()
                                    },
                                    {&drive_, &hood_, &shooter_}));
   // Face buttons select latched shooter presets or stop the shooter.
-  (controller_.X() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::DriverHubPreset(m));
-  (copilot_.X() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::DriverHubPreset(m));
-  (controller_.Y() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::ShooterPreset(m, .049, 55));
-  (copilot_.Y() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::ShooterPreset(m, .049, 55));
-  (copilot_.A() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::ShooterPreset(m, .049, 35));
-  (controller_.B() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::ShooterIdle(m));
-  (copilot_.B() && [] { return frc::DriverStation::IsTeleopEnabled(); }).OnTrue(season::ShooterIdle(m));
+  (controller_.X() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .OnTrue(season::DriverHubPreset(m));
+  (copilot_.X() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .OnTrue(season::DriverHubPreset(m));
+  (controller_.Y() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .OnTrue(season::ShooterPreset(m, season::hardware::kFerryHood, season::hardware::kFerryRps));
+  (copilot_.Y() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .OnTrue(season::ShooterPreset(m, season::hardware::kFerryHood, season::hardware::kFerryRps));
+  (copilot_.A() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .OnTrue(season::ShooterPreset(m, season::hardware::kTrenchHood, season::hardware::kTrenchRps));
+  (controller_.B() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .OnTrue(season::ShooterIdle(m));
+  (copilot_.B() && []
+   { return frc::DriverStation::IsTeleopEnabled(); })
+      .OnTrue(season::ShooterIdle(m));
 }
 // Shape driver inputs before applying the driver-relative field frame.
 void RobotContainer::DriveTeleop(bool aim)
@@ -739,12 +311,13 @@ void RobotContainer::DriveTeleop(bool aim)
   // Preserve MecoBase 2026.2.1's per-axis shaping before rotating the driver
   // translation frame. FieldDrive still owns alliance perspective and gating.
   const auto deadband = [](double value)
-  { return std::abs(value) < .1 ? 0. : std::copysign((std::abs(value) - .1) / .9, value); };
+  { return std::abs(value) < season::hardware::kDriverDeadband ? 0. : std::copysign((std::abs(value) - season::hardware::kDriverDeadband) / (1 - season::hardware::kDriverDeadband), value); };
   const bool dsConnected = controller_.GetHID().IsConnected() && controller_.GetHID().GetAxisCount() >= 5;
   const double dsLeftY = dsConnected ? controller_.GetLeftY() : 0.0;
   const double dsLeftX = dsConnected ? controller_.GetLeftX() : 0.0;
   const double dsRightX = dsConnected ? controller_.GetRightX() : 0.0;
-  const auto validAxis = [](double value) { return std::isfinite(value) && std::abs(value) <= 1.0; };
+  const auto validAxis = [](double value)
+  { return std::isfinite(value) && std::abs(value) <= 1.0; };
   const bool dsInputValid = dsConnected &&
                             validAxis(dsLeftY) && validAxis(dsLeftX) && validAxis(dsRightX);
   double rawLeftY = 0.0, rawLeftX = 0.0, rawRightX = 0.0;
@@ -780,199 +353,20 @@ void RobotContainer::DriveTeleop(bool aim)
   {
     const auto p = drive_.Pose();
     const auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
-    const auto shot = season::CalculateDriverAim(alliance, p, field_, frc::RobotBase::IsSimulation());
+    const auto shot = season::CalculateDriverAim(alliance, p, field_, simulationRuntime_->IsSimulation());
     hood_.SetPosition(shot.hoodRotations);
     shooter_.SetVelocity(shot.flywheelRps);
     const double error = std::remainder(shot.headingRadians - p.Rotation().Radians().value(), 2 * std::numbers::pi);
-    omega = std::clamp(5 * error, -drive_.Config().maxAngularRate, drive_.Config().maxAngularRate);
+    omega = std::clamp(season::hardware::kAimHeadingGain * error, -drive_.Config().maxAngularRate, drive_.Config().maxAngularRate);
   }
   drive_.FieldDrive(x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin(),
                     x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos(), omega);
-#ifndef __FRC_ROBORIO__
-  const int64_t consumeNtUs = nt::Now();
-  const double fieldX = x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin();
-  const double fieldY = x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos();
-  if (ntGamepadConsumedPublisher_)
-  {
-    const std::array<double, 7> consumed{static_cast<double>(ntGamepadState.sequence),
-                                         static_cast<double>(ntGamepadState.sourceTimestampUs),
-                                         static_cast<double>(consumeNtUs), fieldX, fieldY, omega,
-                                         ntGamepadState.accepted ? 1.0 : 0.0};
-    ntGamepadConsumedPublisher_.Set(consumed, consumeNtUs);
-  }
-  if (driverStationCommandPublisher_)
-  {
-    const std::array<double, 7> driverStation{static_cast<double>(consumeNtUs), dsLeftY, dsLeftX, dsRightX,
-                                              fieldX, fieldY, omega};
-    driverStationCommandPublisher_.Set(driverStation, consumeNtUs);
-  }
-  frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Accepted",
-                                  ntGamepad_ && ntGamepadState.accepted);
-  frc::SmartDashboard::PutNumber("Simulation/NTGamepad/AgeMs",
-                                 std::isfinite(ntGamepadState.ageMs) ? ntGamepadState.ageMs : -1.0);
-  frc::SmartDashboard::PutNumber("Simulation/NTGamepad/Sequence", ntGamepadState.sequence);
-#endif
+  simulationRuntime_->PublishDriverInput(ntGamepadState, dsLeftY, dsLeftX, dsRightX, x, y, omega);
 }
-// Select a hub or ferry target from alliance, pose, and visible tags.
-season::ShotTarget RobotContainer::SelectTarget()
-{
-  auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
-  auto calibration =
-      nt::NetworkTableInstance::GetDefault().GetEntry("/TunableNumbers/ShooterCalibration/Enabled").GetBoolean(false);
-  if (calibration)
-    return {season::ShotMode::Hub, season::HubPosition(alliance)};
-  auto p = drive_.Pose();
-  std::vector<int> ids;
-  auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
-#ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation())
-    return season::SelectTarget(alliance, p, simulatedLocalization_.tagIds, field_);
-#endif
-  // Limelight publishes each raw fiducial as a seven-value record.
-  auto raw = table->GetNumberArray("rawfiducials", {});
-  if (vision_->Inputs().connected)
-    for (size_t i = 0; i + 6 < raw.size(); i += 7)
-      ids.push_back(static_cast<int>(raw[i]));
-  return season::SelectTarget(alliance, p, ids, field_);
-}
-// Build a bounded shot with optional drivetrain ownership and vision gating.
-frc2::CommandPtr RobotContainer::HubShot(bool ownDrive, bool requireVision)
-{
-  season::CoordinatedShotOptions o;
-  o.ownDrive = ownDrive;
-  o.autonomous = true;
-  o.simulation = frc::RobotBase::IsSimulation();
-  // A shot ends as soon as its configured feed completes. Its overall bound
-  // must also allow the rollers to reverse after the preceding intake path.
-  o.readyTimeoutSeconds = 8;
-  o.totalTimeoutSeconds = o.simulation ? 25 : 15;
-  o.feedDurationSeconds = season::ConfiguredFeedDurationSeconds;
-  struct FeedTiming { double last = 0, elapsed = 0, target = 0; bool active = false; };
-  auto timing = std::make_shared<FeedTiming>();
-  o.feedFeedback = [timing](bool active) {
-    const double now = frc::Timer::GetFPGATimestamp().value();
-    if (timing->active) timing->elapsed += std::max(0., now - timing->last);
-    timing->last = now;
-    timing->active = active;
-  };
-  o.poseReady = [this, requireVision]
-  {
-    return (!requireVision && frc::DriverStation::IsAutonomousEnabled()) ||
-           frc::Timer::GetFPGATimestamp().value() - lastAcceptedVision_ < .5;
-  };
-  return season::CoordinatedShot(
-      Mechanisms(), drive_, field_,
-      []
-      {
-        auto a = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
-        return season::ShotTarget{season::ShotMode::Hub, season::HubPosition(a)};
-      },
-      o).BeforeStarting([timing] {
-        timing->last = frc::Timer::GetFPGATimestamp().value();
-        timing->elapsed = 0;
-        timing->active = false;
-        timing->target = season::ConfiguredFeedDurationSeconds();
-      }).FinallyDo([this, timing](bool interrupted) {
-        fuelEstimate_->CompleteFeed(!interrupted && timing->target > 0 && timing->elapsed >= timing->target);
-      });
-}
-frc2::Command *RobotContainer::GetAutonomousCommand() { return autoChooser_.GetSelected(); }
-// Capture only the initial pose reset made while the auto is scheduled.
-void RobotContainer::ScheduleAutonomous(frc2::Command *command)
-{
-#ifndef __FRC_ROBORIO__
-  captureAutonomousPoseReset_ = frc::RobotBase::IsSimulation();
-  autonomousPoseBlocked_ = false;
-  if (captureAutonomousPoseReset_)
-    frc::SmartDashboard::PutString("Simulation/AutoStartPose", "not-requested");
-#endif
-  command->Schedule();
-#ifndef __FRC_ROBORIO__
-  captureAutonomousPoseReset_ = false;
-  if (autonomousPoseBlocked_)
-    command->Cancel();
-#endif
-}
+frc2::Command *RobotContainer::GetAutonomousCommand() { return autonomous_->Selected(); }
+void RobotContainer::ScheduleAutonomous(frc2::Command *command) { simulationRuntime_->Schedule(command); }
 void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 
-// Publish physical truth and feed simulated sensors once per loop.
-void RobotContainer::SimulationPeriodic()
-{
-#ifndef __FRC_ROBORIO__
-#if defined(MECO_FAST_CONTROL_API)
-  // The fast command scheduler does not own the 20 ms simulation clock.
-  if (fastControlEnabled_)
-    drive_.StepSimulationPeriod();
-#endif
-  static auto mechanismCadence = nt::NetworkTableInstance::GetDefault()
-      .GetDoubleArrayTopic("/Simulation/MechanismCadence").Publish();
-  mechanismCadence.Set(std::array<double, 3>{static_cast<double>(nt::Now()),
-      static_cast<double>(sparkControlCount_), static_cast<double>(talonControlCount_)});
-  std::optional<season::FuelRobotState> fuelRobotState;
-  if (auto truth = drive_.SimulationTruth())
-  {
-    // Scene reset changes encoder and gyro raw inputs asynchronously. Reconcile
-    // once after transport/odometry has consumed them. Preserve any autonomous
-    // pose seed applied since reset and motion in that frame. No loop waits.
-    if (simulationResetFeedbackLoops_ > 0 && --simulationResetFeedbackLoops_ == 0)
-      drive_.ResetPose(simulationResetPose_.TransformBy(frc::Transform2d{
-          simulationResetPhysicalOrigin_, frc::Pose2d{units::meter_t{truth->x}, units::meter_t{truth->y},
-                                                      frc::Rotation2d{units::radian_t{truth->yaw}}}}));
-    // Keep body-origin physics and floor-referenced visualization distinct.
-    const auto body = simulationSession_->PhysicsTruth().body;
-    const auto q = body.pose.rotation;
-    const frc::Pose3d bodyPose{units::meter_t{body.pose.position.x}, units::meter_t{body.pose.position.y},
-                               units::meter_t{body.pose.position.z},
-                               frc::Rotation3d{frc::Quaternion{q.w, q.x, q.y, q.z}}};
-    simulationBodyPosePublisher_.Set(bodyPose);
-    const auto visualPose = meco::sim::FloorReferencedRobotPose(bodyPose, simulationGroundedBodyHeight_);
-    simulationPosePublisher_.Set(visualPose);
-    // Do not generate localization observations while reset feedback settles.
-    if (simulationResetFeedbackLoops_ == 0)
-      simulatedLocalization_.Update(visualPose, frc::Timer::GetFPGATimestamp(), layout_,
-                                    VisionConfig(layout_).robotToCamera, QuestConfig(layout_).robotToQuest);
-    frc::SmartDashboard::PutBoolean("Localization/LimelightConnected", vision_->Inputs().connected);
-    frc::SmartDashboard::PutBoolean("Localization/QuestTracking", vision_->Inputs(1).tracking);
-    frc::SmartDashboard::PutBoolean("Localization/QuestAligned", vision_->Inputs(1).aligned);
-    frc::SmartDashboard::PutNumber("Localization/LimelightTagCount", simulatedLocalization_.tagIds.size());
-    frc::SmartDashboard::PutNumber("Localization/TruthErrorMetres",
-                                   drive_.Pose().Translation().Distance(visualPose.ToPose2d().Translation()).value());
-    const auto &config = drive_.Config().simulation;
-    // Launch and contact calculations consume physical pose and velocities.
-    fuelRobotState = season::FuelRobotState{
-        visualPose,
-        {body.linearVelocity.x, body.linearVelocity.y, body.linearVelocity.z},
-        {body.angularVelocity.x, body.angularVelocity.y, body.angularVelocity.z},
-        {config.centerOfMassX, config.centerOfMassY, config.centerOfMassZ + simulationGroundedBodyHeight_.value()}};
-  }
-  // Step fuel once, then generate camera observations from the updated scene.
-  if (simulation_)
-    simulation_->Periodic(.02, fuelRobotState, matchContext_.ownActive);
-  if (autoDrive_ && simulation_ && fuelRobotState && simulationResetFeedbackLoops_ == 0)
-    autoDrive_->UpdateSimulation(fuelRobotState->pose, simulation_->Model(), simulationFieldCollidersEnabled_);
-#endif
-}
-// Reset the scene and allow sensor feedback to settle before reconciliation.
-void RobotContainer::ResetSimulation()
-{
-  driverHeadingOffset_ = frc::Rotation2d{};
-#ifndef __FRC_ROBORIO__
-  // Reset to a clear alliance-specific starting pose.
-  const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
-  simulationResetPhysicalOrigin_ =
-      simulationFieldCollidersEnabled_ ? season::simulation::DefaultSpawn(red) : frc::Pose2d{};
-  if (simulationFieldCollidersEnabled_ && !season::simulation::IsClearStartingPose(simulationResetPhysicalOrigin_))
-    throw std::logic_error("Simulation spawn intersects field geometry");
-  if (autoDrive_)
-    autoDrive_->ResetSimulation();
-  simulatedLocalization_.Reset();
-  lastAcceptedVision_ = -1e9;
-  simulationResetFeedbackLoops_ = 5;
-  drive_.ResetSimulation(simulationResetPhysicalOrigin_);
-#endif
-
-#ifndef __FRC_ROBORIO__
-  if (simulation_)
-    simulation_->Reset();
-#endif
-}
+void RobotContainer::SimulationPeriodic() { simulationRuntime_->Periodic(); }
+void RobotContainer::ResetSimulation() { simulationRuntime_->Reset(); }
+bool RobotContainer::SimulationResetReady() const { return simulationRuntime_->ResetReady(); }

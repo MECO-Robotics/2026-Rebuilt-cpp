@@ -82,7 +82,7 @@ If its current location cannot produce a valid ferry solution, offense first att
 
 ## Read the code
 
-- [Bindings and chooser](../src/main/cpp/RobotContainer.cpp)
+- [Bindings](../src/main/cpp/RobotContainer.cpp) and [autonomous chooser](../src/main/cpp/season/auto/RobotAutos.cpp)
 - [AutoDrive target and perception](../src/main/cpp/season/drive/AutoDrive.cpp) and [interface](../src/main/include/season/drive/AutoDrive.h)
 - [Offensive command](../src/main/cpp/season/drive/OffensiveAutoDrive.cpp) and [decision helpers](../src/main/include/season/drive/OffensiveAutoDrive.h)
 - [Navgrid](../src/main/deploy/pathplanner/navgrid.json)

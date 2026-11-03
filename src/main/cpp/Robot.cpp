@@ -1,5 +1,7 @@
 #include "Robot.h"
 #include "season/drive/FastControlProfile.h"
+#include "season/simulation/RuntimeConfig.h"
+#include "season/mechanisms/Mechanisms.h"
 #include <string_view>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/NetworkTable.h>
@@ -43,16 +45,16 @@ Robot::Robot()
 #endif
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
-    practice_ = std::make_unique<meco::sim::PracticeMatchController>(meco::sim::PracticeMatchProfile{20, 3, 140});
+    practice_ = std::make_unique<meco::sim::PracticeMatchController>(meco::sim::PracticeMatchProfile{season::simulation::runtimeconfig::kPracticeAutonomousSeconds, season::simulation::runtimeconfig::kPracticeAssessmentSeconds, season::simulation::runtimeconfig::kPracticeTeleopSeconds});
 #endif
   frc::DataLogManager::Start();
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
-  frc::RobotController::SetBrownoutVoltage(units::volt_t{6.3});
+  frc::RobotController::SetBrownoutVoltage(season::hardware::kBrownoutVoltage);
   const char *fastControl = std::getenv("FRC_FAST_CONTROL");
   fastControlEnabled_ = fastControl ? std::string_view{fastControl} == "1"
                                     : season::drive::fastcontrol::Config().enabled;
   frc2::CommandScheduler::GetInstance().SetPeriod(units::second_t{
-      fastControlEnabled_ ? season::drive::fastcontrol::Config().periodMs / 1000.0 : .02});
+      fastControlEnabled_ ? season::drive::fastcontrol::Config().periodMs / 1000.0 : season::hardware::kControlPeriod.value()});
   if (fastControlEnabled_)
   {
 #ifndef MECO_FAST_CONTROL_API
@@ -63,7 +65,8 @@ Robot::Robot()
     fastControlSamplesPublisher_ = nt::NetworkTableInstance::GetDefault()
                                        .GetDoubleArrayTopic("/Simulation/FastControl/Samples")
                                        .Publish();
-    AddPeriodic([this] { FastControlPeriodic(); },
+    AddPeriodic([this]
+                { FastControlPeriodic(); },
                 units::second_t{season::drive::fastcontrol::Config().periodMs / 1000.0});
 #endif
   }
@@ -201,13 +204,14 @@ void Robot::SimulationPeriodic()
 #ifndef __FRC_ROBORIO__
   auto &runtime = base::simulation::GetSimulationRuntime();
   static auto physicsClockPublisher = nt::NetworkTableInstance::GetDefault()
-      .GetDoubleArrayTopic("/Simulation/Physics/Samples").Publish();
+                                          .GetDoubleArrayTopic("/Simulation/Physics/Samples")
+                                          .Publish();
   physicsClockPublisher.Set(std::array<double, 3>{static_cast<double>(nt::Now()),
-      static_cast<double>(frc::RobotController::GetFPGATime()), runtime.Time()});
+                                                  static_cast<double>(frc::RobotController::GetFPGATime()), runtime.Time()});
   // Coulomb-count an estimated 18 Ah FRC battery for the life of this sim
   // process. OCV falls with state of charge; the shared supply model then
   // adds the configured internal-resistance sag under load.
-  constexpr double capacityAh = 18.0;
+  constexpr double capacityAh = season::simulation::runtimeconfig::kBatteryCapacityAh;
   struct BatteryState
   {
     double remainingAh = capacityAh;
@@ -224,9 +228,9 @@ void Robot::SimulationPeriodic()
   const double current = runtime.SupplyCurrent();
   battery.remainingAh = std::max(0.0, battery.remainingAh - current * dt / 3600.0);
   const double stateOfCharge = std::clamp(battery.remainingAh / capacityAh, 0.0, 1.0);
-  const double openCircuitVoltage = 10.5 + 2.1 * std::sqrt(stateOfCharge);
+  const double openCircuitVoltage = season::simulation::runtimeconfig::kBatteryEmptyVoltage + season::simulation::runtimeconfig::kBatteryVoltageRange * std::sqrt(stateOfCharge);
   const double batteryVoltage = meco::sim::UpdateBatterySupply(
-      runtime, meco::sim::BatterySupplyConfig{openCircuitVoltage, 0.020, 0.0});
+      runtime, meco::sim::BatterySupplyConfig{openCircuitVoltage, season::simulation::runtimeconfig::kBatteryInternalResistanceOhms, 0.0});
   const bool brownedOut = frc::RobotController::IsBrownedOut();
   if (brownedOut && !battery.previouslyBrownedOut)
     ++battery.brownoutCount;
@@ -243,8 +247,8 @@ void Robot::SimulationPeriodic()
   static auto batteryPublisher =
       nt::NetworkTableInstance::GetDefault().GetDoubleArrayTopic("/Simulation/BatteryState").Publish();
   batteryPublisher.Set(std::array<double, 4>{battery.remainingAh, stateOfCharge,
-                                              brownedOut ? 1.0 : 0.0,
-                                              static_cast<double>(battery.brownoutCount)});
+                                             brownedOut ? 1.0 : 0.0,
+                                             static_cast<double>(battery.brownoutCount)});
   meco::sim::PublishDriverStationPacket();
 #endif
 }

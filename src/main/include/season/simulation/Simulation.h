@@ -2,6 +2,7 @@
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/ParticleContacts.h"
 #include "season/mechanisms/Mechanisms.h"
+#include "season/simulation/RuntimeConfig.h"
 #include "season/simulation/LoadedMotorSimulation.h"
 #include <random>
 #include <optional>
@@ -42,7 +43,7 @@ namespace season
   class FuelModel
   {
   public:
-    explicit FuelModel(unsigned seed = 3737);
+    explicit FuelModel(unsigned seed = simulation::runtimeconfig::kFuelRandomSeed);
     void Reset();
     void Step(double dt, const FuelInputs &input);
     void AddFloorFuel(frc::Translation2d point);
@@ -74,7 +75,7 @@ namespace season
   {
   public:
     FuelSimulation(Mechanisms mechanisms, base::Drive &drive, std::shared_ptr<FuelMotorLoads> loads = {});
-    void Periodic(double dt = .02, std::optional<FuelRobotState> physics = std::nullopt,
+    void Periodic(double dt = simulation::runtimeconfig::kSimulationPeriodSeconds, std::optional<FuelRobotState> physics = std::nullopt,
                   std::optional<bool> hubActive = true);
     void Reset();
     FuelModel &Model() { return model_; }
@@ -85,80 +86,77 @@ namespace season
     FuelModel model_;
     std::shared_ptr<FuelMotorLoads> loads_;
     double shooterLoadRemaining_{};
-    std::mt19937 loadRandom_{3737};
+    std::mt19937 loadRandom_{simulation::runtimeconfig::kFuelRandomSeed};
     nt::StructPublisher<frc::Pose3d> robotPosePublisher_;
     nt::StructArrayPublisher<frc::Pose3d> componentsPublisher_;
     nt::StructArrayPublisher<frc::Pose3d> fuelPublisher_, hopperPublisher_, projectilesPublisher_;
   };
 }
 
-
-
 namespace season::simulation
 {
-    // Robot-specific ideal sensor model. Geometry/mounts are supplied by the season;
-    // shared acquisition, filtering and estimator ownership remain in MecoBase.
-    struct SimulatedLocalization
+  // Robot-specific ideal sensor model. Geometry/mounts are supplied by the season;
+  // shared acquisition, filtering and estimator ownership remain in MecoBase.
+  struct SimulatedLocalization
+  {
+    base::VisionInputs limelight, quest;
+    std::vector<int> tagIds;
+    bool questAligned = false;
+
+    void Reset()
     {
-        base::VisionInputs limelight, quest;
-        std::vector<int> tagIds;
-        bool questAligned = false;
+      limelight = {};
+      quest = {};
+      tagIds.clear();
+      questAligned = false;
+    }
 
-        void Reset()
-        {
-            limelight = {};
-            quest = {};
-            tagIds.clear();
-            questAligned = false;
-        }
-
-        void Update(const frc::Pose3d &truth, units::second_t timestamp,
-                    const frc::AprilTagFieldLayout &layout,
-                    const frc::Transform3d &limelightMount, const frc::Transform3d &questMount)
-        {
-            limelight = {};
-            quest = {};
-            limelight.connected = quest.connected = quest.tracking = true;
-            // LL3 standard lens; Quest optical frustum is an approximate model.
-            tagIds = meco::sim::VisibleTags(truth, limelightMount, layout,
-                                            units::degree_t{62.5}, units::degree_t{48.9}, units::meter_t{6});
-            const auto questTags = meco::sim::VisibleTags(truth, questMount, layout,
-                                                          units::degree_t{90}, units::degree_t{90}, units::meter_t{6});
-            // Model AprilTag-assisted absolute initialization, then continuous VIO.
-            questAligned = questAligned || questTags.size() >= 2 || !tagIds.empty();
-            quest.aligned = questAligned;
-            const auto limelightObservation = meco::sim::MakeIdealVisionObservation(
-                truth, timestamp, layout, !tagIds.empty(), units::meter_t{.75}, {.08, .08, .12});
-            const auto questObservation = meco::sim::MakeIdealVisionObservation(
-                truth, timestamp, layout, questAligned, units::meter_t{.75}, {.1, .1, .05});
-            if (limelightObservation)
-                limelight.observations.push_back({limelightObservation->pose, limelightObservation->timestamp, limelightObservation->stdDevs});
-            if (questObservation)
-                quest.observations.push_back({questObservation->pose, questObservation->timestamp, questObservation->stdDevs});
-        }
-    };
+    void Update(const frc::Pose3d &truth, units::second_t timestamp,
+                const frc::AprilTagFieldLayout &layout,
+                const frc::Transform3d &limelightMount, const frc::Transform3d &questMount)
+    {
+      limelight = {};
+      quest = {};
+      limelight.connected = quest.connected = quest.tracking = true;
+      // LL3 standard lens; Quest optical frustum is an approximate model.
+      tagIds = meco::sim::VisibleTags(truth, limelightMount, layout,
+                                      units::degree_t{simulation::runtimeconfig::kLimelightHorizontalFovDegrees}, units::degree_t{simulation::runtimeconfig::kLimelightVerticalFovDegrees}, units::meter_t{simulation::runtimeconfig::kVisionRangeMetres});
+      const auto questTags = meco::sim::VisibleTags(truth, questMount, layout,
+                                                    units::degree_t{simulation::runtimeconfig::kQuestHorizontalFovDegrees}, units::degree_t{simulation::runtimeconfig::kQuestVerticalFovDegrees}, units::meter_t{simulation::runtimeconfig::kVisionRangeMetres});
+      // Model AprilTag-assisted absolute initialization, then continuous VIO.
+      questAligned = questAligned || questTags.size() >= simulation::runtimeconfig::kQuestAlignmentMinTags || !tagIds.empty();
+      quest.aligned = questAligned;
+      const auto limelightObservation = meco::sim::MakeIdealVisionObservation(
+          truth, timestamp, layout, !tagIds.empty(), units::meter_t{simulation::runtimeconfig::kVisionTagDistanceNoiseMetres}, {simulation::runtimeconfig::kLimelightStdX, simulation::runtimeconfig::kLimelightStdY, simulation::runtimeconfig::kLimelightStdHeading});
+      const auto questObservation = meco::sim::MakeIdealVisionObservation(
+          truth, timestamp, layout, questAligned, units::meter_t{simulation::runtimeconfig::kVisionTagDistanceNoiseMetres}, {simulation::runtimeconfig::kQuestStdX, simulation::runtimeconfig::kQuestStdY, simulation::runtimeconfig::kQuestStdHeading});
+      if (limelightObservation)
+        limelight.observations.push_back({limelightObservation->pose, limelightObservation->timestamp, limelightObservation->stdDevs});
+      if (questObservation)
+        quest.observations.push_back({questObservation->pose, questObservation->timestamp, questObservation->stdDevs});
+    }
+  };
 }
 
-
 namespace season::simulation
 {
-    using base::sim::fields::rebuilt2026::FieldColliders;
-    using base::sim::fields::rebuilt2026::kBlueHubX;
-    using base::sim::fields::rebuilt2026::kFieldLength;
-    using base::sim::fields::rebuilt2026::kFieldWidth;
-    using base::sim::fields::rebuilt2026::kHubY;
-    using base::sim::fields::rebuilt2026::kRedHubX;
-    using base::sim::fields::rebuilt2026::kStartingLineX;
-    frc::Pose2d DefaultSpawn(bool red);
-    // Conservative clearance of the modeled .86m square chassis up to .45m high.
-    // This is a modeled start-space check, not whole-robot inspection acceptance.
-    bool IsClearStartingPose(const frc::Pose2d &pose);
-    void InstallField(base::sim::Arena &arena);
-    // Centerline terrain for the modeled pitched plates; rolling resistance is
-    // not modeled here. These functions are desktop simulation inputs only.
-    std::vector<double> RampBoundaries(base::FootprintPose a, base::FootprintPose b);
-    base::FootprintTerrainSegment RampTerrain(base::FootprintPose a, base::FootprintPose b);
-    // Conservative plan-view rectangles for the optional ramp avoidance policy.
-    std::vector<base::FieldRectangle> RampObstacles();
+  using base::sim::fields::rebuilt2026::FieldColliders;
+  using base::sim::fields::rebuilt2026::kBlueHubX;
+  using base::sim::fields::rebuilt2026::kFieldLength;
+  using base::sim::fields::rebuilt2026::kFieldWidth;
+  using base::sim::fields::rebuilt2026::kHubY;
+  using base::sim::fields::rebuilt2026::kRedHubX;
+  using base::sim::fields::rebuilt2026::kStartingLineX;
+  frc::Pose2d DefaultSpawn(bool red);
+  // Conservative clearance of the modeled .86m square chassis up to .45m high.
+  // This is a modeled start-space check, not whole-robot inspection acceptance.
+  bool IsClearStartingPose(const frc::Pose2d &pose);
+  void InstallField(base::sim::Arena &arena);
+  // Centerline terrain for the modeled pitched plates; rolling resistance is
+  // not modeled here. These functions are desktop simulation inputs only.
+  std::vector<double> RampBoundaries(base::FootprintPose a, base::FootprintPose b);
+  base::FootprintTerrainSegment RampTerrain(base::FootprintPose a, base::FootprintPose b);
+  // Conservative plan-view rectangles for the optional ramp avoidance policy.
+  std::vector<base::FieldRectangle> RampObstacles();
 }
 #endif
