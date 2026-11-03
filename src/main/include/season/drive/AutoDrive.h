@@ -1,5 +1,4 @@
 #pragma once
-#include "season/drive/OffensiveConfig.h"
 #include <base/AutoDrive.h>
 #include <cmath>
 #include <numbers>
@@ -14,14 +13,34 @@
 
 namespace season
 {
+namespace autodriveconfig
+{
+  inline constexpr double kDetectionPeriodSeconds = .005;
+  inline constexpr double kCameraFrontXMetres = .43, kCameraRearXMetres = -.43, kCameraHeightMetres = .54;
+  inline constexpr double kCameraPitchDegrees = 15, kRearCameraYawDegrees = 180;
+  inline constexpr double kCameraRangeMetres = 6, kClusterRadiusMetres = .15;
+  inline constexpr double kDefaultTargetXMetres = 3., kDefaultTargetYMetres = .65;
+  inline constexpr int kMaxGridBytes = 262144;
+  inline constexpr double kTargetReplanDistanceMetres = .3;
+  inline constexpr double kFootprintLengthMetres = .86, kFootprintWidthMetres = .86;
+  inline constexpr double kHeadingToleranceRadians = .02, kAngularSettleSpeed = .02;
+  inline constexpr int kFinalSettleSamples = 50;
+  inline constexpr double kPoseAngularDamping = .5, kAngularStopTolerance = .01;
+  inline constexpr double kTranslationStallTimeoutSeconds = 3, kTranslationStallRequest = .01;
+  inline constexpr double kMaxAcceleration = 4, kCollisionBottomThresholdMetres = .05, kCollisionTopThresholdMetres = .45;
+  inline constexpr double kPostCommandWaitSeconds = .3;
+  inline constexpr double kArrivalDistanceMetres = .05, kArrivalHeadingRadians = .06;
+  inline constexpr double kArrivalLinearSpeed = .2, kArrivalAngularSpeed = .2;
+}
+
   class FuelModel;
 // Arrival requires both pose tolerance and low measured motion.
 inline bool AutoDriveArrived(const frc::Pose2d &pose, const frc::ChassisSpeeds &speeds, const frc::Pose2d &goal)
 {
-  return pose.Translation().Distance(goal.Translation()).value() < offenseconfig::kArrivalDistanceMetres &&
+  return pose.Translation().Distance(goal.Translation()).value() < autodriveconfig::kArrivalDistanceMetres &&
          std::abs(std::remainder((goal.Rotation().Radians() - pose.Rotation().Radians()).value(),
-                                 2 * std::numbers::pi)) < offenseconfig::kArrivalHeadingRadians &&
-         std::hypot(speeds.vx.value(), speeds.vy.value()) < offenseconfig::kArrivalLinearSpeed && std::abs(speeds.omega.value()) < offenseconfig::kArrivalAngularSpeed;
+                                 2 * std::numbers::pi)) < autodriveconfig::kArrivalHeadingRadians &&
+         std::hypot(speeds.vx.value(), speeds.vy.value()) < autodriveconfig::kArrivalLinearSpeed && std::abs(speeds.omega.value()) < autodriveconfig::kArrivalAngularSpeed;
 }
 // Bridges season perception and match state to reusable navigation.
 class AutoDrive
@@ -29,7 +48,7 @@ class AutoDrive
 public:
   AutoDrive(base::Drive &drive, std::function<double()> intakeExtension,
             std::function<const base::season2026::MatchContext &()> matchContext,
-            units::second_t detectionUpdatePeriod = units::second_t{offenseconfig::kDetectionPeriodSeconds});
+            units::second_t detectionUpdatePeriod = units::second_t{autodriveconfig::kDetectionPeriodSeconds});
   ~AutoDrive();
   // Create a fresh drivetrain-owning navigation command.
   frc2::CommandPtr Command();

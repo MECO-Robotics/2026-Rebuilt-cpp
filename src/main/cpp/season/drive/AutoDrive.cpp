@@ -1,5 +1,4 @@
 #include "season/drive/AutoDrive.h"
-#include "season/drive/AutoDriveConfig.h"
 #include "season/simulation/RuntimeConfig.h"
 #include "season/mechanisms/RobotGeometry.h"
 #include <frc/RobotBase.h>

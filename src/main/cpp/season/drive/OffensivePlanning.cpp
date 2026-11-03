@@ -1,5 +1,4 @@
 #include "season/drive/OffensiveAutoDrive.h"
-#include "season/drive/OffensiveConfig.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>

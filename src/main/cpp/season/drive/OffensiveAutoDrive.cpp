@@ -1,5 +1,4 @@
 #include "season/drive/OffensiveAutoDrive.h"
-#include "season/drive/OffensiveConfig.h"
 #include "season/mechanisms/MechanismConfig.h"
 #include "season/drive/ScoringPosition.h"
 #include "season/simulation/FuelConfig.h"

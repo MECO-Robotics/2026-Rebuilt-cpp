@@ -1,6 +1,5 @@
 #pragma once
 
-#include "season/drive/NtGamepadConfig.h"
 #include <networktables/DoubleArrayTopic.h>
 #include <networktables/NetworkTableInstance.h>
 #include <algorithm>
@@ -12,6 +11,14 @@
 
 namespace season::drive
 {
+  namespace ntgamepadconfig
+  {
+    inline constexpr bool kEnabled = true;
+    inline constexpr bool kFallbackToDriverStation = true;
+    inline constexpr double kDefaultPeriodMs = 5.0, kDefaultStaleMs = 50.0;
+    inline constexpr int64_t kMaxTimestampDisagreementUs = 20000, kMaxFutureOffsetUs = 5000;
+  }
+
   // Axes-only input supplied over NT4. Buttons and enable authority stay on Driver Station.
   class NtGamepad
   {

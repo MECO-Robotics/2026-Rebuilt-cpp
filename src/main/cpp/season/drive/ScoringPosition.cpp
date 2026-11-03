@@ -1,5 +1,4 @@
 #include "season/drive/ScoringPosition.h"
-#include "season/drive/AutoDriveConfig.h"
 #include <frc/Filesystem.h>
 #include <wpi/MemoryBuffer.h>
 #include <wpi/json.h>
@@ -11,7 +10,7 @@
 
 namespace season
 {
-  namespace cfg = autodriveconfig;
+  namespace cfg = scoringpositionconfig;
   bool RobotClearOfDepot(frc::Pose2d pose, frc::DriverStation::Alliance alliance, const FieldGeometry &field)
   {
     // The depot rails enclose a 27 by 42 inch area against the end wall. The

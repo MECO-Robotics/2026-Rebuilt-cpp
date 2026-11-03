@@ -1,5 +1,4 @@
 #include "season/auto/RobotAutos.h"
-#include "season/drive/AutoDriveConfig.h"
 #include "RobotContainer.h"
 #include "season/simulation/RobotRuntime.h"
 #include "season/mechanisms/Mechanisms.h"
@@ -20,6 +19,11 @@
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+namespace
+{
+constexpr double kAutoSpinUpTimeoutSeconds = 2.;
+constexpr double kChoreoTranslationP = 10., kChoreoRotationP = 7.;
+}
 using namespace units::literals;
 void season::autonomous::RobotAutos::ConfigureDrive(base::Drive &drive) {
   base::ConfigureNativeAutoDrivePathfinder();
@@ -93,7 +97,7 @@ void season::autonomous::RobotAutos::Configure() {
         },
         {&owner_.hood_, &owner_.shooter_});
   };
-  pathplanner::NamedCommands::registerCommand("AutoSpinUp", calculatedSpinUp().WithTimeout(units::second_t{season::autodriveconfig::kAutoSpinUpTimeoutSeconds}));
+  pathplanner::NamedCommands::registerCommand("AutoSpinUp", calculatedSpinUp().WithTimeout(units::second_t{kAutoSpinUpTimeoutSeconds}));
   pathplanner::NamedCommands::registerCommand("Fender", season::ShooterPreset(m, season::hardware::kHubHood, season::hardware::kHubRps));
   // AutoAim owns the drivetrain while it rotates toward the selected target.
   pathplanner::NamedCommands::registerCommand(
@@ -121,7 +125,7 @@ void season::autonomous::RobotAutos::Configure() {
   chooser_ = pathplanner::AutoBuilder::buildAutoChooser();
   autos_.emplace_back(HubShot(true, true));
   autos_.emplace_back(
-      base::FollowChoreo<2026>(owner_.drive_, "LeftBlueBump", {season::autodriveconfig::kChoreoTranslationP, 0, 0}, {season::autodriveconfig::kChoreoRotationP, 0, 0}, season::hardware::kControlPeriod).AndThen(HubShot()));
+      base::FollowChoreo<2026>(owner_.drive_, "LeftBlueBump", {kChoreoTranslationP, 0, 0}, {kChoreoRotationP, 0, 0}, season::hardware::kControlPeriod).AndThen(HubShot()));
   autos_.emplace_back(frc2::cmd::None());
   // Hardware and desktop simulation intentionally choose different defaults.
   if (!frc::RobotBase::IsSimulation())
