@@ -1,4 +1,5 @@
 #include "season/mechanisms/RobotPlatform.h"
+#include "season/mechanisms/MechanismConfig.h"
 #include "season/drive/FastControlProfile.h"
 #include <frc/RobotBase.h>
 #include <cstdlib>

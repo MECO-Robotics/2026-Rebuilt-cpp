@@ -2,6 +2,7 @@
 #include "RobotContainer.h"
 #include "season/mechanisms/RobotPlatform.h"
 #include "season/mechanisms/RobotConfiguration.h"
+#include "season/mechanisms/MechanismConfig.h"
 #include "season/simulation/RuntimeConfig.h"
 #include <frc/RobotBase.h>
 #include <frc/DriverStation.h>

@@ -3,6 +3,7 @@
 #include "base/Mechanism.h"
 #include "base/Vision.h"
 #include "season/mechanisms/Mechanisms.h"
+#include "season/mechanisms/RobotConfiguration.h"
 #include "base/SystemCheck.h"
 #include "season/drive/AutoDrive.h"
 #include "season/drive/OffensiveAutoDrive.h"

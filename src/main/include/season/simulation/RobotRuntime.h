@@ -2,6 +2,7 @@
 #include "base/Mechanism.h"
 #include "base/Vision.h"
 #include "season/mechanisms/Mechanisms.h"
+#include "season/mechanisms/MechanismConfig.h"
 #include "season/drive/NtGamepad.h"
 #include "season/drive/FastControlProfile.h"
 #include <memory>

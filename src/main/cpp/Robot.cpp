@@ -2,6 +2,7 @@
 #include "season/drive/FastControlProfile.h"
 #include "season/simulation/RuntimeConfig.h"
 #include "season/mechanisms/Mechanisms.h"
+#include "season/mechanisms/MechanismConfig.h"
 #include "season/mechanisms/RobotPlatform.h"
 #include <string_view>
 #include <networktables/NetworkTableInstance.h>

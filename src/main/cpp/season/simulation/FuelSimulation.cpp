@@ -2,6 +2,7 @@
 #include "season/simulation/Simulation.h"
 #include "season/simulation/FuelConfig.h"
 #include "season/mechanisms/RobotGeometry.h"
+#include "season/mechanisms/MechanismConfig.h"
 #include "meco/sim/ParticleFieldContacts.h"
 #include <networktables/NetworkTableInstance.h>
 

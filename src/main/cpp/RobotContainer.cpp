@@ -6,6 +6,7 @@
 #include "season/mechanisms/RobotPlatform.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/mechanisms/RobotConfiguration.h"
+#include "season/mechanisms/MechanismConfig.h"
 #include <frc/Timer.h>
 #include <frc/DriverStation.h>
 #include <frc/GenericHID.h>

@@ -1,10 +1,22 @@
 #pragma once
 #include <cmath>
-#include "season/mechanisms/RobotConfiguration.h"
 #include <numbers>
 #include <frc/geometry/Pose3d.h>
 #include <frc/geometry/Transform3d.h>
 #include <array>
+
+namespace season
+{
+  inline constexpr double kRackAngleRadians = 7.5 * std::numbers::pi / 180;
+  inline const double kRackAngleCos = std::cos(kRackAngleRadians);
+  inline const double kRackAngleSin = std::sin(kRackAngleRadians);
+}
+
+namespace season::hardware
+{
+  inline constexpr double kShooterPivotXMetres = -0.103310, kShooterPivotZMetres = 0.423;
+  inline constexpr double kClimberPivotXMetres = -0.290, kClimberPivotZMetres = 0.512;
+}
 
 namespace season
 {

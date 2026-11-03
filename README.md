@@ -50,7 +50,7 @@ New to the code? Start with the [student editing guide](docs/student-editing-gui
 | --- | --- |
 | Understand buttons and autonomous choices | [RobotContainer.cpp](src/main/cpp/RobotContainer.cpp) and [RobotAutos.cpp](src/main/cpp/season/auto/RobotAutos.cpp) |
 | Understand robot modes and the main loop | [Robot.cpp](src/main/cpp/Robot.cpp) |
-| Find motor settings and command interfaces | [RobotConfiguration.h](src/main/include/season/mechanisms/RobotConfiguration.h), [Mechanisms.h](src/main/include/season/mechanisms/Mechanisms.h), and [season commands](src/main/cpp/season/mechanisms/SeasonCommands.cpp) |
+| Find mechanism motor settings and command interfaces | [MechanismConfig.h](src/main/include/season/mechanisms/MechanismConfig.h), [Mechanisms.h](src/main/include/season/mechanisms/Mechanisms.h), and [season commands](src/main/cpp/season/mechanisms/SeasonCommands.cpp) |
 | Understand shooting and targeting | [Shooting.h](src/main/include/season/shooting/Shooting.h) and [Shooting.cpp](src/main/cpp/season/shooting/Shooting.cpp) |
 | Try AutoDrive | [AutoDrive guide](docs/autodrive-simulation.md) |
 | Configure enabled control/CAN/NT rates | [control profile](docs/frequency-profile.md) |

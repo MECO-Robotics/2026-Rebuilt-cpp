@@ -1,6 +1,6 @@
 #pragma once
 #include "base/Mechanism.h"
-#include "season/mechanisms/RobotConfiguration.h"
+#include "season/mechanisms/MechanismConfig.h"
 #include "season/shooting/Shooting.h"
 #include "base/Drive.h"
 #include <functional>
