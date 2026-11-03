@@ -6,13 +6,15 @@
 #include <base/season2026/MatchContext.h>
 #include <base/FootprintConfiguration.h>
 #include <base/ObjectPerception.h>
-#include "season/simulation/Simulation.h"
-#ifndef __FRC_ROBORIO__
-#include <meco/sim/SimulatedPieceSensor.h>
-#endif
+#include <frc/geometry/Pose3d.h>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <vector>
 
 namespace season
 {
+  class FuelModel;
 // Arrival requires both pose tolerance and low measured motion.
 inline bool AutoDriveArrived(const frc::Pose2d &pose, const frc::ChassisSpeeds &speeds, const frc::Pose2d &goal)
 {
@@ -28,6 +30,7 @@ public:
   AutoDrive(base::Drive &drive, std::function<double()> intakeExtension,
             std::function<const base::season2026::MatchContext &()> matchContext,
             units::second_t detectionUpdatePeriod = units::second_t{offenseconfig::kDetectionPeriodSeconds});
+  ~AutoDrive();
   // Create a fresh drivetrain-owning navigation command.
   frc2::CommandPtr Command();
   // Fresh, estimated field-frame observations from the camera perception path.
@@ -52,9 +55,8 @@ private:
   std::unique_ptr<base::ObjectPerception> perception_;
   std::optional<base::FootprintConfiguration> configuredFootprint_;
 #ifndef __FRC_ROBORIO__
-  std::array<std::unique_ptr<meco::sim::SimulatedPieceSensor>, 2> sensors_;
-  std::array<std::optional<base::ObjectDetectionFrame>, 2> frames_;
-  uint64_t sequence_{};
+  struct SimulationSensors;
+  std::unique_ptr<SimulationSensors> simulationSensors_;
 #endif
 };
 } // namespace season

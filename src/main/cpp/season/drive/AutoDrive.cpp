@@ -12,11 +12,16 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
 #include <algorithm>
+#include <array>
+#include <cstdint>
+#include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/Simulation.h"
+#include <meco/sim/SimulatedPieceSensor.h>
 #endif
 
 namespace season
@@ -58,6 +63,14 @@ namespace season
       return "unknown";
     }
   } // namespace
+#ifndef __FRC_ROBORIO__
+  struct AutoDrive::SimulationSensors
+  {
+    std::array<std::unique_ptr<meco::sim::SimulatedPieceSensor>, 2> sensors;
+    std::array<std::optional<base::ObjectDetectionFrame>, 2> frames;
+    uint64_t sequence{};
+  };
+#endif
   // Publish a concise reason for the current navigation state.
   void AutoDrive::Status(const char *value)
   {
@@ -83,6 +96,9 @@ namespace season
       : matchContext_(std::move(context)), drive_(drive), extension_(std::move(extension))
   {
     std::vector<base::ObjectCamera> cameras;
+#ifndef __FRC_ROBORIO__
+    simulationSensors_ = std::make_unique<SimulationSensors>();
+#endif
     for (size_t i = 0; i < 2; ++i)
     {
       const std::string name = i == 0 ? "front" : "rear";
@@ -102,9 +118,9 @@ namespace season
         config.maxRange = autodriveconfig::kCameraRangeMetres;
         config.seed = simulation::runtimeconfig::kFuelRandomSeed + i;
         config.robotToCamera = Mount(i);
-        sensors_[i] = std::make_unique<meco::sim::SimulatedPieceSensor>(config);
+        simulationSensors_->sensors[i] = std::make_unique<meco::sim::SimulatedPieceSensor>(config);
         io = std::make_unique<base::InjectedObjectDetectionIO>([this, i]
-                                                               { return std::exchange(frames_[i], std::nullopt); });
+                                                               { return std::exchange(simulationSensors_->frames[i], std::nullopt); });
       }
       else
 #endif
@@ -151,6 +167,7 @@ namespace season
     nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/Active").SetBoolean(false);
     Status("idle-native");
   }
+  AutoDrive::~AutoDrive() = default;
   void AutoDrive::PublishMatchContext() const
   {
     const auto &match = MatchState();
@@ -354,15 +371,16 @@ namespace season
     static const auto fieldObstacles = simulation::FieldColliders();
     static const std::vector<base::sim::BodySpec> noObstacles;
     const auto &obstacles = fieldColliders ? fieldObstacles : noObstacles;
-    ++sequence_;
+    ++simulationSensors_->sequence;
     for (size_t i = 0; i < 2; ++i)
     {
-      sensors_[i]->SetMount(Mount(i));
-      frames_[i] = sensors_[i]->ObserveFrame(truth, points, obstacles, frc::Timer::GetFPGATimestamp(), sequence_);
+      simulationSensors_->sensors[i]->SetMount(Mount(i));
+      simulationSensors_->frames[i] = simulationSensors_->sensors[i]->ObserveFrame(
+          truth, points, obstacles, frc::Timer::GetFPGATimestamp(), simulationSensors_->sequence);
       frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontDetections" : "AutoDrive/SimRearDetections",
-                                     frames_[i]->detections.size());
+                                     simulationSensors_->frames[i]->detections.size());
       frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontFrameAge" : "AutoDrive/SimRearFrameAge",
-                                     (frc::Timer::GetFPGATimestamp() - frames_[i]->captureTime).value());
+                                     (frc::Timer::GetFPGATimestamp() - simulationSensors_->frames[i]->captureTime).value());
     }
     const auto &clusters = perception_->Clusters();
     frc::SmartDashboard::PutBoolean("AutoDrive/DetectionFresh", !clusters.empty());
@@ -379,7 +397,7 @@ namespace season
   }
   void AutoDrive::ResetSimulation()
   {
-    for (auto &frame : frames_)
+    for (auto &frame : simulationSensors_->frames)
       frame.reset();
     perception_->Clear();
   }
