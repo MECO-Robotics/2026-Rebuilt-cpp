@@ -1,6 +1,8 @@
-# Optimized mixed-hardware profile: laptop results
+# Archived fast-control experiment: laptop results
 
-The following results were collected before the production configuration/release integration. For the current enabled defaults and roboRIO build, see [configurable profile](frequency-profile.md).
+> This report documents an earlier experimental implementation. The configurable fast scheduler, `FastControlProfile`, and its deploy JSON have been removed from the current robot code. The measurements below are historical evidence only; the current robot runs command and mechanism control on the standard 20 ms loop. The old reproduction instructions and profile artifacts refer to that earlier implementation.
+
+The following results were collected before the production configuration/release integration and do not describe the current runtime. For current control constants, see [control timing](control-timing.md).
 
 All eight cases passed. Each measured eight seconds of the full native desktop robot, with separate process-owned localhost endpoints and safe disable/cleanup. The baseline is this branch with the optimized profile disabled, not a physical Driver Station or radio measurement. Input events are spaced 73 ms apart; latency is from the scheduled event through input publication to the timestamped teleop drive command.
 
@@ -46,16 +48,9 @@ This is a nominal 500 Hz profile, not a hard 2 ms deadline guarantee. The synchr
 
 The actual `MakeNtObjectDetectionIO` factory was exercised over NT4 with a 60 Hz synthetic source for four seconds per profile. Baseline received 40/240 frames; optimized received 240/240: **6× more delivered frames**. Frame publication-to-read mean age was about 11 ms versus 6 ms in the initial probe. This is transport age, not camera exposure/inference latency. Producers must also configure low batching; `scripts/perception_publisher.py` supplies the matching 5 ms publisher for the existing protocol. It must be called by the actual coprocessor inference pipeline; no camera application was deployed.
 
-## Build and reproduce
+## Archived validation records
 
-To reproduce the archived development build exactly, two development worktrees are required: `../mecobase-fast-control` at public tag v2026.2.11 plus this patch, and `../mecosim-fast-control` at public tag v2026.0.16. The latter has no source edits: its adapter must be rebuilt against the development Base headers because the public configuration layout changed. The packaging script retains unchanged published Jolt objects, replaces all three adapter objects, checks membership, and uses hashed development coordinates. Public vendordeps/releases are not overwritten.
-
-```sh
-scripts/build_fast_profile.sh
-/home/brian/.cache/rebuilt-latency-venv/bin/python scripts/frequency_matrix.py --seconds 8 --include-vision-load
-```
-
-These commands and development-package details describe the archived run above. In the current public-dependency build, `FRC_FAST_CONTROL=1` selects fast scheduling and `FRC_SIM_NT_GAMEPAD=1` selects the simulated NT input; CAN and odometry rates are configured independently. The native development packages used for the archived run were not roboRIO/Windows releases or a hardware deployment.
+The scripts and deploy profile used for the fast-control experiment have been removed with that implementation. The records below preserve the historical evidence and provenance; they do not provide a reproduction path for the current code.
 
 Framework tests: 138 passed and one acceptance fixture skipped. Consumer safety/transport tests: three passed. Physical CAN utilization, delivered signal age, hardware trajectories, USB controller sampling, radios and mechanical response remain unmeasured. Preserve the Pigeon and existing bus topology; no speculative split-bus or gyro replacement was included.
 

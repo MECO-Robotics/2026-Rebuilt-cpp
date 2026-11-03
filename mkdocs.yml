@@ -12,7 +12,7 @@ nav:
   - Home: README.md
   - Where to make changes: student-editing-guide.md
   - AutoDrive: autodrive-simulation.md
-  - Control rates: frequency-profile.md
+  - Control timing: control-timing.md
   - NT gamepad: nt-gamepad.md
   - Timing measurements: frequency-results.md
   - Practice matches: practice-mode.md

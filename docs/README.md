@@ -16,4 +16,4 @@
 
 Install with `python3 -m pip install -r docs-requirements.txt`, then run `mkdocs serve` from the repository root. `mkdocs build` writes the site to `site/`. GitHub Actions builds the site and can publish it after Pages is configured to use GitHub Actions.
 
-The [control profile](frequency-profile.md) configures the enabled fast scheduler, CAN rates and input source. Use the [NT gamepad guide](nt-gamepad.md) for the laptop controller publisher and [timing measurements](frequency-results.md) for the desktop comparison.
+The [control timing guide](control-timing.md) describes the standard loop and where its requested rates are configured. Use the [NT gamepad guide](nt-gamepad.md) for the laptop controller publisher. [Historical timing measurements](frequency-results.md) document an earlier fast-control experiment and do not describe the current runtime.
