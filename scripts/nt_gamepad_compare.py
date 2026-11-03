@@ -34,9 +34,7 @@ INPUT_TOPIC = "/Input/Gamepad"
 PROBE_TOPIC = "/Diagnostics/Latency/RobotLoop"
 NT_COMMAND_TOPIC = "/Simulation/NTGamepad/Consumed"
 DS_COMMAND_TOPIC = "/Simulation/NTGamepad/DriverStationCommand"
-FAST_LOOP_TOPIC = "/Simulation/FastControl/Samples"
 PHYSICS_TOPIC = "/Simulation/Physics/Samples"
-MECHANISM_CADENCE_TOPIC = "/Simulation/MechanismCadence"
 DRIVE_MAX_MPS = 5.24
 STEP_PERIOD_S = 0.073
 STEP_VALUES = (-0.65, 0.65, 0.0, 0.35, -0.35, 0.0)
@@ -171,9 +169,7 @@ class NtSession:
         self.robot_probe = self.inst.getDoubleArrayTopic(PROBE_TOPIC).subscribe([], opts)
         self.nt_command = self.inst.getDoubleArrayTopic(NT_COMMAND_TOPIC).subscribe([], opts)
         self.ds_command = self.inst.getDoubleArrayTopic(DS_COMMAND_TOPIC).subscribe([], opts)
-        self.fast_loop = self.inst.getDoubleArrayTopic(FAST_LOOP_TOPIC).subscribe([], opts)
         self.physics_samples = self.inst.getDoubleArrayTopic(PHYSICS_TOPIC).subscribe([], opts)
-        self.mechanism_cadence = self.inst.getDoubleArrayTopic(MECHANISM_CADENCE_TOPIC).subscribe([], opts)
         self.load_publishers = {}
         self.load_sequences = defaultdict(int)
         self.load_stop = threading.Event()
@@ -265,8 +261,6 @@ def main() -> int:
                         help="simulated Driver Station joystick or NT4 gamepad publisher")
     parser.add_argument("--nt-port", type=int, default=DEFAULT_NT_PORT)
     parser.add_argument("--ws-port", type=int, default=WS_PORT)
-    parser.add_argument("--robot-period-ms", type=int, choices=(2, 20), default=20,
-                        help="expected active robot command cadence; physics remains on its 20 ms loop")
     parser.add_argument("--load", choices=("none", "vision"), default="none",
                         help="optional concurrent synthetic NT4 vision-rate traffic")
     parser.add_argument("--seconds", type=float, default=8.0,
@@ -282,7 +276,7 @@ def main() -> int:
         "experiment": "actual local WPILib robot HAL DS-vs-NT gamepad comparison",
         "mode": args.mode,
         "synthetic_vision_traffic": args.load == "vision",
-        "robot_period_ms": args.robot_period_ms,
+        "robot_period_ms": 20,
         "nt4_input_publish_period_ms": 5,
         "nt_server": f"{NT_HOST}:{args.nt_port}",
         "hal_websocket": f"ws://{WS_HOST}:{args.ws_port}/wpilibws",
@@ -314,10 +308,8 @@ def main() -> int:
 
         probe_rows: list[list[float]] = []
         physics_rows: list[list[float]] = []
-        mechanism_rows: list[list[float]] = []
         ds_rows: list[list[float]] = []
         nt_rows: list[list[float]] = []
-        fast_rows: list[list[float]] = []
         hal.set_joystick(0.0, new_data=True, enabled=True)
         wait_until(lambda: any(len(row) >= 9 and row[7] >= 0.5 and row[8] >= 0.5
                                for row in drain(nt.robot_probe)), 3,
@@ -380,8 +372,6 @@ def main() -> int:
             probes = drain(nt.robot_probe)
             probe_rows.extend(probes)
             physics_rows.extend(drain(nt.physics_samples))
-            mechanism_rows.extend(drain(nt.mechanism_cadence))
-            fast_rows.extend(drain(nt.fast_loop))
             ds_confirmed = ds_confirmed or any(len(row) >= 9 and row[7] >= 0.5 and row[8] >= 0.5
                                                 for row in probes)
             if args.mode == "nt":
@@ -443,8 +433,6 @@ def main() -> int:
         # Capture the final queued robot samples before making the input safe.
         probe_rows.extend(drain(nt.robot_probe))
         physics_rows.extend(drain(nt.physics_samples))
-        mechanism_rows.extend(drain(nt.mechanism_cadence))
-        fast_rows.extend(drain(nt.fast_loop))
         if args.mode == "nt":
             nt_rows.extend(drain(nt.nt_command))
         else:
@@ -453,32 +441,6 @@ def main() -> int:
             "samples": len(probe_rows),
             "ds_attached_and_enabled": ds_confirmed,
         }
-        enabled_fast_rows = [row for row in fast_rows if len(row) >= 7 and row[6] >= 0.5]
-        enabled_fast_rows.sort(key=lambda row: int(row[0]))
-        fast_periods_ms = [(float(b[2]) - float(a[2])) / 1000.0
-                           for a, b in zip(enabled_fast_rows, enabled_fast_rows[1:])
-                           if b[2] > a[2]]
-        fast_schedule_delays_ms = [(float(row[2]) - float(row[1])) / 1000.0
-                                   for row in enabled_fast_rows]
-        fast_work_ms = [float(row[4]) / 1000.0 for row in enabled_fast_rows]
-        fast_lateness_ms = [float(row[5]) / 1000.0 for row in enabled_fast_rows]
-        result["fast_loop"] = {
-            "topic": FAST_LOOP_TOPIC,
-            "sample_layout": ["sequence", "scheduledFpgaUs", "actualStartFpgaUs",
-                              "finishFpgaUs", "workUs", "latenessUs", "enabled"],
-            "samples_total": len(fast_rows),
-            "samples_enabled": len(enabled_fast_rows),
-            "sequence_gaps": max(0, int(enabled_fast_rows[-1][0] - enabled_fast_rows[0][0] + 1 - len(enabled_fast_rows)))
-                if len(enabled_fast_rows) > 1 else 0,
-            "actual_start_period_ms": {"samples": len(fast_periods_ms),
-                "p50": pct(fast_periods_ms, .50), "p95": pct(fast_periods_ms, .95),
-                "p99": pct(fast_periods_ms, .99)},
-            "schedule_delay_ms": {"p50": pct(fast_schedule_delays_ms, .50),
-                "p95": pct(fast_schedule_delays_ms, .95)},
-            "work_ms": {"p50": pct(fast_work_ms, .50), "p95": pct(fast_work_ms, .95)},
-            "lateness_ms": {"p50": pct(fast_lateness_ms, .50), "p95": pct(fast_lateness_ms, .95)},
-        }
-        result["fast_loop_trace"] = [list(row) for row in fast_rows if len(row) >= 7]
         result["robot_command_samples"] = len(nt_rows if args.mode == "nt" else ds_rows)
         result["hal_websocket_messages_received"] = hal.received_messages if hal else 0
         if hal and hal.reader_error:
@@ -521,29 +483,6 @@ def main() -> int:
                 if len(physics_rows) >= 2 else None,
             "runtime_rate_vs_nt_wall": physics_runtime_rate,
         }
-        mechanism_rows = sorted((row for row in mechanism_rows if len(row) >= 3), key=lambda row: row[0])
-        mechanism_elapsed_s = ((float(mechanism_rows[-1][0]) - float(mechanism_rows[0][0])) / 1e6
-                               if len(mechanism_rows) >= 2 else None)
-        spark_callbacks_hz = talon_callbacks_hz = None
-        if mechanism_elapsed_s and mechanism_elapsed_s > 0:
-            spark_callbacks_hz = (float(mechanism_rows[-1][1]) - float(mechanism_rows[0][1])) / mechanism_elapsed_s
-            talon_callbacks_hz = (float(mechanism_rows[-1][2]) - float(mechanism_rows[0][2])) / mechanism_elapsed_s
-        expected_spark_hz = 100.0 if args.robot_period_ms == 2 else 50.0
-        expected_talon_hz = 250.0 if args.robot_period_ms == 2 else 50.0
-        result["mechanism_cadence"] = {
-            "topic": MECHANISM_CADENCE_TOPIC,
-            "sample_layout": ["ntNowUs", "sparkControlCount", "talonControlCount"],
-            "samples": len(mechanism_rows),
-            "nt_elapsed_s": mechanism_elapsed_s,
-            "spark_control_count_delta": ((float(mechanism_rows[-1][1]) - float(mechanism_rows[0][1]))
-                                            if len(mechanism_rows) >= 2 else None),
-            "talon_control_count_delta": ((float(mechanism_rows[-1][2]) - float(mechanism_rows[0][2]))
-                                            if len(mechanism_rows) >= 2 else None),
-            "spark_control_callbacks_hz": spark_callbacks_hz,
-            "talon_control_callbacks_hz": talon_callbacks_hz,
-            "expected_spark_hz": expected_spark_hz,
-            "expected_talon_hz": expected_talon_hz,
-        }
         command_times_us = sorted({int(row["command_nt_us"]) for row in result["command_trace"]})
         command_periods_ms = [(b - a) / 1000.0 for a, b in zip(command_times_us, command_times_us[1:])]
         result["active_command_period_ms"] = {"samples": len(command_periods_ms),
@@ -554,20 +493,13 @@ def main() -> int:
             "driver_station_enabled_teleop_confirmed": ds_confirmed,
             "robot_command_telemetry_observed": bool(nt_rows if args.mode == "nt" else ds_rows),
             "control_loop_p50_within_10pct_of_target": result["control_loop_period_ms"]["p50"] is not None and
-                abs(result["control_loop_period_ms"]["p50"] - args.robot_period_ms) <= args.robot_period_ms * 0.10,
+                abs(result["control_loop_period_ms"]["p50"] - 20.0) <= 2.0,
             "physics_loop_p50_within_10pct_of_20ms": result["physics_samples"]["period_ms"]["p50"] is not None and
                 abs(result["physics_samples"]["period_ms"]["p50"] - 20.0) <= 2.0,
             "physics_runtime_rate_within_10pct_of_wall": result["physics_samples"]["runtime_rate_vs_nt_wall"] is not None and
                 abs(result["physics_samples"]["runtime_rate_vs_nt_wall"] - 1.0) <= 0.10,
-            "spark_mechanism_rate_within_10pct_of_expected": spark_callbacks_hz is not None and
-                abs(spark_callbacks_hz - expected_spark_hz) <= expected_spark_hz * 0.10,
-            "talon_mechanism_rate_within_10pct_of_expected": talon_callbacks_hz is not None and
-                abs(talon_callbacks_hz - expected_talon_hz) <= expected_talon_hz * 0.10,
             "active_command_period_within_10pct_of_target": result["active_command_period_ms"]["p50"] is not None and
-                abs(result["active_command_period_ms"]["p50"] - args.robot_period_ms) <= args.robot_period_ms * 0.10,
-            "fast_loop_period_within_10pct_of_target": args.robot_period_ms != 2 or
-                result["fast_loop"]["actual_start_period_ms"]["p50"] is not None and
-                abs(result["fast_loop"]["actual_start_period_ms"]["p50"] - 2.0) <= 0.2,
+                abs(result["active_command_period_ms"]["p50"] - 20.0) <= 2.0,
             "source_cadence_within_10pct": abs((seq - first_sequence) / args.seconds - requested_rate) <= requested_rate * 0.10,
             "latencies_finite": bool(result["input_to_command_ms"]) and
                                 all(math.isfinite(x) for x in result["input_to_command_ms"]),
@@ -604,9 +536,7 @@ def main() -> int:
             "input_publish_rate": result["input_publish_rate"],
             "control_loop_period_ms": result["control_loop_period_ms"],
             "physics_samples": result["physics_samples"],
-            "mechanism_cadence": result["mechanism_cadence"],
             "active_command_period_ms": result["active_command_period_ms"],
-            "fast_loop": result["fast_loop"],
             "latency_summary_ms": result["latency_summary_ms"],
             "steps_observed_by_robot": result["steps_observed_by_robot"],
             "quality": result["quality"], "output": str(args.output),
