@@ -50,7 +50,7 @@ New to the code? Start with the [student editing guide](docs/student-editing-gui
 | --- | --- |
 | Understand buttons and autonomous choices | [RobotContainer.cpp](src/main/cpp/RobotContainer.cpp) and [RobotAutos.cpp](src/main/cpp/season/auto/RobotAutos.cpp) |
 | Understand robot modes and the main loop | [Robot.cpp](src/main/cpp/Robot.cpp) |
-| Find motor settings and command interfaces | [MechanismConfig.h](src/main/include/season/mechanisms/MechanismConfig.h), [Mechanisms.h](src/main/include/season/mechanisms/Mechanisms.h), and [season commands](src/main/cpp/season/mechanisms/SeasonCommands.cpp) |
+| Find motor settings and command interfaces | [RobotConfiguration.h](src/main/include/season/mechanisms/RobotConfiguration.h), [Mechanisms.h](src/main/include/season/mechanisms/Mechanisms.h), and [season commands](src/main/cpp/season/mechanisms/SeasonCommands.cpp) |
 | Understand shooting and targeting | [Shooting.h](src/main/include/season/shooting/Shooting.h) and [Shooting.cpp](src/main/cpp/season/shooting/Shooting.cpp) |
 | Try AutoDrive | [AutoDrive guide](docs/autodrive-simulation.md) |
 | Configure enabled control/CAN/NT rates | [control profile](docs/frequency-profile.md) |
@@ -61,7 +61,7 @@ New to the code? Start with the [student editing guide](docs/student-editing-gui
 
 Season code is grouped by purpose under `src/main/cpp/season` and `src/main/include/season`: `drive` contains AutoDrive and scoring-position selection, `shooting` contains shot calculations, `mechanisms` contains robot mechanism configuration and commands, `simulation` contains the desktop field and fuel models, and `diagnostics` contains system-check setup. Source and header folders use the same names where both are needed.
 
-Robot and simulation settings are in configuration headers alongside those components, including `MechanismConfig.h`, `ShootingConfig.h`, `AutoDriveConfig.h`, `OffensiveConfig.h`, and the simulation configuration headers.
+Robot and simulation settings are in configuration headers alongside those components, including subsystem headers for mechanism, shooting, and robot configuration, plus shared drive and simulation configuration headers.
 
 ## How the pieces connect
 

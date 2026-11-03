@@ -1,6 +1,6 @@
 #pragma once
 #include <cmath>
-#include "season/mechanisms/MechanismConfig.h"
+#include "season/mechanisms/RobotConfiguration.h"
 #include <numbers>
 #include <frc/geometry/Pose3d.h>
 #include <frc/geometry/Transform3d.h>

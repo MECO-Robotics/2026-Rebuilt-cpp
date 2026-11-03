@@ -8,9 +8,9 @@ Start with the task you want the robot to do. These files contain this season's 
 | Add an autonomous action or chooser option | Edit [RobotAutos.cpp](../src/main/cpp/season/auto/RobotAutos.cpp). Named commands can be used as PathPlanner event markers. |
 | Change a controller button | Edit `ConfigureBindings()` in [RobotContainer.cpp](../src/main/cpp/RobotContainer.cpp). |
 | Change what an intake, conveyor, indexer, hood, or shooter command does | Edit [SeasonCommands.cpp](../src/main/cpp/season/mechanisms/SeasonCommands.cpp). The command interfaces are in [Mechanisms.h](../src/main/include/season/mechanisms/Mechanisms.h). |
-| Change mechanism CAN IDs, ratios, gains, limits, or presets | Edit [MechanismConfig.h](../src/main/include/season/mechanisms/MechanismConfig.h). |
+| Change mechanism CAN IDs, ratios, gains, limits, or presets | Edit [RobotConfiguration.h](../src/main/include/season/mechanisms/RobotConfiguration.h). |
 | Change drivetrain settings or localization mounts | Edit [RobotConfiguration.h](../src/main/include/season/mechanisms/RobotConfiguration.h). |
-| Change the shot table or shooting limits | Edit [ShootingConfig.h](../src/main/include/season/shooting/ShootingConfig.h). Shot calculations are in [Shooting.cpp](../src/main/cpp/season/shooting/Shooting.cpp). |
+| Change the shot table or shooting limits | Edit [Shooting.h](../src/main/include/season/shooting/Shooting.h). Shot calculations are in [Shooting.cpp](../src/main/cpp/season/shooting/Shooting.cpp). |
 | Change AutoDrive or offensive planning settings | Start with [AutoDriveConfig.h](../src/main/include/season/drive/AutoDriveConfig.h) or [OffensiveConfig.h](../src/main/include/season/drive/OffensiveConfig.h). |
 | Change a simulation assumption | See [simulation configuration](#simulation) below. |
 

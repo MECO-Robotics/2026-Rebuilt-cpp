@@ -1,13 +1,13 @@
 #pragma once
 #ifndef __FRC_ROBORIO__
-#include "meco/sim/ParticleContacts.h"
+#include "base/sim/RobotContactConfig.h"
 
 namespace season::simulation
 {
-  inline meco::sim::RobotContactConfig RobotContacts()
+  inline base::sim::RobotContactConfig RobotContacts()
   {
     constexpr double inchesToMetres = .0254;
-    meco::sim::RobotContactConfig c;
+    base::sim::RobotContactConfig c;
     // Unmeasured construction/material estimates: replace with loaded measurements.
     c.chassisClearance = 2.0 * inchesToMetres;
     c.panThickness = .125 * inchesToMetres;
