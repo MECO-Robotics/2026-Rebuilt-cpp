@@ -2,7 +2,7 @@
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/ParticleContacts.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/simulation/RuntimeConfig.h"
+#include "season/simulation/SimulationConfig.h"
 #include <array>
 #include <random>
 #include <optional>

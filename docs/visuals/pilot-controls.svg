@@ -615,7 +615,7 @@
 <text x="35" y="153" text-anchor="start">LB · AutoDrive</text>
 <text x="35" y="298" text-anchor="start">Left stick · Drive</text>
 <text x="35" y="458" text-anchor="start">D-pad ↑ · Deploy</text>
-<text x="486" y="612" text-anchor="middle">D-pad ↓ · Stow</text>
+<text x="486" y="612" text-anchor="middle">D-pad ↓ · Retract to clearance</text>
 <text x="525" y="116" font-size="13" text-anchor="middle">Back · Sim reset</text>
 <text x="780" y="90" text-anchor="middle">RT · Intake</text>
 <text x="1165" y="153" text-anchor="end">RB · Agitate and feed</text>

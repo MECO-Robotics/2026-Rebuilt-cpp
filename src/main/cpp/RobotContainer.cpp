@@ -179,7 +179,7 @@ void RobotContainer::ConfigureBindings()
      return frc::DriverStation::IsTeleopEnabled() && frc::SmartDashboard::GetBoolean("AutoDrive/OffenseEnabled", false);
    }).WhileTrue(season::OffensiveAutoDrive(*autoDrive_, drive_, Mechanisms(), field_, fuelEstimate_));
   auto m = Mechanisms();
-  // Presets latch between button presses. No idle default overwrites their setpoints.
+  // No idle default overwrites shooter setpoints between actions.
   (controller_.Start() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
       .OnTrue(frc2::cmd::RunOnce(
@@ -199,7 +199,7 @@ void RobotContainer::ConfigureBindings()
    { return frc::DriverStation::IsTeleopEnabled(); })
       .WhileTrue(season::Eject(m).AlongWith(
           frc2::cmd::RunEnd([this]
-                            { rack_.SetPosition(season::hardware::kRackDeploy); }, [this]
+                            { rack_.SetPosition(season::mechanismconfig::kRackDeploy); }, [this]
                             { rack_.Stop(); }, {&rack_})));
   // Feed while held; rumble reports shooter readiness.
   (controller_.RightBumper() && []
@@ -226,13 +226,13 @@ void RobotContainer::ConfigureBindings()
    {
      return frc::DriverStation::IsTeleopEnabled();
    }).OnTrue(frc2::cmd::RunOnce([this]
-                                { rack_.SetPosition(season::hardware::kRackDeploy); }, {&rack_}));
+                                { rack_.SetPosition(season::mechanismconfig::kRackDeploy); }, {&rack_}));
   (copilot_.POVRight() &&
    []
    {
      return frc::DriverStation::IsTeleopEnabled();
    }).OnTrue(frc2::cmd::RunOnce([this]
-                                { rack_.SetPosition(season::hardware::kRackStow); }, {&rack_}));
+                                { rack_.SetPosition(season::mechanismconfig::kRackStow); }, {&rack_}));
   // A assists aiming while retaining driver translation.
   (controller_.A() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
@@ -245,7 +245,7 @@ void RobotContainer::ConfigureBindings()
                                      shooter_.Stop();
                                    },
                                    {&drive_, &hood_, &shooter_}));
-  // Face buttons select latched shooter presets or stop the shooter.
+  // X runs the hub preset; Y latches ferry setpoints; B stops the shooter.
   (controller_.X() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
       .OnTrue(season::DriverHubPreset(m));
@@ -254,77 +254,19 @@ void RobotContainer::ConfigureBindings()
       .OnTrue(season::DriverHubPreset(m));
   (controller_.Y() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
-      .OnTrue(season::ShooterPreset(m, season::hardware::kFerryHood, season::hardware::kFerryRps));
+      .OnTrue(season::ShooterPreset(m, season::shotconfig::kFerryHood, season::shotconfig::kFerryRps));
   (copilot_.Y() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
-      .OnTrue(season::ShooterPreset(m, season::hardware::kFerryHood, season::hardware::kFerryRps));
+      .OnTrue(season::ShooterPreset(m, season::shotconfig::kFerryHood, season::shotconfig::kFerryRps));
   (copilot_.A() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
-      .OnTrue(season::ShooterPreset(m, season::hardware::kTrenchHood, season::hardware::kTrenchRps));
+      .OnTrue(season::ShooterPreset(m, season::shotconfig::kTrenchHood, season::shotconfig::kTrenchRps));
   (controller_.B() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
       .OnTrue(season::ShooterIdle(m));
   (copilot_.B() && []
    { return frc::DriverStation::IsTeleopEnabled(); })
       .OnTrue(season::ShooterIdle(m));
-}
-// Shape driver inputs before applying the driver-relative field frame.
-void RobotContainer::DriveTeleop(bool aim)
-{
-  // Preserve MecoBase 2026.2.1's per-axis shaping before rotating the driver
-  // translation frame. FieldDrive still owns alliance perspective and gating.
-  const auto deadband = [](double value)
-  { return std::abs(value) < season::hardware::kDriverDeadband ? 0. : std::copysign((std::abs(value) - season::hardware::kDriverDeadband) / (1 - season::hardware::kDriverDeadband), value); };
-  const bool dsConnected = controller_.GetHID().IsConnected() && controller_.GetHID().GetAxisCount() >= 5;
-  const double dsLeftY = dsConnected ? controller_.GetLeftY() : 0.0;
-  const double dsLeftX = dsConnected ? controller_.GetLeftX() : 0.0;
-  const double dsRightX = dsConnected ? controller_.GetRightX() : 0.0;
-  const auto validAxis = [](double value)
-  { return std::isfinite(value) && std::abs(value) <= 1.0; };
-  const bool dsInputValid = dsConnected &&
-                            validAxis(dsLeftY) && validAxis(dsLeftX) && validAxis(dsRightX);
-  double rawLeftY = 0.0, rawLeftX = 0.0, rawRightX = 0.0;
-  bool inputAvailable = false;
-  activeDriverInput_ = "none";
-  season::drive::NtGamepad::State ntGamepadState;
-  if (ntGamepad_)
-    ntGamepadState = ntGamepad_->Read();
-  if (ntGamepad_ && ntGamepadState.accepted)
-  {
-    rawLeftY = ntGamepadState.leftY;
-    rawLeftX = ntGamepadState.leftX;
-    rawRightX = ntGamepadState.rightX;
-    inputAvailable = true;
-    activeDriverInput_ = "nt";
-  }
-  else if (dsInputValid && (!ntGamepad_ || season::drive::ntgamepadconfig::kFallbackToDriverStation))
-  {
-    rawLeftY = dsLeftY;
-    rawLeftX = dsLeftX;
-    rawRightX = dsRightX;
-    inputAvailable = true;
-    activeDriverInput_ = "driverstation";
-  }
-  const bool teleopAuthority = frc::DriverStation::IsTeleopEnabled() && !frc::DriverStation::IsEStopped();
-  double x = deadband(base::simulation::ObserveJoystick(-rawLeftY)) * drive_.Config().maxSpeed;
-  double y = deadband(-rawLeftX) * drive_.Config().maxSpeed;
-  double omega = deadband(-rawRightX) * drive_.Config().maxAngularRate;
-  if (!teleopAuthority || !inputAvailable)
-    x = y = omega = 0.0;
-  // Aim controls rotation and shooter targets while translation stays manual.
-  if (aim && teleopAuthority && inputAvailable)
-  {
-    const auto p = drive_.Pose();
-    const auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
-    const auto shot = season::CalculateDriverAim(alliance, p, field_, simulationRuntime_->IsSimulation());
-    hood_.SetPosition(shot.hoodRotations);
-    shooter_.SetVelocity(shot.flywheelRps);
-    const double error = std::remainder(shot.headingRadians - p.Rotation().Radians().value(), 2 * std::numbers::pi);
-    omega = std::clamp(season::hardware::kAimHeadingGain * error, -drive_.Config().maxAngularRate, drive_.Config().maxAngularRate);
-  }
-  drive_.FieldDrive(x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin(),
-                    x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos(), omega);
-  simulationRuntime_->PublishDriverInput(ntGamepadState, dsLeftY, dsLeftX, dsRightX, x, y, omega);
 }
 frc2::Command *RobotContainer::GetAutonomousCommand() { return autonomous_->Selected(); }
 void RobotContainer::ScheduleAutonomous(frc2::Command *command) { simulationRuntime_->Schedule(command); }

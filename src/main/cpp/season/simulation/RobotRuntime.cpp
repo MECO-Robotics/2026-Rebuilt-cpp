@@ -19,7 +19,6 @@
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/LoadedMotorIO.h"
 #include "meco/sim/SimulationPose.h"
-#include "season/simulation/MotorModelConfig.h"
 #endif
 std::unique_ptr<base::MotorIO> season::simulation::RobotRuntime::MakeMotor(const season::hardware::FlywheelConfig &c, base::Vendor vendor, MotorLoad loadedMotor) {
 #ifndef __FRC_ROBORIO__

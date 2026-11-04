@@ -25,59 +25,66 @@ constexpr double kAutoSpinUpTimeoutSeconds = 2.;
 constexpr double kChoreoTranslationP = 10., kChoreoRotationP = 7.;
 }
 using namespace units::literals;
-void season::autonomous::RobotAutos::ConfigureDrive(base::Drive &drive) {
+void season::autonomous::RobotAutos::ConfigureDrive(base::Drive &drive)
+{
   base::ConfigureNativeAutoDrivePathfinder();
   drive.ConfigureAuto();
 }
-void season::autonomous::RobotAutos::Configure() {
+void season::autonomous::RobotAutos::Configure()
+{
   auto m = owner_.Mechanisms();
   // PathPlanner markers reuse commands with explicit mechanism requirements.
-  pathplanner::NamedCommands::registerCommand("DeployIntake",
-                                              frc2::cmd::RunOnce([this]
-                                                                 { owner_.rack_.SetPosition(season::hardware::kRackDeploy); }, {&owner_.rack_}));
-  pathplanner::NamedCommands::registerCommand("StowIntake",
-                                              frc2::cmd::RunOnce([this]
-                                                                 { owner_.rack_.SetPosition(season::hardware::kRackStow); }, {&owner_.rack_}));
+  pathplanner::NamedCommands::registerCommand(
+      "DeployIntake", frc2::cmd::RunOnce(
+                          [this] { owner_.rack_.SetPosition(season::mechanismconfig::kRackDeploy); },
+                          {&owner_.rack_}));
+  pathplanner::NamedCommands::registerCommand(
+      "StowIntake", frc2::cmd::RunOnce(
+                        [this] { owner_.rack_.SetPosition(season::mechanismconfig::kRackStow); },
+                        {&owner_.rack_}));
+  // Legacy name used by deployed autos; this is a coordinated shot, not just rollers.
   pathplanner::NamedCommands::registerCommand("FeedRollers", HubShot(false));
   pathplanner::NamedCommands::registerCommand("CoordinatedHubShot", HubShot(false));
   // Use this marker only in auto steps that do not run a path concurrently.
   pathplanner::NamedCommands::registerCommand("AimedHubShot", HubShot(true));
-  pathplanner::NamedCommands::registerCommand("IdleRollers", frc2::cmd::RunOnce(
-                                                                 [this]
-                                                                 {
-                                                                   owner_.conveyor_.Stop();
-                                                                   owner_.bottom_.Stop();
-                                                                   owner_.top_.Stop();
-                                                                 },
-                                                                 {&owner_.conveyor_, &owner_.bottom_, &owner_.top_}));
-  pathplanner::NamedCommands::registerCommand("Agitate", frc2::cmd::RunEnd(
-                                                             [this]
-                                                             {
-                                                               owner_.bottom_.SetVoltage(season::hardware::kBottomFeedVolts);
-                                                               owner_.top_.SetVoltage(season::hardware::kTopFeedVolts);
-                                                             },
-                                                             [this]
-                                                             {
-                                                               owner_.bottom_.Stop();
-                                                               owner_.top_.Stop();
-                                                             },
-                                                             {&owner_.bottom_, &owner_.top_}));
-  pathplanner::NamedCommands::registerCommand("SpinIntake", frc2::cmd::RunEnd(
-                                                                [this]
-                                                                {
-                                                                  owner_.intake_.SetVoltage(season::hardware::kIntakeVolts);
-                                                                  owner_.conveyor_.SetVoltage(season::hardware::kAutoIntakeConveyorVolts);
-                                                                  owner_.fuelEstimate_->Observe(owner_.autoDrive_->VisibleFuel(), owner_.drive_.Pose());
-                                                                  frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", owner_.fuelEstimate_->Count());
-                                                                },
-                                                                [this]
-                                                                {
-                                                                  owner_.intake_.Stop();
-                                                                  owner_.conveyor_.Stop();
-                                                                },
-                                                                {&owner_.intake_, &owner_.conveyor_})
-                                                                .BeforeStarting([this]
-                                                                                { owner_.fuelEstimate_->StartCollection(); }));
+  pathplanner::NamedCommands::registerCommand(
+      "IdleRollers", frc2::cmd::RunOnce(
+                         [this]
+                         {
+                           owner_.conveyor_.Stop();
+                           owner_.bottom_.Stop();
+                           owner_.top_.Stop();
+                         },
+                         {&owner_.conveyor_, &owner_.bottom_, &owner_.top_}));
+  pathplanner::NamedCommands::registerCommand(
+      "Agitate", frc2::cmd::RunEnd(
+                     [this]
+                     {
+                       owner_.bottom_.SetVoltage(season::mechanismconfig::kBottomFeedVolts);
+                       owner_.top_.SetVoltage(season::mechanismconfig::kTopFeedVolts);
+                     },
+                     [this]
+                     {
+                       owner_.bottom_.Stop();
+                       owner_.top_.Stop();
+                     },
+                     {&owner_.bottom_, &owner_.top_}));
+  pathplanner::NamedCommands::registerCommand(
+      "SpinIntake", frc2::cmd::RunEnd(
+                        [this]
+                        {
+                          owner_.intake_.SetVoltage(season::mechanismconfig::kIntakeVolts);
+                          owner_.conveyor_.SetVoltage(season::mechanismconfig::kAutoIntakeConveyorVolts);
+                          owner_.fuelEstimate_->Observe(owner_.autoDrive_->VisibleFuel(), owner_.drive_.Pose());
+                          frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", owner_.fuelEstimate_->Count());
+                        },
+                        [this]
+                        {
+                          owner_.intake_.Stop();
+                          owner_.conveyor_.Stop();
+                        },
+                        {&owner_.intake_, &owner_.conveyor_})
+                        .BeforeStarting([this] { owner_.fuelEstimate_->StartCollection(); }));
   // Spin up from the current pose while the auto is running.
   auto calculatedSpinUp = [this]
   {
@@ -97,8 +104,10 @@ void season::autonomous::RobotAutos::Configure() {
         },
         {&owner_.hood_, &owner_.shooter_});
   };
-  pathplanner::NamedCommands::registerCommand("AutoSpinUp", calculatedSpinUp().WithTimeout(units::second_t{kAutoSpinUpTimeoutSeconds}));
-  pathplanner::NamedCommands::registerCommand("Fender", season::ShooterPreset(m, season::hardware::kHubHood, season::hardware::kHubRps));
+  pathplanner::NamedCommands::registerCommand(
+      "AutoSpinUp", calculatedSpinUp().WithTimeout(units::second_t{kAutoSpinUpTimeoutSeconds}));
+  pathplanner::NamedCommands::registerCommand(
+      "Fender", season::ShooterPreset(m, season::shotconfig::kHubHood, season::shotconfig::kHubRps));
   // AutoAim owns the drivetrain while it rotates toward the selected target.
   pathplanner::NamedCommands::registerCommand(
       "AutoAim",
@@ -112,7 +121,11 @@ void season::autonomous::RobotAutos::Configure() {
             owner_.shooter_.SetVelocity(shot.flywheelRps);
             double error = std::remainder(shot.headingRadians - p.Rotation().Radians().value(), 2 * std::numbers::pi);
             owner_.drive_.RunVelocity(
-                frc::ChassisSpeeds{0_mps, 0_mps, units::radians_per_second_t{std::clamp(season::hardware::kAutoAimHeadingGain * error, -season::hardware::kAutoAimMaxAngularRate, season::hardware::kAutoAimMaxAngularRate)}});
+                frc::ChassisSpeeds{
+                    0_mps, 0_mps,
+                    units::radians_per_second_t{std::clamp(season::driveconfig::kAutoAimHeadingGain * error,
+                                                          -season::driveconfig::kAutoAimMaxAngularRate,
+                                                          season::driveconfig::kAutoAimMaxAngularRate)}});
           },
           [this]
           {
@@ -125,18 +138,21 @@ void season::autonomous::RobotAutos::Configure() {
   chooser_ = pathplanner::AutoBuilder::buildAutoChooser();
   autos_.emplace_back(HubShot(true, true));
   autos_.emplace_back(
-      base::FollowChoreo<2026>(owner_.drive_, "LeftBlueBump", {kChoreoTranslationP, 0, 0}, {kChoreoRotationP, 0, 0}, season::hardware::kControlPeriod).AndThen(HubShot()));
+      base::FollowChoreo<2026>(owner_.drive_, "LeftBlueBump", {kChoreoTranslationP, 0, 0},
+                               {kChoreoRotationP, 0, 0}, season::hardware::kControlPeriod)
+          .AndThen(HubShot()));
   autos_.emplace_back(frc2::cmd::None());
   // Hardware and desktop simulation intentionally choose different defaults.
   if (!frc::RobotBase::IsSimulation())
-    chooser_.SetDefaultOption("Fender I HARDLY KNOW HER -JAVI", autos_[0].get());
+    chooser_.SetDefaultOption("Hub shot (vision required)", autos_[0].get());
   else
-    chooser_.AddOption("Fender I HARDLY KNOW HER -JAVI", autos_[0].get());
+    chooser_.AddOption("Hub shot (vision required)", autos_[0].get());
   chooser_.AddOption("Choreo LeftBlueBump + Shoot", autos_[1].get());
-  chooser_.AddOption("You better hit the A stop before this -Manny (none)", autos_[2].get());
+  chooser_.AddOption("Do nothing", autos_[2].get());
   autos_.emplace_back(owner_.autoDrive_->Command());
   chooser_.AddOption("AutoDrive target", autos_.back().get());
-  autos_.emplace_back(season::OffensiveAutoDrive(*owner_.autoDrive_, owner_.drive_, m, owner_.field_, owner_.fuelEstimate_));
+  autos_.emplace_back(
+      season::OffensiveAutoDrive(*owner_.autoDrive_, owner_.drive_, m, owner_.field_, owner_.fuelEstimate_));
   if (frc::RobotBase::IsSimulation())
     chooser_.SetDefaultOption("AutoDrive offensive", autos_.back().get());
   else
@@ -147,40 +163,41 @@ void season::autonomous::RobotAutos::Configure() {
   if (frc::RobotBase::IsSimulation())
   {
     // The dashboard command starts practice using the selected sim station.
-    autos_.emplace_back(frc2::cmd::RunOnce(
-                                  []
-                                  {
-                                    const char *station = "Blue1";
-                                    switch (frc::sim::DriverStationSim::GetAllianceStationId())
-                                    {
-                                    case HAL_AllianceStationID_kRed1:
-                                      station = "Red1";
-                                      break;
-                                    case HAL_AllianceStationID_kRed2:
-                                      station = "Red2";
-                                      break;
-                                    case HAL_AllianceStationID_kRed3:
-                                      station = "Red3";
-                                      break;
-                                    case HAL_AllianceStationID_kBlue2:
-                                      station = "Blue2";
-                                      break;
-                                    case HAL_AllianceStationID_kBlue3:
-                                      station = "Blue3";
-                                      break;
-                                    default:
-                                      break;
-                                    }
-                                    nt::NetworkTableInstance::GetDefault()
-                                        .GetTable("/Sim/Practice")
-                                        ->GetEntry("Config/AllianceStation")
-                                        .SetString(station);
-                                    static auto command = nt::NetworkTableInstance::GetDefault()
-                                                              .GetStringTopic("/Sim/Practice/Command")
-                                                              .Publish({.keepDuplicates = true});
-                                    command.Set("start");
-                                  })
-                                  .IgnoringDisable(true));
+    autos_.emplace_back(
+        frc2::cmd::RunOnce(
+            []
+            {
+              const char *station = "Blue1";
+              switch (frc::sim::DriverStationSim::GetAllianceStationId())
+              {
+              case HAL_AllianceStationID_kRed1:
+                station = "Red1";
+                break;
+              case HAL_AllianceStationID_kRed2:
+                station = "Red2";
+                break;
+              case HAL_AllianceStationID_kRed3:
+                station = "Red3";
+                break;
+              case HAL_AllianceStationID_kBlue2:
+                station = "Blue2";
+                break;
+              case HAL_AllianceStationID_kBlue3:
+                station = "Blue3";
+                break;
+              default:
+                break;
+              }
+              nt::NetworkTableInstance::GetDefault()
+                  .GetTable("/Sim/Practice")
+                  ->GetEntry("Config/AllianceStation")
+                  .SetString(station);
+              static auto command = nt::NetworkTableInstance::GetDefault()
+                                        .GetStringTopic("/Sim/Practice/Command")
+                                        .Publish({.keepDuplicates = true});
+              command.Set("start");
+            })
+            .IgnoringDisable(true));
     frc::SmartDashboard::PutData("Start Practice Match", autos_.back().get());
   }
 #endif
@@ -214,8 +231,9 @@ frc2::CommandPtr season::autonomous::RobotAutos::HubShot(bool ownDrive, bool req
   o.simulation = frc::RobotBase::IsSimulation();
   // A shot ends as soon as its configured feed completes. Its overall bound
   // must also allow the rollers to reverse after the preceding intake path.
-  o.readyTimeoutSeconds = season::hardware::kShotReadyTimeoutSeconds;
-  o.totalTimeoutSeconds = o.simulation ? season::hardware::kShotSimTimeoutSeconds : season::hardware::kShotRealTimeoutSeconds;
+  o.readyTimeoutSeconds = season::shotconfig::kShotReadyTimeoutSeconds;
+  o.totalTimeoutSeconds = o.simulation ? season::shotconfig::kShotSimTimeoutSeconds
+                                      : season::shotconfig::kShotRealTimeoutSeconds;
   o.feedDurationSeconds = season::ConfiguredFeedDurationSeconds;
   struct FeedTiming
   {
@@ -234,7 +252,8 @@ frc2::CommandPtr season::autonomous::RobotAutos::HubShot(bool ownDrive, bool req
   o.poseReady = [this, requireVision]
   {
     return (!requireVision && frc::DriverStation::IsAutonomousEnabled()) ||
-           frc::Timer::GetFPGATimestamp().value() - owner_.lastAcceptedVision_ < season::hardware::kVisionFreshnessSeconds;
+           frc::Timer::GetFPGATimestamp().value() - owner_.lastAcceptedVision_ <
+               season::visionconfig::kVisionFreshnessSeconds;
   };
   return season::CoordinatedShot(
              owner_.Mechanisms(), owner_.drive_, owner_.field_,
@@ -246,10 +265,14 @@ frc2::CommandPtr season::autonomous::RobotAutos::HubShot(bool ownDrive, bool req
              o)
       .BeforeStarting([timing]
                       {
-        timing->last = frc::Timer::GetFPGATimestamp().value();
-        timing->elapsed = 0;
-        timing->active = false;
-        timing->target = season::ConfiguredFeedDurationSeconds(); })
+                        timing->last = frc::Timer::GetFPGATimestamp().value();
+                        timing->elapsed = 0;
+                        timing->active = false;
+                        timing->target = season::ConfiguredFeedDurationSeconds();
+                      })
       .FinallyDo([this, timing](bool interrupted)
-                 { owner_.fuelEstimate_->CompleteFeed(!interrupted && timing->target > 0 && timing->elapsed >= timing->target); });
+                 {
+                   owner_.fuelEstimate_->CompleteFeed(
+                       !interrupted && timing->target > 0 && timing->elapsed >= timing->target);
+                 });
 }

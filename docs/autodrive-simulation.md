@@ -84,6 +84,6 @@ If its current location cannot produce a valid ferry solution, offense first att
 
 - [Bindings](../src/main/cpp/RobotContainer.cpp) and [autonomous chooser](../src/main/cpp/season/auto/RobotAutos.cpp)
 - [AutoDrive target and perception](../src/main/cpp/season/drive/AutoDrive.cpp) and [interface](../src/main/include/season/drive/AutoDrive.h)
-- [Offensive command orchestration](../src/main/cpp/season/drive/OffensiveAutoDrive.cpp), [planning and decision implementations](../src/main/cpp/season/drive/OffensivePlanning.cpp), and [public interfaces](../src/main/include/season/drive/OffensiveAutoDrive.h)
+- [Offensive command orchestration](../src/main/cpp/season/drive/OffensiveAutoDrive.cpp), [collection path planning](../src/main/cpp/season/drive/OffensiveCollectionPlanner.cpp), [other planning and decisions](../src/main/cpp/season/drive/OffensivePlanning.cpp), and [public interfaces](../src/main/include/season/drive/OffensiveAutoDrive.h)
 - AutoDrive's public header contains its robot-facing API; desktop simulated sensor implementation details stay in [AutoDrive.cpp](../src/main/cpp/season/drive/AutoDrive.cpp).
 - [Navgrid](../src/main/deploy/pathplanner/navgrid.json)
