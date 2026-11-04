@@ -2,7 +2,14 @@
 
 The reusable planner and command contracts are documented in [MecoBase AutoDrive](https://github.com/MECO-Robotics/MecoBase-cpp/blob/main/docs/autodrive.md).
 
-AutoDrive is robot code that chooses a target and asks the drivetrain to navigate there. It runs on the robot and in desktop simulation. The planner is supplied by MecoBase; this project supplies season targets and behavior.
+## TL;DR
+
+- **Try it:** In enabled teleop, hold the pilot's **LB**; release to cancel. For a full match, use the [practice guide](practice-mode.md).
+- **Choose a mode:** `AutoDrive/OffenseEnabled` selects offensive driving; otherwise LB drives toward the dashboard target. Simulation defaults to offense, and the robot defaults to target drive.
+- **If offense waits:** Check alliance and HUB state, camera detections, and localization. Physical feeding also needs configured capacity and feed-rate preferences.
+- **Know the limits:** Fuel count is estimated, and simulation does not establish safe or calibrated physical operation. See [limits and troubleshooting](#limits-and-troubleshooting).
+
+AutoDrive chooses a target and asks the drivetrain to navigate there. MecoBase supplies the planner; this project supplies season targets and behavior.
 
 [![AutoDrive mode selection and outputs](visuals/autodrive-modes.png)](visuals/autodrive-modes.png)
 

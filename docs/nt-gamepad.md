@@ -1,5 +1,11 @@
 # NetworkTables gamepad input
 
+## TL;DR
+
+- This adapter sends **drive axes only**; Driver Station still supplies buttons, robot mode, enable, and E-stop.
+- To use it, [install the packages and run the publisher](#use-a-usb-controller-with-the-roborio) on the driver laptop. Verify directions while disabled.
+- If the stream is invalid or stale, the robot normally falls back to Driver Station axes. Check `Input/ActiveSource`; if no valid source is available, drive axes become zero.
+
 The axes-only NT4 adapter is enabled by `kEnabled` at the top of [NtGamepad.h](../src/main/include/season/drive/NtGamepad.h); desktop simulation can override the setting with `FRC_SIM_NT_GAMEPAD=1` or `=0`. Its default subscription period is 5 ms, while robot commands and mechanism control run on the standard 20 ms robot loop configured in [RobotControlConfig.h](../src/main/include/season/RobotControlConfig.h). Buttons and command bindings always remain on Driver Station.
 
 Publish `/Input/Gamepad` as a NetworkTables `double[]` with this layout:

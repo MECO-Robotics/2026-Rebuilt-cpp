@@ -1,5 +1,11 @@
 # Simulation field and fuel
 
+## TL;DR
+
+- The simulator approximates the field, fuel, and robot contact; use it to check behavior, not physical clearance or calibration.
+- In teleop, **Back/View** resets the simulated scene; **Start** only resets driver forward.
+- If a start is rejected, check `Simulation/AutoStartPose`. See [starting and resetting](#starting-and-resetting) and [troubleshooting](#troubleshooting).
+
 The reusable physics model is documented in [MecoSimulation](https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/docs/jolt-simulation.md).
 
 The desktop simulator builds a simplified REBUILT field around the robot. The drive adapter owns the physics world; the season code chooses the starting pose and updates fuel.

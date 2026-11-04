@@ -1,8 +1,12 @@
 # Where to make changes
 
-Start with the task you want the robot to do. These files contain this season's robot-specific choices; the shared drive, mechanism, and motor IO implementations come from the vendordeps.
+## TL;DR
 
-For a first change, find the closest existing setting or command in the table, follow its uses in the editor, and change one thing at a time. A header (`.h`) usually declares an interface or holds settings; its corresponding source file (`.cpp`) implements behavior. The `season` folders contain this robot's choices. You normally do not need to edit the shared vendordeps for a season-specific change.
+1. Find your task in the table and follow the existing setting or command to its uses.
+2. Change one thing, then [build and test it in simulation](#check-your-change), including release and interruption for held controls.
+3. Check units, saved Preferences, and the physical robot with the team before relying on a change.
+
+The `season` folders contain this robot's choices. A `.h` usually declares an interface or holds settings; a `.cpp` implements behavior. Shared drive, mechanism, and motor IO code comes from vendordeps.
 
 | I want to… | Edit here |
 | --- | --- |
