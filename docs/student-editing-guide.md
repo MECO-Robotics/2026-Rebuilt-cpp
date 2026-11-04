@@ -16,7 +16,7 @@ For a first change, find the closest existing setting or command in the table, f
 | Change drivetrain hardware or swerve odometry rate | Edit [DriveConfig.h](../src/main/include/season/drive/DriveConfig.h). |
 | Change driver deadband or aiming gains | Edit [DriveBehaviorConfig.h](../src/main/include/season/drive/DriveBehaviorConfig.h). |
 | Change QuestNav or AprilTag camera mounts or vision freshness | Edit [VisionConfig.h](../src/main/include/season/vision/VisionConfig.h). |
-| Change object-perception camera mounts, detection range, clustering, or update period | Edit [PerceptionConfig.h](../src/main/include/season/vision/PerceptionConfig.h). |
+| Change object-perception camera mounts, simulated detection range, clustering, or update period | Edit [PerceptionConfig.h](../src/main/include/season/vision/PerceptionConfig.h). |
 | Change unloaded pit-check speeds, tolerances, or timeouts | Edit [SystemCheckConfig.h](../src/main/include/season/diagnostics/SystemCheckConfig.h). |
 | Change the standard robot loop or controller ports | Edit [RobotControlConfig.h](../src/main/include/season/RobotControlConfig.h). |
 | Change the shot table or shooting limits | Edit [Shooting.h](../src/main/include/season/shooting/Shooting.h). Shared movement limits apply to both the moving-ferry solver and shot readiness. Shot calculations are in [Shooting.cpp](../src/main/cpp/season/shooting/Shooting.cpp). |
@@ -63,7 +63,7 @@ Put robot-specific settings in the configuration header for the subsystem or beh
 
 Some values are supplied by WPILib Preferences or the dashboard at runtime. Changing a header default does not necessarily replace an already-saved preference. See the [AutoDrive guide](autodrive-simulation.md) for the shooting and feed preferences and the [control timing guide](control-timing.md) for the standard loop and requested CAN, sensor, and input rates.
 
-Object-camera mounts use saved `Perception/Front/` and `Perception/Rear/` Preferences (`X`, `Y`, `Z`, `RollDeg`, `PitchDeg`, and `YawDeg`); existing values override source defaults. The front camera also moves with the intake extension. QuestNav and AprilTag camera mounts in `VisionConfig.h` are configured directly. For a swerve CAN ID, check both the named module fields and the CAN bus in `DriveConfig.h`.
+The front and rear object-camera defaults are listed separately in `PerceptionConfig.h`. Saved `Perception/Front/` and `Perception/Rear/` Preferences (`X`, `Y`, `Z`, `RollDeg`, `PitchDeg`, and `YawDeg`) override those defaults in both simulation and hardware. The front mount is relative to the hopper and moves with intake extension; the rear mount is relative to the robot. The header explains the axes and hopper origin. QuestNav and AprilTag camera mounts in `VisionConfig.h` are configured directly. For a swerve CAN ID, check both the named module fields and the CAN bus in `DriveConfig.h`.
 
 ### Example: update a measured shot
 

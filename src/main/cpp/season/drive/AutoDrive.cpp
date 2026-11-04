@@ -79,14 +79,15 @@ namespace season
   frc::Transform3d AutoDrive::Mount(size_t camera) const
   {
     const std::string prefix = camera == 0 ? "Perception/Front/" : "Perception/Rear/";
+    const auto &defaults = camera == 0 ? vision::config::kFrontCamera : vision::config::kRearCamera;
     // AutoDrive's nominal fore/aft chassis-edge locations; height is an estimate.
     const frc::Transform3d local{
-        units::meter_t{frc::Preferences::GetDouble(prefix + "X", camera == 0 ? vision::config::kFrontCameraXMetres : vision::config::kRearCameraXMetres)},
-        units::meter_t{frc::Preferences::GetDouble(prefix + "Y", 0)},
-        units::meter_t{frc::Preferences::GetDouble(prefix + "Z", vision::config::kCameraHeightMetres)},
-        frc::Rotation3d{units::degree_t{frc::Preferences::GetDouble(prefix + "RollDeg", 0)},
-                        units::degree_t{frc::Preferences::GetDouble(prefix + "PitchDeg", vision::config::kCameraPitchDegrees)},
-                        units::degree_t{frc::Preferences::GetDouble(prefix + "YawDeg", camera == 0 ? 0 : vision::config::kRearCameraYawDegrees)}}};
+        units::meter_t{frc::Preferences::GetDouble(prefix + "X", defaults.xMetres)},
+        units::meter_t{frc::Preferences::GetDouble(prefix + "Y", defaults.yMetres)},
+        units::meter_t{frc::Preferences::GetDouble(prefix + "Z", defaults.zMetres)},
+        frc::Rotation3d{units::degree_t{frc::Preferences::GetDouble(prefix + "RollDeg", defaults.rollDegrees)},
+                        units::degree_t{frc::Preferences::GetDouble(prefix + "PitchDeg", defaults.pitchDegrees)},
+                        units::degree_t{frc::Preferences::GetDouble(prefix + "YawDeg", defaults.yawDegrees)}}};
     return camera == 0 ? HopperCameraMount(extension_(), local) : local;
   }
   AutoDrive::AutoDrive(base::Drive &drive, std::function<double()> extension,
@@ -102,12 +103,11 @@ namespace season
     {
       const std::string name = i == 0 ? "front" : "rear";
       const std::string prefix = i == 0 ? "Perception/Front/" : "Perception/Rear/";
-      for (const auto &[key, value] : std::vector<std::pair<std::string, double>>{{"X", i == 0 ? vision::config::kFrontCameraXMetres : vision::config::kRearCameraXMetres},
-                                                                                  {"Y", 0},
-                                                                                  {"Z", vision::config::kCameraHeightMetres},
-                                                                                  {"RollDeg", 0},
-                                                                                  {"PitchDeg", vision::config::kCameraPitchDegrees},
-                                                                                  {"YawDeg", i == 0 ? 0 : vision::config::kRearCameraYawDegrees}})
+      const auto &defaults = i == 0 ? vision::config::kFrontCamera : vision::config::kRearCamera;
+      for (const auto &[key, value] : std::vector<std::pair<std::string, double>>{
+               {"X", defaults.xMetres}, {"Y", defaults.yMetres}, {"Z", defaults.zMetres},
+               {"RollDeg", defaults.rollDegrees}, {"PitchDeg", defaults.pitchDegrees},
+               {"YawDeg", defaults.yawDegrees}})
         frc::Preferences::InitDouble(prefix + key, value);
       std::unique_ptr<base::ObjectDetectionIO> io;
 #ifndef __FRC_ROBORIO__
