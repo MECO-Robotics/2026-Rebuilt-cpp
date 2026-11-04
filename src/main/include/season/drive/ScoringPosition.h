@@ -17,8 +17,6 @@ namespace season
     inline constexpr double kRampRobotMarginMetres = .10;
     // Ramp dimensions from the field geometry, in inches.
     inline constexpr double kRampLengthInches = 44.4, kRampWidthInches = 73.;
-    // Hub width used to locate the adjacent bump/ramp region, in inches.
-    inline constexpr double kHubWidthInches = 47.;
     // Convert depot depth to metres for field-coordinate comparisons.
     inline constexpr double kDepotDepthMetres = kDepotDepthInches * .0254;
     // Half the depot width converted to metres for side-boundary checks.
@@ -31,7 +29,7 @@ namespace season
     inline constexpr double kRampHalfLengthMetres = kRampLengthInches * .0254 / 2,
                            kRampHalfWidthMetres = kRampWidthInches * .0254 / 2;
     // Centre offset from the hub to the bump/ramp centreline, in metres.
-    inline constexpr double kBumpCentreOffsetMetres = (kHubWidthInches + kRampWidthInches) * .0254 / 2;
+    inline constexpr double kBumpCentreOffsetMetres = (season::kHubWidthInches + kRampWidthInches) * .0254 / 2;
     // Extra inset from field scoring boundaries required for a valid position, in metres.
     inline constexpr double kScoringBoundaryMarginMetres = .15;
   }

@@ -17,11 +17,12 @@ namespace season
   inline constexpr double kFlightMinSeconds = .05, kFlightMaxSeconds = 5.;
   // Iterations used by the bounded flight-time search.
   inline constexpr int kFlightSearchIterations = 45;
-  // Maximum heading, hood-position, and flywheel-speed errors accepted for shot readiness.
+  // Readiness evaluator tolerances for heading, hood position, and flywheel speed.
+  // Autonomous waits for this readiness before beginning a volley.
   inline constexpr double kHeadingToleranceDegrees = 2, kHoodToleranceRotations = .002, kFlywheelToleranceRps = .75;
   // Highest flywheel speed accepted by the calibration workflow.
   inline constexpr double kMaxCalibrationFlywheelRps = 60.;
-  // Flywheel speed error tolerated before feeding a game piece.
+  // Flywheel error in RPS accepted to start the teleop feed gate; the gate then tolerates normal speed sag.
   inline constexpr double kFeedReadinessToleranceRps = 3;
   // Minimum and maximum intake speeds while retracting.
   inline constexpr double kIntakeMinRetractSpeed = .01, kIntakeMaxRetractSpeed = .50;
@@ -41,7 +42,7 @@ namespace season
   inline constexpr double kBlueHubXInches = 182.105, kRedHubXInches = 469.115, kHubYInches = 158.845;
   // X coordinate separating the alliance zones in field inches.
   inline constexpr double kAllianceBoundaryInches = 158.6;
-  // Ferry target inset from the field boundary.
+  // Ferry target inset into the alliance zone from the alliance line.
   inline constexpr double kFerryInsetMetres = .90;
   // Lateral offset used to place ferry targets clear of the trench.
   inline constexpr double kFerryTrenchOffsetMetres = .40;
@@ -55,7 +56,7 @@ namespace season
   inline constexpr double kHubClearanceMetres = .12, kShotSafetyMarginMetres = .10;
   // Trench height used to reject trajectories that collide with the trench.
   inline constexpr double kTrenchHeightInches = 40.25;
-  // Hub opening height used by the scoring trajectory check.
+  // Hub opening height used by desktop ballistic aiming and the simulated fuel-scoring plane.
   inline constexpr double kHubOpeningHeightInches = 72;
   // Half the hub width converted to meters for clearance calculations.
   inline constexpr double kHubHalfWidthMetres = kHubWidthInches * .0254 / 2;
@@ -71,12 +72,10 @@ namespace season
   inline constexpr double kHubOpeningHeightMetres = kHubOpeningHeightInches * .0254;
   // Candidate hood positions evaluated when calculating a ferry shot.
   inline constexpr int kFerryHoodSearchSteps = 50;
-  // Pitch margin and launch-speed scale applied for a conservative trajectory solution.
+  // Pitch margin and launch-speed scale used for conservative trajectory clearance checks.
   inline constexpr double kConservativePitchDegrees = 1, kConservativeSpeedScale = .99;
   // Minimum and maximum hood output rotations accepted by the shot solver.
   inline constexpr double kHoodMin = 0, kHoodMax = .049;
-  // Minimum and maximum distances represented by the calibrated shot table, in metres.
-  inline constexpr double kMinDistance = 46.003 * .0254, kMaxDistance = 236 * .0254;
   // Projectile release height above the floor in meters.
   inline constexpr double kReleaseHeight = .45;
   // Main-wheel surface speed in meters per second per wheel rotation/second.
@@ -91,10 +90,13 @@ namespace season
   // Conversion from flywheel RPS to estimated projectile launch speed.
   inline constexpr double kProjectileSpeedPerRps =
       kMainWheelSpeedPerRps * kBackspinTranslationSpeedScale * kShooterSurfaceEfficiencyScale;
-  // Minimum time between accepted readiness samples.
+  // Readiness must stay true for this long before feeding starts.
   inline constexpr double kDebounceSeconds = .15;
   // Calibration distances paired by index with hood and flywheel tables.
   inline constexpr std::array<double, 8> kDistanceInches{46.003, 123.24, 144.60, 153.64, 191.86, 202.78, 210.47, 236};
+  // Shot validity uses the first and last calibrated distances, converted to metres.
+  inline constexpr double kMinDistance = kDistanceInches.front() * .0254;
+  inline constexpr double kMaxDistance = kDistanceInches.back() * .0254;
   // Hood output-rotation targets paired with calibration distances.
   inline constexpr std::array<double, 8> kHoodTable{0, .019, .020, .020, .020, .020, .020, .049};
   // Table entries are wheel-RPS targets, not ball speeds; do not scale them again.

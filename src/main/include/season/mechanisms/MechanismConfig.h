@@ -126,7 +126,4 @@ namespace season::hardware
   inline constexpr double kRackGearRatio = 9 / (season::kPi * .0254);
   // Radius in metres of the rack drum that converts rotation to extension.
   inline constexpr double kRackDrumRadius = .5 * .0254;
-  // Rack inertia reflected to the motor input through its gearing.
-  inline constexpr double kRackInputInertia =
-      15 * .45359237 * kRackDrumRadius * kRackDrumRadius / (kRackGearRatio * kRackGearRatio);
 }

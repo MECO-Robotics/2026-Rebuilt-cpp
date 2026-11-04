@@ -20,7 +20,7 @@ For a first change, find the closest existing setting or command in the table, f
 | Change unloaded pit-check speeds, tolerances, or timeouts | Edit [SystemCheckConfig.h](../src/main/include/season/diagnostics/SystemCheckConfig.h). |
 | Change the standard robot loop or controller ports | Edit [RobotControlConfig.h](../src/main/include/season/RobotControlConfig.h). |
 | Change the shot table or shooting limits | Edit [Shooting.h](../src/main/include/season/shooting/Shooting.h). Shared movement limits apply to both the moving-ferry solver and shot readiness. Shot calculations are in [Shooting.cpp](../src/main/cpp/season/shooting/Shooting.cpp). |
-| Change AutoDrive or offensive planning settings | Start with the constants at the top of [AutoDrive.h](../src/main/include/season/drive/AutoDrive.h) or [OffensiveAutoDrive.h](../src/main/include/season/drive/OffensiveAutoDrive.h). |
+| Change AutoDrive or offensive planning settings | Start with the constants at the top of [AutoDrive.h](../src/main/include/season/drive/AutoDrive.h) or [OffensiveAutoDrive.h](../src/main/include/season/drive/OffensiveAutoDrive.h). These are advanced planning heuristics; read the [AutoDrive guide](autodrive-simulation.md) first. |
 | Change the bumper-inclusive robot length or width | Edit [RobotGeometry.h](../src/main/include/season/RobotGeometry.h). Navigation, scoring clearance, and simulated placement use these dimensions; simulation contact details have separate estimates. |
 | Change a simulation assumption | See [simulation configuration](#simulation) below. |
 
@@ -38,7 +38,7 @@ PathPlanner routes and auto sequences live under [deploy/pathplanner](../src/mai
 | `FeedRollers` / `CoordinatedHubShot` | Aliases for a bounded coordinated hub shot; own hood, shooter, conveyor, and both indexers. |
 | `AimedHubShot` | Coordinated hub shot that also owns and commands the drivetrain; ends on feed completion or timeout. |
 | `AutoAim` | Aims and spins the shooter until interrupted; owns and stops drivetrain, hood, and shooter. |
-| `AutoSpinUp` | Calculates hood and shooter targets for up to two seconds; owns and stops both. |
+| `AutoSpinUp` | Calculates hood and shooter targets until its configured timeout (two seconds by default); owns and stops both. |
 | `Fender` | Sets a hub preset once; briefly owns hood and shooter and leaves targets active. |
 | `IdleRollers` | Stops conveyor and indexers once; briefly owns those mechanisms. |
 
@@ -67,11 +67,17 @@ The front and rear object-camera defaults are listed separately in `PerceptionCo
 
 ### Example: update a measured shot
 
-The hub calibration arrays in [Shooting.h](../src/main/include/season/shooting/Shooting.h) are paired by index: each entry in `kDistanceInches` corresponds to the hood output rotations in `kHoodTable` and flywheel rotations per second in `kFlywheelTable` at the same position. Keep the distances in increasing order and update the measured row together. There are currently eight entries; changing the number also requires updating the interpolation function in [Shooting.cpp](../src/main/cpp/season/shooting/Shooting.cpp). Check the calibrated distance bounds when changing the endpoints. The table's flywheel values are wheel speeds, not ball speeds. Presets for fixed driver actions are separate from this calculated shot table; trace the binding and command to identify which one you are changing.
+The hub calibration arrays in [Shooting.h](../src/main/include/season/shooting/Shooting.h) are paired by index: each entry in `kDistanceInches` corresponds to the hood output rotations in `kHoodTable` and flywheel rotations per second in `kFlywheelTable` at the same position. Keep the distances in increasing order and update the measured row together. There are currently eight entries; changing the number also requires updating the interpolation function in [Shooting.cpp](../src/main/cpp/season/shooting/Shooting.cpp). The calibrated distance bounds come from the first and last entries. The table's flywheel values are wheel speeds, not ball speeds. Presets for fixed driver actions are separate from this calculated shot table; trace the binding and command to identify which one you are changing.
 
 Record the measurement conditions and units with the team's calibration notes. Build, exercise the relevant shot in simulation, and have the team verify the physical shot and limits before relying on it in a match.
 
 The simulated HUB shot uses a ballistic speed rather than the physical shot table; see [simulation limits](autodrive-simulation.md#limits-and-troubleshooting). The driver HUB preset can also use `TunableNumbers/ShooterCalibration` values when calibration is enabled at command start; check that mode when a preset does not match its source default.
+
+## Run the pit check
+
+The check moves the drivetrain, rack, hood, rollers, and shooter. Put the robot on blocks, remove fuel, clear personnel, and have an operator ready to disable it. Connect the Driver Station, select and enable Test mode, and use a dashboard that can edit SmartDashboard values. Set `SystemCheck/Armed` and `SystemCheck/SetupConfirmed` to true, then set `SystemCheck/Start` to true. The check requires no FMS, no emergency stop or brownout, and at least 11.5 V to start. It reserves the controlled subsystems and begins after a three-second countdown.
+
+Watch `SystemCheck/State`, `Reason`, `Stage`, and `Live/` measurements. Set `SystemCheck/Abort` to true or disable the robot to stop it; losing an interlock or subsystem ownership also aborts and neutralizes outputs. After completion or abort, `SystemCheck/ReportJSON` contains results. The code also attempts to write the report to `/home/lvuser/systemcheck-latest.json` on the robot or `systemcheck-latest.json` in the simulator's working directory; it reports a warning if the file cannot be opened. The vision stage checks connectivity only; it does not verify localization or calibration. These steps describe the code, not a verified physical run.
 
 ## Simulation
 

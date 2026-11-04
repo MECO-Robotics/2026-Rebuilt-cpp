@@ -17,15 +17,16 @@ namespace season
 {
 namespace autodriveconfig
 {
-  // Default dashboard target coordinates used when no target is configured, in metres.
+  // Dashboard target coordinates published at startup and used as fallbacks, in metres.
   inline constexpr double kDefaultTargetXMetres = 3., kDefaultTargetYMetres = .65;
-  // Maximum serialized obstacle-grid payload accepted, in bytes.
+  // Maximum size of the configured-footprint JSON file accepted at startup, in bytes.
   inline constexpr int kMaxGridBytes = 262144;
-  // Target movement required before navigation computes a new route, in metres.
+  // Target movement that triggers replanning in a tracking footprint mode, in metres.
   inline constexpr double kTargetReplanDistanceMetres = .3;
-  // Robot footprint dimensions used for collision checks, in metres.
+  // Robot footprint dimensions used by the simulated footprint follower, in metres.
   inline constexpr double kFootprintLengthMetres = geometry::kLengthMetres,
                           kFootprintWidthMetres = geometry::kWidthMetres;
+  // The following follower settings apply to simulated footprint modes.
   // Heading error allowed when settling at a navigation target, in radians.
   inline constexpr double kHeadingToleranceRadians = .02;
   // Maximum angular speed considered settled, in radians per second.
@@ -42,12 +43,13 @@ namespace autodriveconfig
   inline constexpr double kTranslationStallTimeoutSeconds = 3;
   // Minimum requested translation speed used to distinguish a stalled command, in metres per second.
   inline constexpr double kTranslationStallRequest = .01;
-  // Maximum acceleration used by the navigation trajectory, in metres per second squared.
+  // Maximum acceleration used by the optional simulated terrain profile, in metres per second squared.
   inline constexpr double kMaxAcceleration = 4;
   // Lower vertical bound for obstacles considered in collision checks, in metres.
   inline constexpr double kCollisionBottomThresholdMetres = .05;
   // Upper vertical bound for obstacles considered in collision checks, in metres.
   inline constexpr double kCollisionTopThresholdMetres = .45;
+  // Status and arrival checks apply to both simulated and physical navigation.
   // Delay after a navigation command before publishing its final status, in seconds.
   inline constexpr double kPostCommandWaitSeconds = .3;
   // Maximum pose error and measured motion accepted by the arrival check, in metres, radians, and per-second units.

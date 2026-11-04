@@ -13,7 +13,7 @@ namespace season::simulationconfig
 
 namespace season::fuelconfig
 {
-    // Diameter of each simulated fuel particle, converted from the game-piece inch measurement.
+    // Diameter used by the fuel model. This differs from the shooting trajectory clearance diameter.
     inline constexpr double kFuelDiameterMetres = 5.5 * .0254;
     // Inset from the field boundary where returned fuel is placed.
     inline constexpr double kFieldReturnInsetMetres = .30;
@@ -54,7 +54,7 @@ namespace season::fuelconfig
     inline constexpr double kLaunchGapNoiseSeconds = .015;
     // Integration interval for advancing individual fuel particles.
     inline constexpr double kParticleStepSeconds = .005;
-    // Half-width of the scoring hub region used by the fuel model.
+    // Scoring region half-width used by the fuel model; separate from the shooting trajectory hub width.
     inline constexpr double kHubHalfWidthMetres = .6096;
     // Distance from the hub at which scored fuel is reintroduced.
     inline constexpr double kScoredReturnOffsetMetres = .65;

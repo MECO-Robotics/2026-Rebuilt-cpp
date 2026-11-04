@@ -25,8 +25,6 @@ namespace season::mechanismconfig
   inline constexpr double kRackStow = 0, kRackDeploy = .30, kRackSafe = .12;
   // Intake voltage used for normal game-piece intake.
   inline constexpr double kIntakeVolts = -10;
-  // Intake voltage used for slower controlled movement.
-  inline constexpr double kIntakeSlowVolts = 7;
   // Intake voltage used to eject a game piece.
   inline constexpr double kEjectVolts = 10;
   // Conveyor voltage used to feed a game piece toward the shooter.
@@ -43,9 +41,9 @@ namespace season::shotconfig
   inline constexpr double kShotRetractSpeedMps = kDefaultIntakeRetractSpeed;
   // Rack extension held during the shot sequence, in metres.
   inline constexpr double kShotHoldPositionMetres = kDefaultIntakeHoldMetres;
-  // Intake acceleration limit while running the shot agitation sequence.
+  // Rack acceleration limit during shot agitation, in metres per second squared.
   inline constexpr double kShotIntakeAcceleration = 100;
-  // Maximum wait for the robot to become ready for a hub shot.
+  // After this wait without feeding, a moving ferry attempt holds position.
   inline constexpr double kHubReadyTimeoutSeconds = 5;
   // Maximum translational speed in m/s allowed for a moving-ferry shot.
   inline constexpr double kMovingFerryMaxSpeed = kMovingFerryMaxTranslation;
@@ -55,7 +53,7 @@ namespace season::shotconfig
   inline constexpr double kMovingFerryMaxAngularSpeed = kMovingFerryMaxOmega;
   // Maximum angular speed in rad/s allowed before a stationary shot proceeds.
   inline constexpr double kStationaryShotMaxAngularSpeed = kDefaultShotMaxOmega;
-  // Shooter velocity error in RPS tolerated when evaluating shot readiness.
+  // Flywheel error in RPS allowed after an autonomous volley starts; also used by the teleop feed gate.
   inline constexpr double kShotVelocityToleranceRps = kFeedReadinessToleranceRps;
   // Controller rumble intensity while game pieces are actively feeding.
   inline constexpr double kRumbleFeedIntensity = .35;

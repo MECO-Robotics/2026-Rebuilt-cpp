@@ -82,6 +82,14 @@ If its current location cannot produce a valid ferry solution, offense first att
 
 ## Read the code
 
+For routine changes, start with the controls, autonomous choices, and settings
+listed in the [student editing guide](student-editing-guide.md). The constants
+in `offenseconfig` are advanced planning heuristics grouped by purpose: fuel
+tracking, pickup selection, field crossings, route selection, match timing, and
+navigation. They interact with the navgrid, perception, and match state; change
+one at a time and observe the relevant telemetry in simulation before relying on
+it. A successful simulation does not establish physical calibration.
+
 - [Bindings](../src/main/cpp/RobotContainer.cpp) and [autonomous chooser](../src/main/cpp/season/auto/RobotAutos.cpp)
 - [AutoDrive target and perception](../src/main/cpp/season/drive/AutoDrive.cpp) and [interface](../src/main/include/season/drive/AutoDrive.h)
 - [Offensive command orchestration](../src/main/cpp/season/drive/OffensiveAutoDrive.cpp), [collection path planning](../src/main/cpp/season/drive/OffensiveCollectionPlanner.cpp), [other planning and decisions](../src/main/cpp/season/drive/OffensivePlanning.cpp), and [public interfaces](../src/main/include/season/drive/OffensiveAutoDrive.h)
