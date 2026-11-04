@@ -16,18 +16,39 @@ namespace season
 {
 namespace autodriveconfig
 {
+  // Default dashboard target coordinates used when no target is configured, in metres.
   inline constexpr double kDefaultTargetXMetres = 3., kDefaultTargetYMetres = .65;
+  // Maximum serialized obstacle-grid payload accepted, in bytes.
   inline constexpr int kMaxGridBytes = 262144;
+  // Target movement required before navigation computes a new route, in metres.
   inline constexpr double kTargetReplanDistanceMetres = .3;
+  // Robot footprint dimensions used for collision checks, in metres.
   inline constexpr double kFootprintLengthMetres = .86, kFootprintWidthMetres = .86;
-  inline constexpr double kHeadingToleranceRadians = .02, kAngularSettleSpeed = .02;
+  // Heading error allowed when settling at a navigation target, in radians.
+  inline constexpr double kHeadingToleranceRadians = .02;
+  // Maximum angular speed considered settled, in radians per second.
+  inline constexpr double kAngularSettleSpeed = .02;
+  // Consecutive settled samples required before reporting arrival.
   inline constexpr int kFinalSettleSamples = 50;
-  inline constexpr double kPoseAngularDamping = .5, kAngularStopTolerance = .01;
-  inline constexpr double kTranslationStallTimeoutSeconds = 3, kTranslationStallRequest = .01;
-  inline constexpr double kMaxAcceleration = 4, kCollisionBottomThresholdMetres = .05, kCollisionTopThresholdMetres = .45;
+  // Damping applied to angular correction while approaching a target.
+  inline constexpr double kPoseAngularDamping = .5;
+  // Angular velocity below which the controller treats rotation as stopped, in radians per second.
+  inline constexpr double kAngularStopTolerance = .01;
+  // Time without translational progress before navigation declares a stall, in seconds.
+  inline constexpr double kTranslationStallTimeoutSeconds = 3;
+  // Minimum requested translation speed used to distinguish a stalled command, in metres per second.
+  inline constexpr double kTranslationStallRequest = .01;
+  // Maximum acceleration used by the navigation trajectory, in metres per second squared.
+  inline constexpr double kMaxAcceleration = 4;
+  // Lower vertical bound for obstacles considered in collision checks, in metres.
+  inline constexpr double kCollisionBottomThresholdMetres = .05;
+  // Upper vertical bound for obstacles considered in collision checks, in metres.
+  inline constexpr double kCollisionTopThresholdMetres = .45;
+  // Delay after a navigation command before publishing its final status, in seconds.
   inline constexpr double kPostCommandWaitSeconds = .3;
-  inline constexpr double kArrivalDistanceMetres = .05, kArrivalHeadingRadians = .06;
-  inline constexpr double kArrivalLinearSpeed = .2, kArrivalAngularSpeed = .2;
+  // Maximum pose error and measured motion accepted by the arrival check, in metres, radians, and per-second units.
+  inline constexpr double kArrivalDistanceMetres = .05, kArrivalHeadingRadians = .06,
+                         kArrivalLinearSpeed = .2, kArrivalAngularSpeed = .2;
 }
 
   class FuelModel;

@@ -13,9 +13,15 @@ namespace season::drive
 {
   namespace ntgamepadconfig
   {
+    // Enables accepting joystick axes published through the NT4 input topic.
     inline constexpr bool kEnabled = true;
+    // Allows Driver Station axes when the NT4 input stream is unavailable or stale.
     inline constexpr bool kFallbackToDriverStation = true;
-    inline constexpr double kDefaultPeriodMs = 5.0, kDefaultStaleMs = 50.0;
+    // Default NT subscription polling interval, in milliseconds.
+    inline constexpr double kDefaultPeriodMs = 5.0;
+    // Maximum sample age before the input is treated as stale, in milliseconds.
+    inline constexpr double kDefaultStaleMs = 50.0;
+    // Allowed NT/source timestamp disagreement and future-clock offset, in microseconds.
     inline constexpr int64_t kMaxTimestampDisagreementUs = 20000, kMaxFutureOffsetUs = 5000;
   }
 

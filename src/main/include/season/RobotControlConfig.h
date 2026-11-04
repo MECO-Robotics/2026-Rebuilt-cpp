@@ -3,6 +3,7 @@
 
 namespace season::hardware
 {
+  // USB ports assigned to the pilot and copilot controllers, respectively.
   inline constexpr int kPilotControllerPort = 0, kCopilotControllerPort = 1;
   // Standard robot and command cadence. Increase only after validating loop
   // timing, motor IO, CAN load, and sensor transport as one system.

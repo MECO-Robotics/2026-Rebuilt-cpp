@@ -2,7 +2,7 @@
 #include "season/simulation/SimulationConfig.h"
 #include "season/RobotControlConfig.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/mechanisms/RobotPlatform.h"
+#include "season/detail/RobotPlatform.h"
 #include <string_view>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/NetworkTable.h>

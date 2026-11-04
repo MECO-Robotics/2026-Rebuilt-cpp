@@ -1,6 +1,6 @@
-#include "RobotRuntime.h"
+#include "season/detail/RobotRuntime.h"
 #include "RobotContainer.h"
-#include "../mechanisms/RobotPlatform.h"
+#include "season/detail/RobotPlatform.h"
 #include "season/vision/VisionConfig.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/simulation/SimulationConfig.h"

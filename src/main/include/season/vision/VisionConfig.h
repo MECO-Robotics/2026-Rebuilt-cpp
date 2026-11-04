@@ -10,6 +10,7 @@
 namespace season::hardware
 {
   using namespace units::literals;
+  // Polling interval used to subscribe to QuestNav measurements.
   inline constexpr double kQuestSubscriptionPeriodSeconds = .005;
   // Express the headset mount relative to the robot frame.
   inline base::QuestNavConfig QuestConfig(const frc::AprilTagFieldLayout &layout)

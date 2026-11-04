@@ -9,47 +9,93 @@
 
 namespace season
 {
+  // Pi used for season geometry and angular conversions.
   inline constexpr double kPi = 3.14159265358979323846;
+  // Maximum chassis translation and angular speeds allowed for a moving ferry shot.
   inline constexpr double kMovingFerryMaxTranslation = 1., kMovingFerryMaxOmega = .3;
+  // Lower and upper bounds for the projectile flight-time search.
   inline constexpr double kFlightMinSeconds = .05, kFlightMaxSeconds = 5.;
+  // Iterations used by the bounded flight-time search.
   inline constexpr int kFlightSearchIterations = 45;
+  // Maximum heading, hood-position, and flywheel-speed errors accepted for shot readiness.
   inline constexpr double kHeadingToleranceDegrees = 2, kHoodToleranceRotations = .002, kFlywheelToleranceRps = .75;
-  inline constexpr double kMaxCalibrationFlywheelRps = 60., kFeedReadinessToleranceRps = 3;
+  // Highest flywheel speed accepted by the calibration workflow.
+  inline constexpr double kMaxCalibrationFlywheelRps = 60.;
+  // Flywheel speed error tolerated before feeding a game piece.
+  inline constexpr double kFeedReadinessToleranceRps = 3;
+  // Minimum and maximum intake speeds while retracting.
   inline constexpr double kIntakeMinRetractSpeed = .01, kIntakeMaxRetractSpeed = .50;
+  // Minimum and maximum intake extensions while holding a game piece.
   inline constexpr double kIntakeMinHoldMetres = .13, kIntakeMaxHoldMetres = .30;
+  // Default maximum chassis translation and angular speeds allowed during a shot.
   inline constexpr double kDefaultShotMaxTranslation = .25, kDefaultShotMaxOmega = 10 * kPi / 180;
+  // Default intake retraction speed and hold extension during shot preparation.
   inline constexpr double kDefaultIntakeRetractSpeed = .10, kDefaultIntakeHoldMetres = .13;
+  // Default hood position and flywheel speed for a ferry shot.
   inline constexpr double kDefaultFerryHoodRotations = .049, kDefaultFerryFlywheelRps = 55;
-  inline constexpr double kShooterExitXMetres = -.19, kShooterRestDeflectionDegrees = 16;
+  // Shooter exit location relative to the robot center along robot X.
+  inline constexpr double kShooterExitXMetres = -.19;
+  // Nominal projectile deflection from the shooter at rest.
+  inline constexpr double kShooterRestDeflectionDegrees = 16;
+  // Blue and red hub center X coordinates and the shared hub center Y coordinate, in field inches.
   inline constexpr double kBlueHubXInches = 182.105, kRedHubXInches = 469.115, kHubYInches = 158.845;
-  inline constexpr double kAllianceBoundaryInches = 158.6, kFerryInsetMetres = .90, kFerryTrenchOffsetMetres = .40;
-  inline constexpr int kBlueFirstTag = 17, kBlueLastTag = 32, kRedFirstTag = 1, kRedLastTag = 16;
+  // X coordinate separating the alliance zones in field inches.
+  inline constexpr double kAllianceBoundaryInches = 158.6;
+  // Ferry target inset from the field boundary.
+  inline constexpr double kFerryInsetMetres = .90;
+  // Lateral offset used to place ferry targets clear of the trench.
+  inline constexpr double kFerryTrenchOffsetMetres = .40;
+  // First and last AprilTag IDs assigned to the blue alliance side.
+  inline constexpr int kBlueFirstTag = 17, kBlueLastTag = 32;
+  // First and last AprilTag IDs assigned to the red alliance side.
+  inline constexpr int kRedFirstTag = 1, kRedLastTag = 16;
+  // Hub width and fuel diameter used for shot-clearance geometry, in inches.
   inline constexpr double kHubWidthInches = 47, kFuelDiameterInches = 5.91;
+  // Hub clearance and extra safety margin applied to shot trajectories, in metres.
   inline constexpr double kHubClearanceMetres = .12, kShotSafetyMarginMetres = .10;
-  inline constexpr double kTrenchHeightInches = 40.25, kHubOpeningHeightInches = 72;
+  // Trench height used to reject trajectories that collide with the trench.
+  inline constexpr double kTrenchHeightInches = 40.25;
+  // Hub opening height used by the scoring trajectory check.
+  inline constexpr double kHubOpeningHeightInches = 72;
+  // Half the hub width converted to meters for clearance calculations.
   inline constexpr double kHubHalfWidthMetres = kHubWidthInches * .0254 / 2;
+  // Fuel radius converted to meters for trajectory clearance calculations.
   inline constexpr double kFuelRadiusMetres = kFuelDiameterInches * .0254 / 2;
+  // Radius around the hub that a candidate shot trajectory must clear.
   inline const double kHubAvoidanceRadiusMetres = std::hypot(kHubHalfWidthMetres, kHubHalfWidthMetres) +
       kFuelRadiusMetres + kHubClearanceMetres + kShotSafetyMarginMetres;
+  // Minimum projectile-center height needed to clear the trench and margin.
   inline constexpr double kTrenchClearanceHeightMetres = kTrenchHeightInches * .0254 +
       kFuelRadiusMetres + kShotSafetyMarginMetres;
+  // Hub opening height converted to meters for trajectory checks.
   inline constexpr double kHubOpeningHeightMetres = kHubOpeningHeightInches * .0254;
+  // Candidate hood positions evaluated when calculating a ferry shot.
   inline constexpr int kFerryHoodSearchSteps = 50;
+  // Pitch margin and launch-speed scale applied for a conservative trajectory solution.
   inline constexpr double kConservativePitchDegrees = 1, kConservativeSpeedScale = .99;
+  // Minimum and maximum hood output rotations accepted by the shot solver.
   inline constexpr double kHoodMin = 0, kHoodMax = .049;
+  // Minimum and maximum distances represented by the calibrated shot table, in metres.
   inline constexpr double kMinDistance = 46.003 * .0254, kMaxDistance = 236 * .0254;
+  // Projectile release height above the floor in meters.
   inline constexpr double kReleaseHeight = .45;
+  // Main-wheel surface speed in meters per second per wheel rotation/second.
   inline constexpr double kMainWheelSpeedPerRps = 4 * kPi * .0254;
   // Counter-wheel surface speed / main-wheel surface speed (gearing and diameters).
   inline constexpr double kCounterWheelSurfaceSpeedRatio = (48.0 / 54) * (1.5 / 4);
   // Unequal contact speeds create backspin and reduce translational exit speed.
   // This is a speed ratio, not an energy-efficiency factor; do not apply it twice.
   inline constexpr double kBackspinTranslationSpeedScale = (1 + kCounterWheelSurfaceSpeedRatio) / 2;
+  // Empirical scale correcting ideal wheel surface speed to measured output.
   inline constexpr double kShooterSurfaceEfficiencyScale = 28.5 / 30;
+  // Conversion from flywheel RPS to estimated projectile launch speed.
   inline constexpr double kProjectileSpeedPerRps =
       kMainWheelSpeedPerRps * kBackspinTranslationSpeedScale * kShooterSurfaceEfficiencyScale;
+  // Minimum time between accepted readiness samples.
   inline constexpr double kDebounceSeconds = .15;
+  // Calibration distances paired by index with hood and flywheel tables.
   inline constexpr std::array<double, 8> kDistanceInches{46.003, 123.24, 144.60, 153.64, 191.86, 202.78, 210.47, 236};
+  // Hood output-rotation targets paired with calibration distances.
   inline constexpr std::array<double, 8> kHoodTable{0, .019, .020, .020, .020, .020, .020, .049};
   // Table entries are wheel-RPS targets, not ball speeds; do not scale them again.
   inline constexpr std::array<double, 8> kFlywheelTable{30, 37.9, 40, 41, 46, 47, 47, 53.7};

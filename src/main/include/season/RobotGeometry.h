@@ -7,14 +7,19 @@
 
 namespace season
 {
+  // Fixed intake-rack slope relative to horizontal, used to resolve its extension vector.
   inline constexpr double kRackAngleRadians = 7.5 * std::numbers::pi / 180;
+  // Cosine of the rack slope, giving the horizontal displacement per metre of extension.
   inline const double kRackAngleCos = std::cos(kRackAngleRadians);
+  // Sine of the rack slope, giving the vertical displacement per metre of extension.
   inline const double kRackAngleSin = std::sin(kRackAngleRadians);
 }
 
 namespace season::hardware
 {
+  // X and Z coordinates in metres of the shooter pivot in the robot frame, respectively.
   inline constexpr double kShooterPivotXMetres = -0.103310, kShooterPivotZMetres = 0.423;
+  // X and Z coordinates in metres of the climber pivot in the robot frame, respectively.
   inline constexpr double kClimberPivotXMetres = -0.290, kClimberPivotZMetres = 0.512;
 }
 

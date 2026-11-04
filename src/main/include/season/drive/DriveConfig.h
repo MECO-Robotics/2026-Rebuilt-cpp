@@ -12,7 +12,7 @@
 
 namespace season::hardware
 {
-  // Requested odometry update rates by CAN network type.
+  // Requested odometry sampling rates by CAN network type, in hertz.
   inline constexpr double kSwerveOdometryFdHz = 500, kSwerveOdometryClassicHz = 100;
   using namespace units::literals;
   inline base::DriveConfig DriveConfig()
@@ -32,6 +32,7 @@ namespace season::hardware
     c.driveKP = .15;
     c.driveKS = .1;
     c.driveKV = .124;
+    // Cache runtime mode because the remaining drive parameters branch on simulation.
     const bool simulation = frc::RobotBase::IsSimulation();
     c.steerKP = 100;
     c.steerKD = .5;
@@ -53,6 +54,7 @@ namespace season::hardware
       // Bumper envelope: user-confirmed 0.5 inch floor gap, estimated 5.5 inch height.
       // Move the body origin to bumper centre; preserve the assumed world CoM at .30 m.
 #ifndef __FRC_ROBORIO__
+      // Read the season's configured bumper contact geometry for the simulated chassis.
       const auto contact = season::simulation::RobotContacts();
       c.simulation.bumperHalfHeight = contact.noodleDiameter;
       c.simulation.rideHeight = contact.bumperFloorGap + c.simulation.bumperHalfHeight;
@@ -81,11 +83,14 @@ namespace season::hardware
     {
       // Native Phoenix swerve requests enable FOC. Use the same electrical
       // plant and stator torque limit as the simulation adapter, not supply amps.
+      // Use the same FOC motor model as the simulated Phoenix drive adapter.
       const auto motor = frc::DCMotor::KrakenX60FOC(1);
+      // Motor torque per amp used to derive simulation traction limits.
       const double motorTorqueConstant = motor.Kt.value();
       std::array<base::sim::ModuleLocation, 4> locations{};
       for (std::size_t i = 0; i < locations.size(); ++i)
         locations[i] = {c.modules[i].xMeters, c.modules[i].yMeters};
+      // Derive controller gains from the configured mass, geometry, motor, and traction data.
       const auto tuned = base::sim::DeriveSimulationTuning(
           {c.massKg, c.moi, c.cof, c.wheelRadius, c.driveRatio, c.slipCurrent, motorTorqueConstant, locations, .08, .50});
       // The contact-loaded plant uses the configured robot steering gains.

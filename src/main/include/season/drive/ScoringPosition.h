@@ -8,16 +8,32 @@ namespace season
 {
   namespace scoringpositionconfig
   {
-    inline constexpr double kDepotDepthInches = 27., kDepotWidthInches = 42., kDepotYMetres = 6.066;
-    inline constexpr double kRobotHalfMetres = .43, kRampRobotMarginMetres = .10;
-    inline constexpr double kRampLengthInches = 44.4, kRampWidthInches = 73., kHubWidthInches = 47.;
+    // Depot dimensions from the field geometry, in inches.
+    inline constexpr double kDepotDepthInches = 27., kDepotWidthInches = 42.;
+    // Field Y coordinate of the depot centreline, in metres.
+    inline constexpr double kDepotYMetres = 6.066;
+    // Half-width used as the square robot footprint radius, in metres.
+    inline constexpr double kRobotHalfMetres = .43;
+    // Extra clearance around the robot when checking ramp regions, in metres.
+    inline constexpr double kRampRobotMarginMetres = .10;
+    // Ramp dimensions from the field geometry, in inches.
+    inline constexpr double kRampLengthInches = 44.4, kRampWidthInches = 73.;
+    // Hub width used to locate the adjacent bump/ramp region, in inches.
+    inline constexpr double kHubWidthInches = 47.;
+    // Convert depot depth to metres for field-coordinate comparisons.
     inline constexpr double kDepotDepthMetres = kDepotDepthInches * .0254;
+    // Half the depot width converted to metres for side-boundary checks.
     inline constexpr double kDepotHalfWidthMetres = kDepotWidthInches * .0254 / 2;
+    // Distance from the robot centre to a footprint corner, in metres.
     inline const double kRobotCornerRadiusMetres = std::hypot(kRobotHalfMetres, kRobotHalfMetres);
+    // Expanded footprint radius used to keep the robot clear of ramp edges, in metres.
     inline const double kRampRobotRadiusMetres = kRobotCornerRadiusMetres + kRampRobotMarginMetres;
-    inline constexpr double kRampHalfLengthMetres = kRampLengthInches * .0254 / 2;
-    inline constexpr double kRampHalfWidthMetres = kRampWidthInches * .0254 / 2;
+    // Half ramp dimensions converted to metres for centre-based geometry checks.
+    inline constexpr double kRampHalfLengthMetres = kRampLengthInches * .0254 / 2,
+                           kRampHalfWidthMetres = kRampWidthInches * .0254 / 2;
+    // Centre offset from the hub to the bump/ramp centreline, in metres.
     inline constexpr double kBumpCentreOffsetMetres = (kHubWidthInches + kRampWidthInches) * .0254 / 2;
+    // Extra inset from field scoring boundaries required for a valid position, in metres.
     inline constexpr double kScoringBoundaryMarginMetres = .15;
   }
 
