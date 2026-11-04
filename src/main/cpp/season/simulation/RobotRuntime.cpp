@@ -12,24 +12,44 @@
 #include <networktables/NetworkTableInstance.h>
 #include <array>
 #include <cmath>
+#include <numbers>
 #include <cstdlib>
 #include <stdexcept>
 #include <string_view>
 #ifndef __FRC_ROBORIO__
+#include "meco/sim/LoadedMotorIO.h"
 #include "meco/sim/SimulationPose.h"
+#include "season/simulation/MotorModelConfig.h"
 #endif
 std::unique_ptr<base::MotorIO> season::simulation::RobotRuntime::MakeMotor(const season::hardware::FlywheelConfig &c, base::Vendor vendor, MotorLoad loadedMotor) {
 #ifndef __FRC_ROBORIO__
   if (season::hardware::Mode() == base::Mode::Sim && loadedMotor != MotorLoad::None) {
-    season::LoadedMotor motor;
+    std::size_t loadIndex{};
     switch (loadedMotor) {
-      case MotorLoad::Conveyor: motor = season::LoadedMotor::Conveyor; break;
-      case MotorLoad::Bottom: motor = season::LoadedMotor::Bottom; break;
-      case MotorLoad::Top: motor = season::LoadedMotor::Top; break;
-      case MotorLoad::Shooter: motor = season::LoadedMotor::Shooter; break;
+      case MotorLoad::Conveyor: loadIndex = 0; break;
+      case MotorLoad::Bottom: loadIndex = 1; break;
+      case MotorLoad::Top: loadIndex = 2; break;
+      case MotorLoad::Shooter: loadIndex = 3; break;
       case MotorLoad::None: return base::MakeMotorIO(season::hardware::Mode(), vendor, season::hardware::MotorRates(c.motor, vendor), c.inertiaKgMetersSquared);
     }
-    return season::MakeLoadedMotorIO(c.motor, vendor, c.inertiaKgMetersSquared, fuelMotorLoads_, motor);
+    constexpr double nominalVoltage = season::simulation::motorconfig::kNominalVoltage;
+    const bool neo = vendor == base::Vendor::SparkMax;
+    const double stallCurrent = neo ? season::simulation::motorconfig::kNeoStallCurrentAmps : season::simulation::motorconfig::kKrakenStallCurrentAmps;
+    const double stallTorque = neo ? season::simulation::motorconfig::kNeoStallTorqueNm : season::simulation::motorconfig::kKrakenStallTorqueNm;
+    const double freeSpeedRpm = neo ? season::simulation::motorconfig::kNeoFreeSpeedRpm : season::simulation::motorconfig::kKrakenFreeSpeedRpm;
+    meco::sim::LoadedMotorModel model;
+    model.resistanceOhms = nominalVoltage / stallCurrent;
+    model.torqueConstantNmPerAmp = stallTorque / stallCurrent;
+    model.velocityConstantRadPerSecondPerVolt = freeSpeedRpm * 2 * std::numbers::pi / 60 / nominalVoltage;
+    model.outputInertiaKgM2 = c.inertiaKgMetersSquared;
+    model.viscousDragNmPerRadPerSecond = season::simulation::motorconfig::kViscousDrag;
+    model.maximumPhysicsStepSeconds = season::simulation::motorconfig::kMaxPhysicsStepSeconds;
+    model.maximumUpdateSeconds = season::simulation::motorconfig::kMaxUpdateSeconds;
+    model.loadDirectionSpeedThresholdRadPerSecond = season::simulation::motorconfig::kLoadDirectionSpeedThreshold;
+    auto loads = fuelMotorLoads_;
+    return base::MakeMotorIO(c.motor, model, [loads = std::move(loads), loadIndex] {
+      return loads->torque[loadIndex];
+    });
   }
 #else
   (void)loadedMotor;

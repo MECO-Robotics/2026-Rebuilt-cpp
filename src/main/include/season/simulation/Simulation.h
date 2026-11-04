@@ -2,9 +2,8 @@
 #ifndef __FRC_ROBORIO__
 #include "meco/sim/ParticleContacts.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/simulation/SimulationConfig.h"
+#include "season/simulation/RuntimeConfig.h"
 #include <array>
-#include <memory>
 #include <random>
 #include <optional>
 #include <frc/geometry/struct/Pose3dStruct.h>
@@ -22,21 +21,12 @@
 
 namespace season
 {
-  // Desktop-only loaded motor model used by the fuel simulation.
-  enum class LoadedMotor
-  {
-    Conveyor,
-    Bottom,
-    Top,
-    Shooter
-  };
+  // Estimated opposing shaft torques, in N m. FuelSimulation owns these
+  // season-specific load inputs; simulated motor integration lives in MecoSimulation.
   struct FuelMotorLoads
   {
     std::array<double, 4> torque{};
   };
-  std::unique_ptr<base::MotorIO> MakeLoadedMotorIO(const base::MotorConfig &, base::Vendor,
-                                                   double inertia, std::shared_ptr<FuelMotorLoads>, LoadedMotor);
-
   using FuelPoint = meco::sim::ParticlePoint;
   using FuelParticle = meco::sim::Particle;
   using FuelRobotState = meco::sim::ContactBody;
