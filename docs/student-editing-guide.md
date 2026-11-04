@@ -10,9 +10,9 @@ Start with the task you want the robot to do. These files contain this season's 
 | Change what an intake, conveyor, indexer, hood, or shooter command does | Edit [SeasonCommands.cpp](../src/main/cpp/season/mechanisms/SeasonCommands.cpp). The command interfaces are in [Mechanisms.h](../src/main/include/season/mechanisms/Mechanisms.h). |
 | Change mechanism CAN IDs, ratios, gains, limits, presets, or controller CAN rates | Edit the constants at the top of [Mechanisms.h](../src/main/include/season/mechanisms/Mechanisms.h). |
 | Change drivetrain hardware settings or swerve odometry rate | Edit [DriveConfig.h](../src/main/include/season/drive/DriveConfig.h). |
-| Change camera or QuestNav mounts and update period | Edit [VisionConfig.h](../src/main/include/season/vision/VisionConfig.h). |
+| Change QuestNav or AprilTag camera mounts | Edit [VisionConfig.h](../src/main/include/season/vision/VisionConfig.h). |
+| Change object-perception camera mounts, detection range, clustering, or update period | Edit [PerceptionConfig.h](../src/main/include/season/vision/PerceptionConfig.h). |
 | Change the standard robot loop or controller ports | Edit [RobotControlConfig.h](../src/main/include/season/RobotControlConfig.h). |
-| Change the AutoDrive detection update period | Edit the constants at the top of [AutoDrive.h](../src/main/include/season/drive/AutoDrive.h). |
 | Change the shot table or shooting limits | Edit [Shooting.h](../src/main/include/season/shooting/Shooting.h). Shot calculations are in [Shooting.cpp](../src/main/cpp/season/shooting/Shooting.cpp). |
 | Change AutoDrive or offensive planning settings | Start with the constants at the top of [AutoDrive.h](../src/main/include/season/drive/AutoDrive.h) or [OffensiveAutoDrive.h](../src/main/include/season/drive/OffensiveAutoDrive.h). |
 | Change a simulation assumption | See [simulation configuration](#simulation) below. |

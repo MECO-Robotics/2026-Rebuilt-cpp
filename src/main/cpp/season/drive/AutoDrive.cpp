@@ -81,12 +81,12 @@ namespace season
     const std::string prefix = camera == 0 ? "Perception/Front/" : "Perception/Rear/";
     // AutoDrive's nominal fore/aft chassis-edge locations; height is an estimate.
     const frc::Transform3d local{
-        units::meter_t{frc::Preferences::GetDouble(prefix + "X", camera == 0 ? autodriveconfig::kCameraFrontXMetres : autodriveconfig::kCameraRearXMetres)},
+        units::meter_t{frc::Preferences::GetDouble(prefix + "X", camera == 0 ? vision::config::kFrontCameraXMetres : vision::config::kRearCameraXMetres)},
         units::meter_t{frc::Preferences::GetDouble(prefix + "Y", 0)},
-        units::meter_t{frc::Preferences::GetDouble(prefix + "Z", autodriveconfig::kCameraHeightMetres)},
+        units::meter_t{frc::Preferences::GetDouble(prefix + "Z", vision::config::kCameraHeightMetres)},
         frc::Rotation3d{units::degree_t{frc::Preferences::GetDouble(prefix + "RollDeg", 0)},
-                        units::degree_t{frc::Preferences::GetDouble(prefix + "PitchDeg", autodriveconfig::kCameraPitchDegrees)},
-                        units::degree_t{frc::Preferences::GetDouble(prefix + "YawDeg", camera == 0 ? 0 : autodriveconfig::kRearCameraYawDegrees)}}};
+                        units::degree_t{frc::Preferences::GetDouble(prefix + "PitchDeg", vision::config::kCameraPitchDegrees)},
+                        units::degree_t{frc::Preferences::GetDouble(prefix + "YawDeg", camera == 0 ? 0 : vision::config::kRearCameraYawDegrees)}}};
     return camera == 0 ? HopperCameraMount(extension_(), local) : local;
   }
   AutoDrive::AutoDrive(base::Drive &drive, std::function<double()> extension,
@@ -102,19 +102,19 @@ namespace season
     {
       const std::string name = i == 0 ? "front" : "rear";
       const std::string prefix = i == 0 ? "Perception/Front/" : "Perception/Rear/";
-      for (const auto &[key, value] : std::vector<std::pair<std::string, double>>{{"X", i == 0 ? autodriveconfig::kCameraFrontXMetres : autodriveconfig::kCameraRearXMetres},
+      for (const auto &[key, value] : std::vector<std::pair<std::string, double>>{{"X", i == 0 ? vision::config::kFrontCameraXMetres : vision::config::kRearCameraXMetres},
                                                                                   {"Y", 0},
-                                                                                  {"Z", autodriveconfig::kCameraHeightMetres},
+                                                                                  {"Z", vision::config::kCameraHeightMetres},
                                                                                   {"RollDeg", 0},
-                                                                                  {"PitchDeg", autodriveconfig::kCameraPitchDegrees},
-                                                                                  {"YawDeg", i == 0 ? 0 : autodriveconfig::kRearCameraYawDegrees}})
+                                                                                  {"PitchDeg", vision::config::kCameraPitchDegrees},
+                                                                                  {"YawDeg", i == 0 ? 0 : vision::config::kRearCameraYawDegrees}})
         frc::Preferences::InitDouble(prefix + key, value);
       std::unique_ptr<base::ObjectDetectionIO> io;
 #ifndef __FRC_ROBORIO__
       if (frc::RobotBase::IsSimulation())
       {
         meco::sim::PieceSensorConfig config;
-        config.maxRange = autodriveconfig::kCameraRangeMetres;
+        config.maxRange = vision::config::kCameraRangeMetres;
         config.seed = simulation::runtimeconfig::kFuelRandomSeed + i;
         config.robotToCamera = Mount(i);
         simulationSensors_->sensors[i] = std::make_unique<meco::sim::SimulatedPieceSensor>(config);
@@ -132,7 +132,7 @@ namespace season
     base::ObjectPerceptionConfig perceptionConfig;
     // Fuse duplicate camera observations without chaining adjacent FUEL into
     // one field-wide centroid (the simulation places centres 0.25 m apart).
-    perceptionConfig.clusterRadius = units::meter_t{autodriveconfig::kClusterRadiusMetres};
+    perceptionConfig.clusterRadius = units::meter_t{vision::config::kClusterRadiusMetres};
     perception_ = std::make_unique<base::ObjectPerception>(
         std::move(cameras), [this]
         { return frc::Pose3d{drive_.Pose()}; }, perceptionConfig);

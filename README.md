@@ -60,7 +60,7 @@ New to the code? Start with the [student editing guide](docs/student-editing-gui
 
 Season code is grouped by purpose under `src/main/cpp/season` and `src/main/include/season`: `drive` contains AutoDrive, offensive planning, and scoring-position selection; `shooting` contains shot calculations; `mechanisms` contains mechanism settings and commands; `RobotGeometry.h` contains robot-wide dimensions and pose helpers; `simulation` contains the desktop field, runtime adapter, and fuel model; and `diagnostics` contains system-check setup. Public headers hold interfaces and configuration, while non-template implementations live in the matching `.cpp` files where practical.
 
-Robot and simulation settings are grouped by subsystem. Mechanism settings and command interfaces are in `Mechanisms.h`; robot dimensions and pose helpers are in `RobotGeometry.h`; drivetrain hardware is in `DriveConfig.h`; camera and QuestNav mounts are in `VisionConfig.h`; and loop timing is in `RobotControlConfig.h`. Drive behavior settings live at the top of their API headers, and desktop simulation assumptions are in `SimulationConfig.h`.
+Robot and simulation settings are grouped by subsystem. Mechanism settings and command interfaces are in `Mechanisms.h`; robot dimensions and pose helpers are in `RobotGeometry.h`; drivetrain hardware is in `DriveConfig.h`; QuestNav and AprilTag camera mounts are in `VisionConfig.h`; object-perception camera settings are in `PerceptionConfig.h`; and loop timing is in `RobotControlConfig.h`. Drive behavior settings live at the top of their API headers, and desktop simulation assumptions are in `SimulationConfig.h`.
 
 ## How the pieces connect
 

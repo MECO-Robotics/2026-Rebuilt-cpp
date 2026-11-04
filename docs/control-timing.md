@@ -8,7 +8,7 @@ Configure each rate in the subsystem header that owns it:
 - Swerve odometry rates for CAN FD and classic CAN: `kSwerveOdometryFdHz` and `kSwerveOdometryClassicHz` in [DriveConfig.h](../src/main/include/season/drive/DriveConfig.h).
 - Mechanism motor CAN control resend and status refresh rates: the `kSpark*Hz` and `kTalon*Hz` constants in [Mechanisms.h](../src/main/include/season/mechanisms/Mechanisms.h). [RobotPlatform.cpp](../src/main/cpp/season/mechanisms/RobotPlatform.cpp) selects the appropriate controller and bus rate.
 - QuestNav update period: `kQuestSubscriptionPeriodSeconds` in [VisionConfig.h](../src/main/include/season/vision/VisionConfig.h).
-- AutoDrive detection subscription period: `kDetectionPeriodSeconds` at the top of [AutoDrive.h](../src/main/include/season/drive/AutoDrive.h).
+- Object-detection subscription period: `kObjectDetectionPeriodSeconds` in [PerceptionConfig.h](../src/main/include/season/vision/PerceptionConfig.h).
 - NT gamepad subscription and freshness: constants at the top of [NtGamepad.h](../src/main/include/season/drive/NtGamepad.h).
 - Desktop physics step: `kSimulationPeriodSeconds` in [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h).
 

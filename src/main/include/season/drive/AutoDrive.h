@@ -5,6 +5,7 @@
 #include <base/season2026/MatchContext.h>
 #include <base/FootprintConfiguration.h>
 #include <base/ObjectPerception.h>
+#include "season/vision/PerceptionConfig.h"
 #include <frc/geometry/Pose3d.h>
 #include <functional>
 #include <memory>
@@ -15,10 +16,6 @@ namespace season
 {
 namespace autodriveconfig
 {
-  inline constexpr double kDetectionPeriodSeconds = .005;
-  inline constexpr double kCameraFrontXMetres = .43, kCameraRearXMetres = -.43, kCameraHeightMetres = .54;
-  inline constexpr double kCameraPitchDegrees = 15, kRearCameraYawDegrees = 180;
-  inline constexpr double kCameraRangeMetres = 6, kClusterRadiusMetres = .15;
   inline constexpr double kDefaultTargetXMetres = 3., kDefaultTargetYMetres = .65;
   inline constexpr int kMaxGridBytes = 262144;
   inline constexpr double kTargetReplanDistanceMetres = .3;
@@ -48,7 +45,7 @@ class AutoDrive
 public:
   AutoDrive(base::Drive &drive, std::function<double()> intakeExtension,
             std::function<const base::season2026::MatchContext &()> matchContext,
-            units::second_t detectionUpdatePeriod = units::second_t{autodriveconfig::kDetectionPeriodSeconds});
+            units::second_t detectionUpdatePeriod = units::second_t{vision::config::kObjectDetectionPeriodSeconds});
   ~AutoDrive();
   // Create a fresh drivetrain-owning navigation command.
   frc2::CommandPtr Command();

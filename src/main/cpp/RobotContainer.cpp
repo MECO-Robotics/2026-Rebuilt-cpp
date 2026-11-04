@@ -7,6 +7,7 @@
 #include "season/mechanisms/Mechanisms.h"
 #include "season/drive/DriveConfig.h"
 #include "season/RobotControlConfig.h"
+#include "season/vision/PerceptionConfig.h"
 #include <frc/Timer.h>
 #include <frc/DriverStation.h>
 #include <frc/GenericHID.h>
@@ -124,7 +125,7 @@ RobotContainer::RobotContainer()
       { return rack_.Position(); },
       [this]() -> const base::season2026::MatchContext &
       { return matchContext_; },
-      units::second_t{season::autodriveconfig::kDetectionPeriodSeconds});
+      units::second_t{season::vision::config::kObjectDetectionPeriodSeconds});
   simulationRuntime_->InitializeFuel();
   // Bind controls before registering the named autonomous actions.
   ConfigureBindings();
