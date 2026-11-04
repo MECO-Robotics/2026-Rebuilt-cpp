@@ -69,8 +69,8 @@ namespace season::shotconfig
   inline constexpr double kRumbleSecondPulseEndSeconds = .45;
   // Maximum time in seconds for a shot to reach its ready state.
   inline constexpr double kShotReadyTimeoutSeconds = 8;
-  // Maximum total shot-command durations in seconds for desktop simulation and the real robot, respectively.
-  inline constexpr double kShotSimTimeoutSeconds = 25, kShotRealTimeoutSeconds = 15;
+  // Maximum total shot-command duration in seconds.
+  inline constexpr double kShotTimeoutSeconds = 15;
   // Hood output rotations for the hub, ferry, and trench shooting presets, respectively.
   inline constexpr double kHubHood = 0, kFerryHood = kDefaultFerryHoodRotations, kTrenchHood = .049;
   // Shooter target speeds in RPS for the hub, ferry, and trench presets, respectively.

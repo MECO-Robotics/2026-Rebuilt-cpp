@@ -1,5 +1,4 @@
 #include "season/drive/OffensiveAutoDrive.h"
-#include "base/SimulationLatency.h"
 #include "RobotContainer.h"
 #include "season/detail/RobotRuntime.h"
 #include "season/auto/RobotAutos.h"
@@ -71,33 +70,31 @@ void RobotContainer::AcceptVision(const base::VisionObservation &observation)
 season::Mechanisms RobotContainer::Mechanisms() { return {rack_, intake_, conveyor_, bottom_, top_, hood_, shooter_}; }
 RobotContainer::~RobotContainer() = default;
 RobotContainer::RobotContainer()
-    : simulationRuntime_(std::make_unique<season::simulation::RobotRuntime>(*this)),
+    : runtime_(std::make_unique<season::runtime::RobotRuntime>(*this)),
       drive_(season::hardware::DriveConfig()),
       rack_("IntakeRack",
-            base::MakeMotorIO(season::hardware::Mode(), base::Vendor::SparkMax,
-                              RackMotorConfig(), season::hardware::kRackMotorInertia),
+            runtime_->MakeJointMotor(RackMotorConfig(), base::Vendor::SparkMax, season::hardware::JointRole::Rack),
             season::hardware::JointGains(season::hardware::kRackGains),
             2 * std::numbers::pi * season::hardware::kRackDrumRadius),
-      hood_("Hood", base::MakeMotorIO(season::hardware::Mode(), base::Vendor::SparkMax,
-                                     HoodMotorConfig(), season::hardware::kHoodMotorInertia),
+      hood_("Hood", runtime_->MakeJointMotor(HoodMotorConfig(), base::Vendor::SparkMax, season::hardware::JointRole::Hood),
             season::hardware::JointGains(season::hardware::kHoodGains),
             1, base::Gravity::Cosine),
-      intake_("IntakeRoller", simulationRuntime_->MakeMotor(season::hardware::kIntake, base::Vendor::SparkMax, season::simulation::MotorLoad::None), season::hardware::kIntakeGains),
+      intake_("IntakeRoller", runtime_->MakeMotor(season::hardware::kIntake, base::Vendor::SparkMax), season::hardware::kIntakeGains),
       conveyor_("Conveyor",
-                simulationRuntime_->MakeMotor(season::hardware::kConveyor, base::Vendor::SparkMax, season::simulation::MotorLoad::Conveyor),
+                runtime_->MakeMotor(season::hardware::kConveyor, base::Vendor::SparkMax),
                 season::hardware::kConveyorGains),
       bottom_("BottomIndexer",
-                simulationRuntime_->MakeMotor(season::hardware::kBottomIndexer, base::Vendor::TalonFX, season::simulation::MotorLoad::Bottom),
+                runtime_->MakeMotor(season::hardware::kBottomIndexer, base::Vendor::TalonFX),
               season::hardware::kIndexerGains),
       top_("TopIndexer",
-                simulationRuntime_->MakeMotor(season::hardware::kTopIndexer, base::Vendor::SparkMax, season::simulation::MotorLoad::Top),
+                runtime_->MakeMotor(season::hardware::kTopIndexer, base::Vendor::SparkMax),
            season::hardware::kIndexerGains),
       shooter_("ShooterFlywheel",
-                simulationRuntime_->MakeMotor(season::hardware::kShooter, base::Vendor::TalonFX, season::simulation::MotorLoad::Shooter),
+                runtime_->MakeMotor(season::hardware::kShooter, base::Vendor::TalonFX),
                season::hardware::kShooterGains),
       layout_(frc::AprilTagFieldLayout::LoadField(frc::AprilTagField::kDefaultField)), field_(Geometry(layout_)),
       vision_(
-          std::make_unique<base::VisionSystem>(simulationRuntime_->LocalizationSources(), [this](const auto &obs)
+          std::make_unique<base::VisionSystem>(runtime_->LocalizationSources(), [this](const auto &obs)
                                                { AcceptVision(obs); })),
       checks_(
           [this]
@@ -124,9 +121,9 @@ RobotContainer::RobotContainer()
   shooter_.UseExternalScheduling();
   // Install the pathfinder before constructing commands that use it.
   season::autonomous::RobotAutos::ConfigureDrive(drive_);
-  simulationRuntime_->Initialize();
+  runtime_->Initialize();
   const bool ntInputSelected = season::drive::ntgamepadconfig::kEnabled;
-  const bool useNtInput = simulationRuntime_->UseNtInput(ntInputSelected);
+  const bool useNtInput = runtime_->UseNtInput(ntInputSelected);
   if (useNtInput)
     ntGamepad_ = std::make_unique<season::drive::NtGamepad>(nt::NetworkTableInstance::GetDefault(),
                                                             season::drive::ntgamepadconfig::kDefaultPeriodMs,
@@ -143,8 +140,9 @@ RobotContainer::RobotContainer()
       { return rack_.Position(); },
       [this]() -> const base::season2026::MatchContext &
       { return matchContext_; },
-      units::second_t{season::vision::config::kObjectDetectionPeriodSeconds});
-  simulationRuntime_->InitializeFuel();
+      units::second_t{season::vision::config::kObjectDetectionPeriodSeconds},
+      runtime_->AutoDriveInputs());
+  runtime_->InitializeFeedback();
   // Bind controls before registering the named autonomous actions.
   ConfigureBindings();
   autonomous_ = std::make_unique<season::autonomous::RobotAutos>(*this);
@@ -156,7 +154,7 @@ RobotContainer::RobotContainer()
       {{"intake", &intake_}, {"conveyor", &conveyor_}, {"bottom-indexer", &bottom_}, {"top-indexer", &top_}},
       [this]
       { return vision_->Inputs().connected; });
-  simulationRuntime_->ResetIfSimulation();
+  runtime_->FinishSetup();
 }
 
 // Maintain mechanism feedback and control at the standard robot-loop cadence.
@@ -183,7 +181,7 @@ void RobotContainer::ControlMechanisms()
 // Bind controls to commands with explicit ownership and cleanup.
 void RobotContainer::ConfigureBindings()
 {
-  simulationRuntime_->BindReset();
+  runtime_->BindReset();
   // LB selects target driving or offense according to the dashboard toggle.
   (controller_.LeftBumper() &&
    []
@@ -287,9 +285,9 @@ void RobotContainer::ConfigureBindings()
       .OnTrue(season::ShooterIdle(m));
 }
 frc2::Command *RobotContainer::GetAutonomousCommand() { return autonomous_->Selected(); }
-void RobotContainer::ScheduleAutonomous(frc2::Command *command) { simulationRuntime_->Schedule(command); }
+void RobotContainer::ScheduleAutonomous(frc2::Command *command) { runtime_->Schedule(command); }
 void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 
-void RobotContainer::SimulationPeriodic() { simulationRuntime_->Periodic(); }
-void RobotContainer::ResetSimulation() { simulationRuntime_->Reset(); }
-bool RobotContainer::SimulationResetReady() const { return simulationRuntime_->ResetReady(); }
+void RobotContainer::SimulationPeriodic() { runtime_->Periodic(); }
+void RobotContainer::PrepareAutonomous() { runtime_->Reset(); }
+bool RobotContainer::AutonomousReady() const { return runtime_->ResetReady(); }

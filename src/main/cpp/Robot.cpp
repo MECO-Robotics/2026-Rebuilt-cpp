@@ -1,52 +1,21 @@
 #include "Robot.h"
-#include "season/simulation/SimulationConfig.h"
 #include "season/RobotControlConfig.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/detail/RobotPlatform.h"
-#include <string_view>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/NetworkTable.h>
-#include "base/SimulationLatency.h"
 #include <base/season2026/MatchContext.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <fmt/format.h>
 #include <frc/DataLogManager.h>
 #include <frc/DriverStation.h>
 #include <frc/RobotController.h>
-#include <cstdlib>
 #include <units/time.h>
-#include <stdexcept>
-#include <array>
-#include <algorithm>
-#include <cmath>
-#ifndef __FRC_ROBORIO__
-#include "base/SimulationRuntime.h"
-#include "meco/sim/BatterySupply.h"
-#include <networktables/NetworkTableInstance.h>
-#include <charconv>
-#include <cmath>
-#endif
 #include <frc2/command/CommandScheduler.h>
-// Construct simulation services before the robot loop starts.
+// Configure platform services before the robot loop starts.
 Robot::Robot() : frc::TimedRobot{season::hardware::kControlPeriod}
 {
-#ifndef __FRC_ROBORIO__
-  if (const char *text = std::getenv("FRC_SIM_NT_PORT"))
-  {
-    const std::string_view value{text};
-    unsigned int port = 0;
-    const auto parsed = std::from_chars(value.data(), value.data() + value.size(), port);
-    if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() || port < 1024 || port > 65535)
-      throw std::invalid_argument("FRC_SIM_NT_PORT must be an integer in [1024,65535]");
-    auto nt = nt::NetworkTableInstance::GetDefault();
-    nt.StopServer();
-    nt.StartServer("", "127.0.0.1", 0, port);
-  }
-#endif
-#ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation())
-    practice_ = std::make_unique<meco::sim::PracticeMatchController>(meco::sim::PracticeMatchProfile{season::simulation::runtimeconfig::kPracticeAutonomousSeconds, season::simulation::runtimeconfig::kPracticeAssessmentSeconds, season::simulation::runtimeconfig::kPracticeTeleopSeconds});
-#endif
+  lifecycle_.Initialize();
   frc::DataLogManager::Start();
   frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
   frc::RobotController::SetBrownoutVoltage(season::hardware::kBrownoutVoltage);
@@ -58,15 +27,15 @@ void Robot::RobotPeriodic()
   const auto match = base::season2026::ReadMatchContext();
   container_.SetMatchContext(match);
   container_.ControlMechanisms();
-  if (autonomousPending_ && frc::DriverStation::IsAutonomousEnabled() && container_.SimulationResetReady())
+  if (autonomousPending_ && frc::DriverStation::IsAutonomousEnabled() && container_.AutonomousReady())
   {
     autonomousPending_ = false;
     if (autonomous_)
       container_.ScheduleAutonomous(autonomous_);
   }
-  base::simulation::BeginLatencyProbe();
+  lifecycle_.BeforeScheduler();
   frc2::CommandScheduler::GetInstance().Run();
-  base::simulation::EndLatencyProbe();
+  lifecycle_.AfterScheduler();
   auto nt = nt::NetworkTableInstance::GetDefault().GetTable("/Match");
   nt->GetEntry("Phase").SetString(match.phase);
   nt->GetEntry("TimeKnown").SetBoolean(match.periodTime.has_value());
@@ -105,17 +74,17 @@ void Robot::RobotPeriodic()
       match.alliance && match.gameDataValid &&
           ((*match.alliance == frc::DriverStation::Alliance::kBlue) == (match.gameData == "R")));
 }
-// Reset the scene before scheduling the selected autonomous command.
+// Prepare platform feedback before scheduling the selected autonomous command.
 void Robot::AutonomousInit()
 {
   container_.CancelChecks();
   // Scheduling initializes AutoDrive immediately, before RobotPeriodic runs.
   // Supply this packet's context for initialization as well as execution.
   container_.SetMatchContext(base::season2026::ReadMatchContext());
-  container_.ResetSimulation();
+  container_.PrepareAutonomous();
   autonomous_ = container_.GetAutonomousCommand();
   autonomousPending_ = autonomous_ != nullptr;
-  if (autonomousPending_ && container_.SimulationResetReady())
+  if (autonomousPending_ && container_.AutonomousReady())
   {
     autonomousPending_ = false;
     container_.ScheduleAutonomous(autonomous_);
@@ -140,64 +109,12 @@ void Robot::TestInit()
 int main() { return frc::StartRobot<Robot>(); }
 #endif
 
-// Advance the practice controller, scene, battery, and simulated DS packet.
+// Advance platform services around the scene update.
 void Robot::SimulationPeriodic()
 {
-#ifndef __FRC_ROBORIO__
-  if (practice_)
-    practice_->Update();
-#endif
+  lifecycle_.BeforeScene();
   container_.SimulationPeriodic();
-#ifndef __FRC_ROBORIO__
-  auto &runtime = base::simulation::GetSimulationRuntime();
-  static auto physicsClockPublisher = nt::NetworkTableInstance::GetDefault()
-                                          .GetDoubleArrayTopic("/Simulation/Physics/Samples")
-                                          .Publish();
-  physicsClockPublisher.Set(std::array<double, 3>{static_cast<double>(nt::Now()),
-                                                  static_cast<double>(frc::RobotController::GetFPGATime()), runtime.Time()});
-  // Coulomb-count an estimated 18 Ah FRC battery for the life of this sim
-  // process. OCV falls with state of charge; the shared supply model then
-  // adds the configured internal-resistance sag under load.
-  constexpr double capacityAh = season::simulation::runtimeconfig::kBatteryCapacityAh;
-  struct BatteryState
-  {
-    double remainingAh = capacityAh;
-    double previousRuntimeTime = -1.0;
-    int brownoutCount = 0;
-    bool previouslyBrownedOut = false;
-  };
-  static BatteryState battery;
-  const double now = runtime.Time();
-  const double dt = battery.previousRuntimeTime >= 0 && now >= battery.previousRuntimeTime
-                        ? now - battery.previousRuntimeTime
-                        : 0.0;
-  battery.previousRuntimeTime = now;
-  const double current = runtime.SupplyCurrent();
-  battery.remainingAh = std::max(0.0, battery.remainingAh - current * dt / 3600.0);
-  const double stateOfCharge = std::clamp(battery.remainingAh / capacityAh, 0.0, 1.0);
-  const double openCircuitVoltage = season::simulation::runtimeconfig::kBatteryEmptyVoltage + season::simulation::runtimeconfig::kBatteryVoltageRange * std::sqrt(stateOfCharge);
-  const double batteryVoltage = meco::sim::UpdateBatterySupply(
-      runtime, meco::sim::BatterySupplyConfig{openCircuitVoltage, season::simulation::runtimeconfig::kBatteryInternalResistanceOhms, 0.0});
-  const bool brownedOut = frc::RobotController::IsBrownedOut();
-  if (brownedOut && !battery.previouslyBrownedOut)
-    ++battery.brownoutCount;
-  battery.previouslyBrownedOut = brownedOut;
-  frc::SmartDashboard::PutNumber("SimulationPower/SupplyCurrentAmps", runtime.SupplyCurrent());
-  frc::SmartDashboard::PutNumber("SimulationPower/BusVoltage", batteryVoltage);
-  frc::SmartDashboard::PutNumber("SimulationPower/BatteryRemainingAh", battery.remainingAh);
-  frc::SmartDashboard::PutNumber("SimulationPower/BatteryStateOfCharge", stateOfCharge);
-  frc::SmartDashboard::PutBoolean("SimulationPower/BrownedOut", brownedOut);
-  frc::SmartDashboard::PutNumber("SimulationPower/BrownoutCount", battery.brownoutCount);
-  static auto powerPublisher =
-      nt::NetworkTableInstance::GetDefault().GetDoubleArrayTopic("/Simulation/PowerSamples").Publish();
-  powerPublisher.Set(std::array<double, 3>{static_cast<double>(nt::Now()), runtime.SupplyCurrent(), batteryVoltage});
-  static auto batteryPublisher =
-      nt::NetworkTableInstance::GetDefault().GetDoubleArrayTopic("/Simulation/BatteryState").Publish();
-  batteryPublisher.Set(std::array<double, 4>{battery.remainingAh, stateOfCharge,
-                                             brownedOut ? 1.0 : 0.0,
-                                             static_cast<double>(battery.brownoutCount)});
-  meco::sim::PublishDriverStationPacket();
-#endif
+  lifecycle_.AfterScene();
 }
 void Robot::DisabledInit()
 {

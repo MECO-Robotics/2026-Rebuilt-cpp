@@ -1,6 +1,7 @@
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/Simulation.h"
 #include "season/simulation/SimulationConfig.h"
+#include "season/simulation/TransportFeedback.h"
 #include "season/RobotGeometry.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "meco/sim/ParticleFieldContacts.h"
@@ -75,7 +76,7 @@ namespace season
                 input.hoodRotations = mechanisms_.hood.Position();
                 input.flywheelRps = mechanisms_.shooter.Velocity();
                 input.collecting = mechanisms_.intake.Inputs().voltage < -simulationconfig::kSimTransportVoltageThreshold && mechanisms_.conveyor.Inputs().voltage > simulationconfig::kSimTransportVoltageThreshold && mechanisms_.intake.Velocity() < 0 && mechanisms_.conveyor.Velocity() > 0;
-                input.feeding = SimulatedTransportFeeding(mechanisms_);
+                input.feeding = simulation::TransportFeeding(mechanisms_);
                 input.physics = physics;
                 input.hubActive = hubActive;
                 frc::SmartDashboard::PutBoolean("FieldSimulation/Feeding", input.feeding);

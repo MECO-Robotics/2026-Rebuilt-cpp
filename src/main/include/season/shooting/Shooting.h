@@ -137,6 +137,13 @@ namespace season
     double length, width;
     frc::Translation2d blueTrenchReference, redTrenchReference;
   };
+  // Select the hub speed model and shooter direction independently of runtime.
+  enum class HubSpeedModel { MeasuredTable, BallisticOpening };
+  struct ShotCalibration
+  {
+    HubSpeedModel hubSpeedModel = HubSpeedModel::MeasuredTable;
+    double shooterHeadingOffsetRadians = kPi;
+  };
   struct ShotTuning
   {
     double ferryHoodRotations = kDefaultFerryHoodRotations, ferryFlywheelRps = kDefaultFerryFlywheelRps;
@@ -151,15 +158,15 @@ namespace season
                           const FieldGeometry &field);
   double FerryFlywheelRps(double distanceMeters, double hoodRotations);
   FerryPlan CalculateFerry(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, ShotTuning tuning = {});
-  ShotSolution CalculateShot(frc::Pose2d robot, frc::Translation2d target, bool simulation = false);
-  ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, bool simulation = false,
+  ShotSolution CalculateShot(frc::Pose2d robot, frc::Translation2d target, ShotCalibration calibration = {});
+  ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, ShotCalibration calibration = {},
                              ShotTuning tuning = {});
   // Speeds are measured robot-relative. Returns an invalid solution when no
   // bounded-velocity trajectory clears the field and lands in the alliance zone.
   ShotSolution CalculateMovingFerry(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field,
-                                    frc::ChassisSpeeds robotSpeeds, bool simulation = false, ShotTuning tuning = {});
+                                    frc::ChassisSpeeds robotSpeeds, ShotCalibration calibration = {}, ShotTuning tuning = {});
   ShotSolution CalculateDriverAim(frc::DriverStation::Alliance alliance, frc::Pose2d robot, const FieldGeometry &field,
-                                  bool simulation = false);
+                                  ShotCalibration calibration = {});
   // Readiness explains why coordinated feeding is permitted or blocked.
   enum class Readiness
   {

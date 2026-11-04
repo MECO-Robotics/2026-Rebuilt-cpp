@@ -12,56 +12,57 @@ namespace season::hardware
   // Requested status refresh rates in Hz for Spark, Talon FX FD, and classic Talon controllers, respectively.
   inline constexpr double kSparkStatusHz = 100, kTalonFdStatusHz = 250, kTalonClassicStatusHz = 100;
   // Java 2026-Rebuilt hardware values; CAN bus strings are significant.
-  // Season motor configuration and modeled rotational inertia.
+  // Role identifies a mechanism when selecting its IO.
+  enum class MotorRole { Intake, Conveyor, BottomIndexer, TopIndexer, Shooter };
+  enum class JointRole { Rack, Hood };
+  // Season motor configuration and role.
   struct FlywheelConfig
   {
     base::MotorConfig motor;
-    double inertiaKgMetersSquared;
+    MotorRole role;
   };
-  // Assumed rotational inertia in kg·m² for lightweight transport rollers in simulation.
-  inline constexpr double kTransportRollerInertia = .0002;
   // The first reversal flag sets the primary direction; later flags oppose the primary.
   // An empty CAN bus name selects the default bus.
-  // CAN ID, inversion, gearing, current limit, and simulated inertia for the top indexer.
+  // CAN ID, inversion, gearing, and current limit for the top indexer.
   inline const FlywheelConfig kTopIndexer{
       .motor = {.ids = {32},
                 .reversed = {false},
                 .gearRatio = 1,
                 .currentLimit = 30,
                 .canBus = ""},
-      .inertiaKgMetersSquared = kTransportRollerInertia};
-  // CAN ID, inversion, gearing, current limit, bus, and inertia for the bottom indexer.
+      .role = MotorRole::TopIndexer};
+  // CAN ID, inversion, gearing, current limit, and bus for the bottom indexer.
   inline const FlywheelConfig kBottomIndexer{
       .motor = {.ids = {31},
                 .reversed = {false},
                 .gearRatio = 1,
                 .currentLimit = 30,
                 .canBus = "MECO 2"},
-      .inertiaKgMetersSquared = kTransportRollerInertia};
-  // CAN ID, inversion, gearing, current limit, bus, and inertia for the conveyor.
+      .role = MotorRole::BottomIndexer};
+  // CAN ID, inversion, gearing, current limit, and bus for the conveyor.
   inline const FlywheelConfig kConveyor{
       .motor = {.ids = {23},
                 .reversed = {true},
                 .gearRatio = 1,
                 .currentLimit = 30,
                 .canBus = ""},
-      .inertiaKgMetersSquared = kTransportRollerInertia};
-  // Shooter motor IDs, inversions, gearing, current limit, bus, and modeled wheel inertia.
+      .role = MotorRole::Conveyor};
+  // Shooter motor IDs, inversions, gearing, current limit, and bus.
   inline const FlywheelConfig kShooter{
       .motor = {.ids = {34, 35},
                 .reversed = {false, true},
                 .gearRatio = 22.0 / 14,
                 .currentLimit = 40,
                 .canBus = "MECO 2"},
-      .inertiaKgMetersSquared = 24 * .45359237 * .0254 * .0254};
-  // Intake motor IDs, inversions, gearing, current limit, bus, and modeled roller inertia.
+      .role = MotorRole::Shooter};
+  // Intake motor IDs, inversions, gearing, current limit, and bus.
   inline const FlywheelConfig kIntake{
       .motor = {.ids = {22, 53},
                 .reversed = {true, true},
                 .gearRatio = 1.5,
                 .currentLimit = 40,
                 .canBus = ""},
-      .inertiaKgMetersSquared = kTransportRollerInertia};
+      .role = MotorRole::Intake};
   // Motion limits shared by the indexer velocity controllers.
   inline constexpr base::Gains kIndexerGains{
       .maxVelocity = 1000,
@@ -106,18 +107,10 @@ namespace season::hardware
       .tolerance = .02,
       .minimum = 0,
       .maximum = .35};
-  // These joints use inertia-only simulation plants without gravitational load.
-  inline base::Gains SimulationGainsFor(base::Gains gains)
-  {
-    gains.gravity = 0;
-    return gains;
-  }
   // Voltage below which the robot reports brownout state.
   inline constexpr units::volt_t kBrownoutVoltage{6.3};
   // Current limits in amperes for the rack and hood motors, respectively.
   inline constexpr int kRackMotorCurrent = 40, kHoodMotorCurrent = 40;
-  // Estimated rack and hood motor inertias in kg·m² used by their simulation plants, respectively.
-  inline constexpr double kRackMotorInertia = 15 * .45359237 * .0127 * .0127, kHoodMotorInertia = .01;
   // CAN device IDs for the hood and rack motor controllers, respectively.
   inline constexpr int kHoodCanId = 33, kRackCanId = 21;
   // Hood motor rotations per hood output rotation.

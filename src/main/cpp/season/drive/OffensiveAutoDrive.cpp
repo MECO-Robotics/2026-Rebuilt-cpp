@@ -2,10 +2,10 @@
 #include "OffensiveCollectionPlanner.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/drive/ScoringPosition.h"
-#include "season/simulation/SimulationConfig.h"
+#include "season/detail/RuntimeBehavior.h"
+#include "season/detail/RuntimeAdapters.h"
 #include <base/AutoDrive.h>
 #include <frc/DriverStation.h>
-#include <frc/RobotBase.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
 #include <frc/system/plant/DCMotor.h>
@@ -33,6 +33,7 @@ namespace season
       bool requestActive = false;
       double requestedBeforeTransport = 0, requestUpdatedAt = 0;
       double quietSince = 0;
+      double quietTime = runtime::RuntimeBehavior().emptyQuietSeconds;
       std::array<double, 3> rollerMean{};
       bool initialized = false, empty = false, latencyRecorded = false;
       std::optional<double> firstRequest;
@@ -94,7 +95,6 @@ namespace season
           frc::SmartDashboard::PutNumber("AutoDrive/EmptyDetectorShooterAmps", shooter);
           if (shooter >= threshold || noise >= noiseThreshold)
             quietSince = now;
-          const double quietTime = frc::RobotBase::IsSimulation() ? fuelconfig::kSimulationBurstPeriodSeconds : offenseconfig::kEmptyQuietSeconds;
           if (now - quietSince >= quietTime)
             empty = true;
         }
@@ -132,13 +132,13 @@ namespace season
     auto refillSeconds = std::make_shared<double>(0.);
     frc::Preferences::InitDouble("AutoDrive/EstimatedCapacity", 0);
     frc::Preferences::InitDouble("AutoDrive/FeedBallsPerSecond", 0);
-    frc::Preferences::InitDouble("AutoDrive/EmptyShooterCurrentAmps", frc::RobotBase::IsSimulation() ? offenseconfig::kSimEmptyShooterCurrentAmps : 0.);
-    frc::Preferences::InitDouble("AutoDrive/EmptyRollerNoiseAmps", frc::RobotBase::IsSimulation() ? offenseconfig::kSimEmptyRollerNoiseAmps : 0.);
+    frc::Preferences::InitDouble("AutoDrive/EmptyShooterCurrentAmps", runtime::RuntimeBehavior().emptyShooterCurrentAmps);
+    frc::Preferences::InitDouble("AutoDrive/EmptyRollerNoiseAmps", runtime::RuntimeBehavior().emptyRollerNoiseAmps);
     auto configuredCapacity = []
     {
       double capacity = frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity", 0);
-      if (frc::RobotBase::IsSimulation() && capacity == 0)
-        capacity = fuelconfig::kSimulationCapacity;
+      if (capacity == 0)
+        capacity = runtime::RuntimeBehavior().defaultCapacity;
       return capacity;
     };
     auto feedDuration = []
@@ -202,7 +202,7 @@ namespace season
         return false;
       const auto pose = drive.Pose();
       const auto grid = LoadScoringGrid();
-      const auto goal = grid ? CheapestHubScoringNode(*grid, pose, *alliance, field, frc::RobotBase::IsSimulation())
+      const auto goal = grid ? CheapestHubScoringNode(*grid, pose, *alliance, field, runtime::ShootingCalibration())
                              : std::nullopt;
       if (!goal)
         return false;
@@ -664,7 +664,7 @@ namespace season
               .WithTimeout(offenseconfig::kEntryTimeout);
         };
         auto finish = frc2::cmd::Defer([&drive, field, scoringGoal, alliance, grid]() -> frc2::CommandPtr {
-          *scoringGoal = CheapestHubScoringNode(*grid, drive.Pose(), *alliance, field, frc::RobotBase::IsSimulation());
+          *scoringGoal = CheapestHubScoringNode(*grid, drive.Pose(), *alliance, field, runtime::ShootingCalibration());
           if (!*scoringGoal) return frc2::cmd::None();
           frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalX", (*scoringGoal)->X().value());
           frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalY", (*scoringGoal)->Y().value());
@@ -681,7 +681,7 @@ namespace season
             }))
             .WithTimeout(offenseconfig::kTrenchReturnTimeout).Until(invalid);
       }
-      *scoringGoal = CheapestHubScoringNode(*grid, pose, *alliance, field, frc::RobotBase::IsSimulation());
+      *scoringGoal = CheapestHubScoringNode(*grid, pose, *alliance, field, runtime::ShootingCalibration());
       if (!*scoringGoal) return frc2::cmd::None();
       frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalX", (*scoringGoal)->X().value());
       frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalY", (*scoringGoal)->Y().value());
@@ -723,19 +723,19 @@ namespace season
       options.ownDrive = true;
       options.autonomous = true;
       options.agitate = true;
-      options.simulation = frc::RobotBase::IsSimulation();
+      options.shotCalibration = runtime::ShootingCalibration();
       options.readyTimeoutSeconds = shotconfig::kShotReadyTimeoutSeconds;
       auto requestedFeed = std::make_shared<double>(0.);
       options.feedDurationSeconds = [requestedFeed, feedDuration]
       {
         return *requestedFeed = feedDuration();
       };
-      options.totalTimeoutSeconds = frc::RobotBase::IsSimulation() ? shotconfig::kShotSimTimeoutSeconds : shotconfig::kShotRealTimeoutSeconds;
+      options.totalTimeoutSeconds = runtime::RuntimeBehavior().shotTimeoutSeconds;
       options.poseReady = [&perception, &drive, field]
       {
         const auto alliance = frc::DriverStation::GetAlliance();
         return perception.MatchState().ownActive.value_or(false) && alliance &&
-               HubScoringPositionValid(drive.Pose(), *alliance, field, frc::RobotBase::IsSimulation());
+               HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::ShootingCalibration());
       };
       auto fed = std::make_shared<FeedTracker>();
       options.feedFeedback = [fed, m, transportLatency](bool active)
@@ -770,7 +770,7 @@ namespace season
                  {
           const auto alliance = frc::DriverStation::GetAlliance();
           return !perception.MatchState().ownActive.value_or(false) || !alliance ||
-                 !HubScoringPositionValid(drive.Pose(), *alliance, field, frc::RobotBase::IsSimulation()) ||
+                 !HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::ShootingCalibration()) ||
                  (prepareForInactive() && !fed->requested); })
           .BeforeStarting(
               [fed]
@@ -796,7 +796,7 @@ namespace season
       options.ownDrive = true;
       options.autonomous = true;
       options.agitate = true;
-      options.simulation = frc::RobotBase::IsSimulation();
+      options.shotCalibration = runtime::ShootingCalibration();
       // Drift toward the neutral-side trench approach while aiming, so ferrying
       // also shortens the return to the alliance zone for the next active shift.
       options.ferryTranslation = [&drive, field]
@@ -819,7 +819,7 @@ namespace season
       {
         return *requestedFeed = feedDuration();
       };
-      options.totalTimeoutSeconds = frc::RobotBase::IsSimulation() ? shotconfig::kShotSimTimeoutSeconds : shotconfig::kShotRealTimeoutSeconds;
+      options.totalTimeoutSeconds = runtime::RuntimeBehavior().shotTimeoutSeconds;
       auto fed = std::make_shared<FeedTracker>();
       options.feedFeedback = [fed, m, ferryTransportLatency](bool active)
       {
@@ -856,19 +856,19 @@ namespace season
         const auto alliance = frc::DriverStation::GetAlliance();
         if (!alliance)
           return std::nullopt;
-        const bool simulation = frc::RobotBase::IsSimulation();
+        const auto calibration = runtime::ShootingCalibration();
         auto aimed = [&](frc::Pose2d pose)
         {
           for (int i = 0; i < 3; ++i)
           {
-            const auto solution = CalculateShot(pose, FerryTarget(*alliance, pose, field), field, simulation);
+            const auto solution = CalculateShot(pose, FerryTarget(*alliance, pose, field), field, calibration);
             pose = frc::Pose2d{pose.Translation(), frc::Rotation2d{units::radian_t{solution.headingRadians}}};
           }
           return pose;
         };
         const auto current = aimed(drive.Pose());
         if (RobotClearOfBumps(current) &&
-            CalculateShot(current, FerryTarget(*alliance, current, field), field, simulation).calibrated)
+            CalculateShot(current, FerryTarget(*alliance, current, field), field, calibration).calibrated)
           return current;
         const double x = HubPosition(*alliance).X().value() +
                          (*alliance == frc::DriverStation::Alliance::kBlue ? offenseconfig::kHubCrossingOffset : -offenseconfig::kHubCrossingOffset);
@@ -877,7 +877,7 @@ namespace season
         {
           const auto candidate = aimed(frc::Pose2d{units::meter_t{x}, units::meter_t{y}, frc::Rotation2d{}});
           if (!RobotClearOfBumps(candidate) ||
-              !CalculateShot(candidate, FerryTarget(*alliance, candidate, field), field, simulation).calibrated)
+              !CalculateShot(candidate, FerryTarget(*alliance, candidate, field), field, calibration).calibrated)
             continue;
           if (!best || drive.Pose().Translation().Distance(candidate.Translation()) <
                            drive.Pose().Translation().Distance(best->Translation()))
@@ -959,7 +959,7 @@ namespace season
     {
       const auto alliance = frc::DriverStation::GetAlliance();
       return alliance && !prepareForInactive() && perception.MatchState().ownActive.value_or(false) && *scoringGoal &&
-             HubScoringPositionValid(drive.Pose(), *alliance, field, frc::RobotBase::IsSimulation()) &&
+             HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::ShootingCalibration()) &&
              drive.Pose().Translation().Distance((*scoringGoal)->Translation()).value() < offenseconfig::kGoalArrivalMetres;
     };
     // Preserve a committed attempt through navigation failure or an incomplete
@@ -1031,7 +1031,7 @@ namespace season
               m.hood.Stop();
               return;
             }
-            const auto solution = CalculateShot(drive.Pose(), HubPosition(*alliance), frc::RobotBase::IsSimulation());
+            const auto solution = CalculateShot(drive.Pose(), HubPosition(*alliance), runtime::ShootingCalibration());
             m.shooter.SetVelocity(ClampCalibrationFlywheel(solution.flywheelRps));
             m.hood.SetPosition(ClampCalibrationHood(solution.hoodRotations));
           },

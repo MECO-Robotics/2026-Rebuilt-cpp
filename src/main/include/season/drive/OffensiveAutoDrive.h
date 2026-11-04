@@ -97,12 +97,8 @@ namespace offenseconfig
   inline constexpr double kHubPreparationMarginSeconds = 1.5;
   // Smoothing gain for the roller current means used to estimate current fluctuations.
   inline constexpr double kEmptyCurrentFilterGain = .2;
-  // Real-robot quiet duration before current indicates an empty load, in seconds; simulation uses the burst period.
+  // Quiet duration before current indicates an empty load, in seconds.
   inline constexpr double kEmptyQuietSeconds = .4;
-  // Default simulated empty-load detector threshold for shooter current, in amperes.
-  inline constexpr double kSimEmptyShooterCurrentAmps = 2.;
-  // Default simulated empty-load detector threshold for roller current fluctuations, in amperes.
-  inline constexpr double kSimEmptyRollerNoiseAmps = .5;
 
   // Navigation tracking and command time bounds.
   // Offset from the hub used to define the crossing-zone route, in metres.

@@ -140,18 +140,16 @@ namespace season
     return {maxHood, std::clamp(FerryFlywheelRps(distance, maxHood), 0.0, maxRps), false};
   }
   // Interpolate the shot table using distance from the shooter exit.
-  ShotSolution CalculateShot(frc::Pose2d robot, frc::Translation2d target, bool simulation)
+  ShotSolution CalculateShot(frc::Pose2d robot, frc::Translation2d target, ShotCalibration calibration)
   {
     frc::Translation2d delta = (target - Exit(robot));
     double distance = delta.Norm().value();
     double hood = Interpolate(distance, kHoodTable);
     double rps = Interpolate(distance, kFlywheelTable);
     bool valid = distance >= kMinDistance && distance <= kMaxDistance;
-    if (simulation)
+    if (calibration.hubSpeedModel == HubSpeedModel::BallisticOpening)
     {
-      // The desktop model uses a ballistic projectile without drag. Aim its
-      // nominal trajectory at the HUB opening; real shots retain the robot's
-      // measured table and require physical calibration.
+      // Aim the nominal drag-free trajectory at the hub opening.
       const double pitch = Pitch(hood);
       const double cosine = std::cos(pitch);
       const double height = kReleaseHeight + distance * std::tan(pitch) - kHubOpeningHeightMetres;
@@ -161,13 +159,13 @@ namespace season
       else
         valid = false;
     }
-    return {distance, Wrap(std::atan2(delta.Y().value(), delta.X().value()) - (simulation ? 0 : kPi)),
+    return {distance, Wrap(std::atan2(delta.Y().value(), delta.X().value()) - calibration.shooterHeadingOffsetRadians),
             hood, rps, valid && std::isfinite(rps)};
   }
-  ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, bool simulation,
+  ShotSolution CalculateShot(frc::Pose2d robot, ShotTarget target, const FieldGeometry &field, ShotCalibration calibration,
                              ShotTuning tuning)
   {
-    auto solution = CalculateShot(robot, target.position, simulation);
+    auto solution = CalculateShot(robot, target.position, calibration);
     if (target.mode == ShotMode::Ferry)
     {
       auto plan = CalculateFerry(robot, target, field, tuning);
@@ -181,9 +179,9 @@ namespace season
   // and rotational velocity at the shooter exit. Safety is checked on the world
   // trajectory, not on the virtual point used to compensate the shooter aim.
   ShotSolution CalculateMovingFerry(frc::Pose2d robot, ShotTarget target, const FieldGeometry &f,
-                                    frc::ChassisSpeeds robotSpeeds, bool simulation, ShotTuning tuning)
+                                    frc::ChassisSpeeds robotSpeeds, ShotCalibration calibration, ShotTuning tuning)
   {
-    auto invalid = CalculateShot(robot, target, f, simulation, tuning);
+    auto invalid = CalculateShot(robot, target, f, calibration, tuning);
     invalid.calibrated = false;
     const auto field = frc::ChassisSpeeds::FromRobotRelativeSpeeds(robotSpeeds, robot.Rotation());
     const double vx = field.vx.value(), vy = field.vy.value(), omega = field.omega.value();
@@ -258,24 +256,24 @@ namespace season
       const double minHeight = kTrenchClearanceHeightMetres;
       if (height(neutral) < minHeight || height(wall) < minHeight)
         continue;
-      return {start.Distance(target.position).value(), Wrap(std::atan2(uy, ux) - (simulation ? 0 : kPi)),
+      return {start.Distance(target.position).value(), Wrap(std::atan2(uy, ux) - calibration.shooterHeadingOffsetRadians),
               hood, rps, true};
     }
     return invalid;
   }
   ShotSolution CalculateDriverAim(frc::DriverStation::Alliance a, frc::Pose2d robot, const FieldGeometry &field,
-                                  bool simulation)
+                                  ShotCalibration calibration)
   {
     auto target = DriverAimTarget(a, robot, field);
     if (target.mode == ShotMode::Hub)
-      return CalculateShot(robot, target, field, simulation);
+      return CalculateShot(robot, target, field, calibration);
 
     const double direction = a == frc::DriverStation::Alliance::kBlue ? -1.0 : 1.0;
     const double shotHeading = direction < 0 ? kPi : 0.0;
-    const double robotHeading = Wrap(shotHeading - (simulation ? 0.0 : kPi));
+    const double robotHeading = Wrap(shotHeading - calibration.shooterHeadingOffsetRadians);
     const frc::Pose2d aligned{robot.Translation(), frc::Rotation2d{units::radian_t{robotHeading}}};
     target.position = {units::meter_t{AllianceBoundary(a, field) + direction * kFerryInsetMetres}, robot.Y()};
-    auto solution = CalculateShot(aligned, target, field, simulation);
+    auto solution = CalculateShot(aligned, target, field, calibration);
     solution.headingRadians = robotHeading;
     return solution;
   }

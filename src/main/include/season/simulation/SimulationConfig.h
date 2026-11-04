@@ -9,6 +9,10 @@ namespace season::simulationconfig
 {
   // Minimum voltage magnitude used by simulation to consider a transport motor commanded.
   inline constexpr double kSimTransportVoltageThreshold = 1;
+  // Default simulated current thresholds for the empty-load detector.
+  inline constexpr double kEmptyShooterCurrentAmps = 2., kEmptyRollerNoiseAmps = .5;
+  // Simulated autonomous shots can require more time to settle.
+  inline constexpr double kShotTimeoutSeconds = 25.;
 }
 
 namespace season::fuelconfig
@@ -188,3 +192,35 @@ namespace season::simulation
   }
 }
 #endif
+
+namespace season::simulation::autodriveconfig
+{
+  // Robot footprint dimensions used by the simulated footprint follower, in metres.
+  inline constexpr double kFootprintLengthMetres = geometry::kLengthMetres,
+                          kFootprintWidthMetres = geometry::kWidthMetres;
+  // The following follower settings apply to simulated footprint modes.
+  // Heading error allowed when settling at a navigation target, in radians.
+  inline constexpr double kHeadingToleranceRadians = .02;
+  // Maximum angular speed considered settled, in radians per second.
+  inline constexpr double kAngularSettleSpeed = .02;
+  // Consecutive settled samples required before reporting arrival.
+  inline constexpr int kFinalSettleSamples = 50;
+  // Intermediate settled samples used by the simulated footprint follower.
+  inline constexpr int kIntermediateSettleSamples = 10;
+  // Damping applied to angular correction while approaching a target.
+  inline constexpr double kPoseAngularDamping = .5;
+  // Angular velocity below which the controller treats rotation as stopped, in radians per second.
+  inline constexpr double kAngularStopTolerance = .01;
+  // Time without translational progress before navigation declares a stall, in seconds.
+  inline constexpr double kTranslationStallTimeoutSeconds = 3;
+  // Minimum requested translation speed used to distinguish a stalled command, in metres per second.
+  inline constexpr double kTranslationStallRequest = .01;
+  // Maximum acceleration used by the optional simulated terrain profile, in metres per second squared.
+  inline constexpr double kMaxAcceleration = 4;
+  // Lower vertical bound for obstacles considered in collision checks, in metres.
+  inline constexpr double kCollisionBottomThresholdMetres = .05;
+  // Upper vertical bound for obstacles considered in collision checks, in metres.
+  inline constexpr double kCollisionTopThresholdMetres = .45;
+  // Maximum modeled camera range; physical detection is set by its camera pipeline.
+  inline constexpr double kCameraRangeMetres = 6;
+}

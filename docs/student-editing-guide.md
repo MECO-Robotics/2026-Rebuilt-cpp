@@ -20,7 +20,8 @@ The `season` folders contain this robot's choices. A `.h` usually declares an in
 | Change drivetrain hardware or swerve odometry rate | Edit [DriveConfig.h](../src/main/include/season/drive/DriveConfig.h). |
 | Change driver deadband or aiming gains | Edit [DriveBehaviorConfig.h](../src/main/include/season/drive/DriveBehaviorConfig.h). |
 | Change QuestNav or AprilTag camera mounts or vision freshness | Edit [VisionConfig.h](../src/main/include/season/vision/VisionConfig.h). |
-| Change object-perception camera mounts, simulated detection range, clustering, or update period | Edit [PerceptionConfig.h](../src/main/include/season/vision/PerceptionConfig.h). |
+| Change object-camera mounts, clustering, or NT subscription period | Edit [PerceptionConfig.h](../src/main/include/season/vision/PerceptionConfig.h). |
+| Change simulated object-camera range | Edit `kCameraRangeMetres` in [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h). |
 | Change unloaded pit-check speeds, tolerances, or timeouts | Edit [SystemCheckConfig.h](../src/main/include/season/diagnostics/SystemCheckConfig.h). |
 | Change the standard robot loop or controller ports | Edit [RobotControlConfig.h](../src/main/include/season/RobotControlConfig.h). |
 | Change the shot table or shooting limits | Edit [Shooting.h](../src/main/include/season/shooting/Shooting.h). Shared movement limits apply to both the moving-ferry solver and shot readiness. Shot calculations are in [Shooting.cpp](../src/main/cpp/season/shooting/Shooting.cpp). |
@@ -85,12 +86,19 @@ Watch `SystemCheck/State`, `Reason`, `Stage`, and `Live/` measurements. Set `Sys
 
 ## Simulation
 
+Robot behavior uses sensor observations to make decisions. The desktop simulator supplies simulated observations from its model of the robot and field; it also updates and resets that model. Start with the behavior or settings in the table above when changing what the robot does, and start with the simulation files below when changing a model assumption.
+
 - [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h): fuel behavior, motor model, contact estimates, simulation timing, sensors, battery, and practice settings.
+- [RobotRuntime.cpp](../src/main/cpp/season/simulation/RobotRuntime.cpp): desktop simulation setup, periodic updates, and reset. This is an advanced entry point for connecting simulated devices and the field model.
+- [RobotLifecycle.cpp](../src/main/cpp/season/simulation/RobotLifecycle.cpp): practice match, simulation timing, and battery telemetry around the robot loop.
+- [MechanismSimulationConfig.h](../src/main/include/season/simulation/MechanismSimulationConfig.h): how hard simulated motors and joints are to accelerate, and the joint gravity assumption.
+- [DriveSimulationConfig.cpp](../src/main/cpp/season/simulation/DriveSimulationConfig.cpp): simulated drivetrain mass, contacts, and controller tuning.
+- [AutoDriveSimulation.cpp](../src/main/cpp/season/simulation/AutoDriveSimulation.cpp): simulated object cameras and optional desktop footprint planner.
 - [FuelSimulation.cpp](../src/main/cpp/season/simulation/FuelSimulation.cpp): robot-state inputs, transport motor loads, and simulation telemetry.
 - [FuelModel.cpp](../src/main/cpp/season/simulation/FuelModel.cpp): fuel particle motion, collection, scoring, and model state transitions.
 - [Simulation.h](../src/main/include/season/simulation/Simulation.h): public desktop simulation interfaces, including the fuel and loaded-motor model contracts.
 
-Simulation settings are estimates; they do not establish physical calibration. See [simulation field](simulation-field.md) for the model and its limits.
+For example, to adjust an object camera's position, edit its shared mount defaults in [PerceptionConfig.h](../src/main/include/season/vision/PerceptionConfig.h) and check for saved Preferences as described above. To change what the simulated camera can detect, change `simulation::autodriveconfig::kCameraRangeMetres` in [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h) instead; that does not configure the physical camera pipeline. The advanced [AutoDriveEnvironment.h](../src/main/include/season/drive/AutoDriveEnvironment.h) interface supplies camera observation sources and can select tracking or an alternate navigation command; the desktop adapter implements those choices. Simulation settings are estimates; they do not establish physical calibration. See [simulation field](simulation-field.md) for the model and its limits.
 
 ## Check your change
 

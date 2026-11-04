@@ -2,7 +2,6 @@
 #include "base/Mechanism.h"
 #include "season/mechanisms/MechanismConfig.h"
 #include "season/mechanisms/MechanismBehaviorConfig.h"
-#include "season/simulation/SimulationConfig.h"
 #include "season/shooting/Shooting.h"
 #include "base/Drive.h"
 #include <functional>
@@ -25,17 +24,8 @@ namespace season
     base::PositionJoint &hood;
     base::Flywheel &shooter;
   };
-  // Voltage alone does not establish roller direction during a reversal.
-  // Used by desktop fuel simulation and its matching feed-time feedback.
-  inline bool SimulatedTransportFeeding(Mechanisms m)
-  {
-    return m.bottomIndexer.Inputs().voltage < -simulationconfig::kSimTransportVoltageThreshold &&
-           m.topIndexer.Inputs().voltage > simulationconfig::kSimTransportVoltageThreshold &&
-           m.conveyor.Inputs().voltage < -simulationconfig::kSimTransportVoltageThreshold &&
-           m.bottomIndexer.Velocity() < 0 && m.topIndexer.Velocity() > 0 && m.conveyor.Velocity() < 0;
-  }
-  // Full-hopper feed duration from robot preferences, with the desktop model's
-  // configured values as simulation defaults. Zero means unconfigured.
+  // Full-hopper feed duration from preferences and configured defaults.
+  // Zero means the capacity or feed rate is unconfigured.
   double ConfiguredFeedDurationSeconds();
   // Acquisition commands own and stop their participating mechanisms.
   frc2::CommandPtr Acquire(Mechanisms m);
@@ -61,9 +51,10 @@ namespace season
     std::function<double()> calibrationRps = []
     { return shotconfig::kHubRps; };
     std::function<void(bool)> readyFeedback = [](bool) {};
-    // In simulation this reports measured transport activity, not just intent.
+    // Reports transport activity according to the configured feedback source.
     std::function<void(bool)> feedFeedback = [](bool) {};
-    bool autonomous = false, simulation = false;
+    bool autonomous = false;
+    ShotCalibration shotCalibration{};
     // Run the intake and retract the rack while a ready volley feeds.
     bool agitate = false;
     // Markers share the path drivetrain and must not claim or command it.

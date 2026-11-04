@@ -1,11 +1,10 @@
 #include "season/drive/DriveBehaviorConfig.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/simulation/SimulationConfig.h"
+#include "season/detail/RuntimeBehavior.h"
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
 #include <frc/DriverStation.h>
-#include <frc/RobotBase.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
 #include <algorithm>
@@ -93,13 +92,11 @@ namespace season
   {
     double capacity = frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity", 0);
     double rate = frc::Preferences::GetDouble("AutoDrive/FeedBallsPerSecond", 0);
-    if (frc::RobotBase::IsSimulation())
-    {
-      if (capacity == 0)
-        capacity = fuelconfig::kSimulationCapacity;
-      if (rate == 0)
-        rate = fuelconfig::kSimulationFeedBallsPerSecond;
-    }
+    const auto behavior = runtime::RuntimeBehavior();
+    if (capacity == 0)
+      capacity = behavior.defaultCapacity;
+    if (rate == 0)
+      rate = behavior.defaultFeedRate;
     if (!std::isfinite(capacity) || capacity <= 0 || !std::isfinite(rate) || rate <= 0)
       return 0;
     const double result = capacity / rate;
@@ -293,6 +290,7 @@ namespace season
                                    std::function<ShotTarget()> supplier, CoordinatedShotOptions options)
   {
     auto state = std::make_shared<ShotState>();
+    const auto transportActive = runtime::RuntimeBehavior().transportActive;
     std::vector<frc2::Subsystem *> requirements{&m.hood, &m.shooter, &m.bottomIndexer, &m.topIndexer, &m.conveyor};
     if (options.agitate)
     {
@@ -305,7 +303,7 @@ namespace season
       requirements.push_back(&drive);
     auto action =
         frc2::cmd::RunEnd(
-            [m, &drive, field, options, state]
+            [m, &drive, field, options, state, transportActive]
             {
               double now = Now();
               if (state->transportActive)
@@ -328,8 +326,8 @@ namespace season
               }
               const auto speeds = drive.Speeds();
               const bool movingFerry = state->target.mode == ShotMode::Ferry && options.ferryTranslation;
-              auto solution = movingFerry ? CalculateMovingFerry(pose, state->target, field, speeds, options.simulation)
-                                          : CalculateShot(pose, state->target, field, options.simulation);
+              auto solution = movingFerry ? CalculateMovingFerry(pose, state->target, field, speeds, options.shotCalibration)
+                                          : CalculateShot(pose, state->target, field, options.shotCalibration);
               const bool durationValid = !options.autonomous ||
                                          (std::isfinite(state->feedTarget) && state->feedTarget > 0);
               bool calibration = options.calibration(), poseReady = options.poseReady() && durationValid,
@@ -379,7 +377,7 @@ namespace season
                 StopFeed(m);
               // During a reversal, voltage can indicate feed while the rollers
               // are still spinning in the collection direction.
-              state->transportActive = ready && (!options.simulation || SimulatedTransportFeeding(m));
+              state->transportActive = ready && transportActive(m);
               options.readyFeedback(ready);
               options.feedFeedback(state->transportActive);
               frc::SmartDashboard::PutBoolean("Shooter/TransportActive", state->transportActive);

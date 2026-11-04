@@ -21,8 +21,6 @@ namespace season::vision::config
       .xMetres = -.43, .yMetres = 0, .zMetres = .54,
       .rollDegrees = 0, .pitchDegrees = 15, .yawDegrees = 180};
 
-  // Maximum range of the simulated object cameras; physical detection is set by the camera pipeline.
-  inline constexpr double kCameraRangeMetres = 6;
   // Distance within which observations are combined into an object cluster.
   inline constexpr double kClusterRadiusMetres = .15;
 }

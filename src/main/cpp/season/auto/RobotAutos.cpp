@@ -3,10 +3,11 @@
 #include "season/RobotControlConfig.h"
 #include "RobotContainer.h"
 #include "season/detail/RobotRuntime.h"
+#include "season/detail/RuntimeAdapters.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/vision/VisionConfig.h"
 #include "base/ChoreoAuto.h"
-#include <frc/RobotBase.h>
+#include "season/detail/RuntimeBehavior.h"
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
 #include <frc/smartdashboard/SmartDashboard.h>
@@ -15,9 +16,6 @@
 #include <pathplanner/lib/auto/NamedCommands.h>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/StringTopic.h>
-#ifndef __FRC_ROBORIO__
-#include <frc/simulation/DriverStationSim.h>
-#endif
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -90,7 +88,7 @@ void season::autonomous::RobotAutos::Configure()
         {
           auto p = owner_.drive_.Pose();
           auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
-          auto shot = season::CalculateShot(p, season::HubPosition(alliance), frc::RobotBase::IsSimulation());
+          auto shot = season::CalculateShot(p, season::HubPosition(alliance), season::runtime::ShootingCalibration());
           owner_.hood_.SetPosition(shot.hoodRotations);
           owner_.shooter_.SetVelocity(shot.flywheelRps);
         },
@@ -113,7 +111,7 @@ void season::autonomous::RobotAutos::Configure()
           {
             auto p = owner_.drive_.Pose();
             auto target = SelectTarget();
-            auto shot = season::CalculateShot(p, target, owner_.field_, frc::RobotBase::IsSimulation());
+            auto shot = season::CalculateShot(p, target, owner_.field_, season::runtime::ShootingCalibration());
             owner_.hood_.SetPosition(shot.hoodRotations);
             owner_.shooter_.SetVelocity(shot.flywheelRps);
             double error = std::remainder(shot.headingRadians - p.Rotation().Radians().value(), 2 * std::numbers::pi);
@@ -139,8 +137,8 @@ void season::autonomous::RobotAutos::Configure()
                                {config::kChoreoRotationP, 0, 0}, season::hardware::kControlPeriod)
           .AndThen(HubShot()));
   autos_.emplace_back(frc2::cmd::None());
-  // Hardware and desktop simulation intentionally choose different defaults.
-  if (!frc::RobotBase::IsSimulation())
+  const auto defaults = season::runtime::AutoDefaults();
+  if (!defaults.offensiveDefault)
     chooser_.SetDefaultOption("Hub shot (vision required)", autos_[0].get());
   else
     chooser_.AddOption("Hub shot (vision required)", autos_[0].get());
@@ -150,54 +148,17 @@ void season::autonomous::RobotAutos::Configure()
   chooser_.AddOption("AutoDrive target", autos_.back().get());
   autos_.emplace_back(
       season::OffensiveAutoDrive(*owner_.autoDrive_, owner_.drive_, m, owner_.field_, owner_.fuelEstimate_));
-  if (frc::RobotBase::IsSimulation())
+  if (defaults.offensiveDefault)
     chooser_.SetDefaultOption("AutoDrive offensive", autos_.back().get());
   else
     chooser_.AddOption("AutoDrive offensive", autos_.back().get());
-  frc::SmartDashboard::PutBoolean("AutoDrive/OffenseEnabled", frc::RobotBase::IsSimulation());
+  frc::SmartDashboard::PutBoolean("AutoDrive/OffenseEnabled", defaults.offenseEnabled);
   frc::SmartDashboard::PutData("Auto Choices", &chooser_);
-#ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation())
+  if (auto practice = season::runtime::PracticeControl())
   {
-    // The dashboard command starts practice using the selected sim station.
-    autos_.emplace_back(
-        frc2::cmd::RunOnce(
-            []
-            {
-              const char *station = "Blue1";
-              switch (frc::sim::DriverStationSim::GetAllianceStationId())
-              {
-              case HAL_AllianceStationID_kRed1:
-                station = "Red1";
-                break;
-              case HAL_AllianceStationID_kRed2:
-                station = "Red2";
-                break;
-              case HAL_AllianceStationID_kRed3:
-                station = "Red3";
-                break;
-              case HAL_AllianceStationID_kBlue2:
-                station = "Blue2";
-                break;
-              case HAL_AllianceStationID_kBlue3:
-                station = "Blue3";
-                break;
-              default:
-                break;
-              }
-              nt::NetworkTableInstance::GetDefault()
-                  .GetTable("/Sim/Practice")
-                  ->GetEntry("Config/AllianceStation")
-                  .SetString(station);
-              static auto command = nt::NetworkTableInstance::GetDefault()
-                                        .GetStringTopic("/Sim/Practice/Command")
-                                        .Publish({.keepDuplicates = true});
-              command.Set("start");
-            })
-            .IgnoringDisable(true));
+    autos_.emplace_back(std::move(*practice));
     frc::SmartDashboard::PutData("Start Practice Match", autos_.back().get());
   }
-#endif
 }
 // Select a hub or ferry target from alliance, pose, and visible tags.
 season::ShotTarget season::autonomous::RobotAutos::SelectTarget()
@@ -210,7 +171,7 @@ season::ShotTarget season::autonomous::RobotAutos::SelectTarget()
   auto p = owner_.drive_.Pose();
   std::vector<int> ids;
   auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
-  if (const auto *tags = owner_.simulationRuntime_->TagIds())
+  if (const auto *tags = owner_.runtime_->TagIds())
     return season::SelectTarget(alliance, p, *tags, owner_.field_);
   // Limelight publishes each raw fiducial as a seven-value record.
   auto raw = table->GetNumberArray("rawfiducials", {});
@@ -225,12 +186,11 @@ frc2::CommandPtr season::autonomous::RobotAutos::HubShot(bool ownDrive, bool req
   season::CoordinatedShotOptions o;
   o.ownDrive = ownDrive;
   o.autonomous = true;
-  o.simulation = frc::RobotBase::IsSimulation();
+  o.shotCalibration = season::runtime::ShootingCalibration();
   // A shot ends as soon as its configured feed completes. Its overall bound
   // must also allow the rollers to reverse after the preceding intake path.
   o.readyTimeoutSeconds = season::shotconfig::kShotReadyTimeoutSeconds;
-  o.totalTimeoutSeconds = o.simulation ? season::shotconfig::kShotSimTimeoutSeconds
-                                      : season::shotconfig::kShotRealTimeoutSeconds;
+  o.totalTimeoutSeconds = season::runtime::RuntimeBehavior().shotTimeoutSeconds;
   o.feedDurationSeconds = season::ConfiguredFeedDurationSeconds;
   struct FeedTiming
   {

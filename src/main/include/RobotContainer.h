@@ -14,7 +14,7 @@
 #include <networktables/NetworkTable.h>
 #include <vector>
 #include <string_view>
-namespace season::simulation { class RobotRuntime; }
+namespace season::runtime { class RobotRuntime; }
 namespace season::autonomous { class RobotAutos; }
 // Owns season subsystems and command bindings.
 class RobotContainer
@@ -35,14 +35,14 @@ public:
       autoDrive_->PublishMatchContext();
   }
   void SimulationPeriodic();
-  void ResetSimulation();
-  // Autonomous waits until reset feedback has been reconciled.
-  bool SimulationResetReady() const;
+  void PrepareAutonomous();
+  // Autonomous waits until platform feedback is ready.
+  bool AutonomousReady() const;
 
 private:
-  friend class season::simulation::RobotRuntime;
+  friend class season::runtime::RobotRuntime;
   friend class season::autonomous::RobotAutos;
-  std::unique_ptr<season::simulation::RobotRuntime> simulationRuntime_;
+  std::unique_ptr<season::runtime::RobotRuntime> runtime_;
   base::season2026::MatchContext matchContext_;
   base::Drive drive_;
   base::PositionJoint rack_, hood_;

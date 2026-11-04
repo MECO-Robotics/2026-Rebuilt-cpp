@@ -45,7 +45,7 @@ namespace season
   }
 
   bool HubScoringPositionValid(frc::Pose2d pose, frc::DriverStation::Alliance alliance,
-                               const FieldGeometry &field, bool simulation)
+                               const FieldGeometry &field, ShotCalibration calibration)
   {
     const double x = pose.X().value(), y = pose.Y().value();
     if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(pose.Rotation().Radians().value()) ||
@@ -57,7 +57,7 @@ namespace season
       return false;
     if (!RobotClearOfBumps(pose) || !RobotClearOfDepot(pose, alliance, field))
       return false;
-    return CalculateShot(pose, HubPosition(alliance), simulation).calibrated;
+    return CalculateShot(pose, HubPosition(alliance), calibration).calibrated;
   }
 
   std::optional<ScoringGrid> LoadScoringGrid()
@@ -86,7 +86,7 @@ namespace season
   }
 
   std::optional<frc::Pose2d> CheapestHubScoringNode(const ScoringGrid &grid, frc::Pose2d start,
-                                                    frc::DriverStation::Alliance alliance, const FieldGeometry &field, bool simulation)
+                                                    frc::DriverStation::Alliance alliance, const FieldGeometry &field, ShotCalibration calibration)
   {
     const int rows = static_cast<int>(grid.blocked.size());
     if (!rows || !std::isfinite(grid.cellSize) || grid.cellSize <= 0 || grid.blocked[0].empty() ||
@@ -106,13 +106,13 @@ namespace season
     {
       frc::Pose2d candidate{position, (hub - position).Angle()};
       for (int i = 0; i < 3; ++i)
-        candidate = frc::Pose2d{position, frc::Rotation2d{units::radian_t{CalculateShot(candidate, hub, simulation).headingRadians}}};
+        candidate = frc::Pose2d{position, frc::Rotation2d{units::radian_t{CalculateShot(candidate, hub, calibration).headingRadians}}};
       return candidate;
     };
     // The current point costs zero; do not move to a grid center merely because
     // the robot is already on level carpet in a valid shooting area.
     const auto current = aimed(start.Translation());
-    if (HubScoringPositionValid(current, alliance, field, simulation))
+    if (HubScoringPositionValid(current, alliance, field, calibration))
       return current;
     if (!free(sx, sy))
       return std::nullopt;
@@ -130,7 +130,7 @@ namespace season
       const int x = index % cols, y = index / cols;
       const frc::Translation2d position{units::meter_t{(x + .5) * grid.cellSize}, units::meter_t{(y + .5) * grid.cellSize}};
       const auto candidate = aimed(position);
-      if (HubScoringPositionValid(candidate, alliance, field, simulation))
+      if (HubScoringPositionValid(candidate, alliance, field, calibration))
         return candidate;
       for (int dx = -1; dx <= 1; ++dx)
         for (int dy = -1; dy <= 1; ++dy)
