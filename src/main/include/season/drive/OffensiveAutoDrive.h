@@ -106,6 +106,10 @@ namespace offenseconfig
   inline constexpr units::second_t kCollectionTimeout{20}, kRetreatTimeout{3}, kEntryTimeout{8};
   // Maximum run times for the scoring approach and ferry commands, in seconds.
   inline constexpr units::second_t kScoringApproachTimeout{5}, kFerryEntryTimeout{7}, kFerryApproachTimeout{9};
+  // Overall bounds for returning through the trench or directly to a scoring position.
+  inline constexpr units::second_t kTrenchReturnTimeout{18}, kDirectReturnTimeout{15};
+  // Bound for driving directly to a ferry position, including after clearing a bump.
+  inline constexpr units::second_t kFerryRepositionTimeout{10};
   // Pause before starting a return sequence, in seconds.
   inline constexpr units::second_t kReturnDelay{.1};
   // Delay between evaluating offense decisions, in seconds.

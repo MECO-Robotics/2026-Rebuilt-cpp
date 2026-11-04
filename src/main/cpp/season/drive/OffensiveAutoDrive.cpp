@@ -679,7 +679,7 @@ namespace season
             .AndThen(travel(exit).AndThen(std::move(finish)).OnlyIf([&drive, entry] {
               return drive.Pose().Translation().Distance(entry.Translation()).value() < offenseconfig::kEntryHandoffToleranceMetres;
             }))
-            .WithTimeout(18_s).Until(invalid);
+            .WithTimeout(offenseconfig::kTrenchReturnTimeout).Until(invalid);
       }
       *scoringGoal = CheapestHubScoringNode(*grid, pose, *alliance, field, frc::RobotBase::IsSimulation());
       if (!*scoringGoal) return frc2::cmd::None();
@@ -689,7 +689,7 @@ namespace season
           (!staging || std::abs(std::remainder((pose.Rotation() - (*scoringGoal)->Rotation()).Radians().value(),
                                                2 * std::numbers::pi)) < offenseconfig::kGoalHeadingEqualityRadians))
         return frc2::cmd::None();
-      return base::AutoDriveToPose(drive, [scoringGoal] { return *scoringGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(15_s).Until(invalid); }, {&drive});
+      return base::AutoDriveToPose(drive, [scoringGoal] { return *scoringGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(offenseconfig::kDirectReturnTimeout).Until(invalid); }, {&drive});
       return std::move(clearDepot).AndThen(std::move(clearBump)).AndThen(std::move(navigate)).Until(invalid).BeforeStarting([start, origin, staging, &drive]
                                                                                                                             {
       *start = frc::Timer::GetFPGATimestamp().value();
@@ -902,7 +902,7 @@ namespace season
         return base::AutoDriveToPose(drive, [retreat] { return std::optional{retreat}; }, OffensiveMotionLimits(drive.Config()))
             .Until([&drive] { return RobotClearOfBumps(drive.Pose()); })
             .WithTimeout(offenseconfig::kScoringApproachTimeout)
-            .AndThen(base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(10_s)
+            .AndThen(base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(offenseconfig::kFerryRepositionTimeout)
                          .OnlyIf([&drive] { return RobotClearOfBumps(drive.Pose()); }));
       }
       // A robot alongside or on a bump must reach the alliance-side lane
@@ -919,7 +919,7 @@ namespace season
                            return drive.Pose().Translation().Distance(entry.Translation()).value() < offenseconfig::kEntryHandoffToleranceMetres;
                          }));
       }
-      return base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(10_s); }, {&drive});
+      return base::AutoDriveToPose(drive, [ferryGoal] { return *ferryGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(offenseconfig::kFerryRepositionTimeout); }, {&drive});
       return std::move(reposition).AndThen(CoordinatedShot(m, drive, field, target, options)).Until([&perception, fed, prepareForActive, canFerry]
                                                                                                     { return !perception.MatchState().ownActive.has_value() || *perception.MatchState().ownActive ||
                                                                                                              ((prepareForActive() || !canFerry()) && fed->elapsed <= 0 && !fed->active); })
