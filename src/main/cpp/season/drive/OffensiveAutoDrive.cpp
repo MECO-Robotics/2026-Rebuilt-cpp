@@ -536,16 +536,20 @@ namespace season
                                 },
                                 {&drive})
                                 .Repeatedly();
-      auto observePickups = frc2::cmd::Run([&perception, &drive, estimate, collectionStarted, collectionStartCount, refillSeconds, configuredCapacity]
-                                           {
-      estimate->Observe(perception.VisibleFuel(), drive.Pose());
-      const double elapsed = frc::Timer::GetFPGATimestamp().value() - *collectionStarted;
-      const double capacity = configuredCapacity();
-      const double pickups = std::min(capacity, static_cast<double>(estimate->Count() - *collectionStartCount));
-      if (elapsed >= offenseconfig::kCollectionSpeedSampleSeconds && std::isfinite(capacity) && capacity > 0 && pickups > 0)
-        *refillSeconds = capacity * elapsed / pickups;
-      frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", estimate->Count());
-      frc::SmartDashboard::PutNumber("AutoDrive/EstimatedRefillSeconds", *refillSeconds); });
+      auto observePickups = frc2::cmd::Run(
+          [&perception, &drive, estimate, collectionStarted, collectionStartCount, refillSeconds, configuredCapacity]
+          {
+            estimate->Observe(perception.VisibleFuel(), drive.Pose());
+            const double elapsed = frc::Timer::GetFPGATimestamp().value() - *collectionStarted;
+            const double capacity = configuredCapacity();
+            const double pickups = std::min(capacity, static_cast<double>(estimate->Count() - *collectionStartCount));
+            if (elapsed >= offenseconfig::kCollectionSpeedSampleSeconds && std::isfinite(capacity) && capacity > 0 && pickups > 0)
+              *refillSeconds = capacity * elapsed / pickups;
+            frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", estimate->Count());
+            frc::SmartDashboard::PutNumber("AutoDrive/EstimatedRefillSeconds", *refillSeconds);
+          });
+      // The timer bounds this attempt. Driving, intake, and observation run
+      // together until the timer expires or the next decision ends collection.
       return frc2::cmd::Deadline(frc2::cmd::Wait(offenseconfig::kCollectionTimeout),
                                  std::move(collectionPath),
                                  Acquire(m), std::move(observePickups))
