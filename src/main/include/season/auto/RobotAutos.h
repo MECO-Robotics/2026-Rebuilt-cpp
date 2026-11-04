@@ -6,6 +6,12 @@
 class RobotContainer;
 namespace base { class Drive; }
 namespace season::autonomous {
+// Settings for the named spin-up action and the Choreo chooser option.
+namespace config {
+inline constexpr double kAutoSpinUpTimeoutSeconds = 2.;
+inline constexpr double kChoreoTranslationP = 10.;
+inline constexpr double kChoreoRotationP = 7.;
+}
 class RobotAutos {
 public:
  explicit RobotAutos(RobotContainer &owner) : owner_(owner) {}

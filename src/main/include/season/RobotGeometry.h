@@ -15,6 +15,13 @@ namespace season
   inline const double kRackAngleSin = std::sin(kRackAngleRadians);
 }
 
+namespace season::geometry
+{
+  // Robot envelope including bumpers, used by navigation and simulated placement.
+  inline constexpr double kLengthMetres = .86;
+  inline constexpr double kWidthMetres = .86;
+}
+
 namespace season::hardware
 {
   // X and Z coordinates in metres of the shooter pivot in the robot frame, respectively.

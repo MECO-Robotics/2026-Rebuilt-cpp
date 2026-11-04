@@ -22,6 +22,31 @@
 using namespace units::literals;
 namespace
 {
+  base::MotorConfig RackMotorConfig()
+  {
+    // Rack gearing is specified in motor rotations per metre. MotorIO expects
+    // motor rotations per drum rotation; PositionJoint converts drum turns to metres.
+    return season::hardware::MotorRates(
+        {.ids = {season::hardware::kRackCanId},
+         .reversed = {false},
+         .gearRatio = season::hardware::kRackGearRatio * 2 * std::numbers::pi *
+                      season::hardware::kRackDrumRadius,
+         .currentLimit = season::hardware::kRackMotorCurrent,
+         .canBus = ""},
+        base::Vendor::SparkMax);
+  }
+
+  base::MotorConfig HoodMotorConfig()
+  {
+    return season::hardware::MotorRates(
+        {.ids = {season::hardware::kHoodCanId},
+         .reversed = {false},
+         .gearRatio = season::hardware::kHoodGearRatio,
+         .currentLimit = season::hardware::kHoodMotorCurrent,
+         .canBus = ""},
+        base::Vendor::SparkMax);
+  }
+
   // Derive trench references from the official field tag layout.
   season::FieldGeometry Geometry(const frc::AprilTagFieldLayout &layout)
   {
@@ -49,19 +74,12 @@ RobotContainer::RobotContainer()
     : simulationRuntime_(std::make_unique<season::simulation::RobotRuntime>(*this)),
       drive_(season::hardware::DriveConfig()),
       rack_("IntakeRack",
-            base::MakeMotorIO(
-                season::hardware::Mode(), base::Vendor::SparkMax,
-                season::hardware::MotorRates({{season::hardware::kRackCanId},
-                            {false},
-                            season::hardware::kRackGearRatio * 2 * std::numbers::pi *
-                                season::hardware::kRackDrumRadius,
-                            season::hardware::kRackMotorCurrent,
-                            ""},
-                           base::Vendor::SparkMax),
-                season::hardware::kRackMotorInertia),
+            base::MakeMotorIO(season::hardware::Mode(), base::Vendor::SparkMax,
+                              RackMotorConfig(), season::hardware::kRackMotorInertia),
             season::hardware::JointGains(season::hardware::kRackGains),
             2 * std::numbers::pi * season::hardware::kRackDrumRadius),
-      hood_("Hood", base::MakeMotorIO(season::hardware::Mode(), base::Vendor::SparkMax, season::hardware::MotorRates({{season::hardware::kHoodCanId}, {false}, season::hardware::kHoodGearRatio, season::hardware::kHoodMotorCurrent, ""}, base::Vendor::SparkMax), season::hardware::kHoodMotorInertia),
+      hood_("Hood", base::MakeMotorIO(season::hardware::Mode(), base::Vendor::SparkMax,
+                                     HoodMotorConfig(), season::hardware::kHoodMotorInertia),
             season::hardware::JointGains(season::hardware::kHoodGains),
             1, base::Gravity::Cosine),
       intake_("IntakeRoller", simulationRuntime_->MakeMotor(season::hardware::kIntake, base::Vendor::SparkMax, season::simulation::MotorLoad::None), season::hardware::kIntakeGains),

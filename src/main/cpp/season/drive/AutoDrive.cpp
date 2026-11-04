@@ -271,7 +271,7 @@ namespace season
                    // drivetrain while residual angular speed is still appreciable.
                    config.follow.headingTolerance = autodriveconfig::kHeadingToleranceRadians;
                    config.follow.angularSettleSpeed = autodriveconfig::kAngularSettleSpeed;
-                   config.follow.settleSamples = 10;
+                   config.follow.settleSamples = autodriveconfig::kIntermediateSettleSamples;
                    config.follow.finalSettleSamples = autodriveconfig::kFinalSettleSamples;
                    config.follow.poseAngularDamping = autodriveconfig::kPoseAngularDamping;
                    config.follow.usePoseRateForSettling = true;

@@ -1,8 +1,15 @@
 #pragma once
+#include "season/RobotGeometry.h"
 #ifndef __FRC_ROBORIO__
 #include "base/sim/RobotContactConfig.h"
 #endif
 
+
+namespace season::simulationconfig
+{
+  // Minimum voltage magnitude used by simulation to consider a transport motor commanded.
+  inline constexpr double kSimTransportVoltageThreshold = 1;
+}
 
 namespace season::fuelconfig
 {
@@ -11,7 +18,7 @@ namespace season::fuelconfig
     // Inset from the field boundary where returned fuel is placed.
     inline constexpr double kFieldReturnInsetMetres = .30;
     // Bumper collision volume dimensions relative to the robot and field floor.
-    inline constexpr double kBumperHalfWidthMetres = .43, kBumperDepthMetres = .0889,
+    inline constexpr double kBumperHalfWidthMetres = geometry::kWidthMetres / 2, kBumperDepthMetres = .0889,
                             kBumperBottomMetres = .0127, kBumperHalfHeightMetres = .06985;
     // Bounds on hood deflection accepted by the simulated shooter.
     inline constexpr double kMinHoodDeflectionDegrees = 15, kMaxHoodDeflectionDegrees = 45;
@@ -139,7 +146,8 @@ namespace season::simulation::runtimeconfig
   // Field X coordinate used to place the simulated robot at spawn.
   inline constexpr double kSpawnXMetres = 3.65;
   // Robot footprint dimensions used for spawn collision checks.
-  inline constexpr double kFootprintHalfLengthMetres = .43, kFootprintHalfWidthMetres = .43,
+  inline constexpr double kFootprintHalfLengthMetres = geometry::kLengthMetres / 2,
+                          kFootprintHalfWidthMetres = geometry::kWidthMetres / 2,
                           kFootprintHeightMetres = .45;
   // Minimum gap required between spawned robot and obstacles.
   inline constexpr double kSpawnClearanceMetres = .02;
@@ -165,7 +173,8 @@ namespace season::simulation
     // Unmeasured construction/material estimates: replace with loaded measurements.
     c.chassisClearance = 2.0 * inchesToMetres;
     c.panThickness = .125 * inchesToMetres;
-    c.panHalfLength = c.panHalfWidth = .43 - 3.5 * inchesToMetres;
+    c.panHalfLength = geometry::kLengthMetres / 2 - 3.5 * inchesToMetres;
+    c.panHalfWidth = geometry::kWidthMetres / 2 - 3.5 * inchesToMetres;
     c.bumperFloorGap = .5 * inchesToMetres; // User-confirmed flush foam/plywood floor gap.
     c.noodleDiameter = 2.75 * inchesToMetres;
     c.backingThickness = .75 * inchesToMetres;

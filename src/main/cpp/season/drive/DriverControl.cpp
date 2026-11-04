@@ -1,3 +1,4 @@
+#include "season/drive/DriveBehaviorConfig.h"
 #include "RobotContainer.h"
 #include "base/SimulationLatency.h"
 #include "season/detail/RobotRuntime.h"

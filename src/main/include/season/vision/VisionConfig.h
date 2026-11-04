@@ -7,6 +7,12 @@
 #include <units/angle.h>
 #include <units/length.h>
 
+namespace season::visionconfig
+{
+  // Maximum age in seconds for a vision observation to be considered fresh.
+  inline constexpr double kVisionFreshnessSeconds = .5;
+}
+
 namespace season::hardware
 {
   using namespace units::literals;

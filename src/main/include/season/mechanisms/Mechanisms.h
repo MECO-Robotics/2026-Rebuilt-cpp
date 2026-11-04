@@ -2,6 +2,7 @@
 #include "base/Mechanism.h"
 #include "season/mechanisms/MechanismConfig.h"
 #include "season/mechanisms/MechanismBehaviorConfig.h"
+#include "season/simulation/SimulationConfig.h"
 #include "season/shooting/Shooting.h"
 #include "base/Drive.h"
 #include <functional>

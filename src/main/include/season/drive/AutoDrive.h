@@ -6,6 +6,7 @@
 #include <base/FootprintConfiguration.h>
 #include <base/ObjectPerception.h>
 #include "season/vision/PerceptionConfig.h"
+#include "season/RobotGeometry.h"
 #include <frc/geometry/Pose3d.h>
 #include <functional>
 #include <memory>
@@ -23,13 +24,16 @@ namespace autodriveconfig
   // Target movement required before navigation computes a new route, in metres.
   inline constexpr double kTargetReplanDistanceMetres = .3;
   // Robot footprint dimensions used for collision checks, in metres.
-  inline constexpr double kFootprintLengthMetres = .86, kFootprintWidthMetres = .86;
+  inline constexpr double kFootprintLengthMetres = geometry::kLengthMetres,
+                          kFootprintWidthMetres = geometry::kWidthMetres;
   // Heading error allowed when settling at a navigation target, in radians.
   inline constexpr double kHeadingToleranceRadians = .02;
   // Maximum angular speed considered settled, in radians per second.
   inline constexpr double kAngularSettleSpeed = .02;
   // Consecutive settled samples required before reporting arrival.
   inline constexpr int kFinalSettleSamples = 50;
+  // Intermediate settled samples used by the simulated footprint follower.
+  inline constexpr int kIntermediateSettleSamples = 10;
   // Damping applied to angular correction while approaching a target.
   inline constexpr double kPoseAngularDamping = .5;
   // Angular velocity below which the controller treats rotation as stopped, in radians per second.

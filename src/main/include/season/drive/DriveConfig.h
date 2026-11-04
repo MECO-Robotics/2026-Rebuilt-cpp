@@ -65,10 +65,19 @@ namespace season::hardware
     c.autoTranslationKP = 15;
     c.autoRotationKP = 10;
     // Module order is front-left, front-right, back-left, back-right.
-    c.modules = {{{2, 1, 9, .3076171875, .2794, .2794, false, true, false},
-                  {8, 3, 10, .304931640625, .2794, -.2794, true, true, false},
-                  {6, 5, 11, -.083740234375, -.2794, .2794, false, true, false},
-                  {4, 7, 12, -.346435546875, -.2794, -.2794, true, true, false}}};
+    c.modules = {{
+        {.drive = 2, .steer = 1, .encoder = 9, .offsetTurns = .3076171875,
+         .xMeters = .2794, .yMeters = .2794,
+         .driveInverted = false, .steerInverted = true, .encoderInverted = false},
+        {.drive = 8, .steer = 3, .encoder = 10, .offsetTurns = .304931640625,
+         .xMeters = .2794, .yMeters = -.2794,
+         .driveInverted = true, .steerInverted = true, .encoderInverted = false},
+        {.drive = 6, .steer = 5, .encoder = 11, .offsetTurns = -.083740234375,
+         .xMeters = -.2794, .yMeters = .2794,
+         .driveInverted = false, .steerInverted = true, .encoderInverted = false},
+        {.drive = 4, .steer = 7, .encoder = 12, .offsetTurns = -.346435546875,
+         .xMeters = -.2794, .yMeters = -.2794,
+         .driveInverted = true, .steerInverted = true, .encoderInverted = false}}};
     // Physical mounting directions measured from the current module geometry.
     // These describe the simulated rotor/encoder axes, independently of the
     // Phoenix electrical inversion settings above.

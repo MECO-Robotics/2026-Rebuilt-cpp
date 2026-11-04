@@ -1,5 +1,6 @@
 #pragma once
 #include "season/shooting/Shooting.h"
+#include "season/RobotGeometry.h"
 #include <cmath>
 #include <optional>
 #include <vector>
@@ -12,8 +13,6 @@ namespace season
     inline constexpr double kDepotDepthInches = 27., kDepotWidthInches = 42.;
     // Field Y coordinate of the depot centreline, in metres.
     inline constexpr double kDepotYMetres = 6.066;
-    // Half-width used as the square robot footprint radius, in metres.
-    inline constexpr double kRobotHalfMetres = .43;
     // Extra clearance around the robot when checking ramp regions, in metres.
     inline constexpr double kRampRobotMarginMetres = .10;
     // Ramp dimensions from the field geometry, in inches.
@@ -25,7 +24,7 @@ namespace season
     // Half the depot width converted to metres for side-boundary checks.
     inline constexpr double kDepotHalfWidthMetres = kDepotWidthInches * .0254 / 2;
     // Distance from the robot centre to a footprint corner, in metres.
-    inline const double kRobotCornerRadiusMetres = std::hypot(kRobotHalfMetres, kRobotHalfMetres);
+    inline const double kRobotCornerRadiusMetres = std::hypot(geometry::kLengthMetres / 2, geometry::kWidthMetres / 2);
     // Expanded footprint radius used to keep the robot clear of ramp edges, in metres.
     inline const double kRampRobotRadiusMetres = kRobotCornerRadiusMetres + kRampRobotMarginMetres;
     // Half ramp dimensions converted to metres for centre-based geometry checks.
