@@ -46,10 +46,12 @@ For comparison, `/Simulation/NTGamepad/Consumed` publishes `[sequence, sourceNTt
 
 ## Run the laptop comparison
 
-Build desktop release targets with the installed WPILib JDK:
+These headless simulator and comparison commands are for Linux x86-64. The USB controller publisher above also supports other platforms.
+
+Build desktop release targets with the installed WPILib JDK. If Gradle cannot find it, set `JAVA_HOME` to your WPILib 2026 JDK directory first:
 
 ```sh
-JAVA_HOME=/home/brian/wpilib/2026/jdk ./gradlew installFrcUserProgramLinuxx86-64ReleaseExecutable installFrcUserProgramTestLinuxx86-64ReleaseGoogleTestExe --max-workers=2
+./gradlew installFrcUserProgramLinuxx86-64ReleaseExecutable installFrcUserProgramTestLinuxx86-64ReleaseGoogleTestExe --max-workers=2
 ```
 
 Start the headless simulator in one terminal. Use `FRC_SIM_NT_GAMEPAD=0` for the DS baseline and `=1` for NT axes. Stop the first simulator before starting the other; keep one owner of ports 3300 and 5810.
@@ -58,14 +60,14 @@ Start the headless simulator in one terminal. Use `FRC_SIM_NT_GAMEPAD=0` for the
 FRC_SIM_NT_PORT=5810 FRC_SIM_LATENCY_PROBE=1 FRC_SIM_NT_GAMEPAD=0 scripts/sim_headless.sh
 ```
 
-In another terminal, run each load case with the matching mode (`ds` or `nt`):
+In another terminal, use a Python environment with `pyntcore==2026.2.2` and `websockets==16.1.1` installed, then run each load case with the matching mode (`ds` or `nt`):
 
 ```sh
-/home/brian/.cache/rebuilt-latency-venv/bin/python scripts/nt_gamepad_compare.py --mode ds --load none --seconds 8 --output artifacts/nt-gamepad/ds-none.json
-/home/brian/.cache/rebuilt-latency-venv/bin/python scripts/nt_gamepad_compare.py --mode ds --load vision --seconds 8 --output artifacts/nt-gamepad/ds-vision.json
+python scripts/nt_gamepad_compare.py --mode ds --load none --seconds 8 --output artifacts/nt-gamepad/ds-none.json
+python scripts/nt_gamepad_compare.py --mode ds --load vision --seconds 8 --output artifacts/nt-gamepad/ds-vision.json
 ```
 
-The Python environment needs `pyntcore==2026.2.2` and `websockets`. The script only connects to localhost and disables/zeros the simulated input in cleanup. Verify that the listeners belong to the simulator you started: the bundled HAL websocket server binds to `0.0.0.0:3300`, while this robot's configured NT server binds to `127.0.0.1:5810`.
+The script only connects to localhost and disables/zeros the simulated input in cleanup. Verify that the listeners belong to the simulator you started: the bundled HAL websocket server binds to `0.0.0.0:3300`, while this robot's configured NT server binds to `127.0.0.1:5810`.
 
 The NT publisher embeds synchronized server time in its payload but supplies client-local time to `Publisher.set`, because NTCore performs the timestamp conversion. Publisher sequences are seeded from server time to remain increasing across script restarts while the same robot process runs. A different publisher must likewise avoid sequence regression.
 

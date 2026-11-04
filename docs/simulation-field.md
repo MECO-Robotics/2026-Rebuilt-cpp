@@ -18,6 +18,8 @@ The robot supplies contact construction estimates in [SimulationConfig.h](../src
 
 The scene is an approximation, not official CAD or proof of field clearance.
 
+The fuel model and shooting trajectory checks use different dimensions: the simulated particle diameter is 5.5 inches and its HUB scoring region has a 0.6096 m half-width, while the trajectory clearance calculation uses a 5.91-inch fuel diameter and a 47-inch HUB width. These model assumptions have not been reconciled; a simulated score does not verify physical shot clearance. See [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h) and [Shooting.h](../src/main/include/season/shooting/Shooting.h) before changing them.
+
 ## Starting and resetting
 
 ![Blue-origin field frame showing the approximate blue and red default simulation starts](visuals/field-frames.svg)
