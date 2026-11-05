@@ -89,15 +89,17 @@ Watch `SystemCheck/State`, `Reason`, `Stage`, and `Live/` measurements. Set `Sys
 Robot behavior uses sensor observations to make decisions. The desktop simulator supplies simulated observations from its model of the robot and field; it also updates and resets that model. Start with the behavior or settings in the table above when changing what the robot does, and start with the simulation files below when changing a model assumption.
 
 - [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h): fuel behavior, motor model, contact estimates, simulation timing, sensors, battery, and practice settings.
-- [RobotRuntime.cpp](../src/main/cpp/season/simulation/RobotRuntime.cpp): desktop simulation setup, periodic updates, and reset. This is an advanced entry point for connecting simulated devices and the field model.
+- [RobotSimulationRuntime.cpp](../src/main/cpp/season/simulation/RobotSimulationRuntime.cpp): desktop simulation setup, periodic updates, and reset. This is an advanced entry point for connecting simulated devices and the field model.
 - [MotorSimulation.cpp](../src/main/cpp/season/simulation/MotorSimulation.cpp): maps this robot's motor IDs to simulated inertia and FUEL loads. The vendordeps select and construct the correct motor IO; mechanism code requests IO through the shared selector.
 - [RobotLifecycle.cpp](../src/main/cpp/season/simulation/RobotLifecycle.cpp): supplies this robot's practice and battery settings to the vendordep lifecycle around the robot loop.
-- [MechanismSimulationConfig.h](../src/main/include/season/simulation/MechanismSimulationConfig.h): how hard simulated motors and joints are to accelerate, and the joint gravity assumption.
+- [MechanismSimulationConfig.h](../src/main/include/season/simulation/MechanismSimulationConfig.h): how hard simulated motors and joints are to accelerate.
 - [DriveSimulationConfig.cpp](../src/main/cpp/season/simulation/DriveSimulationConfig.cpp): simulated drivetrain mass, contacts, and controller tuning.
 - [AutoDriveSimulation.cpp](../src/main/cpp/season/simulation/AutoDriveSimulation.cpp): simulated object cameras and optional desktop footprint planner.
 - [FuelSimulation.cpp](../src/main/cpp/season/simulation/FuelSimulation.cpp): robot-state inputs, transport motor loads, and simulation telemetry.
 - [FuelModel.cpp](../src/main/cpp/season/simulation/FuelModel.cpp): fuel particle motion, collection, scoring, and model state transitions.
 - [Simulation.h](../src/main/include/season/simulation/Simulation.h): public desktop simulation interfaces, including the fuel and loaded-motor model contracts.
+
+Simulation controller gains use the single `kSimulationTuning` setting in [RobotPlatform.h](../src/main/include/season/detail/RobotPlatform.h). `Automatic` derives drive gains and accounts for the current gravity-free simulated joint plants; `Configured` uses the robot's configured gains in simulation. Simulation physics properties remain active with either choice.
 
 For example, to adjust an object camera's position, edit its shared mount defaults in [PerceptionConfig.h](../src/main/include/season/vision/PerceptionConfig.h) and check for saved Preferences as described above. To change what the simulated camera can detect, change `simulation::autodriveconfig::kCameraRangeMetres` in [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h) instead; that does not configure the physical camera pipeline. The advanced [AutoDriveEnvironment.h](../src/main/include/season/drive/AutoDriveEnvironment.h) interface supplies camera observation sources and can select tracking or an alternate navigation command; the desktop adapter implements those choices. Simulation settings are estimates; they do not establish physical calibration. See [simulation field](simulation-field.md) for the model and its limits.
 

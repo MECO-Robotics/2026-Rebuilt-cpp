@@ -2,7 +2,6 @@
 #include "season/drive/DriveConfig.h"
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/DriveSimulationConfig.h"
-#include "season/simulation/MechanismSimulationConfig.h"
 #endif
 #include "season/mechanisms/Mechanisms.h"
 #include <base/CanBusMode.h>
@@ -12,13 +11,17 @@ namespace season::hardware {
   base::DriveConfig DriveConfig()
   {
     auto config = HardwareDriveConfig(kSwerveOdometryFdHz);
-#ifndef __FRC_ROBORIO__
-    if (base::CurrentRuntimeMode() == base::Mode::Sim)
-      return season::simulation::ConfigureDrive(std::move(config));
-#endif
     config.odometryHz = base::SelectCanBusRate(config.bus, kSwerveOdometryFdHz, kSwerveOdometryClassicHz);
-    return config;
+#ifndef __FRC_ROBORIO__
+    return base::ConfigureRuntimeDrive(std::move(config), [](base::DriveConfig c) {
+      c.odometryHz = kSwerveOdometryFdHz;
+      return simulation::ConfigureDrive(std::move(c), kSimulationTuning);
+    });
+#else
+    return base::ConfigureRuntimeDrive(std::move(config));
+#endif
   }
+
   base::MotorConfig MotorRates(base::MotorConfig config, base::Vendor vendor)
   {
     if (vendor == base::Vendor::SparkMax)
@@ -36,11 +39,7 @@ namespace season::hardware {
   }
   base::Gains JointGains(base::Gains gains)
   {
-#ifndef __FRC_ROBORIO__
-    if (base::CurrentRuntimeMode() == base::Mode::Sim)
-      return simulation::ConfigureJointGains(gains);
-#endif
-    return gains;
+    return base::ConfigureRuntimeJointGains(gains, kSimulationTuning, base::SimulationJointGravity::Unmodeled);
   }
   const char *SystemCheckPath() { return base::CurrentRuntimeMode() == base::Mode::Real ? "/home/lvuser/systemcheck-latest.json" : "systemcheck-latest.json"; }
 }

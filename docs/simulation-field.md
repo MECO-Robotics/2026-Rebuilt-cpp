@@ -38,7 +38,7 @@ The fuel model and shooting trajectory checks use different dimensions: the simu
 
 ## Read the code
 
-- [Scene setup and pose resets](../src/main/cpp/season/simulation/RobotRuntime.cpp)
+- [Scene setup and pose resets](../src/main/cpp/season/simulation/RobotSimulationRuntime.cpp)
 - [Field helpers](../src/main/cpp/season/simulation/SimulationField.cpp)
 - [Fuel simulation adapter](../src/main/cpp/season/simulation/FuelSimulation.cpp), [fuel model](../src/main/cpp/season/simulation/FuelModel.cpp), and [model interface](../src/main/include/season/simulation/Simulation.h)
 

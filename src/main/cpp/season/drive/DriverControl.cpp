@@ -3,6 +3,7 @@
 #include "season/detail/RuntimeAdapters.h"
 #include "season/detail/RobotRuntime.h"
 #include <frc/DriverStation.h>
+#include <base/DriverInput.h>
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -14,44 +15,14 @@ void RobotContainer::DriveTeleop(bool aim)
   // translation frame. FieldDrive still owns alliance perspective and gating.
   const auto deadband = [](double value)
   { return std::abs(value) < season::driveconfig::kDriverDeadband ? 0. : std::copysign((std::abs(value) - season::driveconfig::kDriverDeadband) / (1 - season::driveconfig::kDriverDeadband), value); };
-  const bool dsConnected = controller_.GetHID().IsConnected() && controller_.GetHID().GetAxisCount() >= 5;
-  const double dsLeftY = dsConnected ? controller_.GetLeftY() : 0.0;
-  const double dsLeftX = dsConnected ? controller_.GetLeftX() : 0.0;
-  const double dsRightX = dsConnected ? controller_.GetRightX() : 0.0;
-  const auto validAxis = [](double value)
-  { return std::isfinite(value) && std::abs(value) <= 1.0; };
-  const bool dsInputValid = dsConnected &&
-                            validAxis(dsLeftY) && validAxis(dsLeftX) && validAxis(dsRightX);
-  double rawLeftY = 0.0, rawLeftX = 0.0, rawRightX = 0.0;
-  bool inputAvailable = false;
-  activeDriverInput_ = "none";
-  base::NtGamepad::State ntGamepadState;
-  if (ntGamepad_)
-    ntGamepadState = ntGamepad_->Read();
-  if (ntGamepad_ && ntGamepadState.accepted)
-  {
-    rawLeftY = ntGamepadState.leftY;
-    rawLeftX = ntGamepadState.leftX;
-    rawRightX = ntGamepadState.rightX;
-    inputAvailable = true;
-    activeDriverInput_ = "nt";
-  }
-  else if (dsInputValid && (!ntGamepad_ || season::drive::ntgamepadconfig::kFallbackToDriverStation))
-  {
-    rawLeftY = dsLeftY;
-    rawLeftX = dsLeftX;
-    rawRightX = dsRightX;
-    inputAvailable = true;
-    activeDriverInput_ = "driverstation";
-  }
-  const bool teleopAuthority = frc::DriverStation::IsTeleopEnabled() && !frc::DriverStation::IsEStopped();
-  double x = deadband(season::runtime::ObserveForwardInput(-rawLeftY)) * drive_.Config().maxSpeed;
-  double y = deadband(-rawLeftX) * drive_.Config().maxSpeed;
-  double omega = deadband(-rawRightX) * drive_.Config().maxAngularRate;
-  if (!teleopAuthority || !inputAvailable)
-    x = y = omega = 0.0;
+  const auto input = base::ReadDriverInput(controller_.GetHID(), ntGamepad_.get(),
+                                           season::drive::ntgamepadconfig::kFallbackToDriverStation);
+  activeDriverInput_ = input.source;
+  double x = deadband(input.WhileAuthorized(season::runtime::ObserveForwardInput(-input.axes.leftY))) * drive_.Config().maxSpeed;
+  double y = deadband(-input.axes.leftX) * drive_.Config().maxSpeed;
+  double omega = deadband(-input.axes.rightX) * drive_.Config().maxAngularRate;
   // Aim controls rotation and shooter targets while translation stays manual.
-  if (aim && teleopAuthority && inputAvailable)
+  if (aim && input.authorized)
   {
     const auto p = drive_.Pose();
     const auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
@@ -63,5 +34,6 @@ void RobotContainer::DriveTeleop(bool aim)
   }
   drive_.FieldDrive(x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin(),
                     x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos(), omega);
-  runtime_->PublishDriverInput(ntGamepadState, dsLeftY, dsLeftX, dsRightX, x, y, omega);
+  runtime_->PublishDriverInput(input.nt, input.driverStationAxes.leftY, input.driverStationAxes.leftX,
+                               input.driverStationAxes.rightX, x, y, omega);
 }

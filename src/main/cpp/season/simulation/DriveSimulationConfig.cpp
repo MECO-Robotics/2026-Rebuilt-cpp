@@ -2,13 +2,13 @@
 
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/SimulationConfig.h"
-#include "base/sim/SimulationTuning.h"
+#include <meco/sim/DriveTuning.h>
 #include <array>
 #include <frc/system/plant/DCMotor.h>
 
 namespace season::simulation
 {
-  base::DriveConfig ConfigureDrive(base::DriveConfig c)
+  base::DriveConfig ConfigureDrive(base::DriveConfig c, base::SimulationTuning tuning)
   {
     // Ready-to-drive robot, bumpers, and battery. The real robot keeps its own values.
     c.massKg = 67.6;
@@ -33,14 +33,7 @@ namespace season::simulation
 
     // Use the Phoenix FOC motor model and stator torque limit of the simulator.
     const auto motor = frc::DCMotor::KrakenX60FOC(1);
-    std::array<base::sim::ModuleLocation, 4> locations{};
-    for (std::size_t i = 0; i < locations.size(); ++i)
-      locations[i] = {c.modules[i].xMeters, c.modules[i].yMeters};
-    const auto tuned = base::sim::DeriveSimulationTuning(
-        {c.massKg, c.moi, c.cof, c.wheelRadius, c.driveRatio, c.slipCurrent, motor.Kt.value(), locations, .08, .50});
-    c.autoTranslationKP = tuned.autoTranslationKP;
-    c.autoRotationKP = tuned.autoRotationKP;
-    return c;
+    return meco::sim::ConfigureDriveTuning(std::move(c), tuning, motor.Kt.value(), .08, .50);
   }
 }
 #endif
