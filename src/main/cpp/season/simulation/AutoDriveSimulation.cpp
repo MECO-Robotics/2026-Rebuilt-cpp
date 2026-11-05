@@ -6,6 +6,7 @@
 #include "season/vision/PerceptionConfig.h"
 #include <base/FootprintAutoDrive.h>
 #include <meco/sim/ColliderNavigation.h>
+#include <meco/sim/FootprintNavigation.h>
 #include <frc/Timer.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
@@ -22,13 +23,10 @@ AutoDriveSimulation::AutoDriveSimulation() {
 }
 std::unique_ptr<base::ObjectDetectionIO> AutoDriveSimulation::Camera(
     std::size_t i, const std::string &, std::function<frc::Transform3d()> mount, units::second_t) {
-  mounts_[i] = std::move(mount);
   meco::sim::PieceSensorConfig config;
   config.maxRange = autodriveconfig::kCameraRangeMetres;
   config.seed = runtimeconfig::kFuelRandomSeed + i;
-  config.robotToCamera = mounts_[i]();
-  sensors[i] = std::make_unique<meco::sim::SimulatedPieceSensorBridge>(config);
-  return sensors[i]->MakeIO();
+  return cameras_.Configure(i, config, std::move(mount));
 }
 bool AutoDriveSimulation::TrackTarget() const {
   return frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim", false);
@@ -77,23 +75,13 @@ std::optional<frc2::CommandPtr> AutoDriveSimulation::NavigationCommand(
       }
       // Desktop HAL/NT tests can inject one perceived obstacle. It is
       // not a simulated rigid body or a hardware detection source.
-      const auto observed = nt::NetworkTableInstance::GetDefault()
-                                .GetEntry("/Simulation/FootprintObstacle")
-                                .GetDoubleArray({});
-      if (!observed.empty())
-      {
-        if (observed.size() != 4)
-          throw std::runtime_error("invalid simulated footprint obstacle");
-        boxes.push_back({observed[0], observed[1], observed[2], observed[3]});
-      }
+      meco::sim::AppendInjectedFootprintObstacle(boxes, nt::NetworkTableInstance::GetDefault()
+          .GetEntry("/Simulation/FootprintObstacle"));
       return boxes;
     };
-    auto outcome = std::make_shared<base::FootprintAutoDriveOutcome>();
-    auto entry = nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/FootprintOutcome");
-    entry.SetString("running");
-    return base::AutoDriveFootprintToPose(drive, target, std::move(obstacles), config, outcome)
-        .FinallyDo([entry, outcome](bool) mutable
-                   { entry.SetString(base::FootprintOutcomeName(*outcome)); });
+    return meco::sim::FootprintCommandWithOutcome(drive, std::move(target), std::move(obstacles),
+        config, nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/FootprintOutcome"),
+        base::FootprintOutcomeName);
   }
   return std::nullopt;
 }
@@ -106,15 +94,14 @@ void AutoDriveSimulation::Update(const frc::Pose3d &truth, const FuelModel &fuel
     static const auto fieldObstacles = simulation::FieldColliders();
     static const std::vector<base::sim::BodySpec> noObstacles;
     const auto &obstacles = fieldColliders ? fieldObstacles : noObstacles;
-    ++sequence;
-    for (size_t i = 0; i < 2; ++i)
+    const auto samples = cameras_.Update(truth, points, obstacles,
+        [] { return frc::Timer::GetFPGATimestamp(); });
+    for (size_t i = 0; i < samples.size(); ++i)
     {
-      const auto &frame = sensors[i]->Update(
-          truth, mounts_[i](), points, obstacles, frc::Timer::GetFPGATimestamp(), sequence);
       frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontDetections" : "AutoDrive/SimRearDetections",
-                                     frame.detections.size());
+                                     samples[i].detections);
       frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontFrameAge" : "AutoDrive/SimRearFrameAge",
-                                     (frc::Timer::GetFPGATimestamp() - frame.captureTime).value());
+                                     (frc::Timer::GetFPGATimestamp() - samples[i].captureTime).value());
     }
     frc::SmartDashboard::PutBoolean("AutoDrive/DetectionFresh", !clusters.empty());
     frc::SmartDashboard::PutNumber("AutoDrive/ClusterCount", clusters.size());
@@ -128,6 +115,6 @@ void AutoDriveSimulation::Update(const frc::Pose3d &truth, const FuelModel &fuel
     }
     frc::SmartDashboard::PutNumber("AutoDrive/SimNearestFuelDistance", nearest);
 }
-void AutoDriveSimulation::Reset() { for (auto &sensor : sensors) if (sensor) sensor->Reset(); }
+void AutoDriveSimulation::Reset() { cameras_.Reset(); }
 }
 #endif

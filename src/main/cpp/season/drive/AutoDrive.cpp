@@ -4,6 +4,7 @@
 #include <frc/Preferences.h>
 #include <frc/Filesystem.h>
 #include <base/FootprintAutoDrive.h>
+#include <base/VisionIOSelector.h>
 #include <fstream>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
@@ -20,9 +21,9 @@
 namespace season
 {
   std::unique_ptr<base::ObjectDetectionIO> AutoDriveEnvironment::Camera(
-      std::size_t, const std::string &name, std::function<frc::Transform3d()>, units::second_t period)
+      std::size_t, const std::string &, std::function<frc::Transform3d()>, units::second_t)
   {
-    return base::MakeNtObjectDetectionIO("/Perception/" + name + "/detections", period);
+    return std::make_unique<base::InjectedObjectDetectionIO>([] { return std::nullopt; });
   }
 
   // Publish a concise reason for the current navigation state.
@@ -63,7 +64,11 @@ namespace season
                {"RollDeg", defaults.rollDegrees}, {"PitchDeg", defaults.pitchDegrees},
                {"YawDeg", defaults.yawDegrees}})
         frc::Preferences::InitDouble(prefix + key, value);
-      auto io = environment_->Camera(i, name, [this, i] { return Mount(i); }, detectionUpdatePeriod);
+      auto io = base::MakeRuntimeObjectDetectionIO(
+          "/Perception/" + name + "/detections", detectionUpdatePeriod,
+          [this, i, name, detectionUpdatePeriod] {
+            return environment_->Camera(i, name, [this, i] { return Mount(i); }, detectionUpdatePeriod);
+          });
       cameras.push_back({name, std::move(io), [this, i]() -> std::optional<frc::Transform3d>
                          { return Mount(i); }});
     }

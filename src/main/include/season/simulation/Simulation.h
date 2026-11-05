@@ -3,6 +3,7 @@
 #include "meco/sim/ParticleContacts.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/simulation/SimulationConfig.h"
+#include "season/simulation/MotorSimulation.h"
 #include <array>
 #include <random>
 #include <optional>
@@ -21,12 +22,6 @@
 
 namespace season
 {
-  // Estimated opposing shaft torques, in N m. FuelSimulation owns these
-  // season-specific load inputs; simulated motor integration lives in MecoSimulation.
-  struct FuelMotorLoads
-  {
-    std::array<double, 4> torque{};
-  };
   using FuelPoint = meco::sim::ParticlePoint;
   using FuelParticle = meco::sim::Particle;
   using FuelRobotState = meco::sim::ContactBody;

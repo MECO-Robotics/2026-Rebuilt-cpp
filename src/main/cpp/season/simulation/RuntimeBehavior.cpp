@@ -1,6 +1,7 @@
 #include "season/detail/RuntimeBehavior.h"
 #include "season/drive/OffensiveAutoDrive.h"
 #include "season/mechanisms/Mechanisms.h"
+#include <base/RuntimeMode.h>
 #include <frc/RobotBase.h>
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/SimulationConfig.h"
@@ -15,7 +16,7 @@ namespace season::runtime
     behavior.emptyQuietSeconds = offenseconfig::kEmptyQuietSeconds;
     behavior.shotTimeoutSeconds = shotconfig::kShotTimeoutSeconds;
 #ifndef __FRC_ROBORIO__
-    if (frc::RobotBase::IsSimulation())
+    if (base::CurrentRuntimeMode() == base::Mode::Sim)
     {
       behavior.defaultCapacity = fuelconfig::kSimulationCapacity;
       behavior.defaultFeedRate = fuelconfig::kSimulationFeedBallsPerSecond;

@@ -12,8 +12,7 @@ class RobotRuntime {
 public:
   explicit RobotRuntime(RobotContainer &owner);
   ~RobotRuntime();
-  std::unique_ptr<base::MotorIO> MakeMotor(const season::hardware::FlywheelConfig &, base::Vendor);
-  std::unique_ptr<base::MotorIO> MakeJointMotor(base::MotorConfig, base::Vendor, season::hardware::JointRole);
+  base::MotorIOSelector &Motors();
   std::vector<std::unique_ptr<base::VisionIO>> LocalizationSources();
   void Initialize();
   void InitializeFeedback();
@@ -28,7 +27,6 @@ public:
   void Reset();
   bool ResetReady() const;
 private:
-  bool IsSimulation() const;
   RobotContainer &owner_;
   struct State;
   std::unique_ptr<State> state_;
