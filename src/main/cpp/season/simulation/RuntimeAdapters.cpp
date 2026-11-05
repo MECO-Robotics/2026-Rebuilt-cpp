@@ -1,5 +1,4 @@
 #include "season/detail/RuntimeAdapters.h"
-#include "season/detail/RuntimePolicy.h"
 #include "base/SimulationLatency.h"
 #include "base/SimulationPractice.h"
 #include <frc2/command/Commands.h>

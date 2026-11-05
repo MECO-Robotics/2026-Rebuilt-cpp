@@ -5,7 +5,13 @@
 #include "season/detail/RobotPlatform.h"
 #include "season/vision/VisionConfig.h"
 #include "season/simulation/SimulationConfig.h"
-#include "season/simulation/AutoDriveSimulation.h"
+#include "season/drive/AutoDrive.h"
+#include <meco/sim/SimulatedPieceCameraBank.h>
+#include <base/FootprintAutoDrive.h>
+#include <meco/sim/ColliderNavigation.h>
+#include <meco/sim/FootprintNavigation.h>
+#include <networktables/NetworkTableInstance.h>
+#include <utility>
 #include "season/simulation/Simulation.h"
 #include "meco/sim/DriveScene.h"
 #include "meco/sim/DriverInputTelemetry.h"
@@ -14,6 +20,130 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
 #include <stdexcept>
+
+namespace season { class FuelModel; }
+namespace season::simulation {
+// Owns desktop-only camera models and optional simulation navigation policy.
+class AutoDriveSimulation final : public AutoDriveEnvironment {
+public:
+  AutoDriveSimulation();
+  std::unique_ptr<base::ObjectDetectionIO> Camera(std::size_t, const std::string &, std::function<frc::Transform3d()>, units::second_t) override;
+  bool TrackTarget() const override;
+  std::optional<frc2::CommandPtr> NavigationCommand(base::Drive &, std::function<std::optional<frc::Pose2d>()>) override;
+  void Update(const frc::Pose3d &, const FuelModel &, bool, const std::vector<base::ObjectCluster> &, const base::Drive &);
+  void Reset();
+  void SetFieldCollidersEnabled(bool enabled) { fieldCollidersEnabled_ = enabled; }
+private:
+  meco::sim::SimulatedPieceCameraBank cameras_{2};
+  bool fieldCollidersEnabled_ = true;
+};
+}
+
+namespace season::simulation {
+AutoDriveSimulation::AutoDriveSimulation() {
+  frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintSim", false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintProfileSim", false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/AvoidBumpsSim", false);
+  frc::SmartDashboard::PutBoolean("AutoDrive/TrackTargetSim", false);
+}
+std::unique_ptr<base::ObjectDetectionIO> AutoDriveSimulation::Camera(
+    std::size_t i, const std::string &, std::function<frc::Transform3d()> mount, units::second_t) {
+  // Frames follow the simulation loop; the period controls the real NT subscription.
+  meco::sim::PieceSensorConfig config;
+  config.maxRange = autodriveconfig::kCameraRangeMetres;
+  config.seed = runtimeconfig::kFuelRandomSeed + i;
+  return cameras_.Configure(i, config, std::move(mount));
+}
+bool AutoDriveSimulation::TrackTarget() const {
+  return frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim", false);
+}
+std::optional<frc2::CommandPtr> AutoDriveSimulation::NavigationCommand(
+    base::Drive &drive, std::function<std::optional<frc::Pose2d>()> target) {
+  if (frc::SmartDashboard::GetBoolean("AutoDrive/UseFootprintSim", false))
+  {
+    base::FootprintAutoDriveConfig config;
+    const bool avoidBumps = frc::SmartDashboard::GetBoolean("AutoDrive/AvoidBumpsSim", false);
+    config.footprint = {autodriveconfig::kFootprintLengthMetres, autodriveconfig::kFootprintWidthMetres};
+    config.field = {0, 0, simulation::kFieldLength, simulation::kFieldWidth};
+    if (frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel", false) ||
+        frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim", false))
+      config.targetTranslationReplanThreshold = season::autodriveconfig::kTargetReplanDistanceMetres;
+    // The modeled swerve can drift after a rotation if it releases the
+    // drivetrain while residual angular speed is still appreciable.
+    config.follow.headingTolerance = autodriveconfig::kHeadingToleranceRadians;
+    config.follow.angularSettleSpeed = autodriveconfig::kAngularSettleSpeed;
+    config.follow.settleSamples = autodriveconfig::kIntermediateSettleSamples;
+    config.follow.finalSettleSamples = autodriveconfig::kFinalSettleSamples;
+    config.follow.poseAngularDamping = autodriveconfig::kPoseAngularDamping;
+    config.follow.usePoseRateForSettling = true;
+    if (frc::SmartDashboard::GetBoolean("AutoDrive/UseFootprintProfileSim", false))
+    {
+      config.follow.terrain = simulation::RampTerrain;
+      config.follow.terrainBoundaries = simulation::RampBoundaries;
+      config.follow.angularStopTolerance = autodriveconfig::kAngularStopTolerance;
+      config.follow.translationStallTimeout = autodriveconfig::kTranslationStallTimeoutSeconds;
+      config.follow.translationStallRequest = autodriveconfig::kTranslationStallRequest;
+      // Illustrative simulation-only capability, not a measured robot limit.
+      config.follow.maxAcceleration = autodriveconfig::kMaxAcceleration;
+    }
+    const bool fieldColliders = fieldCollidersEnabled_;
+    auto obstacles = [avoidBumps, fieldColliders]
+    {
+      std::vector<base::FieldRectangle> boxes;
+      if (fieldColliders)
+        for (const auto &rectangle : meco::sim::ColliderRectangles(
+                 simulation::FieldColliders(), autodriveconfig::kCollisionBottomThresholdMetres,
+                 autodriveconfig::kCollisionTopThresholdMetres))
+          boxes.push_back({rectangle.minX, rectangle.minY, rectangle.maxX, rectangle.maxY});
+      if (fieldColliders && avoidBumps)
+      {
+        const auto ramps = simulation::RampObstacles();
+        boxes.insert(boxes.end(), ramps.begin(), ramps.end());
+      }
+      // Desktop HAL/NT tests can inject one perceived obstacle. It is
+      // not a simulated rigid body or a hardware detection source.
+      meco::sim::AppendInjectedFootprintObstacle(boxes, nt::NetworkTableInstance::GetDefault()
+          .GetEntry("/Simulation/FootprintObstacle"));
+      return boxes;
+    };
+    return meco::sim::FootprintCommandWithOutcome(drive, std::move(target), std::move(obstacles),
+        config, nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/FootprintOutcome"),
+        base::FootprintOutcomeName);
+  }
+  return std::nullopt;
+}
+void AutoDriveSimulation::Update(const frc::Pose3d &truth, const FuelModel &fuel, bool fieldColliders,
+                                 const std::vector<base::ObjectCluster> &clusters, const base::Drive &drive) {
+    std::vector<frc::Translation3d> points;
+    points.reserve(fuel.FloorFuel().size());
+    for (const auto &p : fuel.FloorFuel())
+      points.emplace_back(units::meter_t{p.position.x}, units::meter_t{p.position.y}, units::meter_t{p.position.z});
+    static const auto fieldObstacles = simulation::FieldColliders();
+    static const std::vector<base::sim::BodySpec> noObstacles;
+    const auto &obstacles = fieldColliders ? fieldObstacles : noObstacles;
+    const auto samples = cameras_.Update(truth, points, obstacles,
+        [] { return frc::Timer::GetFPGATimestamp(); });
+    for (size_t i = 0; i < samples.size(); ++i)
+    {
+      frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontDetections" : "AutoDrive/SimRearDetections",
+                                     samples[i].detections);
+      frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontFrameAge" : "AutoDrive/SimRearFrameAge",
+                                     (frc::Timer::GetFPGATimestamp() - samples[i].captureTime).value());
+    }
+    frc::SmartDashboard::PutBoolean("AutoDrive/DetectionFresh", !clusters.empty());
+    frc::SmartDashboard::PutNumber("AutoDrive/ClusterCount", clusters.size());
+    double nearest = -1;
+    const auto robotPosition = drive.Pose().Translation();
+    for (const auto &cluster : clusters)
+    {
+      const double distance = cluster.position.Distance(robotPosition).value();
+      if (nearest < 0 || distance < nearest)
+        nearest = distance;
+    }
+    frc::SmartDashboard::PutNumber("AutoDrive/SimNearestFuelDistance", nearest);
+}
+void AutoDriveSimulation::Reset() { cameras_.Reset(); }
+}
 
 namespace season::runtime {
 struct RobotRuntime::DesktopSimulation final : RobotRuntime::Simulation {
@@ -29,6 +159,7 @@ struct RobotRuntime::DesktopSimulation final : RobotRuntime::Simulation {
   }
   std::shared_ptr<season::AutoDriveEnvironment> AutoDriveInputs() override {
     autoDriveSimulation_ = std::make_shared<season::simulation::AutoDriveSimulation>();
+    autoDriveSimulation_->SetFieldCollidersEnabled(simulationFieldCollidersEnabled_);
     return autoDriveSimulation_;
   }
   void Initialize() override {
@@ -49,6 +180,7 @@ struct RobotRuntime::DesktopSimulation final : RobotRuntime::Simulation {
       frc::SmartDashboard::PutNumber("SimulationTuning/AutoRotationKP", owner_.drive_.Config().autoRotationKP);
       simulationGroundedBodyHeight_ = units::meter_t{owner_.drive_.Config().simulation.rideHeight};
       simulationFieldCollidersEnabled_ = driveScene_->FieldCollidersEnabled();
+      if (autoDriveSimulation_) autoDriveSimulation_->SetFieldCollidersEnabled(simulationFieldCollidersEnabled_);
     }
   }
   void InitializeFeedback() override {

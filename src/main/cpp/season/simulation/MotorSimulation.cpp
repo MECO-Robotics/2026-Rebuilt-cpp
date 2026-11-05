@@ -1,6 +1,5 @@
 #include "season/simulation/MotorSimulation.h"
 #ifndef __FRC_ROBORIO__
-#include "season/simulation/MechanismSimulationConfig.h"
 #include "season/simulation/SimulationConfig.h"
 #include "meco/sim/MotorSimulationFactories.h"
 #include <vector>

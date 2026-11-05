@@ -3,10 +3,10 @@
 #include "base/Vision.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "base/NtGamepad.h"
-#include "season/drive/AutoDriveEnvironment.h"
 #include <memory>
 #include <vector>
 class RobotContainer;
+namespace season { class AutoDriveEnvironment; }
 namespace season::runtime {
 class RobotRuntime {
 public:

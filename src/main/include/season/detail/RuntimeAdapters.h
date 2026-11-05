@@ -1,6 +1,7 @@
 #pragma once
 
 #include "season/shooting/Shooting.h"
+#include "season/detail/RuntimeBehavior.h"
 #include <frc2/command/CommandPtr.h>
 #include <optional>
 
@@ -19,4 +20,14 @@ namespace season::runtime
 
   // Some platforms provide an additional practice control for the dashboard.
   std::optional<frc2::CommandPtr> PracticeControl();
+
+  // Game policy values are composed once. Base selects the matching profile
+  // without making robot behavior or its callers inspect the runtime mode.
+  struct PolicyProfile
+  {
+    AutonomousDefaults autonomous{false, false};
+    ShotCalibration shot{};
+    Behavior behavior{};
+  };
+  const PolicyProfile &Policy();
 }

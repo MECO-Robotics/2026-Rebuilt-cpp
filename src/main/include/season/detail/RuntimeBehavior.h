@@ -21,3 +21,11 @@ namespace season
     Behavior RuntimeBehavior();
   }
 }
+
+#ifndef __FRC_ROBORIO__
+namespace season::simulation
+{
+  // Voltage alone cannot establish direction during a roller reversal.
+  bool TransportFeeding(const Mechanisms &mechanisms);
+}
+#endif

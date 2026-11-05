@@ -1,4 +1,4 @@
-#include "season/detail/RobotLifecycle.h"
+#include "Robot.h"
 #include "season/simulation/SimulationConfig.h"
 #include "base/SimulationLifecycle.h"
 
