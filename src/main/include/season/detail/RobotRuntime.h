@@ -27,7 +27,6 @@ public:
   void Reset();
   bool ResetReady() const;
 private:
-  bool IsSimulation() const;
   RobotContainer &owner_;
   struct State;
   std::unique_ptr<State> state_;

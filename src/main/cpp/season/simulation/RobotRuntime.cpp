@@ -25,6 +25,7 @@
 #include "season/simulation/AutoDriveSimulation.h"
 #include "season/simulation/Simulation.h"
 #include "meco/sim/DriveScene.h"
+#include "meco/sim/DriverInputTelemetry.h"
 #include <networktables/StructTopic.h>
 #include <frc/geometry/struct/Pose3dStruct.h>
 #include "meco/sim/SimulationPose.h"
@@ -37,8 +38,7 @@ struct season::runtime::RobotRuntime::State
   std::shared_ptr<season::simulation::AutoDriveSimulation> autoDriveSimulation_;
   std::shared_ptr<season::simulation::SimulatedLocalization> simulatedLocalization_;
   std::unique_ptr<season::FuelSimulation> fuelSimulation_;
-  nt::DoubleArrayPublisher ntGamepadConsumedPublisher_;
-  nt::DoubleArrayPublisher driverStationCommandPublisher_;
+  std::unique_ptr<meco::sim::DriverInputTelemetry> driverInputTelemetry_;
   std::unique_ptr<meco::sim::DriveScene> driveScene_;
   units::meter_t simulationGroundedBodyHeight_{};
   bool simulationFieldCollidersEnabled_{true};
@@ -81,76 +81,55 @@ std::vector<std::unique_ptr<base::VisionIO>> season::runtime::RobotRuntime::Loca
 }
 void season::runtime::RobotRuntime::Initialize() {
 #ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation() && !base::replay::Active())
+  state_->driveScene_ = meco::sim::MakeRuntimeDriveScene(owner_.drive_, [this] {
+    return meco::sim::DriveScene::Configuration{
+        .fieldCollidersEnabled = true,
+        .feedbackLoops = season::simulation::runtimeconfig::kResetFeedbackLoops,
+        .colliders = season::simulation::FieldColliders(),
+        .contact = season::simulation::RobotContacts(),
+        .clearStartingPose = [](const frc::Pose2d &pose) { return season::simulation::IsClearStartingPose(pose); },
+        .resetSensors = [this] { if (state_->simulatedLocalization_) state_->simulatedLocalization_->Reset(); owner_.lastAcceptedVision_ = -1e9; }};
+  });
+  if (state_->driveScene_)
   {
-    auto ntInstance = nt::NetworkTableInstance::GetDefault();
-    state_->ntGamepadConsumedPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/Consumed").Publish();
-    state_->driverStationCommandPublisher_ = ntInstance.GetDoubleArrayTopic("/Simulation/NTGamepad/DriverStationCommand").Publish();
-    const char *ntGamepadMode = std::getenv("FRC_SIM_NT_GAMEPAD");
-    const bool simNtEnabled = ntGamepadMode ? std::string_view{ntGamepadMode} == "1"
-                                            : drive::ntgamepadconfig::kEnabled;
-    frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Enabled", simNtEnabled);
+    state_->driverInputTelemetry_ = std::make_unique<meco::sim::DriverInputTelemetry>(drive::ntgamepadconfig::kEnabled);
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKP", owner_.drive_.Config().steerKP);
     frc::SmartDashboard::PutNumber("SimulationTuning/SteerKD", owner_.drive_.Config().steerKD);
     frc::SmartDashboard::PutNumber("SimulationTuning/AutoTranslationKP", owner_.drive_.Config().autoTranslationKP);
     frc::SmartDashboard::PutNumber("SimulationTuning/AutoRotationKP", owner_.drive_.Config().autoRotationKP);
     const auto &physics = owner_.drive_.Config().simulation;
     state_->simulationGroundedBodyHeight_ = units::meter_t{physics.rideHeight};
-    state_->driveScene_ = std::make_unique<meco::sim::DriveScene>(owner_.drive_,
-        meco::sim::DriveScene::Configuration{
-            .fieldCollidersEnabled = true,
-            .feedbackLoops = season::simulation::runtimeconfig::kResetFeedbackLoops,
-            .colliders = season::simulation::FieldColliders(),
-            .contact = season::simulation::RobotContacts(),
-            .clearStartingPose = [](const frc::Pose2d &pose) { return season::simulation::IsClearStartingPose(pose); },
-            .resetSensors = [this] { if (state_->simulatedLocalization_) state_->simulatedLocalization_->Reset(); owner_.lastAcceptedVision_ = -1e9; }});
     state_->simulationFieldCollidersEnabled_ = state_->driveScene_->FieldCollidersEnabled();
   }
 #endif
 }
 void season::runtime::RobotRuntime::InitializeFeedback() {
 #ifndef __FRC_ROBORIO__
-  if (frc::RobotBase::IsSimulation() && !base::replay::Active()) state_->fuelSimulation_ = std::make_unique<season::FuelSimulation>(owner_.Mechanisms(), owner_.drive_, state_->fuelMotorLoads_);
+  if (state_->driveScene_) state_->fuelSimulation_ = std::make_unique<season::FuelSimulation>(owner_.Mechanisms(), owner_.drive_, state_->fuelMotorLoads_);
 #endif
 }
-void season::runtime::RobotRuntime::FinishSetup() { if (IsSimulation() && !base::replay::Active()) Reset(); }
-bool season::runtime::RobotRuntime::IsSimulation() const { return frc::RobotBase::IsSimulation(); }
+void season::runtime::RobotRuntime::FinishSetup() {
+#ifndef __FRC_ROBORIO__
+  if (state_->driveScene_) Reset();
+#endif
+}
 bool season::runtime::RobotRuntime::UseNtInput(bool selected) const {
 #ifndef __FRC_ROBORIO__
-  const char *overrideMode = std::getenv("FRC_SIM_NT_GAMEPAD");
-  if (frc::RobotBase::IsSimulation() && overrideMode) return std::string_view{overrideMode} == "1";
+  if (state_->driverInputTelemetry_) return state_->driverInputTelemetry_->Selected(selected);
 #endif
   return selected;
 }
 void season::runtime::RobotRuntime::BindReset() {
 #ifndef __FRC_ROBORIO__
-  owner_.controller_.Back().OnTrue(frc2::cmd::RunOnce([this] { Reset(); }));
+  if (state_->driveScene_)
+    owner_.controller_.Back().OnTrue(frc2::cmd::RunOnce([this] { Reset(); }));
 #endif
 }
 void season::runtime::RobotRuntime::PublishDriverInput(const base::NtGamepad::State &ntGamepadState, double dsLeftY, double dsLeftX, double dsRightX, double x, double y, double omega) {
 #ifndef __FRC_ROBORIO__
-  const int64_t consumeNtUs = nt::Now();
-  const double fieldX = x * owner_.driverHeadingOffset_.Cos() - y * owner_.driverHeadingOffset_.Sin();
-  const double fieldY = x * owner_.driverHeadingOffset_.Sin() + y * owner_.driverHeadingOffset_.Cos();
-  if (state_->ntGamepadConsumedPublisher_)
-  {
-    const std::array<double, 7> consumed{static_cast<double>(ntGamepadState.sequence),
-                                         static_cast<double>(ntGamepadState.sourceTimestampUs),
-                                         static_cast<double>(consumeNtUs), fieldX, fieldY, omega,
-                                         ntGamepadState.accepted ? 1.0 : 0.0};
-    state_->ntGamepadConsumedPublisher_.Set(consumed, consumeNtUs);
-  }
-  if (state_->driverStationCommandPublisher_)
-  {
-    const std::array<double, 7> driverStation{static_cast<double>(consumeNtUs), dsLeftY, dsLeftX, dsRightX,
-                                              fieldX, fieldY, omega};
-    state_->driverStationCommandPublisher_.Set(driverStation, consumeNtUs);
-  }
-  frc::SmartDashboard::PutBoolean("Simulation/NTGamepad/Accepted",
-                                  owner_.ntGamepad_ && ntGamepadState.accepted);
-  frc::SmartDashboard::PutNumber("Simulation/NTGamepad/AgeMs",
-                                 std::isfinite(ntGamepadState.ageMs) ? ntGamepadState.ageMs : -1.0);
-  frc::SmartDashboard::PutNumber("Simulation/NTGamepad/Sequence", ntGamepadState.sequence);
+  if (state_->driverInputTelemetry_)
+    state_->driverInputTelemetry_->Publish(ntGamepadState, dsLeftY, dsLeftX, dsRightX, x, y, omega,
+                                           owner_.driverHeadingOffset_, static_cast<bool>(owner_.ntGamepad_));
 #endif
 #ifdef __FRC_ROBORIO__
  (void)ntGamepadState; (void)dsLeftY; (void)dsLeftX; (void)dsRightX; (void)x; (void)y; (void)omega;
@@ -221,6 +200,7 @@ void season::runtime::RobotRuntime::Reset()
 {
   owner_.driverHeadingOffset_ = frc::Rotation2d{};
 #ifndef __FRC_ROBORIO__
+  if (!state_->driveScene_) return;
   // Reset to a clear alliance-specific starting pose.
   const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
   const frc::Pose2d origin =
