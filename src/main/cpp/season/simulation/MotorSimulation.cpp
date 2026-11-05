@@ -4,12 +4,16 @@
 #include "season/simulation/SimulationConfig.h"
 #include "meco/sim/MotorSimulationFactories.h"
 #include <vector>
+#include <mutex>
+#include <utility>
 #endif
 
-base::MotorIOSelector::SimulationProvider season::simulation::MotorProvider(std::shared_ptr<FuelMotorLoads> loads)
-{
 #ifndef __FRC_ROBORIO__
+namespace {
+base::MotorIOSelector::SimulationProvider BuildMotorProvider(std::shared_ptr<season::FuelMotorLoads> loads)
+{
   using namespace season::hardware;
+  using namespace season::simulation;
   using namespace season::simulation::motorconfig;
   auto loaded = [](bool neo) {
     auto model = meco::sim::LoadedMotorModelFromStallAndFreeSpeed(
@@ -39,6 +43,25 @@ base::MotorIOSelector::SimulationProvider season::simulation::MotorProvider(std:
       entry(base::Vendor::TalonFX, kBottomIndexer, kraken, 1),
       entry(base::Vendor::SparkMax, kTopIndexer, neo, 2),
       entry(base::Vendor::TalonFX, kShooter, kraken, 3)});
+}
+struct LazyMotorProvider {
+  explicit LazyMotorProvider(std::shared_ptr<season::FuelMotorLoads> sharedLoads)
+      : loads(std::move(sharedLoads)) {}
+  std::shared_ptr<season::FuelMotorLoads> loads;
+  std::once_flag initialized;
+  base::MotorIOSelector::SimulationProvider provider;
+};
+} // namespace
+#endif
+
+base::MotorIOSelector::SimulationProvider season::simulation::MotorProvider(std::shared_ptr<FuelMotorLoads> loads)
+{
+#ifndef __FRC_ROBORIO__
+  auto state = std::make_shared<LazyMotorProvider>(std::move(loads));
+  return [state](base::Vendor vendor, const base::MotorConfig& config) {
+    std::call_once(state->initialized, [&] { state->provider = BuildMotorProvider(state->loads); });
+    return state->provider(vendor, config);
+  };
 #else
   (void)loads;
   return {};

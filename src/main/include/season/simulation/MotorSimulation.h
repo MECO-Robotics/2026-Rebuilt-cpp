@@ -8,6 +8,7 @@ namespace season {
 struct FuelMotorLoads { std::array<double, 4> torque{}; };
 }
 namespace season::simulation {
-// Binds season mechanism parameters to a lazily selected simulation provider.
+// Derives simulation entries on the first simulated motor request; the
+// provider and resulting load callbacks retain the shared load state.
 base::MotorIOSelector::SimulationProvider MotorProvider(std::shared_ptr<FuelMotorLoads> loads);
 }
