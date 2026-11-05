@@ -20,8 +20,6 @@ namespace season::hardware {
                             ? kSwerveOdometryFdHz : kSwerveOdometryClassicHz;
     return config;
   }
-  // Select hardware IO only on a real robot.
-  base::Mode Mode() { return frc::RobotBase::IsReal() ? base::Mode::Real : base::Mode::Sim; }
   base::MotorConfig MotorRates(base::MotorConfig config, base::Vendor vendor)
   {
     if (vendor == base::Vendor::SparkMax)

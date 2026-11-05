@@ -43,15 +43,7 @@ struct season::runtime::RobotRuntime::State
 season::runtime::RobotRuntime::RobotRuntime(RobotContainer &owner)
     : owner_(owner), state_(std::make_unique<State>()) {}
 season::runtime::RobotRuntime::~RobotRuntime() = default;
-std::unique_ptr<base::MotorIO> season::runtime::RobotRuntime::MakeMotor(const season::hardware::FlywheelConfig &c, base::Vendor vendor) {
-  return state_->motorSelector_.Make(vendor, season::hardware::MotorRates(c.motor, vendor));
-}
-std::unique_ptr<base::MotorIO> season::runtime::RobotRuntime::MakeJointMotor(
-    base::MotorConfig config, base::Vendor vendor, season::hardware::JointRole role)
-{
-  (void)role;
-  return state_->motorSelector_.Make(vendor, season::hardware::MotorRates(config, vendor));
-}
+base::MotorIOSelector &season::runtime::RobotRuntime::Motors() { return state_->motorSelector_; }
 std::shared_ptr<season::AutoDriveEnvironment> season::runtime::RobotRuntime::AutoDriveInputs() {
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation()) {
