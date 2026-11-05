@@ -6,29 +6,19 @@
 #include "season/mechanisms/Mechanisms.h"
 #include "season/simulation/SimulationConfig.h"
 #include "season/simulation/MotorSimulation.h"
-#include <base/Replay.h>
 #include <base/RuntimeMode.h>
 #include <base/VisionIOSelector.h>
-#include <frc/RobotBase.h>
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
-#include <networktables/NetworkTableInstance.h>
-#include <array>
-#include <cmath>
-#include <cstdlib>
 #include <stdexcept>
-#include <string_view>
 #include <utility>
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/AutoDriveSimulation.h"
 #include "season/simulation/Simulation.h"
 #include "meco/sim/DriveScene.h"
 #include "meco/sim/DriverInputTelemetry.h"
-#include <networktables/StructTopic.h>
-#include <frc/geometry/struct/Pose3dStruct.h>
-#include "meco/sim/SimulationPose.h"
 #endif
 struct season::runtime::RobotRuntime::State
 {

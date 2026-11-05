@@ -80,7 +80,8 @@ std::optional<frc2::CommandPtr> AutoDriveSimulation::NavigationCommand(
       return boxes;
     };
     return meco::sim::FootprintCommandWithOutcome(drive, std::move(target), std::move(obstacles),
-        config, nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/FootprintOutcome"));
+        config, nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/FootprintOutcome"),
+        base::FootprintOutcomeName);
   }
   return std::nullopt;
 }
