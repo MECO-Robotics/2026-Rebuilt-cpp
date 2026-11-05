@@ -42,10 +42,7 @@ namespace season::offense
       return {};
     auto free = [&grid](frc::Translation2d p)
     {
-      const int x = static_cast<int>(std::floor(p.X().value() / grid.cellSize));
-      const int y = static_cast<int>(std::floor(p.Y().value() / grid.cellSize));
-      return y >= 0 && y < static_cast<int>(grid.blocked.size()) && x >= 0 &&
-             x < static_cast<int>(grid.blocked[y].size()) && !grid.blocked[y][x];
+      return base::IsNavigationGridPointFree(grid, p);
     };
     if (!free(start.Translation()))
       return {};

@@ -11,7 +11,7 @@
 #include <networktables/StructTopic.h>
 #include <vector>
 #include "base/Vision.h"
-#include "meco/sim/IdealVisionObservation.h"
+#include "meco/sim/SimulatedVisionSource.h"
 #include "meco/sim/SimulatedVision.h"
 #include <frc/geometry/Pose3d.h>
 #include "base/sim/Arena.h"
@@ -105,14 +105,14 @@ namespace season::simulation
   // shared acquisition, filtering and estimator ownership remain in MecoBase.
   struct SimulatedLocalization
   {
-    base::VisionInputs limelight, quest;
+    meco::sim::SimulatedVisionSource limelight, quest;
     std::vector<int> tagIds;
     bool questAligned = false;
 
     void Reset()
     {
-      limelight = {};
-      quest = {};
+      limelight.Reset();
+      quest.Reset();
       tagIds.clear();
       questAligned = false;
     }
@@ -121,9 +121,6 @@ namespace season::simulation
                 const frc::AprilTagFieldLayout &layout,
                 const frc::Transform3d &limelightMount, const frc::Transform3d &questMount)
     {
-      limelight = {};
-      quest = {};
-      limelight.connected = quest.connected = quest.tracking = true;
       // LL3 standard lens; Quest optical frustum is an approximate model.
       tagIds = meco::sim::VisibleTags(truth, limelightMount, layout,
                                       units::degree_t{simulation::runtimeconfig::kLimelightHorizontalFovDegrees}, units::degree_t{simulation::runtimeconfig::kLimelightVerticalFovDegrees}, units::meter_t{simulation::runtimeconfig::kVisionRangeMetres});
@@ -131,15 +128,14 @@ namespace season::simulation
                                                     units::degree_t{simulation::runtimeconfig::kQuestHorizontalFovDegrees}, units::degree_t{simulation::runtimeconfig::kQuestVerticalFovDegrees}, units::meter_t{simulation::runtimeconfig::kVisionRangeMetres});
       // Model AprilTag-assisted absolute initialization, then continuous VIO.
       questAligned = questAligned || questTags.size() >= simulation::runtimeconfig::kQuestAlignmentMinTags || !tagIds.empty();
-      quest.aligned = questAligned;
-      const auto limelightObservation = meco::sim::MakeIdealVisionObservation(
-          truth, timestamp, layout, !tagIds.empty(), units::meter_t{simulation::runtimeconfig::kVisionTagDistanceNoiseMetres}, {simulation::runtimeconfig::kLimelightStdX, simulation::runtimeconfig::kLimelightStdY, simulation::runtimeconfig::kLimelightStdHeading});
-      const auto questObservation = meco::sim::MakeIdealVisionObservation(
-          truth, timestamp, layout, questAligned, units::meter_t{simulation::runtimeconfig::kVisionTagDistanceNoiseMetres}, {simulation::runtimeconfig::kQuestStdX, simulation::runtimeconfig::kQuestStdY, simulation::runtimeconfig::kQuestStdHeading});
-      if (limelightObservation)
-        limelight.observations.push_back({limelightObservation->pose, limelightObservation->timestamp, limelightObservation->stdDevs});
-      if (questObservation)
-        quest.observations.push_back({questObservation->pose, questObservation->timestamp, questObservation->stdDevs});
+      limelight.Update(truth, timestamp, layout, !tagIds.empty(),
+          units::meter_t{simulation::runtimeconfig::kVisionTagDistanceNoiseMetres},
+          {simulation::runtimeconfig::kLimelightStdX, simulation::runtimeconfig::kLimelightStdY, simulation::runtimeconfig::kLimelightStdHeading},
+          true, false, false);
+      quest.Update(truth, timestamp, layout, questAligned,
+          units::meter_t{simulation::runtimeconfig::kVisionTagDistanceNoiseMetres},
+          {simulation::runtimeconfig::kQuestStdX, simulation::runtimeconfig::kQuestStdY, simulation::runtimeconfig::kQuestStdHeading},
+          true, true, questAligned);
     }
   };
 }

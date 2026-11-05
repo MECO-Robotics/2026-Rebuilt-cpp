@@ -1,3 +1,4 @@
+#include "season/drive/DriveBehaviorConfig.h"
 #include "season/detail/RobotRuntime.h"
 #include "RobotContainer.h"
 #include "season/detail/RobotPlatform.h"
@@ -22,6 +23,7 @@
 #include "season/simulation/MechanismSimulationConfig.h"
 #include "season/simulation/Simulation.h"
 #include "meco/sim/DriveSimulationAdapter.h"
+#include "meco/sim/DriveResetCoordinator.h"
 #include <networktables/StructTopic.h>
 #include <frc/geometry/struct/Pose3dStruct.h>
 #include "meco/sim/LoadedMotorIO.h"
@@ -40,12 +42,8 @@ struct season::runtime::RobotRuntime::State
   nt::StructPublisher<frc::Pose3d> simulationPosePublisher_;
   nt::StructPublisher<frc::Pose3d> simulationBodyPosePublisher_;
   units::meter_t simulationGroundedBodyHeight_{};
-  int simulationResetFeedbackLoops_{};
-  frc::Pose2d simulationResetPose_{};
-  frc::Pose2d simulationResetPhysicalOrigin_{};
+  meco::sim::DriveResetCoordinator reset_{season::simulation::runtimeconfig::kResetFeedbackLoops};
   bool simulationFieldCollidersEnabled_{true};
-  bool captureAutonomousPoseReset_ = false;
-  bool autonomousPoseBlocked_ = false;
 #endif
 };
 season::runtime::RobotRuntime::RobotRuntime(RobotContainer &owner)
@@ -67,10 +65,8 @@ std::unique_ptr<base::MotorIO> season::runtime::RobotRuntime::MakeMotor(const se
     const double stallCurrent = neo ? season::simulation::motorconfig::kNeoStallCurrentAmps : season::simulation::motorconfig::kKrakenStallCurrentAmps;
     const double stallTorque = neo ? season::simulation::motorconfig::kNeoStallTorqueNm : season::simulation::motorconfig::kKrakenStallTorqueNm;
     const double freeSpeedRpm = neo ? season::simulation::motorconfig::kNeoFreeSpeedRpm : season::simulation::motorconfig::kKrakenFreeSpeedRpm;
-    meco::sim::LoadedMotorModel model;
-    model.resistanceOhms = nominalVoltage / stallCurrent;
-    model.torqueConstantNmPerAmp = stallTorque / stallCurrent;
-    model.velocityConstantRadPerSecondPerVolt = freeSpeedRpm * 2 * std::numbers::pi / 60 / nominalVoltage;
+    auto model = meco::sim::LoadedMotorModelFromStallAndFreeSpeed(
+        nominalVoltage, stallCurrent, stallTorque, freeSpeedRpm);
     model.outputInertiaKgM2 = season::simulation::MotorInertia(c.role);
     model.viscousDragNmPerRadPerSecond = season::simulation::motorconfig::kViscousDrag;
     model.maximumPhysicsStepSeconds = season::simulation::motorconfig::kMaxPhysicsStepSeconds;
@@ -119,18 +115,8 @@ std::vector<std::unique_ptr<base::VisionIO>> season::runtime::RobotRuntime::Loca
 #ifndef __FRC_ROBORIO__
   if (frc::RobotBase::IsSimulation())
   {
-    sources.push_back(std::make_unique<base::InjectedVisionIO>(
-        [this](auto &inputs)
-        {
-          inputs = std::move(state_->simulatedLocalization_.limelight);
-          state_->simulatedLocalization_.limelight.observations.clear();
-        }));
-    sources.push_back(std::make_unique<base::InjectedVisionIO>(
-        [this](auto &inputs)
-        {
-          inputs = std::move(state_->simulatedLocalization_.quest);
-          state_->simulatedLocalization_.quest.observations.clear();
-        }));
+    sources.push_back(state_->simulatedLocalization_.limelight.MakeIO());
+    sources.push_back(state_->simulatedLocalization_.quest.MakeIO());
     return sources;
   }
 #endif
@@ -188,30 +174,21 @@ void season::runtime::RobotRuntime::Initialize() {
     owner_.drive_.SetPoseResetCallback(
         [this](const frc::Pose2d &pose)
         {
-          if (state_->captureAutonomousPoseReset_)
+          const bool clear = !state_->reset_.CapturingAutonomous() ||
+              !state_->simulationFieldCollidersEnabled_ || season::simulation::IsClearStartingPose(pose);
+          const auto result = state_->reset_.OnPoseReset(pose, clear);
+          if (result == meco::sim::DriveResetCoordinator::PoseReset::autonomousAccepted)
           {
-            state_->captureAutonomousPoseReset_ = false;
-            if (!state_->simulationFieldCollidersEnabled_ || season::simulation::IsClearStartingPose(pose))
-            {
-              state_->simulationResetPhysicalOrigin_ = pose;
-              state_->simulatedLocalization_.Reset();
-              owner_.lastAcceptedVision_ = -1e9;
-              // Allow simulated encoders and gyro to catch up after teleporting.
-              state_->simulationResetFeedbackLoops_ = season::simulation::runtimeconfig::kResetFeedbackLoops;
-              owner_.drive_.ResetSimulation(pose);
-              frc::SmartDashboard::PutString("Simulation/AutoStartPose", "applied");
-            }
-            else
-            {
-              // Reject overlapping starts and restore the prior simulation origin.
-              state_->autonomousPoseBlocked_ = true;
-              owner_.drive_.ResetPose(state_->simulationResetPhysicalOrigin_);
-              frc::SmartDashboard::PutString("Simulation/AutoStartPose", "blocked-by-field");
-            }
-            return;
+            state_->simulatedLocalization_.Reset();
+            owner_.lastAcceptedVision_ = -1e9;
+            owner_.drive_.ResetSimulation(pose);
+            frc::SmartDashboard::PutString("Simulation/AutoStartPose", "applied");
           }
-          if (state_->simulationResetFeedbackLoops_ > 0)
-            state_->simulationResetPose_ = pose;
+          else if (result == meco::sim::DriveResetCoordinator::PoseReset::autonomousRejected)
+          {
+            owner_.drive_.ResetPose(state_->reset_.PhysicalOrigin());
+            frc::SmartDashboard::PutString("Simulation/AutoStartPose", "blocked-by-field");
+          }
         });
   }
 #endif
@@ -235,7 +212,7 @@ void season::runtime::RobotRuntime::BindReset() {
   owner_.controller_.Back().OnTrue(frc2::cmd::RunOnce([this] { Reset(); }));
 #endif
 }
-void season::runtime::RobotRuntime::PublishDriverInput(const season::drive::NtGamepad::State &ntGamepadState, double dsLeftY, double dsLeftX, double dsRightX, double x, double y, double omega) {
+void season::runtime::RobotRuntime::PublishDriverInput(const base::NtGamepad::State &ntGamepadState, double dsLeftY, double dsLeftX, double dsRightX, double x, double y, double omega) {
 #ifndef __FRC_ROBORIO__
   const int64_t consumeNtUs = nt::Now();
   const double fieldX = x * owner_.driverHeadingOffset_.Cos() - y * owner_.driverHeadingOffset_.Sin();
@@ -272,7 +249,7 @@ const std::vector<int> *season::runtime::RobotRuntime::TagIds() const {
 }
 bool season::runtime::RobotRuntime::ResetReady() const {
 #ifndef __FRC_ROBORIO__
- return state_->simulationResetFeedbackLoops_ == 0;
+ return state_->reset_.Ready();
 #else
  return true;
 #endif
@@ -281,15 +258,14 @@ bool season::runtime::RobotRuntime::ResetReady() const {
 void season::runtime::RobotRuntime::Schedule(frc2::Command *command)
 {
 #ifndef __FRC_ROBORIO__
-  state_->captureAutonomousPoseReset_ = frc::RobotBase::IsSimulation();
-  state_->autonomousPoseBlocked_ = false;
-  if (state_->captureAutonomousPoseReset_)
+  if (frc::RobotBase::IsSimulation()) {
+    state_->reset_.BeginAutonomousSchedule();
     frc::SmartDashboard::PutString("Simulation/AutoStartPose", "not-requested");
+  }
 #endif
   command->Schedule();
 #ifndef __FRC_ROBORIO__
-  state_->captureAutonomousPoseReset_ = false;
-  if (state_->autonomousPoseBlocked_)
+  if (frc::RobotBase::IsSimulation() && state_->reset_.EndAutonomousSchedule())
     command->Cancel();
 #endif
 }
@@ -303,10 +279,10 @@ void season::runtime::RobotRuntime::Periodic()
     // Scene reset changes encoder and gyro raw inputs asynchronously. Reconcile
     // once after transport/odometry has consumed them. Preserve any autonomous
     // pose seed applied since reset and motion in that frame. No loop waits.
-    if (state_->simulationResetFeedbackLoops_ > 0 && --state_->simulationResetFeedbackLoops_ == 0)
-      owner_.drive_.ResetPose(state_->simulationResetPose_.TransformBy(frc::Transform2d{
-          state_->simulationResetPhysicalOrigin_, frc::Pose2d{units::meter_t{truth->x}, units::meter_t{truth->y},
-                                                      frc::Rotation2d{units::radian_t{truth->yaw}}}}));
+    if (const auto reconciled = state_->reset_.Advance(frc::Pose2d{
+            units::meter_t{truth->x}, units::meter_t{truth->y},
+            frc::Rotation2d{units::radian_t{truth->yaw}}}))
+      owner_.drive_.ResetPose(*reconciled);
     // Keep body-origin physics and floor-referenced visualization distinct.
     const auto body = state_->simulationSession_->PhysicsTruth().body;
     const auto q = body.pose.rotation;
@@ -317,7 +293,7 @@ void season::runtime::RobotRuntime::Periodic()
     const auto visualPose = meco::sim::FloorReferencedRobotPose(bodyPose, state_->simulationGroundedBodyHeight_);
     state_->simulationPosePublisher_.Set(visualPose);
     // Do not generate localization observations while reset feedback settles.
-    if (state_->simulationResetFeedbackLoops_ == 0)
+    if (state_->reset_.Ready())
       state_->simulatedLocalization_.Update(visualPose, frc::Timer::GetFPGATimestamp(), owner_.layout_,
                                     season::hardware::VisionConfig(owner_.layout_).robotToCamera, season::hardware::QuestConfig(owner_.layout_).robotToQuest);
     frc::SmartDashboard::PutBoolean("Localization/LimelightConnected", owner_.vision_->Inputs().connected);
@@ -337,7 +313,7 @@ void season::runtime::RobotRuntime::Periodic()
   // Step fuel once, then generate camera observations from the updated scene.
   if (state_->fuelSimulation_)
     state_->fuelSimulation_->Periodic(season::simulation::runtimeconfig::kSimulationPeriodSeconds, fuelRobotState, owner_.matchContext_.ownActive);
-  if (state_->autoDriveSimulation_ && owner_.autoDrive_ && state_->fuelSimulation_ && fuelRobotState && state_->simulationResetFeedbackLoops_ == 0)
+  if (state_->autoDriveSimulation_ && owner_.autoDrive_ && state_->fuelSimulation_ && fuelRobotState && state_->reset_.Ready())
     state_->autoDriveSimulation_->Update(fuelRobotState->pose, state_->fuelSimulation_->Model(), state_->simulationFieldCollidersEnabled_,
                                  owner_.autoDrive_->VisibleFuel(), owner_.drive_);
 #endif
@@ -349,9 +325,9 @@ void season::runtime::RobotRuntime::Reset()
 #ifndef __FRC_ROBORIO__
   // Reset to a clear alliance-specific starting pose.
   const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
-  state_->simulationResetPhysicalOrigin_ =
+  const frc::Pose2d origin =
       state_->simulationFieldCollidersEnabled_ ? season::simulation::DefaultSpawn(red) : frc::Pose2d{};
-  if (state_->simulationFieldCollidersEnabled_ && !season::simulation::IsClearStartingPose(state_->simulationResetPhysicalOrigin_))
+  if (state_->simulationFieldCollidersEnabled_ && !season::simulation::IsClearStartingPose(origin))
     throw std::logic_error("Simulation spawn intersects field geometry");
   if (state_->autoDriveSimulation_)
     state_->autoDriveSimulation_->Reset();
@@ -359,8 +335,8 @@ void season::runtime::RobotRuntime::Reset()
     owner_.autoDrive_->ClearPerception();
   state_->simulatedLocalization_.Reset();
   owner_.lastAcceptedVision_ = -1e9;
-  state_->simulationResetFeedbackLoops_ = season::simulation::runtimeconfig::kResetFeedbackLoops;
-  owner_.drive_.ResetSimulation(state_->simulationResetPhysicalOrigin_);
+  state_->reset_.BeginPhysicalReset(origin);
+  owner_.drive_.ResetSimulation(origin);
 #endif
 
 #ifndef __FRC_ROBORIO__

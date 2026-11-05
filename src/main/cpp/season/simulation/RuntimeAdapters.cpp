@@ -5,7 +5,7 @@
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/StringTopic.h>
 #ifndef __FRC_ROBORIO__
-#include <frc/simulation/DriverStationSim.h>
+#include <meco/sim/PracticeMatchController.h>
 #endif
 
 namespace season::runtime
@@ -29,24 +29,7 @@ namespace season::runtime
   {
 #ifndef __FRC_ROBORIO__
     if (frc::RobotBase::IsSimulation())
-      return frc2::cmd::RunOnce([] {
-        const char *station = "Blue1";
-        switch (frc::sim::DriverStationSim::GetAllianceStationId())
-        {
-        case HAL_AllianceStationID_kRed1: station = "Red1"; break;
-        case HAL_AllianceStationID_kRed2: station = "Red2"; break;
-        case HAL_AllianceStationID_kRed3: station = "Red3"; break;
-        case HAL_AllianceStationID_kBlue2: station = "Blue2"; break;
-        case HAL_AllianceStationID_kBlue3: station = "Blue3"; break;
-        default: break;
-        }
-        nt::NetworkTableInstance::GetDefault().GetTable("/Sim/Practice")
-            ->GetEntry("Config/AllianceStation").SetString(station);
-        static auto command = nt::NetworkTableInstance::GetDefault()
-                                  .GetStringTopic("/Sim/Practice/Command")
-                                  .Publish({.keepDuplicates = true});
-        command.Set("start");
-      }).IgnoringDisable(true);
+      return meco::sim::StartPracticeMatch();
 #endif
     return std::nullopt;
   }

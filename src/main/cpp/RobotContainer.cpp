@@ -1,3 +1,4 @@
+#include "season/drive/DriveBehaviorConfig.h"
 #include "season/drive/OffensiveAutoDrive.h"
 #include "RobotContainer.h"
 #include "season/detail/RobotRuntime.h"
@@ -125,9 +126,9 @@ RobotContainer::RobotContainer()
   const bool ntInputSelected = season::drive::ntgamepadconfig::kEnabled;
   const bool useNtInput = runtime_->UseNtInput(ntInputSelected);
   if (useNtInput)
-    ntGamepad_ = std::make_unique<season::drive::NtGamepad>(nt::NetworkTableInstance::GetDefault(),
-                                                            season::drive::ntgamepadconfig::kDefaultPeriodMs,
-                                                            season::drive::ntgamepadconfig::kDefaultStaleMs);
+    ntGamepad_ = std::make_unique<base::NtGamepad>(nt::NetworkTableInstance::GetDefault(),
+                                                  season::drive::ntgamepadconfig::kDefaultPeriodMs,
+                                                  season::drive::ntgamepadconfig::kDefaultStaleMs);
   frc::SmartDashboard::PutString("Input/DriverSource", useNtInput ? "nt" : "driverstation");
   frc::SmartDashboard::PutBoolean("Input/NTGamepadEnabled", useNtInput);
   // Manual driving resumes whenever no other command owns the drivetrain.

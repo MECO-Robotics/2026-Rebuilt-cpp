@@ -1,6 +1,7 @@
 #pragma once
 #include "season/shooting/Shooting.h"
 #include "season/RobotGeometry.h"
+#include "base/NavigationGrid.h"
 #include <cmath>
 #include <optional>
 #include <vector>
@@ -34,11 +35,7 @@ namespace season
     inline constexpr double kScoringBoundaryMarginMetres = .15;
   }
 
-  struct ScoringGrid
-  {
-    double cellSize = 0;
-    std::vector<std::vector<bool>> blocked;
-  };
+  using ScoringGrid = base::NavigationGrid;
   // Static-grid path distance; diagonal moves cannot cut blocked corners.
   std::optional<frc::Pose2d> CheapestHubScoringNode(const ScoringGrid &grid, frc::Pose2d start,
                                                     frc::DriverStation::Alliance alliance, const FieldGeometry &field, ShotCalibration calibration);

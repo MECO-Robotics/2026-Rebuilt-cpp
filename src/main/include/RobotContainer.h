@@ -7,7 +7,7 @@
 #include "base/SystemCheck.h"
 #include "season/drive/AutoDrive.h"
 #include "season/drive/OffensiveAutoDrive.h"
-#include "season/drive/NtGamepad.h"
+#include "base/NtGamepad.h"
 #include <base/season2026/MatchContext.h>
 #include <frc2/command/button/CommandXboxController.h>
 #include <frc/apriltag/AprilTagFieldLayout.h>
@@ -57,7 +57,7 @@ private:
   std::unique_ptr<season::AutoDrive> autoDrive_;
   std::shared_ptr<season::OffensiveFuelEstimate> fuelEstimate_ = std::make_shared<season::OffensiveFuelEstimate>();
 
-  std::unique_ptr<season::drive::NtGamepad> ntGamepad_;
+  std::unique_ptr<base::NtGamepad> ntGamepad_;
   std::string_view activeDriverInput_ = "none";
   frc2::CommandXboxController controller_{season::hardware::kPilotControllerPort}, copilot_{season::hardware::kCopilotControllerPort};
   std::unique_ptr<season::autonomous::RobotAutos> autonomous_;

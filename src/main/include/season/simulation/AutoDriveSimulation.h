@@ -16,8 +16,7 @@ public:
   void Update(const frc::Pose3d &, const FuelModel &, bool, const std::vector<base::ObjectCluster> &, const base::Drive &);
   void Reset();
 private:
-  std::array<std::unique_ptr<meco::sim::SimulatedPieceSensor>, 2> sensors;
-  std::array<std::optional<base::ObjectDetectionFrame>, 2> frames;
+  std::array<std::unique_ptr<meco::sim::SimulatedPieceSensorBridge>, 2> sensors;
   std::array<std::function<frc::Transform3d()>, 2> mounts_;
   uint64_t sequence{};
 };

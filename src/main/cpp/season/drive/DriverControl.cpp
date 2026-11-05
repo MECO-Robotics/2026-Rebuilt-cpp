@@ -25,7 +25,7 @@ void RobotContainer::DriveTeleop(bool aim)
   double rawLeftY = 0.0, rawLeftX = 0.0, rawRightX = 0.0;
   bool inputAvailable = false;
   activeDriverInput_ = "none";
-  season::drive::NtGamepad::State ntGamepadState;
+  base::NtGamepad::State ntGamepadState;
   if (ntGamepad_)
     ntGamepadState = ntGamepad_->Read();
   if (ntGamepad_ && ntGamepadState.accepted)
