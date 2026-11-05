@@ -20,10 +20,5 @@ namespace season::simulation
     return role == hardware::JointRole::Rack ? kRackInertia : kHoodInertia;
   }
 
-  // The current joint plants do not model gravitational load.
-  inline base::Gains ConfigureJointGains(base::Gains gains)
-  {
-    gains.gravity = 0;
-    return gains;
-  }
+
 }

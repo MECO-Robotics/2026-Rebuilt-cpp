@@ -104,3 +104,5 @@ For example, to adjust an object camera's position, edit its shared mount defaul
 ## Check your change
 
 Run `./gradlew build --max-workers=2` from the repository root, then use `./gradlew simulateNative` and exercise the affected controls or autonomous choice. For a held action, also release it and try another action that uses the same subsystem; observe what stops and what remains commanded. For an autonomous change, select the actual chooser option and check its start, finish, and interruption behavior. A successful build checks compilation and the existing tests; a simulation check shows only simulated behavior. Before deploying or moving the physical robot, review the change with the team and verify the relevant hardware settings and safe operating conditions.
+
+Simulation controller gains use the single `kSimulationTuning` setting in `season/detail/RobotPlatform.h`. `Automatic` derives drive gains and accounts for the current gravity-free simulated joint plants; `Configured` uses the robot's configured gains in simulation. Simulation physics properties remain active with either choice.
