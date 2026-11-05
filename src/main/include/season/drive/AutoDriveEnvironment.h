@@ -7,7 +7,8 @@
 #include <string>
 
 namespace season {
-// Inputs and optional navigation policy supplied by the robot's runtime.
+// Simulation camera input and optional navigation policy supplied by the
+// robot's runtime. The default camera reports no simulated detections.
 class AutoDriveEnvironment {
 public:
   virtual ~AutoDriveEnvironment() = default;
