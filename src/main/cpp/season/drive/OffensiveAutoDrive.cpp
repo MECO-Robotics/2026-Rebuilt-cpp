@@ -381,11 +381,7 @@ namespace season
             return false;
           if (!*collectionGrid)
             return true; // the pathfinder retains its own safety checks
-          const auto &grid = **collectionGrid;
-          const int x = static_cast<int>(std::floor(p.X().value() / grid.cellSize));
-          const int y = static_cast<int>(std::floor(p.Y().value() / grid.cellSize));
-          return y >= 0 && y < static_cast<int>(grid.blocked.size()) && x >= 0 &&
-                 x < static_cast<int>(grid.blocked[y].size()) && !grid.blocked[y][x];
+          return base::IsNavigationGridPointFree(**collectionGrid, p);
         };
         auto selected = selector->Update(points, pose, speeds, frc::Timer::GetFPGATimestamp().value(), field, *active, passable);
         if (!selected)

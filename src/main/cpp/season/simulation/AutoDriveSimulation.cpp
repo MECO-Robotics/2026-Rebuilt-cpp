@@ -5,6 +5,7 @@
 #include "season/drive/AutoDrive.h"
 #include "season/vision/PerceptionConfig.h"
 #include <base/FootprintAutoDrive.h>
+#include <meco/sim/ColliderNavigation.h>
 #include <frc/Timer.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
@@ -13,42 +14,6 @@
 #include <utility>
 
 namespace season::simulation {
-namespace {
-    const char *FootprintOutcomeName(base::FootprintAutoDriveOutcome outcome)
-    {
-      using O = base::FootprintAutoDriveOutcome;
-      switch (outcome)
-      {
-      case O::running:
-        return "running";
-      case O::arrived:
-        return "arrived";
-      case O::stalled:
-        return "stalled";
-      case O::blocked:
-        return "blocked";
-      case O::no_route:
-        return "no-route";
-      case O::planner_busy:
-        return "planner-busy";
-      case O::target_unavailable:
-        return "target-unavailable";
-      case O::target_unstable:
-        return "target-unstable";
-      case O::target_changed:
-        return "target-changed";
-      case O::invalid_feedback:
-        return "invalid-feedback";
-      case O::source_error:
-        return "source-error";
-      case O::settle_failed:
-        return "settle-failed";
-      case O::interrupted:
-        return "interrupted";
-      }
-      return "unknown";
-    }
- }
 AutoDriveSimulation::AutoDriveSimulation() {
   frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintSim", false);
   frc::SmartDashboard::PutBoolean("AutoDrive/UseFootprintProfileSim", false);
@@ -62,8 +27,8 @@ std::unique_ptr<base::ObjectDetectionIO> AutoDriveSimulation::Camera(
   config.maxRange = autodriveconfig::kCameraRangeMetres;
   config.seed = runtimeconfig::kFuelRandomSeed + i;
   config.robotToCamera = mounts_[i]();
-  sensors[i] = std::make_unique<meco::sim::SimulatedPieceSensor>(config);
-  return std::make_unique<base::InjectedObjectDetectionIO>([this, i] { return std::exchange(frames[i], std::nullopt); });
+  sensors[i] = std::make_unique<meco::sim::SimulatedPieceSensorBridge>(config);
+  return sensors[i]->MakeIO();
 }
 bool AutoDriveSimulation::TrackTarget() const {
   return frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim", false);
@@ -101,19 +66,10 @@ std::optional<frc2::CommandPtr> AutoDriveSimulation::NavigationCommand(
     {
       std::vector<base::FieldRectangle> boxes;
       if (frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled", true))
-        for (const auto &body : simulation::FieldColliders())
-        {
-          // Skip traversable inclined ramps and objects entirely above or
-          // below the modeled chassis contact volume. Remaining field
-          // boxes are axis aligned in this desktop model.
-          if (std::abs(body.pose.rotation.x) > 1e-8 || std::abs(body.pose.rotation.y) > 1e-8 ||
-              std::abs(body.pose.rotation.z) > 1e-8 || body.pose.position.z + body.halfExtents.z < autodriveconfig::kCollisionBottomThresholdMetres ||
-              body.pose.position.z - body.halfExtents.z > autodriveconfig::kCollisionTopThresholdMetres)
-            continue;
-          boxes.push_back(
-              {body.pose.position.x - body.halfExtents.x, body.pose.position.y - body.halfExtents.y,
-               body.pose.position.x + body.halfExtents.x, body.pose.position.y + body.halfExtents.y});
-        }
+        for (const auto &rectangle : meco::sim::ColliderRectangles(
+                 simulation::FieldColliders(), autodriveconfig::kCollisionBottomThresholdMetres,
+                 autodriveconfig::kCollisionTopThresholdMetres))
+          boxes.push_back({rectangle.minX, rectangle.minY, rectangle.maxX, rectangle.maxY});
       if (frc::SmartDashboard::GetBoolean("FieldSimulation/CollidersEnabled", true) && avoidBumps)
       {
         const auto ramps = simulation::RampObstacles();
@@ -137,7 +93,7 @@ std::optional<frc2::CommandPtr> AutoDriveSimulation::NavigationCommand(
     entry.SetString("running");
     return base::AutoDriveFootprintToPose(drive, target, std::move(obstacles), config, outcome)
         .FinallyDo([entry, outcome](bool) mutable
-                   { entry.SetString(FootprintOutcomeName(*outcome)); });
+                   { entry.SetString(base::FootprintOutcomeName(*outcome)); });
   }
   return std::nullopt;
 }
@@ -153,13 +109,12 @@ void AutoDriveSimulation::Update(const frc::Pose3d &truth, const FuelModel &fuel
     ++sequence;
     for (size_t i = 0; i < 2; ++i)
     {
-      sensors[i]->SetMount(mounts_[i]());
-      frames[i] = sensors[i]->ObserveFrame(
-          truth, points, obstacles, frc::Timer::GetFPGATimestamp(), sequence);
+      const auto &frame = sensors[i]->Update(
+          truth, mounts_[i](), points, obstacles, frc::Timer::GetFPGATimestamp(), sequence);
       frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontDetections" : "AutoDrive/SimRearDetections",
-                                     frames[i]->detections.size());
+                                     frame.detections.size());
       frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontFrameAge" : "AutoDrive/SimRearFrameAge",
-                                     (frc::Timer::GetFPGATimestamp() - frames[i]->captureTime).value());
+                                     (frc::Timer::GetFPGATimestamp() - frame.captureTime).value());
     }
     frc::SmartDashboard::PutBoolean("AutoDrive/DetectionFresh", !clusters.empty());
     frc::SmartDashboard::PutNumber("AutoDrive/ClusterCount", clusters.size());
@@ -173,6 +128,6 @@ void AutoDriveSimulation::Update(const frc::Pose3d &truth, const FuelModel &fuel
     }
     frc::SmartDashboard::PutNumber("AutoDrive/SimNearestFuelDistance", nearest);
 }
-void AutoDriveSimulation::Reset() { for (auto &frame : frames) frame.reset(); }
+void AutoDriveSimulation::Reset() { for (auto &sensor : sensors) if (sensor) sensor->Reset(); }
 }
 #endif

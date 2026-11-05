@@ -2,7 +2,7 @@
 #include "base/Mechanism.h"
 #include "base/Vision.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/drive/NtGamepad.h"
+#include "base/NtGamepad.h"
 #include "season/drive/AutoDriveEnvironment.h"
 #include <memory>
 #include <vector>
@@ -20,7 +20,7 @@ public:
   std::shared_ptr<season::AutoDriveEnvironment> AutoDriveInputs();
   void FinishSetup();
   bool UseNtInput(bool selected) const;
-  void PublishDriverInput(const season::drive::NtGamepad::State &, double, double, double, double, double, double);
+  void PublishDriverInput(const base::NtGamepad::State &, double, double, double, double, double, double);
   const std::vector<int> *TagIds() const;
   void BindReset();
   void Schedule(frc2::Command *);

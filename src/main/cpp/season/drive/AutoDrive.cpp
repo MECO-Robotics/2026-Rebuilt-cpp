@@ -25,44 +25,6 @@ namespace season
     return base::MakeNtObjectDetectionIO("/Perception/" + name + "/detections", period);
   }
 
-  namespace
-  {
-    const char *FootprintOutcomeName(base::FootprintAutoDriveOutcome outcome)
-    {
-      using O = base::FootprintAutoDriveOutcome;
-      switch (outcome)
-      {
-      case O::running:
-        return "running";
-      case O::arrived:
-        return "arrived";
-      case O::stalled:
-        return "stalled";
-      case O::blocked:
-        return "blocked";
-      case O::no_route:
-        return "no-route";
-      case O::planner_busy:
-        return "planner-busy";
-      case O::target_unavailable:
-        return "target-unavailable";
-      case O::target_unstable:
-        return "target-unstable";
-      case O::target_changed:
-        return "target-changed";
-      case O::invalid_feedback:
-        return "invalid-feedback";
-      case O::source_error:
-        return "source-error";
-      case O::settle_failed:
-        return "settle-failed";
-      case O::interrupted:
-        return "interrupted";
-      }
-      return "unknown";
-    }
-  } // namespace
-
   // Publish a concise reason for the current navigation state.
   void AutoDrive::Status(const char *value)
   {
@@ -221,7 +183,7 @@ namespace season
                               drive_, target, [obstacles]
                               { return obstacles; }, config, outcome)
                        .FinallyDo([entry, outcome](bool) mutable
-                                  { entry.SetString(FootprintOutcomeName(*outcome)); });
+                                  { entry.SetString(base::FootprintOutcomeName(*outcome)); });
                  }
                  if (auto command = environment_->NavigationCommand(drive_, target))
                    return std::move(*command);

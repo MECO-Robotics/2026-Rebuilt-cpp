@@ -12,3 +12,13 @@ namespace season::driveconfig
   // Maximum angular rate in rad/s commanded by autonomous aiming.
   inline constexpr double kAutoAimMaxAngularRate = 7;
 }
+
+namespace season::drive::ntgamepadconfig
+{
+  // Accept axes published through the NT4 input topic.
+  inline constexpr bool kEnabled = true;
+  // Fall back to valid Driver Station axes if the NT stream is unavailable.
+  inline constexpr bool kFallbackToDriverStation = true;
+  inline constexpr double kDefaultPeriodMs = 5.0;
+  inline constexpr double kDefaultStaleMs = 50.0;
+}
