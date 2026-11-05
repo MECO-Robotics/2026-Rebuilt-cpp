@@ -90,7 +90,8 @@ Robot behavior uses sensor observations to make decisions. The desktop simulator
 
 - [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h): fuel behavior, motor model, contact estimates, simulation timing, sensors, battery, and practice settings.
 - [RobotRuntime.cpp](../src/main/cpp/season/simulation/RobotRuntime.cpp): desktop simulation setup, periodic updates, and reset. This is an advanced entry point for connecting simulated devices and the field model.
-- [RobotLifecycle.cpp](../src/main/cpp/season/simulation/RobotLifecycle.cpp): practice match, simulation timing, and battery telemetry around the robot loop.
+- [MotorSimulation.cpp](../src/main/cpp/season/simulation/MotorSimulation.cpp): maps this robot's motor IDs to simulated inertia and FUEL loads. The vendordeps select and construct the correct motor IO; mechanism code requests IO through the shared selector.
+- [RobotLifecycle.cpp](../src/main/cpp/season/simulation/RobotLifecycle.cpp): supplies this robot's practice and battery settings to the vendordep lifecycle around the robot loop.
 - [MechanismSimulationConfig.h](../src/main/include/season/simulation/MechanismSimulationConfig.h): how hard simulated motors and joints are to accelerate, and the joint gravity assumption.
 - [DriveSimulationConfig.cpp](../src/main/cpp/season/simulation/DriveSimulationConfig.cpp): simulated drivetrain mass, contacts, and controller tuning.
 - [AutoDriveSimulation.cpp](../src/main/cpp/season/simulation/AutoDriveSimulation.cpp): simulated object cameras and optional desktop footprint planner.

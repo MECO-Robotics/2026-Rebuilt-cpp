@@ -6,6 +6,7 @@
 #include "season/mechanisms/Mechanisms.h"
 #include "season/simulation/SimulationConfig.h"
 #include "season/simulation/MotorSimulation.h"
+#include <base/Replay.h>
 #include <frc/RobotBase.h>
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>

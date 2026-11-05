@@ -1,5 +1,6 @@
 #include "season/detail/RuntimeAdapters.h"
 #include "base/SimulationLatency.h"
+#include "base/RuntimeMode.h"
 #include <frc/RobotBase.h>
 #include <frc2/command/Commands.h>
 #include <networktables/NetworkTableInstance.h>
@@ -14,13 +15,13 @@ namespace season::runtime
 
   AutonomousDefaults AutoDefaults()
   {
-    const bool desktop = frc::RobotBase::IsSimulation();
+    const bool desktop = base::CurrentRuntimeMode() == base::Mode::Sim;
     return {desktop, desktop};
   }
 
   ShotCalibration ShootingCalibration()
   {
-    return frc::RobotBase::IsSimulation()
+    return base::CurrentRuntimeMode() == base::Mode::Sim
                ? ShotCalibration{HubSpeedModel::BallisticOpening, 0.}
                : ShotCalibration{};
   }
@@ -28,7 +29,7 @@ namespace season::runtime
   std::optional<frc2::CommandPtr> PracticeControl()
   {
 #ifndef __FRC_ROBORIO__
-    if (frc::RobotBase::IsSimulation())
+    if (base::CurrentRuntimeMode() == base::Mode::Sim)
       return meco::sim::StartPracticeMatch();
 #endif
     return std::nullopt;
