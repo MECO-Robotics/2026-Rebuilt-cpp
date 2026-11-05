@@ -1,7 +1,7 @@
 #pragma once
 #ifndef __FRC_ROBORIO__
 #include "season/drive/AutoDriveEnvironment.h"
-#include <meco/sim/SimulatedPieceSensor.h>
+#include <meco/sim/SimulatedPieceCameraBank.h>
 #include <array>
 #include <cstdint>
 namespace season { class FuelModel; }
@@ -16,9 +16,7 @@ public:
   void Update(const frc::Pose3d &, const FuelModel &, bool, const std::vector<base::ObjectCluster> &, const base::Drive &);
   void Reset();
 private:
-  std::array<std::unique_ptr<meco::sim::SimulatedPieceSensorBridge>, 2> sensors;
-  std::array<std::function<frc::Transform3d()>, 2> mounts_;
-  uint64_t sequence{};
+  meco::sim::SimulatedPieceCameraBank cameras_{2};
 };
 }
 #endif
