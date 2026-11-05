@@ -28,6 +28,9 @@ public:
   bool ResetReady() const;
 private:
   RobotContainer &owner_;
+  struct Simulation;
+  struct DesktopSimulation;
+  std::unique_ptr<Simulation> MakeDesktopSimulation();
   struct State;
   std::unique_ptr<State> state_;
  };

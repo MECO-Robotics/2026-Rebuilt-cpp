@@ -1,213 +1,40 @@
-#include "season/drive/DriveBehaviorConfig.h"
-#include "season/detail/RobotRuntime.h"
+#include "season/detail/RobotRuntimeInternal.h"
 #include "RobotContainer.h"
-#include "season/detail/RobotPlatform.h"
 #include "season/vision/VisionConfig.h"
-#include "season/mechanisms/Mechanisms.h"
-#include "season/simulation/SimulationConfig.h"
-#include "season/simulation/MotorSimulation.h"
-#include <base/RuntimeMode.h>
-#include <base/VisionIOSelector.h>
-#include <frc/DriverStation.h>
-#include <frc/Timer.h>
-#include <frc/smartdashboard/SmartDashboard.h>
-#include <frc2/command/Commands.h>
-#include <stdexcept>
 #include <utility>
-#ifndef __FRC_ROBORIO__
-#include "season/simulation/AutoDriveSimulation.h"
-#include "season/simulation/Simulation.h"
-#include "meco/sim/DriveScene.h"
-#include "meco/sim/DriverInputTelemetry.h"
-#endif
-struct season::runtime::RobotRuntime::State
-{
-  std::shared_ptr<season::FuelMotorLoads> fuelMotorLoads_ = std::make_shared<season::FuelMotorLoads>();
-  base::MotorIOSelector motorSelector_{season::simulation::MotorProvider(fuelMotorLoads_)};
-#ifndef __FRC_ROBORIO__
-  std::shared_ptr<season::simulation::AutoDriveSimulation> autoDriveSimulation_;
-  std::shared_ptr<season::simulation::SimulatedLocalization> simulatedLocalization_;
-  std::unique_ptr<season::FuelSimulation> fuelSimulation_;
-  std::unique_ptr<meco::sim::DriverInputTelemetry> driverInputTelemetry_;
-  std::unique_ptr<meco::sim::DriveScene> driveScene_;
-  units::meter_t simulationGroundedBodyHeight_{};
-  bool simulationFieldCollidersEnabled_{true};
-#endif
-};
+
 season::runtime::RobotRuntime::RobotRuntime(RobotContainer &owner)
-    : owner_(owner), state_(std::make_unique<State>()) {}
+    : owner_(owner), state_(std::make_unique<State>()) {
+  // The provider is not invoked in real or replay modes. Its constructor only
+  // retains this runtime; robot subsystems are initialized later.
+  state_->simulation_ = base::MakeRuntimeScene<Simulation>([this] { return MakeDesktopSimulation(); });
+}
 season::runtime::RobotRuntime::~RobotRuntime() = default;
 base::MotorIOSelector &season::runtime::RobotRuntime::Motors() { return state_->motorSelector_; }
 std::shared_ptr<season::AutoDriveEnvironment> season::runtime::RobotRuntime::AutoDriveInputs() {
-  return base::SelectRuntimeIO<std::shared_ptr<season::AutoDriveEnvironment>>(
-      [] { return std::shared_ptr<season::AutoDriveEnvironment>{}; },
-      [this]() -> std::shared_ptr<season::AutoDriveEnvironment> {
-#ifndef __FRC_ROBORIO__
-        state_->autoDriveSimulation_ = std::make_shared<season::simulation::AutoDriveSimulation>();
-        return state_->autoDriveSimulation_;
-#else
-        return {};
-#endif
-      }, [] { return std::shared_ptr<season::AutoDriveEnvironment>{}; });
+  return state_->simulation_->AutoDriveInputs();
 }
-// Select simulated observations or physical localization devices.
-std::vector<std::unique_ptr<base::VisionIO>> season::runtime::RobotRuntime::LocalizationSources()
-{
+std::vector<std::unique_ptr<base::VisionIO>> season::runtime::RobotRuntime::LocalizationSources() {
+  auto [limelight, quest] = state_->simulation_->LocalizationProviders();
   std::vector<std::unique_ptr<base::VisionIO>> sources;
-  base::SimVisionProvider limelightSimulation, questSimulation;
-#ifndef __FRC_ROBORIO__
-  auto localization = [this] {
-    if (!state_->simulatedLocalization_)
-      state_->simulatedLocalization_ = std::make_shared<season::simulation::SimulatedLocalization>();
-    return state_->simulatedLocalization_;
-  };
-  limelightSimulation = [localization] { return localization()->limelight.MakeIO(); };
-  questSimulation = [localization] { return localization()->quest.MakeIO(); };
-#endif
   sources.push_back(base::MakeRuntimeLimelightVisionIO(season::hardware::VisionConfig(owner_.layout_), [this]
-                                                { return owner_.drive_.Pose().Rotation(); }, std::move(limelightSimulation)));
-  sources.push_back(base::MakeRuntimeQuestNavVisionIO(season::hardware::QuestConfig(owner_.layout_), std::move(questSimulation)));
+      { return owner_.drive_.Pose().Rotation(); }, std::move(limelight)));
+  sources.push_back(base::MakeRuntimeQuestNavVisionIO(season::hardware::QuestConfig(owner_.layout_), std::move(quest)));
   return sources;
 }
-void season::runtime::RobotRuntime::Initialize() {
-#ifndef __FRC_ROBORIO__
-  state_->driveScene_ = meco::sim::MakeRuntimeDriveScene(owner_.drive_, [this] {
-    return meco::sim::DriveScene::Configuration{
-        .fieldCollidersEnabled = true,
-        .feedbackLoops = season::simulation::runtimeconfig::kResetFeedbackLoops,
-        .colliders = season::simulation::FieldColliders(),
-        .contact = season::simulation::RobotContacts(),
-        .clearStartingPose = [](const frc::Pose2d &pose) { return season::simulation::IsClearStartingPose(pose); },
-        .resetSensors = [this] { if (state_->simulatedLocalization_) state_->simulatedLocalization_->Reset(); owner_.lastAcceptedVision_ = -1e9; }};
-  });
-  if (state_->driveScene_)
-  {
-    state_->driverInputTelemetry_ = std::make_unique<meco::sim::DriverInputTelemetry>(drive::ntgamepadconfig::kEnabled);
-    frc::SmartDashboard::PutNumber("SimulationTuning/SteerKP", owner_.drive_.Config().steerKP);
-    frc::SmartDashboard::PutNumber("SimulationTuning/SteerKD", owner_.drive_.Config().steerKD);
-    frc::SmartDashboard::PutNumber("SimulationTuning/AutoTranslationKP", owner_.drive_.Config().autoTranslationKP);
-    frc::SmartDashboard::PutNumber("SimulationTuning/AutoRotationKP", owner_.drive_.Config().autoRotationKP);
-    const auto &physics = owner_.drive_.Config().simulation;
-    state_->simulationGroundedBodyHeight_ = units::meter_t{physics.rideHeight};
-    state_->simulationFieldCollidersEnabled_ = state_->driveScene_->FieldCollidersEnabled();
-  }
-#endif
+void season::runtime::RobotRuntime::Initialize() { state_->simulation_->Initialize(); }
+void season::runtime::RobotRuntime::InitializeFeedback() { state_->simulation_->InitializeFeedback(); }
+void season::runtime::RobotRuntime::FinishSetup() { state_->simulation_->FinishSetup(); }
+bool season::runtime::RobotRuntime::UseNtInput(bool selected) const { return state_->simulation_->UseNtInput(selected); }
+void season::runtime::RobotRuntime::BindReset() { state_->simulation_->BindReset(); }
+void season::runtime::RobotRuntime::PublishDriverInput(const base::NtGamepad::State &nt, double a, double b, double c, double x, double y, double omega) {
+  state_->simulation_->PublishDriverInput(nt, a, b, c, x, y, omega);
 }
-void season::runtime::RobotRuntime::InitializeFeedback() {
-#ifndef __FRC_ROBORIO__
-  if (state_->driveScene_) state_->fuelSimulation_ = std::make_unique<season::FuelSimulation>(owner_.Mechanisms(), owner_.drive_, state_->fuelMotorLoads_);
-#endif
-}
-void season::runtime::RobotRuntime::FinishSetup() {
-#ifndef __FRC_ROBORIO__
-  if (state_->driveScene_) Reset();
-#endif
-}
-bool season::runtime::RobotRuntime::UseNtInput(bool selected) const {
-#ifndef __FRC_ROBORIO__
-  if (state_->driverInputTelemetry_) return state_->driverInputTelemetry_->Selected(selected);
-#endif
-  return selected;
-}
-void season::runtime::RobotRuntime::BindReset() {
-#ifndef __FRC_ROBORIO__
-  if (state_->driveScene_)
-    owner_.controller_.Back().OnTrue(frc2::cmd::RunOnce([this] { Reset(); }));
-#endif
-}
-void season::runtime::RobotRuntime::PublishDriverInput(const base::NtGamepad::State &ntGamepadState, double dsLeftY, double dsLeftX, double dsRightX, double x, double y, double omega) {
-#ifndef __FRC_ROBORIO__
-  if (state_->driverInputTelemetry_)
-    state_->driverInputTelemetry_->Publish(ntGamepadState, dsLeftY, dsLeftX, dsRightX, x, y, omega,
-                                           owner_.driverHeadingOffset_, static_cast<bool>(owner_.ntGamepad_));
-#endif
-#ifdef __FRC_ROBORIO__
- (void)ntGamepadState; (void)dsLeftY; (void)dsLeftX; (void)dsRightX; (void)x; (void)y; (void)omega;
-#endif
-}
-const std::vector<int> *season::runtime::RobotRuntime::TagIds() const {
-#ifndef __FRC_ROBORIO__
-  if (state_->simulatedLocalization_) return &state_->simulatedLocalization_->tagIds;
-#endif
-  return nullptr;
-}
-bool season::runtime::RobotRuntime::ResetReady() const {
-#ifndef __FRC_ROBORIO__
- return !state_->driveScene_ || state_->driveScene_->Ready();
-#else
- return true;
-#endif
-}
-// Capture only the initial pose reset made while the auto is scheduled.
-void season::runtime::RobotRuntime::Schedule(frc2::Command *command)
-{
-#ifndef __FRC_ROBORIO__
-  if (state_->driveScene_) state_->driveScene_->BeginAutonomousSchedule();
-#endif
-  command->Schedule();
-#ifndef __FRC_ROBORIO__
-  if (state_->driveScene_ && state_->driveScene_->EndAutonomousSchedule())
-    command->Cancel();
-#endif
-}
-// Publish physical truth and feed simulated sensors once per loop.
-void season::runtime::RobotRuntime::Periodic()
-{
-#ifndef __FRC_ROBORIO__
-  std::optional<season::FuelRobotState> fuelRobotState;
-  if (auto snapshot = state_->driveScene_ ? state_->driveScene_->Update() : std::nullopt)
-  {
-    const auto &body = snapshot->body;
-    const auto &visualPose = snapshot->visualPose;
-    // Do not generate localization observations while reset feedback settles.
-    if (state_->driveScene_->Ready() && state_->simulatedLocalization_)
-      state_->simulatedLocalization_->Update(visualPose, frc::Timer::GetFPGATimestamp(), owner_.layout_,
-                                    season::hardware::VisionConfig(owner_.layout_).robotToCamera, season::hardware::QuestConfig(owner_.layout_).robotToQuest);
-    frc::SmartDashboard::PutBoolean("Localization/LimelightConnected", owner_.vision_->Inputs().connected);
-    frc::SmartDashboard::PutBoolean("Localization/QuestTracking", owner_.vision_->Inputs(1).tracking);
-    frc::SmartDashboard::PutBoolean("Localization/QuestAligned", owner_.vision_->Inputs(1).aligned);
-    frc::SmartDashboard::PutNumber("Localization/LimelightTagCount", state_->simulatedLocalization_ ? state_->simulatedLocalization_->tagIds.size() : 0);
-    frc::SmartDashboard::PutNumber("Localization/TruthErrorMetres",
-                                   owner_.drive_.Pose().Translation().Distance(visualPose.ToPose2d().Translation()).value());
-    const auto &config = owner_.drive_.Config().simulation;
-    // Launch and contact calculations consume physical pose and velocities.
-    fuelRobotState = season::FuelRobotState{
-        visualPose,
-        {body.linearVelocity.x, body.linearVelocity.y, body.linearVelocity.z},
-        {body.angularVelocity.x, body.angularVelocity.y, body.angularVelocity.z},
-        {config.centerOfMassX, config.centerOfMassY, config.centerOfMassZ + state_->simulationGroundedBodyHeight_.value()}};
-  }
-  // Step fuel once, then generate camera observations from the updated scene.
-  if (state_->fuelSimulation_)
-    state_->fuelSimulation_->Periodic(season::simulation::runtimeconfig::kSimulationPeriodSeconds, fuelRobotState, owner_.matchContext_.ownActive);
-  if (state_->autoDriveSimulation_ && owner_.autoDrive_ && state_->fuelSimulation_ && fuelRobotState && state_->driveScene_->Ready())
-    state_->autoDriveSimulation_->Update(fuelRobotState->pose, state_->fuelSimulation_->Model(), state_->simulationFieldCollidersEnabled_,
-                                 owner_.autoDrive_->VisibleFuel(), owner_.drive_);
-#endif
-}
-// Reset the scene and allow sensor feedback to settle before reconciliation.
-void season::runtime::RobotRuntime::Reset()
-{
+const std::vector<int> *season::runtime::RobotRuntime::TagIds() const { return state_->simulation_->TagIds(); }
+bool season::runtime::RobotRuntime::ResetReady() const { return state_->simulation_->Ready(); }
+void season::runtime::RobotRuntime::Schedule(frc2::Command *command) { state_->simulation_->Schedule(*command); }
+void season::runtime::RobotRuntime::Periodic() { state_->simulation_->Periodic(); }
+void season::runtime::RobotRuntime::Reset() {
   owner_.driverHeadingOffset_ = frc::Rotation2d{};
-#ifndef __FRC_ROBORIO__
-  if (!state_->driveScene_) return;
-  // Reset to a clear alliance-specific starting pose.
-  const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
-  const frc::Pose2d origin =
-      state_->simulationFieldCollidersEnabled_ ? season::simulation::DefaultSpawn(red) : frc::Pose2d{};
-  if (state_->simulationFieldCollidersEnabled_ && !season::simulation::IsClearStartingPose(origin))
-    throw std::logic_error("Simulation spawn intersects field geometry");
-  if (state_->autoDriveSimulation_)
-    state_->autoDriveSimulation_->Reset();
-  if (owner_.autoDrive_)
-    owner_.autoDrive_->ClearPerception();
-  if (state_->simulatedLocalization_) state_->simulatedLocalization_->Reset();
-  owner_.lastAcceptedVision_ = -1e9;
-  if (state_->driveScene_) state_->driveScene_->Reset(origin);
-#endif
-
-#ifndef __FRC_ROBORIO__
-  if (state_->fuelSimulation_)
-    state_->fuelSimulation_->Reset();
-#endif
+  state_->simulation_->Reset();
 }
