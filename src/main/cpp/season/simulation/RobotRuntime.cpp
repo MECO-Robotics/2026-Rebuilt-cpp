@@ -2,10 +2,10 @@
 #include "season/detail/RobotRuntime.h"
 #include "RobotContainer.h"
 #include "season/detail/RobotPlatform.h"
-#include "base/Replay.h"
 #include "season/vision/VisionConfig.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/simulation/SimulationConfig.h"
+#include "season/simulation/MotorSimulation.h"
 #include <frc/RobotBase.h>
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
@@ -14,25 +14,23 @@
 #include <networktables/NetworkTableInstance.h>
 #include <array>
 #include <cmath>
-#include <numbers>
 #include <cstdlib>
 #include <stdexcept>
 #include <string_view>
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/AutoDriveSimulation.h"
-#include "season/simulation/MechanismSimulationConfig.h"
 #include "season/simulation/Simulation.h"
 #include "meco/sim/DriveScene.h"
 #include <networktables/StructTopic.h>
 #include <frc/geometry/struct/Pose3dStruct.h>
-#include "meco/sim/LoadedMotorIO.h"
 #include "meco/sim/SimulationPose.h"
 #endif
 struct season::runtime::RobotRuntime::State
 {
+  std::shared_ptr<season::FuelMotorLoads> fuelMotorLoads_ = std::make_shared<season::FuelMotorLoads>();
+  base::MotorIOSelector motorSelector_{season::simulation::MotorProvider(fuelMotorLoads_)};
 #ifndef __FRC_ROBORIO__
   std::shared_ptr<season::simulation::AutoDriveSimulation> autoDriveSimulation_;
-  std::shared_ptr<season::FuelMotorLoads> fuelMotorLoads_ = std::make_shared<season::FuelMotorLoads>();
   season::simulation::SimulatedLocalization simulatedLocalization_;
   std::unique_ptr<season::FuelSimulation> fuelSimulation_;
   nt::DoubleArrayPublisher ntGamepadConsumedPublisher_;
@@ -46,54 +44,13 @@ season::runtime::RobotRuntime::RobotRuntime(RobotContainer &owner)
     : owner_(owner), state_(std::make_unique<State>()) {}
 season::runtime::RobotRuntime::~RobotRuntime() = default;
 std::unique_ptr<base::MotorIO> season::runtime::RobotRuntime::MakeMotor(const season::hardware::FlywheelConfig &c, base::Vendor vendor) {
-#ifndef __FRC_ROBORIO__
-  if (season::hardware::Mode() == base::Mode::Sim && !base::replay::Active() && c.role != season::hardware::MotorRole::Intake) {
-    std::size_t loadIndex{};
-    switch (c.role) {
-      case season::hardware::MotorRole::Conveyor: loadIndex = 0; break;
-      case season::hardware::MotorRole::BottomIndexer: loadIndex = 1; break;
-      case season::hardware::MotorRole::TopIndexer: loadIndex = 2; break;
-      case season::hardware::MotorRole::Shooter: loadIndex = 3; break;
-      case season::hardware::MotorRole::Intake: break;
-    }
-    constexpr double nominalVoltage = season::simulation::motorconfig::kNominalVoltage;
-    const bool neo = vendor == base::Vendor::SparkMax;
-    const double stallCurrent = neo ? season::simulation::motorconfig::kNeoStallCurrentAmps : season::simulation::motorconfig::kKrakenStallCurrentAmps;
-    const double stallTorque = neo ? season::simulation::motorconfig::kNeoStallTorqueNm : season::simulation::motorconfig::kKrakenStallTorqueNm;
-    const double freeSpeedRpm = neo ? season::simulation::motorconfig::kNeoFreeSpeedRpm : season::simulation::motorconfig::kKrakenFreeSpeedRpm;
-    auto model = meco::sim::LoadedMotorModelFromStallAndFreeSpeed(
-        nominalVoltage, stallCurrent, stallTorque, freeSpeedRpm);
-    model.outputInertiaKgM2 = season::simulation::MotorInertia(c.role);
-    model.viscousDragNmPerRadPerSecond = season::simulation::motorconfig::kViscousDrag;
-    model.maximumPhysicsStepSeconds = season::simulation::motorconfig::kMaxPhysicsStepSeconds;
-    model.maximumUpdateSeconds = season::simulation::motorconfig::kMaxUpdateSeconds;
-    model.loadDirectionSpeedThresholdRadPerSecond = season::simulation::motorconfig::kLoadDirectionSpeedThreshold;
-    auto loads = state_->fuelMotorLoads_;
-    return base::MakeMotorIO(c.motor, model, [loads = std::move(loads), loadIndex] {
-      return loads->torque[loadIndex];
-    });
-  }
-#endif
-  const auto mode = season::hardware::Mode();
-  const auto config = season::hardware::MotorRates(c.motor, vendor);
-#ifndef __FRC_ROBORIO__
-  if (mode == base::Mode::Sim && !base::replay::Active())
-    return base::MakeMotorIO(mode, vendor, config, season::simulation::MotorInertia(c.role));
-#endif
-  return base::MakeMotorIO(mode, vendor, config);
+  return state_->motorSelector_.Make(vendor, season::hardware::MotorRates(c.motor, vendor));
 }
 std::unique_ptr<base::MotorIO> season::runtime::RobotRuntime::MakeJointMotor(
     base::MotorConfig config, base::Vendor vendor, season::hardware::JointRole role)
 {
-  const auto mode = season::hardware::Mode();
-  config = season::hardware::MotorRates(config, vendor);
-#ifndef __FRC_ROBORIO__
-  if (mode == base::Mode::Sim && !base::replay::Active())
-    return base::MakeMotorIO(mode, vendor, config, season::simulation::JointInertia(role));
-#else
   (void)role;
-#endif
-  return base::MakeMotorIO(mode, vendor, config);
+  return state_->motorSelector_.Make(vendor, season::hardware::MotorRates(config, vendor));
 }
 std::shared_ptr<season::AutoDriveEnvironment> season::runtime::RobotRuntime::AutoDriveInputs() {
 #ifndef __FRC_ROBORIO__
