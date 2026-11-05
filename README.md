@@ -16,7 +16,7 @@ This is MECO Robotics' 2026 robot code. It runs on the roboRIO and in a desktop 
    If Gradle can't find Java, set `JAVA_HOME` to the WPILib 2026 JDK first.
 4. Connect a controller in SimGUI. See [practice matches](docs/practice-mode.md) to run a match or [AutoDrive](docs/autodrive-simulation.md) to try autonomous driving.
 
-The pinned dependencies include [MecoBase 2026.2.12](vendordeps/MecoBase.json) and [MecoSimulation 2026.0.18](vendordeps/MecoSimulation.json). Building and simulating do **not** prove that a physical robot is safe or calibrated. Deploying with `./gradlew deploy` writes to team 8324's roboRIO.
+The pinned dependencies include [MecoBase 2026.2.15](vendordeps/MecoBase.json) and [MecoSimulation 2026.0.21](vendordeps/MecoSimulation.json). Building and simulating do **not** prove that a physical robot is safe or calibrated. Deploying with `./gradlew deploy` writes to team 8324's roboRIO.
 
 ## Pilot controls
 
