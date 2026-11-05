@@ -29,9 +29,9 @@ namespace season::runtime
   std::optional<frc2::CommandPtr> PracticeControl()
   {
 #ifndef __FRC_ROBORIO__
-    if (base::CurrentRuntimeMode() == base::Mode::Sim)
-      return meco::sim::StartPracticeMatch();
-#endif
+    return meco::sim::TryStartPracticeMatch();
+#else
     return std::nullopt;
+#endif
   }
 }
