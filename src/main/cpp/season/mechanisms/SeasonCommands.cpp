@@ -15,24 +15,14 @@ namespace season
   namespace
   {
     double Now() { return frc::Timer::GetFPGATimestamp().value(); }
-    // Stop every transport stage together.
-    void StopFeed(Mechanisms m)
+    // Each motor command owns its mechanism and stops it when the group ends.
+    frc2::CommandPtr FeedVoltageCommands(Mechanisms m, std::function<bool()> feeding)
     {
-      m.conveyor.Stop();
-      m.bottomIndexer.Stop();
-      m.topIndexer.Stop();
-    }
-    void Feed(Mechanisms m)
-    {
-      m.conveyor.SetVoltage(mechanismconfig::kConveyorFeedVolts);
-      m.bottomIndexer.SetVoltage(mechanismconfig::kBottomFeedVolts);
-      m.topIndexer.SetVoltage(mechanismconfig::kTopFeedVolts);
-    }
-    void StopAcquisition(Mechanisms m)
-    {
-      StopFeed(m);
-      m.intake.Stop();
-      m.rack.Stop();
+      return m.conveyor.VoltageCommand([feeding] { return feeding() ? mechanismconfig::kConveyorFeedVolts : 0.; })
+          .AlongWith(m.bottomIndexer.VoltageCommand(
+              [feeding] { return feeding() ? mechanismconfig::kBottomFeedVolts : 0.; }))
+          .AlongWith(m.topIndexer.VoltageCommand(
+              [feeding] { return feeding() ? mechanismconfig::kTopFeedVolts : 0.; }));
     }
     frc::Pose2d RobotPose(base::Drive &drive) { return drive.Pose(); }
 
@@ -63,7 +53,6 @@ namespace season
 
     void SetShotAgitation(Mechanisms m, ShotState &state, bool ready)
     {
-      m.intake.SetVoltage(mechanismconfig::kIntakeVolts);
       if (ready)
       {
         if (!state.feeding)
@@ -105,35 +94,20 @@ namespace season
   // Run the intake and transport while the command owns them.
   frc2::CommandPtr Acquire(Mechanisms m)
   {
-    return frc2::cmd::RunEnd(
-        [m]
-        {
-          m.rack.SetPosition(mechanismconfig::kRackDeploy);
-          m.intake.SetVoltage(mechanismconfig::kIntakeVolts);
-          m.conveyor.SetVoltage(mechanismconfig::kAcquireConveyorVolts);
-          m.bottomIndexer.SetVoltage(mechanismconfig::kAcquireBottomVolts);
-          m.topIndexer.SetVoltage(mechanismconfig::kAcquireTopVolts);
-        },
-        [m]
-        { StopAcquisition(m); }, {&m.rack, &m.intake, &m.conveyor, &m.bottomIndexer, &m.topIndexer});
+    return frc2::cmd::RunEnd([m] { m.rack.SetPosition(mechanismconfig::kRackDeploy); },
+                             [m] { m.rack.Stop(); }, {&m.rack})
+        .AlongWith(m.intake.VoltageCommand([] { return mechanismconfig::kIntakeVolts; }))
+        .AlongWith(m.conveyor.VoltageCommand([] { return mechanismconfig::kAcquireConveyorVolts; }))
+        .AlongWith(m.bottomIndexer.VoltageCommand([] { return mechanismconfig::kAcquireBottomVolts; }))
+        .AlongWith(m.topIndexer.VoltageCommand([] { return mechanismconfig::kAcquireTopVolts; }));
   }
   // Reverse the intake path and stop it on interruption.
   frc2::CommandPtr Eject(Mechanisms m)
   {
-    return frc2::cmd::RunEnd(
-        [m]
-        {
-          m.intake.SetVoltage(mechanismconfig::kEjectVolts);
-          m.conveyor.SetVoltage(mechanismconfig::kEjectConveyorVolts);
-          m.bottomIndexer.SetVoltage(mechanismconfig::kEjectBottomVolts);
-          m.topIndexer.SetVoltage(mechanismconfig::kEjectTopVolts);
-        },
-        [m]
-        {
-          m.intake.Stop();
-          StopFeed(m);
-        },
-        {&m.intake, &m.conveyor, &m.bottomIndexer, &m.topIndexer});
+    return m.intake.VoltageCommand([] { return mechanismconfig::kEjectVolts; })
+        .AlongWith(m.conveyor.VoltageCommand([] { return mechanismconfig::kEjectConveyorVolts; }))
+        .AlongWith(m.bottomIndexer.VoltageCommand([] { return mechanismconfig::kEjectBottomVolts; }))
+        .AlongWith(m.topIndexer.VoltageCommand([] { return mechanismconfig::kEjectTopVolts; }));
   }
   // Hold the rack deployed while keeping the intake stopped.
   frc2::CommandPtr Deploy(Mechanisms m)
@@ -154,20 +128,10 @@ namespace season
   // Retract the rack while moving fuel away from the intake.
   frc2::CommandPtr Stow(Mechanisms m)
   {
-    return frc2::cmd::RunEnd(
-        [m]
-        {
-          m.rack.SetPosition(mechanismconfig::kRackSafe);
-          m.intake.SetVoltage(mechanismconfig::kIntakeVolts);
-          m.conveyor.SetVoltage(mechanismconfig::kStowConveyorVolts);
-        },
-        [m]
-        {
-          m.rack.Stop();
-          m.intake.Stop();
-          m.conveyor.Stop();
-        },
-        {&m.rack, &m.intake, &m.conveyor});
+    return frc2::cmd::RunEnd([m] { m.rack.SetPosition(mechanismconfig::kRackSafe); },
+                             [m] { m.rack.Stop(); }, {&m.rack})
+        .AlongWith(m.intake.VoltageCommand([] { return mechanismconfig::kIntakeVolts; }))
+        .AlongWith(m.conveyor.VoltageCommand([] { return mechanismconfig::kStowConveyorVolts; }));
   }
   // Clamp preset targets before latching them into the mechanisms.
   frc2::CommandPtr ShooterPreset(Mechanisms m, double hood, double rps)
@@ -231,16 +195,14 @@ namespace season
     auto state = std::make_shared<State>();
     frc::Preferences::InitDouble("Intake/ShotRetractSpeedMps", shotconfig::kShotRetractSpeedMps);
     frc::Preferences::InitDouble("Intake/ShotHoldPositionMeters", shotconfig::kShotHoldPositionMetres);
-    return frc2::cmd::RunEnd(
+    auto action = frc2::cmd::RunEnd(
                [m, rumble, state]
                {
                  double now = Now();
                  bool feeding = state->gate.Calculate(m.shooter.VelocityControlActive(), m.shooter.Velocity(),
                                                       m.shooter.VelocitySetpoint(), now);
-                 m.intake.SetVoltage(mechanismconfig::kIntakeVolts);
                  if (feeding)
                  {
-                   Feed(m);
                    if (!state->feeding)
                      state->settings =
                          ShotIntakeSettings{frc::Preferences::GetDouble("Intake/ShotRetractSpeedMps", shotconfig::kShotRetractSpeedMps),
@@ -250,7 +212,6 @@ namespace season
                  }
                  else
                  {
-                   StopFeed(m);
                    m.rack.SetPosition(mechanismconfig::kRackDeploy);
                  }
                  state->feeding = feeding;
@@ -266,8 +227,6 @@ namespace season
                },
                [m, rumble]
                {
-                 StopFeed(m);
-                 m.intake.Stop();
                  if (frc::DriverStation::IsTeleopEnabled())
                    m.rack.SetPosition(mechanismconfig::kRackDeploy);
                  else
@@ -276,7 +235,7 @@ namespace season
                  frc::SmartDashboard::PutBoolean("Shooter/Feeding", false);
                  frc::SmartDashboard::PutString("Shooter/FeedBlockedReason", "");
                },
-               {&m.rack, &m.intake, &m.conveyor, &m.bottomIndexer, &m.topIndexer})
+               {&m.rack})
         .BeforeStarting(
             [state]
             {
@@ -284,6 +243,9 @@ namespace season
               state->gate.Reset(state->start);
               state->feeding = false;
             });
+    return std::move(action)
+        .AlongWith(m.intake.VoltageCommand([] { return mechanismconfig::kIntakeVolts; }))
+        .AlongWith(FeedVoltageCommands(m, [state] { return state->feeding; }));
   }
   // Coordinate aiming, readiness, feeding, and interruption cleanup.
   frc2::CommandPtr CoordinatedShot(Mechanisms m, base::Drive &drive, FieldGeometry field,
@@ -291,11 +253,10 @@ namespace season
   {
     auto state = std::make_shared<ShotState>();
     const auto transportActive = runtime::RuntimeBehavior().transportActive;
-    std::vector<frc2::Subsystem *> requirements{&m.hood, &m.shooter, &m.bottomIndexer, &m.topIndexer, &m.conveyor};
+    std::vector<frc2::Subsystem *> requirements{&m.hood, &m.shooter};
     if (options.agitate)
     {
       requirements.push_back(&m.rack);
-      requirements.push_back(&m.intake);
       frc::Preferences::InitDouble("Intake/ShotRetractSpeedMps", shotconfig::kShotRetractSpeedMps);
       frc::Preferences::InitDouble("Intake/ShotHoldPositionMeters", shotconfig::kShotHoldPositionMetres);
     }
@@ -369,12 +330,7 @@ namespace season
                 SetShotAgitation(m, *state, ready);
               state->feeding = ready;
               if (ready)
-              {
-                Feed(m);
                 state->started = true;
-              }
-              else
-                StopFeed(m);
               // During a reversal, voltage can indicate feed while the rollers
               // are still spinning in the collection direction.
               state->transportActive = ready && transportActive(m);
@@ -397,11 +353,9 @@ namespace season
             },
             [m, &drive, options]
             {
-              StopFeed(m);
               if (options.agitate)
               {
                 m.rack.Stop();
-                m.intake.Stop();
                 frc::SmartDashboard::PutBoolean("Shooter/Agitating", false);
               }
               m.shooter.Stop();
@@ -425,13 +379,18 @@ namespace season
                   state->started = state->feeding = state->transportActive = state->stationaryFerry = false;
                   state->volley.Reset(state->start);
                 });
+    auto command = std::move(action)
+        .AlongWith(FeedVoltageCommands(m, [state] { return state->feeding; }));
+    if (options.agitate)
+      command = std::move(command).AlongWith(
+          m.intake.VoltageCommand([] { return mechanismconfig::kIntakeVolts; }));
     if (options.autonomous)
-      return std::move(action)
+      return std::move(command)
           .Until(
               [state, options]
               {
                 return ShotFinished(*state, options, Now());
               });
-    return action;
+    return command;
   }
 } // namespace season

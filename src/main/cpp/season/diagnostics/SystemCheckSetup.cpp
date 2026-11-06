@@ -90,8 +90,7 @@ namespace season
         throw std::invalid_argument("Null diagnostic roller");
       check.AddStage({name + "-roller",
                       diagnostics::kRollerTimeoutSeconds,
-                      [roller]
-                      { roller->SetVoltage(diagnostics::kRollerVoltage); },
+                      {},
                       [roller]
                       {
                         return base::CheckEvaluation{
@@ -100,7 +99,8 @@ namespace season
                             {{"rollerVelocity", roller->Velocity()}, {"rollerCurrent", roller->Inputs().current}}};
                       },
                       {"preflight"},
-                      diagnostics::kMotionSettleSeconds});
+                      diagnostics::kMotionSettleSeconds},
+                     roller->VoltageCommand([] { return diagnostics::kRollerVoltage; }));
     }
     // Check unloaded shooter speed and record current.
     check.AddStage({"shooter-speed",
