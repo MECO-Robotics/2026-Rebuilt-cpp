@@ -2,12 +2,12 @@
 #include "season/auto/RobotAutos.h"
 #include "season/RobotControlConfig.h"
 #include "RobotContainer.h"
-#include "season/detail/RobotRuntime.h"
-#include "season/detail/RuntimeAdapters.h"
+#include "season/runtime/RobotRuntime.h"
+#include "season/runtime/SeasonPolicy.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/vision/VisionConfig.h"
 #include "base/ChoreoAuto.h"
-#include "season/detail/RuntimeBehavior.h"
+#include <base/SimulationPractice.h>
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
 #include <frc/smartdashboard/SmartDashboard.h>
@@ -73,7 +73,7 @@ void season::autonomous::RobotAutos::Configure()
         {
           auto p = owner_.drive_.Pose();
           auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
-          auto shot = season::CalculateShot(p, season::HubPosition(alliance), season::runtime::ShootingCalibration());
+          auto shot = season::CalculateShot(p, season::HubPosition(alliance), season::runtime::SeasonPolicy().shot);
           owner_.hood_.SetPosition(shot.hoodRotations);
           owner_.shooter_.SetVelocity(shot.flywheelRps);
         },
@@ -96,7 +96,7 @@ void season::autonomous::RobotAutos::Configure()
           {
             auto p = owner_.drive_.Pose();
             auto target = SelectTarget();
-            auto shot = season::CalculateShot(p, target, owner_.field_, season::runtime::ShootingCalibration());
+            auto shot = season::CalculateShot(p, target, owner_.field_, season::runtime::SeasonPolicy().shot);
             owner_.hood_.SetPosition(shot.hoodRotations);
             owner_.shooter_.SetVelocity(shot.flywheelRps);
             double error = std::remainder(shot.headingRadians - p.Rotation().Radians().value(), 2 * std::numbers::pi);
@@ -122,7 +122,7 @@ void season::autonomous::RobotAutos::Configure()
                                {config::kChoreoRotationP, 0, 0}, season::hardware::kControlPeriod)
           .AndThen(HubShot()));
   autos_.emplace_back(frc2::cmd::None());
-  const auto defaults = season::runtime::AutoDefaults();
+  const auto defaults = season::runtime::SeasonPolicy().autonomous;
   if (!defaults.offensiveDefault)
     chooser_.SetDefaultOption("Hub shot (vision required)", autos_[0].get());
   else
@@ -139,7 +139,7 @@ void season::autonomous::RobotAutos::Configure()
     chooser_.AddOption("AutoDrive offensive", autos_.back().get());
   frc::SmartDashboard::PutBoolean("AutoDrive/OffenseEnabled", defaults.offenseEnabled);
   frc::SmartDashboard::PutData("Auto Choices", &chooser_);
-  if (auto practice = season::runtime::PracticeControl())
+  if (auto practice = base::simulation::TryStartPracticeMatch())
   {
     autos_.emplace_back(std::move(*practice));
     frc::SmartDashboard::PutData("Start Practice Match", autos_.back().get());
@@ -171,11 +171,11 @@ frc2::CommandPtr season::autonomous::RobotAutos::HubShot(bool ownDrive, bool req
   season::CoordinatedShotOptions o;
   o.ownDrive = ownDrive;
   o.autonomous = true;
-  o.shotCalibration = season::runtime::ShootingCalibration();
+  o.shotCalibration = season::runtime::SeasonPolicy().shot;
   // A shot ends as soon as its configured feed completes. Its overall bound
   // must also allow the rollers to reverse after the preceding intake path.
   o.readyTimeoutSeconds = season::shotconfig::kShotReadyTimeoutSeconds;
-  o.totalTimeoutSeconds = season::runtime::RuntimeBehavior().shotTimeoutSeconds;
+  o.totalTimeoutSeconds = season::runtime::SeasonPolicy().behavior.shotTimeoutSeconds;
   o.feedDurationSeconds = season::ConfiguredFeedDurationSeconds;
   struct FeedTiming
   {

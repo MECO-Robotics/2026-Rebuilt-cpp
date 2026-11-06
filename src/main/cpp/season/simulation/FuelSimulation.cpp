@@ -1,7 +1,7 @@
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/Simulation.h"
 #include "season/simulation/SimulationConfig.h"
-#include "season/detail/RuntimeBehavior.h"
+#include "season/runtime/SeasonPolicy.h"
 #include "season/RobotGeometry.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "meco/sim/ParticleFieldContacts.h"

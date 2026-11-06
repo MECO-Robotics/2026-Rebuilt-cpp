@@ -37,5 +37,5 @@ Settings are sampled at start. The dashboard button copies SimGUI's selected sta
 
 ## Read the code
 
-- [Practice controller lifecycle](../src/main/cpp/season/simulation/RobotLifecycle.cpp)
-- [Autonomous chooser](../src/main/cpp/season/auto/RobotAutos.cpp) and [practice button](../src/main/cpp/season/simulation/RuntimeAdapters.cpp)
+- [Robot loop lifecycle hooks](../src/main/cpp/Robot.cpp) and the season simulation settings in [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h)
+- [Autonomous chooser and practice button](../src/main/cpp/season/auto/RobotAutos.cpp)

@@ -1,9 +1,22 @@
-#include "season/detail/RuntimeAdapters.h"
+#include "season/runtime/SeasonPolicy.h"
 #include "season/drive/OffensiveAutoDrive.h"
 #include "season/mechanisms/Mechanisms.h"
 #include <base/RuntimeMode.h>
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/SimulationConfig.h"
+#endif
+
+#ifndef __FRC_ROBORIO__
+namespace season::simulation
+{
+  bool TransportFeeding(const Mechanisms &m)
+  {
+    return m.bottomIndexer.Inputs().voltage < -simulationconfig::kSimTransportVoltageThreshold &&
+           m.topIndexer.Inputs().voltage > simulationconfig::kSimTransportVoltageThreshold &&
+           m.conveyor.Inputs().voltage < -simulationconfig::kSimTransportVoltageThreshold &&
+           m.bottomIndexer.Velocity() < 0 && m.topIndexer.Velocity() > 0 && m.conveyor.Velocity() < 0;
+  }
+}
 #endif
 
 namespace season::runtime
@@ -19,7 +32,7 @@ namespace season::runtime
     }
   }
 
-  const PolicyProfile &Policy()
+  const PolicyProfile &SeasonPolicy()
   {
     return base::SelectRuntimeIO<const PolicyProfile &>(
         []() -> const PolicyProfile & { static const auto profile = ConfiguredPolicy(); return profile; },
@@ -44,17 +57,4 @@ namespace season::runtime
         []() -> const PolicyProfile & { static const auto profile = ConfiguredPolicy(); return profile; });
   }
 
-  Behavior RuntimeBehavior() { return Policy().behavior; }
 }
-#ifndef __FRC_ROBORIO__
-namespace season::simulation
-{
-  bool TransportFeeding(const Mechanisms &m)
-  {
-    return m.bottomIndexer.Inputs().voltage < -simulationconfig::kSimTransportVoltageThreshold &&
-           m.topIndexer.Inputs().voltage > simulationconfig::kSimTransportVoltageThreshold &&
-           m.conveyor.Inputs().voltage < -simulationconfig::kSimTransportVoltageThreshold &&
-           m.bottomIndexer.Velocity() < 0 && m.topIndexer.Velocity() > 0 && m.conveyor.Velocity() < 0;
-  }
-}
-#endif

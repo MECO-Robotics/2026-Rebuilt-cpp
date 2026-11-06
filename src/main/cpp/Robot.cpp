@@ -1,7 +1,7 @@
 #include "Robot.h"
 #include "season/RobotControlConfig.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/detail/RobotPlatform.h"
+#include "season/hardware/RobotPlatform.h"
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/NetworkTable.h>
 #include <base/season2026/MatchContext.h>

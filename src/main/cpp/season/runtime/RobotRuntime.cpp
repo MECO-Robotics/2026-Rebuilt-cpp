@@ -1,4 +1,4 @@
-#include "season/detail/RobotRuntimeInternal.h"
+#include "season/runtime/RobotRuntimeInternal.h"
 #include "RobotContainer.h"
 #include "season/vision/VisionConfig.h"
 #include <utility>
@@ -32,7 +32,6 @@ void season::runtime::RobotRuntime::PublishDriverInput(const base::NtGamepad::St
 }
 const std::vector<int> *season::runtime::RobotRuntime::TagIds() const { return state_->simulation_->TagIds(); }
 bool season::runtime::RobotRuntime::ResetReady() const { return state_->simulation_->Ready(); }
-void season::runtime::RobotRuntime::Schedule(frc2::Command *command) { state_->simulation_->Schedule(*command); }
 void season::runtime::RobotRuntime::Periodic() { state_->simulation_->Periodic(); }
 void season::runtime::RobotRuntime::Reset() {
   owner_.driverHeadingOffset_ = frc::Rotation2d{};

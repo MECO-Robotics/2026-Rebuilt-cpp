@@ -1,8 +1,8 @@
-#include "season/detail/RobotRuntimeInternal.h"
+#include "season/runtime/RobotRuntimeInternal.h"
 #ifndef __FRC_ROBORIO__
 #include "RobotContainer.h"
 #include "season/drive/DriveBehaviorConfig.h"
-#include "season/detail/RobotPlatform.h"
+#include "season/hardware/RobotPlatform.h"
 #include "season/vision/VisionConfig.h"
 #include "season/simulation/SimulationConfig.h"
 #include "season/drive/AutoDrive.h"

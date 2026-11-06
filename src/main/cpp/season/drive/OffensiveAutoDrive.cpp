@@ -1,8 +1,8 @@
 #include "season/drive/OffensiveAutoDrive.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/drive/ScoringPosition.h"
-#include "season/detail/RuntimeBehavior.h"
-#include "season/detail/RuntimeAdapters.h"
+#include "season/runtime/SeasonPolicy.h"
+#include "season/runtime/SeasonPolicy.h"
 #include <base/AutoDrive.h>
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
@@ -32,7 +32,7 @@ namespace season
       bool requestActive = false;
       double requestedBeforeTransport = 0, requestUpdatedAt = 0;
       double quietSince = 0;
-      double quietTime = runtime::RuntimeBehavior().emptyQuietSeconds;
+      double quietTime = runtime::SeasonPolicy().behavior.emptyQuietSeconds;
       std::array<double, 3> rollerMean{};
       bool initialized = false, empty = false, latencyRecorded = false;
       std::optional<double> firstRequest;
@@ -131,13 +131,13 @@ namespace season
     auto refillSeconds = std::make_shared<double>(0.);
     frc::Preferences::InitDouble("AutoDrive/EstimatedCapacity", 0);
     frc::Preferences::InitDouble("AutoDrive/FeedBallsPerSecond", 0);
-    frc::Preferences::InitDouble("AutoDrive/EmptyShooterCurrentAmps", runtime::RuntimeBehavior().emptyShooterCurrentAmps);
-    frc::Preferences::InitDouble("AutoDrive/EmptyRollerNoiseAmps", runtime::RuntimeBehavior().emptyRollerNoiseAmps);
+    frc::Preferences::InitDouble("AutoDrive/EmptyShooterCurrentAmps", runtime::SeasonPolicy().behavior.emptyShooterCurrentAmps);
+    frc::Preferences::InitDouble("AutoDrive/EmptyRollerNoiseAmps", runtime::SeasonPolicy().behavior.emptyRollerNoiseAmps);
     auto configuredCapacity = []
     {
       double capacity = frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity", 0);
       if (capacity == 0)
-        capacity = runtime::RuntimeBehavior().defaultCapacity;
+        capacity = runtime::SeasonPolicy().behavior.defaultCapacity;
       return capacity;
     };
     auto feedDuration = []
@@ -201,7 +201,7 @@ namespace season
         return false;
       const auto pose = drive.Pose();
       const auto grid = LoadScoringGrid();
-      const auto goal = grid ? CheapestHubScoringNode(*grid, pose, *alliance, field, runtime::ShootingCalibration())
+      const auto goal = grid ? CheapestHubScoringNode(*grid, pose, *alliance, field, runtime::SeasonPolicy().shot)
                              : std::nullopt;
       if (!goal)
         return false;
@@ -659,7 +659,7 @@ namespace season
               .WithTimeout(offenseconfig::kEntryTimeout);
         };
         auto finish = frc2::cmd::Defer([&drive, field, scoringGoal, alliance, grid]() -> frc2::CommandPtr {
-          *scoringGoal = CheapestHubScoringNode(*grid, drive.Pose(), *alliance, field, runtime::ShootingCalibration());
+          *scoringGoal = CheapestHubScoringNode(*grid, drive.Pose(), *alliance, field, runtime::SeasonPolicy().shot);
           if (!*scoringGoal) return frc2::cmd::None();
           frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalX", (*scoringGoal)->X().value());
           frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalY", (*scoringGoal)->Y().value());
@@ -676,7 +676,7 @@ namespace season
             }))
             .WithTimeout(offenseconfig::kTrenchReturnTimeout).Until(invalid);
       }
-      *scoringGoal = CheapestHubScoringNode(*grid, pose, *alliance, field, runtime::ShootingCalibration());
+      *scoringGoal = CheapestHubScoringNode(*grid, pose, *alliance, field, runtime::SeasonPolicy().shot);
       if (!*scoringGoal) return frc2::cmd::None();
       frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalX", (*scoringGoal)->X().value());
       frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalY", (*scoringGoal)->Y().value());
@@ -718,19 +718,19 @@ namespace season
       options.ownDrive = true;
       options.autonomous = true;
       options.agitate = true;
-      options.shotCalibration = runtime::ShootingCalibration();
+      options.shotCalibration = runtime::SeasonPolicy().shot;
       options.readyTimeoutSeconds = shotconfig::kShotReadyTimeoutSeconds;
       auto requestedFeed = std::make_shared<double>(0.);
       options.feedDurationSeconds = [requestedFeed, feedDuration]
       {
         return *requestedFeed = feedDuration();
       };
-      options.totalTimeoutSeconds = runtime::RuntimeBehavior().shotTimeoutSeconds;
+      options.totalTimeoutSeconds = runtime::SeasonPolicy().behavior.shotTimeoutSeconds;
       options.poseReady = [&perception, &drive, field]
       {
         const auto alliance = frc::DriverStation::GetAlliance();
         return perception.MatchState().ownActive.value_or(false) && alliance &&
-               HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::ShootingCalibration());
+               HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::SeasonPolicy().shot);
       };
       auto fed = std::make_shared<FeedTracker>();
       options.feedFeedback = [fed, m, transportLatency](bool active)
@@ -765,7 +765,7 @@ namespace season
                  {
           const auto alliance = frc::DriverStation::GetAlliance();
           return !perception.MatchState().ownActive.value_or(false) || !alliance ||
-                 !HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::ShootingCalibration()) ||
+                 !HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::SeasonPolicy().shot) ||
                  (prepareForInactive() && !fed->requested); })
           .BeforeStarting(
               [fed]
@@ -791,7 +791,7 @@ namespace season
       options.ownDrive = true;
       options.autonomous = true;
       options.agitate = true;
-      options.shotCalibration = runtime::ShootingCalibration();
+      options.shotCalibration = runtime::SeasonPolicy().shot;
       // Drift toward the neutral-side trench approach while aiming, so ferrying
       // also shortens the return to the alliance zone for the next active shift.
       options.ferryTranslation = [&drive, field]
@@ -814,7 +814,7 @@ namespace season
       {
         return *requestedFeed = feedDuration();
       };
-      options.totalTimeoutSeconds = runtime::RuntimeBehavior().shotTimeoutSeconds;
+      options.totalTimeoutSeconds = runtime::SeasonPolicy().behavior.shotTimeoutSeconds;
       auto fed = std::make_shared<FeedTracker>();
       options.feedFeedback = [fed, m, ferryTransportLatency](bool active)
       {
@@ -851,7 +851,7 @@ namespace season
         const auto alliance = frc::DriverStation::GetAlliance();
         if (!alliance)
           return std::nullopt;
-        const auto calibration = runtime::ShootingCalibration();
+        const auto calibration = runtime::SeasonPolicy().shot;
         auto aimed = [&](frc::Pose2d pose)
         {
           for (int i = 0; i < 3; ++i)
@@ -954,7 +954,7 @@ namespace season
     {
       const auto alliance = frc::DriverStation::GetAlliance();
       return alliance && !prepareForInactive() && perception.MatchState().ownActive.value_or(false) && *scoringGoal &&
-             HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::ShootingCalibration()) &&
+             HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::SeasonPolicy().shot) &&
              drive.Pose().Translation().Distance((*scoringGoal)->Translation()).value() < offenseconfig::kGoalArrivalMetres;
     };
     // Preserve a committed attempt through navigation failure or an incomplete
@@ -1026,7 +1026,7 @@ namespace season
               m.hood.Stop();
               return;
             }
-            const auto solution = CalculateShot(drive.Pose(), HubPosition(*alliance), runtime::ShootingCalibration());
+            const auto solution = CalculateShot(drive.Pose(), HubPosition(*alliance), runtime::SeasonPolicy().shot);
             m.shooter.SetVelocity(ClampCalibrationFlywheel(solution.flywheelRps));
             m.hood.SetPosition(ClampCalibrationHood(solution.hoodRotations));
           },

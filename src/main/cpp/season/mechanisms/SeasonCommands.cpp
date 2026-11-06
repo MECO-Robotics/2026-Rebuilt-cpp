@@ -1,6 +1,6 @@
 #include "season/drive/DriveBehaviorConfig.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "season/detail/RuntimeBehavior.h"
+#include "season/runtime/SeasonPolicy.h"
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
@@ -81,7 +81,7 @@ namespace season
   {
     double capacity = frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity", 0);
     double rate = frc::Preferences::GetDouble("AutoDrive/FeedBallsPerSecond", 0);
-    const auto behavior = runtime::RuntimeBehavior();
+    const auto behavior = runtime::SeasonPolicy().behavior;
     if (capacity == 0)
       capacity = behavior.defaultCapacity;
     if (rate == 0)
@@ -252,7 +252,7 @@ namespace season
                                    std::function<ShotTarget()> supplier, CoordinatedShotOptions options)
   {
     auto state = std::make_shared<ShotState>();
-    const auto transportActive = runtime::RuntimeBehavior().transportActive;
+    const auto transportActive = runtime::SeasonPolicy().behavior.transportActive;
     std::vector<frc2::Subsystem *> requirements{&m.hood, &m.shooter};
     if (options.agitate)
     {

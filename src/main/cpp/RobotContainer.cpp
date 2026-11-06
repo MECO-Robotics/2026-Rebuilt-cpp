@@ -1,9 +1,9 @@
 #include "season/drive/DriveBehaviorConfig.h"
 #include "season/drive/OffensiveAutoDrive.h"
 #include "RobotContainer.h"
-#include "season/detail/RobotRuntime.h"
+#include "season/runtime/RobotRuntime.h"
 #include "season/auto/RobotAutos.h"
-#include "season/detail/RobotPlatform.h"
+#include "season/hardware/RobotPlatform.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/drive/DriveConfig.h"
 #include "season/RobotControlConfig.h"
@@ -286,7 +286,7 @@ void RobotContainer::ConfigureBindings()
       .OnTrue(season::ShooterIdle(m));
 }
 frc2::Command *RobotContainer::GetAutonomousCommand() { return autonomous_->Selected(); }
-void RobotContainer::ScheduleAutonomous(frc2::Command *command) { runtime_->Schedule(command); }
+void RobotContainer::ScheduleAutonomous(frc2::Command *command) { command->Schedule(); }
 void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 
 void RobotContainer::SimulationPeriodic() { runtime_->Periodic(); }

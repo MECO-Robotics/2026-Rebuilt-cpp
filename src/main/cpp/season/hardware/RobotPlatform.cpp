@@ -1,4 +1,4 @@
-#include "season/detail/RobotPlatform.h"
+#include "season/hardware/RobotPlatform.h"
 #include "season/drive/DriveConfig.h"
 #ifndef __FRC_ROBORIO__
 #include "season/simulation/DriveSimulationConfig.h"

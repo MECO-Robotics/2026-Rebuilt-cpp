@@ -22,7 +22,6 @@ public:
   void PublishDriverInput(const base::NtGamepad::State &, double, double, double, double, double, double);
   const std::vector<int> *TagIds() const;
   void BindReset();
-  void Schedule(frc2::Command *);
   void Periodic();
   void Reset();
   bool ResetReady() const;

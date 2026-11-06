@@ -96,6 +96,9 @@ namespace season
 
 namespace season::simulation
 {
+  // Season-specific transport feedback used by command policy and fuel motion.
+  bool TransportFeeding(const Mechanisms &mechanisms);
+
   // Robot-specific ideal sensor model. Geometry/mounts are supplied by the season;
   // shared acquisition, filtering and estimator ownership remain in MecoBase.
   struct SimulatedLocalization

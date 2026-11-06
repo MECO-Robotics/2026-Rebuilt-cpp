@@ -1,13 +1,15 @@
 #pragma once
 
+#include "season/shooting/Shooting.h"
 #include <functional>
 
 namespace season
 {
   struct Mechanisms;
+
   namespace runtime
   {
-    // Environment-dependent defaults and measured transport feedback.
+    // Season behavior values selected for the current runtime mode.
     struct Behavior
     {
       double defaultCapacity = 0;
@@ -18,14 +20,20 @@ namespace season
       double shotTimeoutSeconds = 15;
       std::function<bool(const Mechanisms &)> transportActive = [](const Mechanisms &) { return true; };
     };
-    Behavior RuntimeBehavior();
+
+    struct AutonomousDefaults
+    {
+      bool offensiveDefault;
+      bool offenseEnabled;
+    };
+
+    struct PolicyProfile
+    {
+      AutonomousDefaults autonomous{false, false};
+      ShotCalibration shot{};
+      Behavior behavior{};
+    };
+
+    const PolicyProfile &SeasonPolicy();
   }
 }
-
-#ifndef __FRC_ROBORIO__
-namespace season::simulation
-{
-  // Voltage alone cannot establish direction during a roller reversal.
-  bool TransportFeeding(const Mechanisms &mechanisms);
-}
-#endif

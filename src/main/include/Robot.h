@@ -1,28 +1,8 @@
 #pragma once
+#include "season/simulation/SimulationConfig.h"
+#include <base/SimulationLifecycle.h>
 #include <frc/TimedRobot.h>
-#include <memory>
 #include "RobotContainer.h"
-namespace season::runtime
-{
-  // Platform services surrounding the robot scheduler and scene updates.
-  class RobotLifecycle
-  {
-  public:
-    RobotLifecycle();
-    ~RobotLifecycle();
-    RobotLifecycle(const RobotLifecycle &) = delete;
-    RobotLifecycle &operator=(const RobotLifecycle &) = delete;
-    void Initialize();
-    void BeforeScheduler();
-    void AfterScheduler();
-    void BeforeScene();
-    void AfterScene();
-
-  private:
-    struct State;
-    std::unique_ptr<State> state_;
-  };
-}
 
 // Drives the command scheduler and season mode transitions.
 class Robot : public frc::TimedRobot
@@ -38,7 +18,14 @@ public:
 
 private:
   RobotContainer container_;
-  season::runtime::RobotLifecycle lifecycle_;
+  base::simulation::Lifecycle lifecycle_{base::simulation::LifecycleConfig{
+      season::simulation::runtimeconfig::kBatteryCapacityAh,
+      season::simulation::runtimeconfig::kBatteryEmptyVoltage,
+      season::simulation::runtimeconfig::kBatteryVoltageRange,
+      season::simulation::runtimeconfig::kBatteryInternalResistanceOhms,
+      season::simulation::runtimeconfig::kPracticeAutonomousSeconds,
+      season::simulation::runtimeconfig::kPracticeAssessmentSeconds,
+      season::simulation::runtimeconfig::kPracticeTeleopSeconds}};
   frc2::Command *autonomous_ = nullptr;
   bool autonomousPending_ = false;
 };

@@ -1,5 +1,5 @@
 #pragma once
-#include "season/detail/RobotRuntime.h"
+#include "season/runtime/RobotRuntime.h"
 #include "season/simulation/MotorSimulation.h"
 #include <base/RuntimeScene.h>
 #include <base/VisionIOSelector.h>
