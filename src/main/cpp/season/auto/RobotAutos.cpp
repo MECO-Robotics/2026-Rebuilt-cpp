@@ -52,33 +52,18 @@ void season::autonomous::RobotAutos::Configure()
                          },
                          {&owner_.conveyor_, &owner_.bottom_, &owner_.top_}));
   pathplanner::NamedCommands::registerCommand(
-      "Agitate", frc2::cmd::RunEnd(
-                     [this]
-                     {
-                       owner_.bottom_.SetVoltage(season::mechanismconfig::kBottomFeedVolts);
-                       owner_.top_.SetVoltage(season::mechanismconfig::kTopFeedVolts);
-                     },
-                     [this]
-                     {
-                       owner_.bottom_.Stop();
-                       owner_.top_.Stop();
-                     },
-                     {&owner_.bottom_, &owner_.top_}));
+      "Agitate",
+      owner_.bottom_.VoltageCommand([] { return season::mechanismconfig::kBottomFeedVolts; })
+          .AlongWith(owner_.top_.VoltageCommand([] { return season::mechanismconfig::kTopFeedVolts; })));
   pathplanner::NamedCommands::registerCommand(
-      "SpinIntake", frc2::cmd::RunEnd(
-                        [this]
+      "SpinIntake", owner_.intake_.VoltageCommand([] { return season::mechanismconfig::kIntakeVolts; })
+                        .AlongWith(owner_.conveyor_.VoltageCommand(
+                            [] { return season::mechanismconfig::kAutoIntakeConveyorVolts; }))
+                        .AlongWith(frc2::cmd::Run([this]
                         {
-                          owner_.intake_.SetVoltage(season::mechanismconfig::kIntakeVolts);
-                          owner_.conveyor_.SetVoltage(season::mechanismconfig::kAutoIntakeConveyorVolts);
                           owner_.fuelEstimate_->Observe(owner_.autoDrive_->VisibleFuel(), owner_.drive_.Pose());
                           frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", owner_.fuelEstimate_->Count());
-                        },
-                        [this]
-                        {
-                          owner_.intake_.Stop();
-                          owner_.conveyor_.Stop();
-                        },
-                        {&owner_.intake_, &owner_.conveyor_})
+                        }))
                         .BeforeStarting([this] { owner_.fuelEstimate_->StartCollection(); }));
   // Spin up from the current pose while the auto is running.
   auto calculatedSpinUp = [this]
