@@ -5,6 +5,7 @@
 #include "season/RobotGeometry.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "meco/sim/ParticleFieldContacts.h"
+#include <base/TelemetryPublishers.h>
 #include <networktables/NetworkTableInstance.h>
 #include <frc/DriverStation.h>
 #include <frc/smartdashboard/SmartDashboard.h>
@@ -43,11 +44,16 @@ namespace season
         FuelSimulation::FuelSimulation(Mechanisms mechanisms, base::Drive &drive, std::shared_ptr<FuelMotorLoads> loads) : mechanisms_(mechanisms), drive_(drive), loads_(std::move(loads))
         {
                 auto nt = nt::NetworkTableInstance::GetDefault();
-                robotPosePublisher_ = nt.GetStructTopic<frc::Pose3d>("/Visualization/RobotRemy/RobotPose").Publish();
-                componentsPublisher_ = nt.GetStructArrayTopic<frc::Pose3d>("/Visualization/RobotRemy/ComponentPoses").Publish();
-                fuelPublisher_ = nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/FuelPositions").Publish();
-                hopperPublisher_ = nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/HopperFuelPositions").Publish();
-                projectilesPublisher_ = nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/FuelProjectilePositions").Publish();
+                robotPosePublisher_ = std::make_shared<nt::StructPublisher<frc::Pose3d>>(
+                    nt.GetStructTopic<frc::Pose3d>("/Visualization/RobotRemy/RobotPose").Publish());
+                componentsPublisher_ = std::make_shared<nt::StructArrayPublisher<frc::Pose3d>>(
+                    nt.GetStructArrayTopic<frc::Pose3d>("/Visualization/RobotRemy/ComponentPoses").Publish());
+                fuelPublisher_ = std::make_shared<nt::StructArrayPublisher<frc::Pose3d>>(
+                    nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/FuelPositions").Publish());
+                hopperPublisher_ = std::make_shared<nt::StructArrayPublisher<frc::Pose3d>>(
+                    nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/HopperFuelPositions").Publish());
+                projectilesPublisher_ = std::make_shared<nt::StructArrayPublisher<frc::Pose3d>>(
+                    nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/FuelProjectilePositions").Publish());
                 Reset();
         }
         void FuelSimulation::Reset()
@@ -62,7 +68,8 @@ namespace season
                         for (double y = fuelconfig::kStartingFuelMinY; y <= fuelconfig::kStartingFuelMaxY; y += fuelconfig::kStartingFuelSpacing)
                                 model_.AddFloorFuel({units::meter_t{x}, units::meter_t{y}});
         }
-        void FuelSimulation::Periodic(double dt, std::optional<FuelRobotState> physics, std::optional<bool> hubActive)
+        void FuelSimulation::Periodic(double dt, std::optional<FuelRobotState> physics, std::optional<bool> hubActive,
+                                      std::optional<frc::DriverStation::Alliance> alliance)
         {
                 auto pose = drive_.Pose();
                 auto speed = drive_.Speeds();
@@ -79,15 +86,15 @@ namespace season
                 input.feeding = simulation::TransportFeeding(mechanisms_);
                 input.physics = physics;
                 input.hubActive = hubActive;
-                frc::SmartDashboard::PutBoolean("FieldSimulation/Feeding", input.feeding);
-                frc::SmartDashboard::PutNumber("FieldSimulation/BottomIndexerVolts", mechanisms_.bottomIndexer.Inputs().voltage);
-                frc::SmartDashboard::PutNumber("FieldSimulation/TopIndexerVolts", mechanisms_.topIndexer.Inputs().voltage);
-                frc::SmartDashboard::PutNumber("FieldSimulation/ConveyorVolts", mechanisms_.conveyor.Inputs().voltage);
-                frc::SmartDashboard::PutNumber("FieldSimulation/ShooterCurrentAmps", mechanisms_.shooter.Inputs().current);
-                frc::SmartDashboard::PutNumber("FieldSimulation/ConveyorCurrentAmps", mechanisms_.conveyor.Inputs().current);
-                frc::SmartDashboard::PutNumber("FieldSimulation/BottomIndexerCurrentAmps", mechanisms_.bottomIndexer.Inputs().current);
-                frc::SmartDashboard::PutNumber("FieldSimulation/TopIndexerCurrentAmps", mechanisms_.topIndexer.Inputs().current);
-                input.alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);
+                base::telemetry::PostDashboardBoolean("FieldSimulation/Feeding", input.feeding);
+                base::telemetry::PostDashboardNumber("FieldSimulation/BottomIndexerVolts", mechanisms_.bottomIndexer.Inputs().voltage);
+                base::telemetry::PostDashboardNumber("FieldSimulation/TopIndexerVolts", mechanisms_.topIndexer.Inputs().voltage);
+                base::telemetry::PostDashboardNumber("FieldSimulation/ConveyorVolts", mechanisms_.conveyor.Inputs().voltage);
+                base::telemetry::PostDashboardNumber("FieldSimulation/ShooterCurrentAmps", mechanisms_.shooter.Inputs().current);
+                base::telemetry::PostDashboardNumber("FieldSimulation/ConveyorCurrentAmps", mechanisms_.conveyor.Inputs().current);
+                base::telemetry::PostDashboardNumber("FieldSimulation/BottomIndexerCurrentAmps", mechanisms_.bottomIndexer.Inputs().current);
+                base::telemetry::PostDashboardNumber("FieldSimulation/TopIndexerCurrentAmps", mechanisms_.topIndexer.Inputs().current);
+                input.alliance = alliance.value_or(frc::DriverStation::Alliance::kBlue);
                 const double fill = static_cast<double>(model_.StoredFuel()) / fuelconfig::kSimulationCapacity;
                 const bool fuelInTransport = (input.feeding || input.collecting) && fill > 0;
                 const int priorLaunches = model_.LaunchedFuel();
@@ -106,8 +113,13 @@ namespace season
                         loads_->torque = {fuelconfig::kConveyorLoadTorque * load * noise(), fuelconfig::kIndexerLoadTorque * load * noise(), fuelconfig::kIndexerLoadTorque * load * noise(), shooterLoadRemaining_ > 0 ? fuelconfig::kShooterLoadTorque * noise() : 0.};
                 }
                 const auto robotPose = input.physics ? input.physics->pose : frc::Pose3d{input.robot};
-                robotPosePublisher_.Set(robotPose);
-                componentsPublisher_.Set(RemyComponentPoses(input.rackMetres, input.hoodRotations, mechanisms_.shooter.Position()));
+                auto robotPublisher = robotPosePublisher_;
+                base::telemetry::Post("Simulation/RobotPose", [robotPublisher, robotPose]
+                                      { robotPublisher->Set(robotPose); });
+                auto componentsPublisher = componentsPublisher_;
+                auto components = RemyComponentPoses(input.rackMetres, input.hoodRotations, mechanisms_.shooter.Position());
+                base::telemetry::Post("Simulation/RobotComponents", [componentsPublisher, components = std::move(components)]
+                                      { componentsPublisher->Set(components); });
                 auto hopper = FuelModel::HopperCenters3d(model_.StoredFuel(), input.rackMetres, robotPose);
                 std::vector<frc::Pose3d> fuel, hopperPoses, projectiles;
                 fuel.reserve(model_.FloorFuel().size() + hopper.size());
@@ -122,21 +134,27 @@ namespace season
                 fuel.insert(fuel.end(), hopperPoses.begin(), hopperPoses.end());
                 for (const auto &p : model_.Projectiles())
                         projectiles.push_back(ballPose(p.position));
-                fuelPublisher_.Set(fuel);
-                hopperPublisher_.Set(hopperPoses);
-                projectilesPublisher_.Set(projectiles);
-                frc::SmartDashboard::PutNumber("FieldSimulation/StoredFuelCount", model_.StoredFuel());
-                frc::SmartDashboard::PutNumber("FieldSimulation/HopperFuelCount", hopper.size());
-                frc::SmartDashboard::PutNumber("FieldSimulation/HopperFillRatio", hopper.empty() ? 0 : static_cast<double>(hopper.size()) / FuelModel::HopperCenters(fuelconfig::kSimulationCapacity, input.rackMetres).size());
+                auto fuelPublisher = fuelPublisher_;
+                base::telemetry::Post("Simulation/FuelPositions", [fuelPublisher, fuel = std::move(fuel)]
+                                      { fuelPublisher->Set(fuel); });
+                auto hopperPublisher = hopperPublisher_;
+                base::telemetry::Post("Simulation/HopperFuelPositions", [hopperPublisher, hopperPoses = std::move(hopperPoses)]
+                                      { hopperPublisher->Set(hopperPoses); });
+                auto projectilesPublisher = projectilesPublisher_;
+                base::telemetry::Post("Simulation/FuelProjectilePositions", [projectilesPublisher, projectiles = std::move(projectiles)]
+                                      { projectilesPublisher->Set(projectiles); });
+                base::telemetry::PostDashboardNumber("FieldSimulation/StoredFuelCount", model_.StoredFuel());
+                base::telemetry::PostDashboardNumber("FieldSimulation/HopperFuelCount", hopper.size());
+                base::telemetry::PostDashboardNumber("FieldSimulation/HopperFillRatio", hopper.empty() ? 0 : static_cast<double>(hopper.size()) / FuelModel::HopperCenters(fuelconfig::kSimulationCapacity, input.rackMetres).size());
                 auto fuelPositions = Positions(model_.FloorFuel());
                 const auto hopperPositions = Positions(hopper);
                 fuelPositions.insert(fuelPositions.end(), hopperPositions.begin(), hopperPositions.end());
-                frc::SmartDashboard::PutNumber("FieldSimulation/SuccessfulScoreCount", model_.SuccessfulScores());
-                frc::SmartDashboard::PutNumber("FieldSimulation/LaunchedFuelCount", model_.LaunchedFuel());
-                frc::SmartDashboard::PutNumber("FieldSimulation/FuelProjectileCount", model_.Projectiles().size());
-                frc::SmartDashboard::PutNumberArray("FieldSimulation/FuelPositionsXYZ", fuelPositions);
-                frc::SmartDashboard::PutNumberArray("FieldSimulation/HopperFuelPositionsXYZ", hopperPositions);
-                frc::SmartDashboard::PutNumberArray("FieldSimulation/FuelProjectilePositionsXYZ", Positions(model_.Projectiles()));
+                base::telemetry::PostDashboardNumber("FieldSimulation/SuccessfulScoreCount", model_.SuccessfulScores());
+                base::telemetry::PostDashboardNumber("FieldSimulation/LaunchedFuelCount", model_.LaunchedFuel());
+                base::telemetry::PostDashboardNumber("FieldSimulation/FuelProjectileCount", model_.Projectiles().size());
+                base::telemetry::PostDashboardNumberArray("FieldSimulation/FuelPositionsXYZ", fuelPositions);
+                base::telemetry::PostDashboardNumberArray("FieldSimulation/HopperFuelPositionsXYZ", hopperPositions);
+                base::telemetry::PostDashboardNumberArray("FieldSimulation/FuelProjectilePositionsXYZ", Positions(model_.Projectiles()));
         }
 }
 #endif

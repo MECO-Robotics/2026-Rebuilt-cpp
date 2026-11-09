@@ -2,6 +2,8 @@
 #include "season/shooting/Shooting.h"
 #include <frc/smartdashboard/SendableChooser.h>
 #include <frc2/command/CommandPtr.h>
+#include <string>
+#include <unordered_map>
 #include <vector>
 class RobotContainer;
 namespace base { class Drive; }
@@ -17,12 +19,15 @@ public:
  explicit RobotAutos(RobotContainer &owner) : owner_(owner) {}
  static void ConfigureDrive(base::Drive &);
  void Configure();
- frc2::Command *Selected() { return chooser_.GetSelected(); }
+ frc2::Command *Selected();
 private:
+ void AddChooserOption(std::string label, std::string id, frc2::CommandPtr command, bool isDefault = false);
  season::ShotTarget SelectTarget();
  frc2::CommandPtr HubShot(bool ownDrive = true, bool requireVision = false);
  RobotContainer &owner_;
- frc::SendableChooser<frc2::Command *> chooser_;
+ frc::SendableChooser<std::string> chooser_;
+ std::unordered_map<std::string, std::string> idsByLabel_;
+ std::unordered_map<std::string, frc2::Command *> commandsById_;
  std::vector<frc2::CommandPtr> autos_;
 };
 }

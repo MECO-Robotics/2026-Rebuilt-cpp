@@ -2,7 +2,7 @@
 #include <base/AutoDrive.h>
 #include <cmath>
 #include <numbers>
-#include <base/season2026/MatchContext.h>
+#include "season/runtime/MatchContext.h"
 #include <base/FootprintConfiguration.h>
 #include <base/ObjectPerception.h>
 #include "season/vision/PerceptionConfig.h"
@@ -33,7 +33,7 @@ namespace autodriveconfig
   // Dashboard target coordinates published at startup and used as fallbacks, in metres.
   inline constexpr double kDefaultTargetXMetres = 3., kDefaultTargetYMetres = .65;
   // Maximum size of the configured-footprint JSON file accepted at startup, in bytes.
-  inline constexpr int kMaxGridBytes = 262144;
+  inline constexpr int kMaxFootprintConfigBytes = 262144;
   // Target movement that triggers replanning in a tracking footprint mode, in metres.
   inline constexpr double kTargetReplanDistanceMetres = .3;
   // Status and arrival checks apply to both simulated and physical navigation.
@@ -57,7 +57,7 @@ class AutoDrive
 {
 public:
   AutoDrive(base::Drive &drive, std::function<double()> intakeExtension,
-            std::function<const base::season2026::MatchContext &()> matchContext,
+            std::function<const season::runtime::MatchContext &()> matchContext,
             units::second_t detectionUpdatePeriod = units::second_t{vision::config::kObjectDetectionPeriodSeconds},
             std::shared_ptr<AutoDriveEnvironment> environment = {});
   ~AutoDrive();
@@ -69,19 +69,21 @@ public:
   void PublishMatchContext() const;
   // Same DriverStation-derived input on hardware and in simulation. Unknowns
   // stay explicit; this supplies timing context without selecting a strategy.
-  const base::season2026::MatchContext &MatchState() const { return matchContext_(); }
+  const season::runtime::MatchContext &MatchState() const { return matchContext_(); }
   // Discard cached observations after a source reset.
   void ClearPerception();
 private:
   frc::Transform3d Mount(size_t camera) const;
+  void LoadConfiguredFootprint();
   // Select a dashboard pose or a fresh perceived fuel target.
   std::optional<frc::Pose2d> Target();
   void Status(const char *value);
-  std::function<const base::season2026::MatchContext &()> matchContext_;
+  std::function<const season::runtime::MatchContext &()> matchContext_;
   base::Drive &drive_;
   std::function<double()> extension_;
   std::unique_ptr<base::ObjectPerception> perception_;
   std::optional<base::FootprintConfiguration> configuredFootprint_;
+  bool configuredFootprintLoaded_{};
   std::shared_ptr<AutoDriveEnvironment> environment_;
 };
 } // namespace season

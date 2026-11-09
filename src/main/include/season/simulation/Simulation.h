@@ -5,6 +5,7 @@
 #include "season/simulation/SimulationConfig.h"
 #include "season/simulation/MotorSimulation.h"
 #include <array>
+#include <memory>
 #include <random>
 #include <optional>
 #include <frc/geometry/struct/Pose3dStruct.h>
@@ -12,13 +13,12 @@
 #include <networktables/StructTopic.h>
 #include <vector>
 #include "base/Vision.h"
-#include "meco/sim/SimulatedVisionSource.h"
-#include "meco/sim/SimulatedVision.h"
 #include <frc/geometry/Pose3d.h>
 #include "base/sim/Arena.h"
-#include "base/sim/fields/Rebuilt2026.h"
+#include "season/simulation/FieldGeometry2026.h"
 #include "base/FootprintSpeedProfile.h"
 #include <frc/geometry/Pose2d.h>
+#include <frc/DriverStation.h>
 
 namespace season
 {
@@ -77,7 +77,8 @@ namespace season
   public:
     FuelSimulation(Mechanisms mechanisms, base::Drive &drive, std::shared_ptr<FuelMotorLoads> loads = {});
     void Periodic(double dt = simulation::runtimeconfig::kSimulationPeriodSeconds, std::optional<FuelRobotState> physics = std::nullopt,
-                  std::optional<bool> hubActive = true);
+                  std::optional<bool> hubActive = true,
+                  std::optional<frc::DriverStation::Alliance> alliance = frc::DriverStation::Alliance::kBlue);
     void Reset();
     FuelModel &Model() { return model_; }
 
@@ -88,9 +89,9 @@ namespace season
     std::shared_ptr<FuelMotorLoads> loads_;
     double shooterLoadRemaining_{};
     std::mt19937 loadRandom_{simulation::runtimeconfig::kFuelRandomSeed};
-    nt::StructPublisher<frc::Pose3d> robotPosePublisher_;
-    nt::StructArrayPublisher<frc::Pose3d> componentsPublisher_;
-    nt::StructArrayPublisher<frc::Pose3d> fuelPublisher_, hopperPublisher_, projectilesPublisher_;
+    std::shared_ptr<nt::StructPublisher<frc::Pose3d>> robotPosePublisher_;
+    std::shared_ptr<nt::StructArrayPublisher<frc::Pose3d>> componentsPublisher_;
+    std::shared_ptr<nt::StructArrayPublisher<frc::Pose3d>> fuelPublisher_, hopperPublisher_, projectilesPublisher_;
   };
 }
 
@@ -99,54 +100,10 @@ namespace season::simulation
   // Season-specific transport feedback used by command policy and fuel motion.
   bool TransportFeeding(const Mechanisms &mechanisms);
 
-  // Robot-specific ideal sensor model. Geometry/mounts are supplied by the season;
-  // shared acquisition, filtering and estimator ownership remain in MecoBase.
-  struct SimulatedLocalization
-  {
-    meco::sim::SimulatedVisionSource limelight, quest;
-    std::vector<int> tagIds;
-    bool questAligned = false;
-
-    void Reset()
-    {
-      limelight.Reset();
-      quest.Reset();
-      tagIds.clear();
-      questAligned = false;
-    }
-
-    void Update(const frc::Pose3d &truth, units::second_t timestamp,
-                const frc::AprilTagFieldLayout &layout,
-                const frc::Transform3d &limelightMount, const frc::Transform3d &questMount)
-    {
-      // LL3 standard lens; Quest optical frustum is an approximate model.
-      tagIds = meco::sim::VisibleTags(truth, limelightMount, layout,
-                                      units::degree_t{simulation::runtimeconfig::kLimelightHorizontalFovDegrees}, units::degree_t{simulation::runtimeconfig::kLimelightVerticalFovDegrees}, units::meter_t{simulation::runtimeconfig::kVisionRangeMetres});
-      const auto questTags = meco::sim::VisibleTags(truth, questMount, layout,
-                                                    units::degree_t{simulation::runtimeconfig::kQuestHorizontalFovDegrees}, units::degree_t{simulation::runtimeconfig::kQuestVerticalFovDegrees}, units::meter_t{simulation::runtimeconfig::kVisionRangeMetres});
-      // Model AprilTag-assisted absolute initialization, then continuous VIO.
-      questAligned = questAligned || questTags.size() >= simulation::runtimeconfig::kQuestAlignmentMinTags || !tagIds.empty();
-      limelight.Update(truth, timestamp, layout, !tagIds.empty(),
-          units::meter_t{simulation::runtimeconfig::kVisionTagDistanceNoiseMetres},
-          {simulation::runtimeconfig::kLimelightStdX, simulation::runtimeconfig::kLimelightStdY, simulation::runtimeconfig::kLimelightStdHeading},
-          true, false, false);
-      quest.Update(truth, timestamp, layout, questAligned,
-          units::meter_t{simulation::runtimeconfig::kVisionTagDistanceNoiseMetres},
-          {simulation::runtimeconfig::kQuestStdX, simulation::runtimeconfig::kQuestStdY, simulation::runtimeconfig::kQuestStdHeading},
-          true, true, questAligned);
-    }
-  };
 }
 
 namespace season::simulation
 {
-  using base::sim::fields::rebuilt2026::FieldColliders;
-  using base::sim::fields::rebuilt2026::kBlueHubX;
-  using base::sim::fields::rebuilt2026::kFieldLength;
-  using base::sim::fields::rebuilt2026::kFieldWidth;
-  using base::sim::fields::rebuilt2026::kHubY;
-  using base::sim::fields::rebuilt2026::kRedHubX;
-  using base::sim::fields::rebuilt2026::kStartingLineX;
   frc::Pose2d DefaultSpawn(bool red);
   // Conservative clearance of the modeled .86m square chassis up to .45m high.
   // This is a modeled start-space check, not whole-robot inspection acceptance.

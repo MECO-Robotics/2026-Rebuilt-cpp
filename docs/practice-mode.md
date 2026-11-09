@@ -21,7 +21,7 @@ Select the auto before starting. During a run, let practice mode control the sim
 - Check `/Sim/Practice/LastCommandAccepted` and `/Sim/Practice/Reason`.
 - `start-requires-disabled-and-no-estop` means to disable the robot and clear the simulated E-stop before trying again.
 - `external-ds-change` means another Driver Station control changed during the sequence. Start a fresh match while disabled.
-- If offense says `wait-for-match`, check the station and `/Match/HubKnown`. In teleop the game data must also be valid.
+- If offense says `wait-for-match`, check the station and `/Match/HubKnown`. `/Match/PolicyInputsKnown` reports whether the current REBUILT shift can be derived; during teleop, missing match time, alliance, or required game data leaves it false. `/Match/GameDataAvailable` distinguishes absent replay data from a present but invalid message.
 
 ## Useful topics
 

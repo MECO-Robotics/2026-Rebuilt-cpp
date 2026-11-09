@@ -7,7 +7,10 @@
 #include "season/mechanisms/Mechanisms.h"
 #include "season/drive/DriveConfig.h"
 #include "season/RobotControlConfig.h"
+#include "season/runtime/MatchContext.h"
+#include <base/ReplaySettings.h>
 #include "season/vision/PerceptionConfig.h"
+#include <base/TelemetryPublishers.h>
 #include <frc/Timer.h>
 #include <frc/DriverStation.h>
 #include <frc/GenericHID.h>
@@ -72,7 +75,7 @@ season::Mechanisms RobotContainer::Mechanisms() { return {rack_, intake_, convey
 RobotContainer::~RobotContainer() = default;
 RobotContainer::RobotContainer()
     : runtime_(std::make_unique<season::runtime::RobotRuntime>(*this)),
-      drive_(season::hardware::DriveConfig()),
+      drive_(runtime_->ConfigureDrive(season::hardware::DriveConfig())),
       rack_("IntakeRack",
             runtime_->Motors().Make(base::Vendor::SparkMax, RackMotorConfig()),
             season::hardware::JointGains(season::hardware::kRackGains),
@@ -123,14 +126,16 @@ RobotContainer::RobotContainer()
   // Install the pathfinder before constructing commands that use it.
   season::autonomous::RobotAutos::ConfigureDrive(drive_);
   runtime_->Initialize();
+  if (const auto *observer = runtime_->DriveRequestObserver())
+    driveRequestObserver_ = *observer;
   const bool ntInputSelected = season::drive::ntgamepadconfig::kEnabled;
   const bool useNtInput = runtime_->UseNtInput(ntInputSelected);
   if (useNtInput)
     ntGamepad_ = std::make_unique<base::NtGamepad>(nt::NetworkTableInstance::GetDefault(),
                                                   season::drive::ntgamepadconfig::kDefaultPeriodMs,
                                                   season::drive::ntgamepadconfig::kDefaultStaleMs);
-  frc::SmartDashboard::PutString("Input/DriverSource", useNtInput ? "nt" : "driverstation");
-  frc::SmartDashboard::PutBoolean("Input/NTGamepadEnabled", useNtInput);
+  base::telemetry::PostDashboardString("Input/DriverSource", useNtInput ? "nt" : "driverstation");
+  base::telemetry::PostDashboardBoolean("Input/NTGamepadEnabled", useNtInput);
   // Manual driving resumes whenever no other command owns the drivetrain.
   drive_.SetDefaultCommand(frc2::cmd::RunEnd([this]
                                              { DriveTeleop(false); }, [this]
@@ -139,7 +144,7 @@ RobotContainer::RobotContainer()
   autoDrive_ = std::make_unique<season::AutoDrive>(
       drive_, [this]
       { return rack_.Position(); },
-      [this]() -> const base::season2026::MatchContext &
+            [this]() -> const season::runtime::MatchContext &
       { return matchContext_; },
       units::second_t{season::vision::config::kObjectDetectionPeriodSeconds},
       runtime_->AutoDriveInputs());
@@ -161,13 +166,13 @@ RobotContainer::RobotContainer()
 // Maintain mechanism feedback and control at the standard robot-loop cadence.
 void RobotContainer::ControlMechanisms()
 {
-  frc::SmartDashboard::PutString("Input/ActiveSource", activeDriverInput_);
+  base::telemetry::PostDashboardString("Input/ActiveSource", activeDriverInput_);
   if (ntGamepad_)
   {
     const auto state = ntGamepad_->Read();
-    frc::SmartDashboard::PutBoolean("Input/NTAccepted", state.accepted);
-    frc::SmartDashboard::PutNumber("Input/NTAgeMs", std::isfinite(state.ageMs) ? state.ageMs : -1.0);
-    frc::SmartDashboard::PutNumber("Input/NTSequence", static_cast<double>(state.sequence));
+    base::telemetry::PostDashboardBoolean("Input/NTAccepted", state.accepted);
+    base::telemetry::PostDashboardNumber("Input/NTAgeMs", std::isfinite(state.ageMs) ? state.ageMs : -1.0);
+    base::telemetry::PostDashboardNumber("Input/NTSequence", static_cast<double>(state.sequence));
   }
   const auto kControlPeriod = season::hardware::kControlPeriod;
   rack_.Control(kControlPeriod);
@@ -183,76 +188,62 @@ void RobotContainer::ControlMechanisms()
 void RobotContainer::ConfigureBindings()
 {
   runtime_->BindReset();
+  const auto teleopEnabled = [this] { return matchContext_.enabled && matchContext_.teleop; };
   // LB selects target driving or offense according to the dashboard toggle.
   (controller_.LeftBumper() &&
-   []
+   [this, teleopEnabled]
    {
-     return frc::DriverStation::IsTeleopEnabled() &&
-            !frc::SmartDashboard::GetBoolean("AutoDrive/OffenseEnabled", false);
+     return teleopEnabled() &&
+            !base::replay::DashboardBoolean("Season/Setting/AutoDrive/OffenseEnabled", "AutoDrive/OffenseEnabled", false);
    }).WhileTrue(autoDrive_->Command());
   (controller_.LeftBumper() &&
-   []
+   [this, teleopEnabled]
    {
-     return frc::DriverStation::IsTeleopEnabled() && frc::SmartDashboard::GetBoolean("AutoDrive/OffenseEnabled", false);
+     return teleopEnabled() && base::replay::DashboardBoolean("Season/Setting/AutoDrive/OffenseEnabled", "AutoDrive/OffenseEnabled", false);
    }).WhileTrue(season::OffensiveAutoDrive(*autoDrive_, drive_, Mechanisms(), field_, fuelEstimate_));
   auto m = Mechanisms();
   // No idle default overwrites shooter setpoints between actions.
-  (controller_.Start() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.Start() && teleopEnabled)
       .OnTrue(frc2::cmd::RunOnce(
           [this]
           {
             // Driver forward is an operator frame, never a new field/vision pose.
-            const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
+            const bool red = matchContext_.alliance == frc::DriverStation::Alliance::kRed;
             driverHeadingOffset_ =
                 drive_.Pose().Rotation() - frc::Rotation2d{units::radian_t{red ? std::numbers::pi : 0}};
           },
           {&drive_}));
   // Triggers acquire and eject while held.
-  (controller_.RightTrigger() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.RightTrigger() && teleopEnabled)
       .WhileTrue(season::Acquire(m));
-  (controller_.LeftTrigger() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.LeftTrigger() && teleopEnabled)
       .WhileTrue(season::Eject(m).AlongWith(
           frc2::cmd::RunEnd([this]
                             { rack_.SetPosition(season::mechanismconfig::kRackDeploy); }, [this]
                             { rack_.Stop(); }, {&rack_})));
   // Feed while held; rumble reports shooter readiness.
-  (controller_.RightBumper() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.RightBumper() && teleopEnabled)
       .WhileTrue(season::AgitateAndFeed(
           m, [this](double intensity)
           { controller_.GetHID().SetRumble(frc::GenericHID::RumbleType::kBothRumble, intensity); }));
   // Either operator can hold the rack deploy and stow commands.
-  (controller_.POVUp() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.POVUp() && teleopEnabled)
       .WhileTrue(season::Deploy(m));
-  (copilot_.POVUp() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (copilot_.POVUp() && teleopEnabled)
       .WhileTrue(season::Deploy(m));
-  (controller_.POVDown() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.POVDown() && teleopEnabled)
       .WhileTrue(season::Stow(m));
-  (copilot_.POVDown() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (copilot_.POVDown() && teleopEnabled)
       .WhileTrue(season::Stow(m));
   // Copilot left/right latches the rack position.
   (copilot_.POVLeft() &&
-   []
-   {
-     return frc::DriverStation::IsTeleopEnabled();
-   }).OnTrue(frc2::cmd::RunOnce([this]
+   teleopEnabled).OnTrue(frc2::cmd::RunOnce([this]
                                 { rack_.SetPosition(season::mechanismconfig::kRackDeploy); }, {&rack_}));
   (copilot_.POVRight() &&
-   []
-   {
-     return frc::DriverStation::IsTeleopEnabled();
-   }).OnTrue(frc2::cmd::RunOnce([this]
+   teleopEnabled).OnTrue(frc2::cmd::RunOnce([this]
                                 { rack_.SetPosition(season::mechanismconfig::kRackStow); }, {&rack_}));
   // A assists aiming while retaining driver translation.
-  (controller_.A() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.A() && teleopEnabled)
       .WhileTrue(frc2::cmd::RunEnd([this]
                                    { DriveTeleop(true); },
                                    [this]
@@ -263,32 +254,29 @@ void RobotContainer::ConfigureBindings()
                                    },
                                    {&drive_, &hood_, &shooter_}));
   // X runs the hub preset; Y latches ferry setpoints; B stops the shooter.
-  (controller_.X() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.X() && teleopEnabled)
       .OnTrue(season::DriverHubPreset(m));
-  (copilot_.X() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (copilot_.X() && teleopEnabled)
       .OnTrue(season::DriverHubPreset(m));
-  (controller_.Y() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.Y() && teleopEnabled)
       .OnTrue(season::ShooterPreset(m, season::shotconfig::kFerryHood, season::shotconfig::kFerryRps));
-  (copilot_.Y() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (copilot_.Y() && teleopEnabled)
       .OnTrue(season::ShooterPreset(m, season::shotconfig::kFerryHood, season::shotconfig::kFerryRps));
-  (copilot_.A() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (copilot_.A() && teleopEnabled)
       .OnTrue(season::ShooterPreset(m, season::shotconfig::kTrenchHood, season::shotconfig::kTrenchRps));
-  (controller_.B() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (controller_.B() && teleopEnabled)
       .OnTrue(season::ShooterIdle(m));
-  (copilot_.B() && []
-   { return frc::DriverStation::IsTeleopEnabled(); })
+  (copilot_.B() && teleopEnabled)
       .OnTrue(season::ShooterIdle(m));
 }
 frc2::Command *RobotContainer::GetAutonomousCommand() { return autonomous_->Selected(); }
-void RobotContainer::ScheduleAutonomous(frc2::Command *command) { command->Schedule(); }
+void RobotContainer::ScheduleAutonomous(frc2::Command *command) { runtime_->Schedule(*command); }
 void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 
 void RobotContainer::SimulationPeriodic() { runtime_->Periodic(); }
+void RobotContainer::BeforeScheduler() { runtime_->BeforeScheduler(); }
+void RobotContainer::AfterScheduler() { runtime_->AfterScheduler(); }
+void RobotContainer::BeforeScene() { runtime_->BeforeScene(); }
+void RobotContainer::AfterScene() { runtime_->AfterScene(); }
 void RobotContainer::PrepareAutonomous() { runtime_->Reset(); }
 bool RobotContainer::AutonomousReady() const { return runtime_->ResetReady(); }

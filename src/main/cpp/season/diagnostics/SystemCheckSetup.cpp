@@ -1,5 +1,6 @@
 #include "season/mechanisms/Mechanisms.h"
 #include "season/diagnostics/SystemCheckConfig.h"
+#include <base/ReplaySettings.h>
 #include <cmath>
 #include <memory>
 #include <frc/RobotController.h>
@@ -27,7 +28,7 @@ namespace season
                         connected = connected && roller && roller->Inputs().connected;
                       return base::CheckEvaluation{connected,
                                                    "Required mechanism controller connectivity",
-                                                   {{"batteryVolts", frc::RobotController::GetBatteryVoltage().value()}}};
+                                                   {{"batteryVolts", base::replay::BatteryVoltage("Season/Sensor/BatteryVoltage")}}};
                     },
                     {},
                     diagnostics::kPreflightSettleSeconds});

@@ -1,12 +1,13 @@
 #include "season/drive/DriveBehaviorConfig.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/runtime/SeasonPolicy.h"
+#include "season/runtime/MatchContext.h"
+#include <base/ReplaySettings.h>
+#include <base/TelemetryPublishers.h>
 #include <frc2/command/Commands.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
 #include <frc/DriverStation.h>
-#include <frc/smartdashboard/SmartDashboard.h>
-#include <networktables/NetworkTableInstance.h>
 #include <algorithm>
 #include <cmath>
 #include <memory>
@@ -57,14 +58,14 @@ namespace season
       {
         if (!state.feeding)
           state.intakeSettings = ShotIntakeSettings{
-              frc::Preferences::GetDouble("Intake/ShotRetractSpeedMps", shotconfig::kShotRetractSpeedMps),
-              frc::Preferences::GetDouble("Intake/ShotHoldPositionMeters", shotconfig::kShotHoldPositionMetres)};
+              base::replay::PreferenceNumber("Season/Preference/Intake/ShotRetractSpeedMps", "Intake/ShotRetractSpeedMps", shotconfig::kShotRetractSpeedMps),
+              base::replay::PreferenceNumber("Season/Preference/Intake/ShotHoldPositionMeters", "Intake/ShotHoldPositionMeters", shotconfig::kShotHoldPositionMetres)};
         m.rack.SetPositionDynamic(state.intakeSettings.holdPositionMeters,
                                   state.intakeSettings.retractSpeedMetersPerSecond, shotconfig::kShotIntakeAcceleration);
       }
       else
         m.rack.SetPosition(mechanismconfig::kRackDeploy);
-      frc::SmartDashboard::PutBoolean("Shooter/Agitating", ready);
+      base::telemetry::PostDashboardBoolean("Shooter/Agitating", ready);
     }
 
     bool ShotFinished(const ShotState &state, const CoordinatedShotOptions &options, double now)
@@ -79,8 +80,8 @@ namespace season
   } // namespace
   double ConfiguredFeedDurationSeconds()
   {
-    double capacity = frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity", 0);
-    double rate = frc::Preferences::GetDouble("AutoDrive/FeedBallsPerSecond", 0);
+    double capacity = base::replay::PreferenceNumber("Season/Preference/AutoDrive/EstimatedCapacity", "AutoDrive/EstimatedCapacity", 0);
+    double rate = base::replay::PreferenceNumber("Season/Preference/AutoDrive/FeedBallsPerSecond", "AutoDrive/FeedBallsPerSecond", 0);
     const auto behavior = runtime::SeasonPolicy().behavior;
     if (capacity == 0)
       capacity = behavior.defaultCapacity;
@@ -148,27 +149,26 @@ namespace season
   frc2::CommandPtr DriverHubPreset(Mechanisms m)
   {
     auto calibration = std::make_shared<bool>(false);
-    auto table = nt::NetworkTableInstance::GetDefault().GetTable("TunableNumbers/ShooterCalibration");
     return frc2::cmd::RunEnd(
-               [m, table, calibration]
+               [m, calibration]
                {
-                 m.hood.SetPosition(*calibration ? ClampCalibrationHood(table->GetNumber("HoodRotations", 0))
+                 m.hood.SetPosition(*calibration ? ClampCalibrationHood(base::replay::NetworkNumber("Season/NT//TunableNumbers/ShooterCalibration/HoodRotations", "/TunableNumbers/ShooterCalibration/HoodRotations", 0))
                                                  : shotconfig::kHubHood);
-                 m.shooter.SetVelocity(*calibration ? ClampCalibrationFlywheel(table->GetNumber("FlywheelRPS", shotconfig::kHubRps))
+                 m.shooter.SetVelocity(*calibration ? ClampCalibrationFlywheel(base::replay::NetworkNumber("Season/NT//TunableNumbers/ShooterCalibration/FlywheelRPS", "/TunableNumbers/ShooterCalibration/FlywheelRPS", shotconfig::kHubRps))
                                                     : shotconfig::kHubRps);
                },
                [m]
                {
                  m.hood.Stop();
                  m.shooter.Stop();
-                 frc::SmartDashboard::PutBoolean("Shooter/CalibrationMode", false);
+                 base::telemetry::PostDashboardBoolean("Shooter/CalibrationMode", false);
                },
                {&m.hood, &m.shooter})
         .BeforeStarting(
-            [table, calibration]
+            [calibration]
             {
-              *calibration = table->GetBoolean("Enabled", false);
-              frc::SmartDashboard::PutBoolean("Shooter/CalibrationMode", *calibration);
+              *calibration = base::replay::NetworkBoolean("Season/NT//TunableNumbers/ShooterCalibration/Enabled", "/TunableNumbers/ShooterCalibration/Enabled", false);
+              base::telemetry::PostDashboardBoolean("Shooter/CalibrationMode", *calibration);
             });
   }
   // Clear shooter speed and return the hood target to zero.
@@ -205,8 +205,8 @@ namespace season
                  {
                    if (!state->feeding)
                      state->settings =
-                         ShotIntakeSettings{frc::Preferences::GetDouble("Intake/ShotRetractSpeedMps", shotconfig::kShotRetractSpeedMps),
-                                            frc::Preferences::GetDouble("Intake/ShotHoldPositionMeters", shotconfig::kShotHoldPositionMetres)};
+                         ShotIntakeSettings{base::replay::PreferenceNumber("Season/Preference/Intake/ShotRetractSpeedMps", "Intake/ShotRetractSpeedMps", shotconfig::kShotRetractSpeedMps),
+                                            base::replay::PreferenceNumber("Season/Preference/Intake/ShotHoldPositionMeters", "Intake/ShotHoldPositionMeters", shotconfig::kShotHoldPositionMetres)};
                    m.rack.SetPositionDynamic(state->settings.holdPositionMeters,
                                              state->settings.retractSpeedMetersPerSecond, shotconfig::kShotIntakeAcceleration);
                  }
@@ -218,8 +218,8 @@ namespace season
                  double phase = std::fmod(now - state->start, shotconfig::kRumblePeriodSeconds);
                  rumble(feeding ? shotconfig::kRumbleFeedIntensity : (phase < shotconfig::kRumbleFirstPulseEndSeconds || (phase >= shotconfig::kRumbleSecondPulseStartSeconds && phase < shotconfig::kRumbleSecondPulseEndSeconds)) ? shotconfig::kRumblePulseIntensity
                                                                                        : 0);
-                 frc::SmartDashboard::PutBoolean("Shooter/Feeding", feeding);
-                 frc::SmartDashboard::PutString("Shooter/FeedBlockedReason",
+                 base::telemetry::PostDashboardBoolean("Shooter/Feeding", feeding);
+                 base::telemetry::PostDashboardString("Shooter/FeedBlockedReason",
                                                 feeding ? ""
                                                 : !m.shooter.VelocityControlActive() || m.shooter.VelocitySetpoint() <= 0
                                                     ? "SELECT_SHOOTER_PRESET"
@@ -227,13 +227,13 @@ namespace season
                },
                [m, rumble]
                {
-                 if (frc::DriverStation::IsTeleopEnabled())
+                 if (runtime::TeleopEnabled())
                    m.rack.SetPosition(mechanismconfig::kRackDeploy);
                  else
                    m.rack.Stop();
                  rumble(0);
-                 frc::SmartDashboard::PutBoolean("Shooter/Feeding", false);
-                 frc::SmartDashboard::PutString("Shooter/FeedBlockedReason", "");
+                 base::telemetry::PostDashboardBoolean("Shooter/Feeding", false);
+                 base::telemetry::PostDashboardString("Shooter/FeedBlockedReason", "");
                },
                {&m.rack})
         .BeforeStarting(
@@ -279,7 +279,7 @@ namespace season
               bool changed = false;
               if (state->target.mode == ShotMode::Ferry)
               {
-                auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
+                auto alliance = runtime::CurrentMatchContext().alliance.value_or(frc::DriverStation::Alliance::kRed);
                 auto selected = FerryTarget(alliance, pose, field);
                 changed = selected.position.X() != state->target.position.X() ||
                           selected.position.Y() != state->target.position.Y();
@@ -321,11 +321,11 @@ namespace season
               auto readiness = force         ? (ready ? Readiness::ForceFeedOverride : Readiness::FlywheelSpinningUp)
                                : calibration ? Readiness::CalibrationMode
                                              : raw;
-              frc::SmartDashboard::PutString("Shooter/Readiness", ReadinessName(readiness));
-              frc::SmartDashboard::PutString("Shooter/TargetMode", state->target.mode == ShotMode::Hub ? "HUB" : "FERRY");
-              frc::SmartDashboard::PutNumber("Shooter/DistanceToTargetMeters", solution.distanceMeters);
-              frc::SmartDashboard::PutBoolean("Shooter/SolutionCalibrated", solution.calibrated);
-              frc::SmartDashboard::PutBoolean("Shooter/CalibrationMode", calibration);
+              base::telemetry::PostDashboardString("Shooter/Readiness", ReadinessName(readiness));
+              base::telemetry::PostDashboardString("Shooter/TargetMode", state->target.mode == ShotMode::Hub ? "HUB" : "FERRY");
+              base::telemetry::PostDashboardNumber("Shooter/DistanceToTargetMeters", solution.distanceMeters);
+              base::telemetry::PostDashboardBoolean("Shooter/SolutionCalibrated", solution.calibrated);
+              base::telemetry::PostDashboardBoolean("Shooter/CalibrationMode", calibration);
               if (options.agitate)
                 SetShotAgitation(m, *state, ready);
               state->feeding = ready;
@@ -334,9 +334,15 @@ namespace season
               // During a reversal, voltage can indicate feed while the rollers
               // are still spinning in the collection direction.
               state->transportActive = ready && transportActive(m);
+              base::replay::RecordOutput("Season/Shooter/Readiness", wpi::json{{"label", ReadinessName(readiness)},
+                                                                              {"targetMode", state->target.mode == ShotMode::Hub ? "HUB" : "FERRY"},
+                                                                              {"ready", ready}, {"feeding", ready},
+                                                                              {"transportActive", state->transportActive},
+                                                                              {"distanceToTargetMetres", solution.distanceMeters},
+                                                                              {"calibrationMode", calibration}});
               options.readyFeedback(ready);
               options.feedFeedback(state->transportActive);
-              frc::SmartDashboard::PutBoolean("Shooter/TransportActive", state->transportActive);
+              base::telemetry::PostDashboardBoolean("Shooter/TransportActive", state->transportActive);
               double error = std::atan2(std::sin(solution.headingRadians - pose.Rotation().Radians().value()),
                                         std::cos(solution.headingRadians - pose.Rotation().Radians().value()));
               if (options.ownDrive)
@@ -348,15 +354,15 @@ namespace season
                     units::meters_per_second_t{translation.X().value()}, units::meters_per_second_t{translation.Y().value()},
                     units::radians_per_second_t{(poseReady || force) ? std::clamp(error * driveconfig::kAutoAimHeadingGain, -driveconfig::kAutoAimMaxAngularRate, driveconfig::kAutoAimMaxAngularRate) : 0}, pose.Rotation()));
               }
-              frc::SmartDashboard::PutBoolean("Shooter/Ready", ready);
-              frc::SmartDashboard::PutBoolean("Shooter/Feeding", ready);
+              base::telemetry::PostDashboardBoolean("Shooter/Ready", ready);
+              base::telemetry::PostDashboardBoolean("Shooter/Feeding", ready);
             },
             [m, &drive, options]
             {
               if (options.agitate)
               {
                 m.rack.Stop();
-                frc::SmartDashboard::PutBoolean("Shooter/Agitating", false);
+                base::telemetry::PostDashboardBoolean("Shooter/Agitating", false);
               }
               m.shooter.Stop();
               m.hood.Stop();
@@ -364,9 +370,9 @@ namespace season
                 drive.Stop();
               options.readyFeedback(false);
               options.feedFeedback(false);
-              frc::SmartDashboard::PutBoolean("Shooter/TransportActive", false);
-              frc::SmartDashboard::PutBoolean("Shooter/Ready", false);
-              frc::SmartDashboard::PutBoolean("Shooter/Feeding", false);
+              base::telemetry::PostDashboardBoolean("Shooter/TransportActive", false);
+              base::telemetry::PostDashboardBoolean("Shooter/Ready", false);
+              base::telemetry::PostDashboardBoolean("Shooter/Feeding", false);
             },
             frc2::Requirements{std::span<frc2::Subsystem *const>{requirements}})
             .BeforeStarting(

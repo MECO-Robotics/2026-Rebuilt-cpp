@@ -7,6 +7,17 @@
 
 namespace season::simulationconfig
 {
+  // Estimated geometry and motor-model parameters for the simulated robot.
+  inline constexpr double kBumperCornerRadiusMetres = .0381;
+  inline constexpr double kBumperSurfaceFriction = .65;
+  inline constexpr double kWheelWidthMetres = .0508;
+  inline constexpr double kTireContactPatchLengthMetres = .020;
+  inline constexpr double kTireShearDeflectionMetres = .001;
+  inline constexpr double kMotorFrictionVoltage = .1;
+  inline constexpr double kRollInertiaKgMetresSquared = 4.0;
+  inline constexpr double kPitchInertiaKgMetresSquared = 4.0;
+  inline constexpr double kTireLongitudinalStiffness = 1800;
+  inline constexpr double kTireLateralStiffness = 1800;
   // Minimum voltage magnitude used by simulation to consider a transport motor commanded.
   inline constexpr double kSimTransportVoltageThreshold = 1;
   // Default simulated current thresholds for the empty-load detector.
@@ -138,7 +149,7 @@ namespace season::simulation::runtimeconfig
   // Maximum range at which simulated vision reports targets.
   inline constexpr double kVisionRangeMetres = 6;
   // Position noise scale applied to simulated Limelight tag observations.
-  inline constexpr double kVisionTagDistanceNoiseMetres = .75;
+  inline constexpr double kVisionMaxAbsTruthHeightMetres = .75;
   // Standard deviations for simulated Limelight pose measurements (metres for X/Y, radians for heading).
   inline constexpr double kLimelightStdX = .08, kLimelightStdY = .08, kLimelightStdHeading = .12;
   // Standard deviations for simulated QuestNav pose measurements (metres for X/Y, radians for heading).
@@ -188,6 +199,7 @@ namespace season::simulation
     c.compressionStressPa = {0, 10000, 35000, 100000, 250000};
     // Overdamped foam dissipates more impact energy and reduces rebound.
     c.dampingRatio = 1.2;
+    c.friction = .65;
     return c;
   }
 }

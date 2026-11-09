@@ -4,27 +4,76 @@
 #include "RobotContainer.h"
 #include "season/runtime/RobotRuntime.h"
 #include "season/runtime/SeasonPolicy.h"
+#include "season/runtime/MatchContext.h"
+#include <base/ReplaySettings.h>
 #include "season/mechanisms/Mechanisms.h"
 #include "season/vision/VisionConfig.h"
 #include "base/ChoreoAuto.h"
-#include <base/SimulationPractice.h>
+#include <base/TelemetryPublishers.h>
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
 #include <pathplanner/lib/auto/AutoBuilder.h>
+#include <pathplanner/lib/commands/PathPlannerAuto.h>
 #include <pathplanner/lib/auto/NamedCommands.h>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/StringTopic.h>
 #include <algorithm>
+#include <memory>
 #include <cmath>
 #include <numbers>
+#include <stdexcept>
 using namespace units::literals;
 void season::autonomous::RobotAutos::ConfigureDrive(base::Drive &drive)
 {
   base::ConfigureNativeAutoDrivePathfinder();
   drive.ConfigureAuto();
 }
+void season::autonomous::RobotAutos::AddChooserOption(std::string label, std::string id,
+                                                       frc2::CommandPtr command, bool isDefault)
+{
+  idsByLabel_[label] = id;
+  commandsById_[id] = command.get();
+  autos_.emplace_back(std::move(command));
+  if (isDefault)
+    chooser_.SetDefaultOption(label, id);
+  else
+    chooser_.AddOption(label, id);
+}
+
+frc2::Command *season::autonomous::RobotAutos::Selected()
+{
+  std::string selected;
+  if (!base::replay::Active())
+    selected = base::replay::ProcessValue<std::string>("Season/Autonomous/Selection", [this]
+                                                       { return chooser_.GetSelected(); });
+  else if (const auto recorded = base::replay::RecordedInputIfPresent("Season/Autonomous/Selection"))
+  {
+    selected = recorded->get<std::string>();
+    base::replay::RecordOutput("EffectiveInputs/Season/Autonomous/Selection", *recorded);
+  }
+  else if (const auto label = base::replay::RecordedInputIfPresent("Auto/Selection"))
+  {
+    const auto found = idsByLabel_.find(label->get<std::string>());
+    if (found == idsByLabel_.end())
+      throw std::runtime_error("recorded autonomous chooser label is unavailable in this robot: " +
+                               label->get<std::string>());
+    selected = found->second;
+    base::replay::RecordOutput("EffectiveInputs/Season/Autonomous/Selection", selected);
+  }
+  else
+    throw std::runtime_error("recorded autonomous selection is unavailable in this log");
+  if (selected.starts_with("PathPlanner/") && selected != "PathPlanner/None")
+    base::replay::VerifyPathPlannerAssets();
+  const auto command = commandsById_.find(selected);
+  if (command != commandsById_.end())
+    return command->second;
+  if (base::replay::Active())
+    throw std::runtime_error("recorded autonomous selection is unavailable in this deploy: " + selected);
+  return nullptr;
+}
+
 void season::autonomous::RobotAutos::Configure()
 {
   auto m = owner_.Mechanisms();
@@ -62,7 +111,7 @@ void season::autonomous::RobotAutos::Configure()
                         .AlongWith(frc2::cmd::Run([this]
                         {
                           owner_.fuelEstimate_->Observe(owner_.autoDrive_->VisibleFuel(), owner_.drive_.Pose());
-                          frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", owner_.fuelEstimate_->Count());
+                          base::telemetry::PostDashboardNumber("AutoDrive/EstimatedFuel", owner_.fuelEstimate_->Count());
                         }))
                         .BeforeStarting([this] { owner_.fuelEstimate_->StartCollection(); }));
   // Spin up from the current pose while the auto is running.
@@ -72,7 +121,7 @@ void season::autonomous::RobotAutos::Configure()
         [this]
         {
           auto p = owner_.drive_.Pose();
-          auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
+          auto alliance = owner_.MatchContext().alliance.value_or(frc::DriverStation::Alliance::kRed);
           auto shot = season::CalculateShot(p, season::HubPosition(alliance), season::runtime::SeasonPolicy().shot);
           owner_.hood_.SetPosition(shot.hoodRotations);
           owner_.shooter_.SetVelocity(shot.flywheelRps);
@@ -115,31 +164,26 @@ void season::autonomous::RobotAutos::Configure()
           },
           {&owner_.drive_, &owner_.hood_, &owner_.shooter_}));
   // Combine deployed PathPlanner autos with season-specific options.
-  chooser_ = pathplanner::AutoBuilder::buildAutoChooser();
-  autos_.emplace_back(HubShot(true, true));
-  autos_.emplace_back(
-      base::FollowChoreo<2026>(owner_.drive_, "LeftBlueBump", {config::kChoreoTranslationP, 0, 0},
-                               {config::kChoreoRotationP, 0, 0}, season::hardware::kControlPeriod)
-          .AndThen(HubShot()));
-  autos_.emplace_back(frc2::cmd::None());
+  for (const auto &name : pathplanner::AutoBuilder::getAllAutoNames())
+    AddChooserOption(name, "PathPlanner/" + name,
+                     frc2::CommandPtr{std::make_unique<pathplanner::PathPlannerAuto>(name)});
+  AddChooserOption("None", "PathPlanner/None", frc2::cmd::None(), true);
+
   const auto defaults = season::runtime::SeasonPolicy().autonomous;
-  if (!defaults.offensiveDefault)
-    chooser_.SetDefaultOption("Hub shot (vision required)", autos_[0].get());
-  else
-    chooser_.AddOption("Hub shot (vision required)", autos_[0].get());
-  chooser_.AddOption("Choreo LeftBlueBump + Shoot", autos_[1].get());
-  chooser_.AddOption("Do nothing", autos_[2].get());
-  autos_.emplace_back(owner_.autoDrive_->Command());
-  chooser_.AddOption("AutoDrive target", autos_.back().get());
-  autos_.emplace_back(
-      season::OffensiveAutoDrive(*owner_.autoDrive_, owner_.drive_, m, owner_.field_, owner_.fuelEstimate_));
-  if (defaults.offensiveDefault)
-    chooser_.SetDefaultOption("AutoDrive offensive", autos_.back().get());
-  else
-    chooser_.AddOption("AutoDrive offensive", autos_.back().get());
+  AddChooserOption("Hub shot (vision required)", "Season/HubShotVisionRequired", HubShot(true, true),
+                   !defaults.offensiveDefault);
+  AddChooserOption("Choreo LeftBlueBump + Shoot", "Season/ChoreoLeftBlueBumpShoot",
+                   base::FollowChoreo<2026>(owner_.drive_, "LeftBlueBump", {config::kChoreoTranslationP, 0, 0},
+                                            {config::kChoreoRotationP, 0, 0}, season::hardware::kControlPeriod)
+                       .AndThen(HubShot()));
+  AddChooserOption("Do nothing", "Season/DoNothing", frc2::cmd::None());
+  AddChooserOption("AutoDrive target", "Season/AutoDriveTarget", owner_.autoDrive_->Command());
+  AddChooserOption("AutoDrive offensive", "Season/AutoDriveOffensive",
+                   season::OffensiveAutoDrive(*owner_.autoDrive_, owner_.drive_, m, owner_.field_, owner_.fuelEstimate_),
+                   defaults.offensiveDefault);
   frc::SmartDashboard::PutBoolean("AutoDrive/OffenseEnabled", defaults.offenseEnabled);
   frc::SmartDashboard::PutData("Auto Choices", &chooser_);
-  if (auto practice = base::simulation::TryStartPracticeMatch())
+  if (auto practice = owner_.runtime_->PracticeMatchCommand())
   {
     autos_.emplace_back(std::move(*practice));
     frc::SmartDashboard::PutData("Start Practice Match", autos_.back().get());
@@ -148,18 +192,16 @@ void season::autonomous::RobotAutos::Configure()
 // Select a hub or ferry target from alliance, pose, and visible tags.
 season::ShotTarget season::autonomous::RobotAutos::SelectTarget()
 {
-  auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
-  auto calibration =
-      nt::NetworkTableInstance::GetDefault().GetEntry("/TunableNumbers/ShooterCalibration/Enabled").GetBoolean(false);
+  auto alliance = owner_.MatchContext().alliance.value_or(frc::DriverStation::Alliance::kRed);
+  auto calibration = base::replay::NetworkBoolean("Season/NT//TunableNumbers/ShooterCalibration/Enabled", "/TunableNumbers/ShooterCalibration/Enabled", false);
   if (calibration)
     return {season::ShotMode::Hub, season::HubPosition(alliance)};
   auto p = owner_.drive_.Pose();
   std::vector<int> ids;
-  auto table = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
   if (const auto *tags = owner_.runtime_->TagIds())
     return season::SelectTarget(alliance, p, *tags, owner_.field_);
   // Limelight publishes each raw fiducial as a seven-value record.
-  auto raw = table->GetNumberArray("rawfiducials", {});
+  auto raw = base::replay::NetworkNumberArray("Season/NT//limelight/rawfiducials", "/limelight/rawfiducials");
   if (owner_.vision_->Inputs().connected)
     for (size_t i = 0; i + 6 < raw.size(); i += 7)
       ids.push_back(static_cast<int>(raw[i]));
@@ -193,15 +235,15 @@ frc2::CommandPtr season::autonomous::RobotAutos::HubShot(bool ownDrive, bool req
   };
   o.poseReady = [this, requireVision]
   {
-    return (!requireVision && frc::DriverStation::IsAutonomousEnabled()) ||
+    return (!requireVision && (owner_.MatchContext().enabled && owner_.MatchContext().autonomous)) ||
            frc::Timer::GetFPGATimestamp().value() - owner_.lastAcceptedVision_ <
                season::visionconfig::kVisionFreshnessSeconds;
   };
   return season::CoordinatedShot(
              owner_.Mechanisms(), owner_.drive_, owner_.field_,
-             []
+             [this]
              {
-               auto a = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
+               auto a = owner_.MatchContext().alliance.value_or(frc::DriverStation::Alliance::kRed);
                return season::ShotTarget{season::ShotMode::Hub, season::HubPosition(a)};
              },
              o)
@@ -214,7 +256,11 @@ frc2::CommandPtr season::autonomous::RobotAutos::HubShot(bool ownDrive, bool req
                       })
       .FinallyDo([this, timing](bool interrupted)
                  {
-                   owner_.fuelEstimate_->CompleteFeed(
-                       !interrupted && timing->target > 0 && timing->elapsed >= timing->target);
+                   const bool complete = !interrupted && timing->target > 0 && timing->elapsed >= timing->target;
+                   owner_.fuelEstimate_->CompleteFeed(complete);
+                   base::replay::RecordOutput("Season/Shooter/FeedResult", wpi::json{{"completed", complete},
+                                                                                     {"interrupted", interrupted},
+                                                                                     {"elapsedSeconds", timing->elapsed},
+                                                                                     {"targetSeconds", timing->target}});
                  });
 }
