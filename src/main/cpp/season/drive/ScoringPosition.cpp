@@ -1,4 +1,6 @@
 #include "season/drive/ScoringPosition.h"
+#include <base/Replay.h>
+#include <base/NavigationGrid.h>
 #include <frc/Filesystem.h>
 #include <algorithm>
 #include <cmath>
@@ -57,7 +59,15 @@ namespace season
 
   std::optional<ScoringGrid> LoadScoringGrid()
   {
-    return base::LoadNavigationGrid(frc::filesystem::GetDeployDirectory() + "/pathplanner/navgrid.json");
+    static bool loaded = false;
+    static std::optional<ScoringGrid> cached;
+    if (!loaded)
+    {
+      const auto path = frc::filesystem::GetDeployDirectory() + "/pathplanner/navgrid.json";
+      cached = base::ProcessNavigationGridInput("Season/AutoDrive/NavigationGrid", path, 2 * 1024 * 1024);
+      loaded = true;
+    }
+    return cached;
   }
 
   std::optional<frc::Pose2d> CheapestHubScoringNode(const ScoringGrid &grid, frc::Pose2d start,

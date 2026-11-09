@@ -138,7 +138,7 @@ namespace season::simulation::runtimeconfig
   // Maximum range at which simulated vision reports targets.
   inline constexpr double kVisionRangeMetres = 6;
   // Position noise scale applied to simulated Limelight tag observations.
-  inline constexpr double kVisionTagDistanceNoiseMetres = .75;
+  inline constexpr double kVisionMaxAbsTruthHeightMetres = .75;
   // Standard deviations for simulated Limelight pose measurements (metres for X/Y, radians for heading).
   inline constexpr double kLimelightStdX = .08, kLimelightStdY = .08, kLimelightStdHeading = .12;
   // Standard deviations for simulated QuestNav pose measurements (metres for X/Y, radians for heading).

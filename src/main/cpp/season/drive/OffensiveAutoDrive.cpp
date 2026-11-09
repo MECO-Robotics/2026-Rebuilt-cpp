@@ -2,28 +2,107 @@
 #include "season/mechanisms/Mechanisms.h"
 #include "season/drive/ScoringPosition.h"
 #include "season/runtime/SeasonPolicy.h"
-#include "season/runtime/SeasonPolicy.h"
+#include "season/runtime/MatchContext.h"
+#include <base/ReplaySettings.h>
+#include <base/TelemetryPublishers.h>
 #include <base/AutoDrive.h>
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
 #include <frc/Preferences.h>
 #include <frc/system/plant/DCMotor.h>
-#include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
 #include <pathplanner/lib/commands/FollowPathCommand.h>
+#include <pathplanner/lib/config/RobotConfig.h>
 #include <pathplanner/lib/controllers/PPHolonomicDriveController.h>
 #include <pathplanner/lib/path/PathPlannerPath.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <numbers>
+#include <stdexcept>
+#include <vector>
+#include <wpi/json.h>
 
 using namespace units::literals;
 namespace season
 {
   namespace
   {
-    void Phase(const char *phase) { frc::SmartDashboard::PutString("AutoDrive/OffensePhase", phase); }
+    void Phase(const char *phase)
+    {
+      base::telemetry::PostDashboardString("AutoDrive/OffensePhase", phase);
+      base::replay::RecordOutput("Season/AutoDrive/OffensePhase", phase);
+    }
+
+    const char *DecisionName(OffensiveDecision decision)
+    {
+      switch (decision)
+      {
+      case OffensiveDecision::Wait: return "wait";
+      case OffensiveDecision::Collect: return "collect";
+      case OffensiveDecision::Score: return "score";
+      case OffensiveDecision::Ferry: return "ferry";
+      case OffensiveDecision::Stage: return "stage";
+      }
+      return "unknown";
+    }
+
+    wpi::json PackPathPlannerRobotConfig()
+    {
+      const auto config = pathplanner::RobotConfig::fromGUISettings();
+      const auto &module = config.moduleConfig;
+      wpi::json locations = wpi::json::array();
+      for (const auto &location : config.moduleLocations)
+        locations.push_back({location.X().value(), location.Y().value()});
+      return {{"massKg", config.mass.value()},
+              {"momentOfInertiaKgM2", config.MOI.value()},
+              {"wheelRadiusMetres", module.wheelRadius.value()},
+              {"maxDriveVelocityMps", module.maxDriveVelocityMPS.value()},
+              {"wheelCoefficientOfFriction", module.wheelCOF},
+              {"driveCurrentLimitAmps", module.driveCurrentLimit.value()},
+              {"motor", {{"nominalVoltage", module.driveMotor.nominalVoltage.value()},
+                          {"stallTorqueNm", module.driveMotor.stallTorque.value()},
+                          {"stallCurrentAmps", module.driveMotor.stallCurrent.value()},
+                          {"freeCurrentAmps", module.driveMotor.freeCurrent.value()},
+                          {"freeSpeedRadPerSecond", module.driveMotor.freeSpeed.value()}}},
+              {"moduleLocationsMetres", std::move(locations)}};
+    }
+
+    pathplanner::RobotConfig PathPlannerRobotConfig()
+    {
+      const auto input = base::replay::ProcessInputs("Season/AutoDrive/PathPlannerRobotConfig",
+                                                     PackPathPlannerRobotConfig);
+      const auto &motorInput = input.at("motor");
+      const frc::DCMotor motor{units::volt_t{motorInput.at("nominalVoltage").get<double>()},
+                               units::newton_meter_t{motorInput.at("stallTorqueNm").get<double>()},
+                               units::ampere_t{motorInput.at("stallCurrentAmps").get<double>()},
+                               units::ampere_t{motorInput.at("freeCurrentAmps").get<double>()},
+                               units::radians_per_second_t{
+                                   motorInput.at("freeSpeedRadPerSecond").get<double>()}};
+      pathplanner::ModuleConfig module{
+          units::meter_t{input.at("wheelRadiusMetres").get<double>()},
+          units::meters_per_second_t{input.at("maxDriveVelocityMps").get<double>()},
+          input.at("wheelCoefficientOfFriction").get<double>(), motor,
+          units::ampere_t{input.at("driveCurrentLimitAmps").get<double>()}, 1};
+      std::vector<frc::Translation2d> locations;
+      for (const auto &location : input.at("moduleLocationsMetres"))
+      {
+        if (!location.is_array() || location.size() != 2)
+          throw std::runtime_error("Invalid replayed PathPlanner module location");
+        locations.emplace_back(units::meter_t{location[0].get<double>()},
+                               units::meter_t{location[1].get<double>()});
+      }
+      return pathplanner::RobotConfig{units::kilogram_t{input.at("massKg").get<double>()},
+                                      units::kilogram_square_meter_t{
+                                          input.at("momentOfInertiaKgM2").get<double>()},
+                                      std::move(module), std::move(locations)};
+    }
+
+    void RecordPoint(const char *key, frc::Translation2d point)
+    {
+      base::replay::RecordOutput(key, wpi::json{{"xMetres", point.X().value()},
+                                                {"yMetres", point.Y().value()}});
+    }
 
     struct FeedTracker
     {
@@ -62,8 +141,8 @@ namespace season
         const double now = frc::Timer::GetFPGATimestamp().value();
         if (active)
           elapsed += std::max(0., now - last);
-        const double threshold = frc::Preferences::GetDouble("AutoDrive/EmptyShooterCurrentAmps", 0);
-        const double noiseThreshold = frc::Preferences::GetDouble("AutoDrive/EmptyRollerNoiseAmps", 0);
+        const double threshold = base::replay::PreferenceNumber("Season/Preference/AutoDrive/EmptyShooterCurrentAmps", "AutoDrive/EmptyShooterCurrentAmps", 0);
+        const double noiseThreshold = base::replay::PreferenceNumber("Season/Preference/AutoDrive/EmptyRollerNoiseAmps", "AutoDrive/EmptyRollerNoiseAmps", 0);
         const std::array<double, 3> currents{m.conveyor.Inputs().current, m.bottomIndexer.Inputs().current,
                                              m.topIndexer.Inputs().current};
         const double shooter = m.shooter.Inputs().current;
@@ -90,15 +169,15 @@ namespace season
             noise = std::max(noise, std::abs(currents[i] - rollerMean[i]));
             rollerMean[i] += offenseconfig::kEmptyCurrentFilterGain * (currents[i] - rollerMean[i]);
           }
-          frc::SmartDashboard::PutNumber("AutoDrive/EmptyDetectorRollerNoiseAmps", noise);
-          frc::SmartDashboard::PutNumber("AutoDrive/EmptyDetectorShooterAmps", shooter);
+          base::telemetry::PostDashboardNumber("AutoDrive/EmptyDetectorRollerNoiseAmps", noise);
+          base::telemetry::PostDashboardNumber("AutoDrive/EmptyDetectorShooterAmps", shooter);
           if (shooter >= threshold || noise >= noiseThreshold)
             quietSince = now;
           if (now - quietSince >= quietTime)
             empty = true;
         }
-        frc::SmartDashboard::PutNumber("AutoDrive/EmptyDetectorQuietSeconds", valid ? now - quietSince : 0.);
-        frc::SmartDashboard::PutBoolean("AutoDrive/CurrentIndicatesEmpty", ready && empty);
+        base::telemetry::PostDashboardNumber("AutoDrive/EmptyDetectorQuietSeconds", valid ? now - quietSince : 0.);
+        base::telemetry::PostDashboardBoolean("AutoDrive/CurrentIndicatesEmpty", ready && empty);
         active = ready;
         last = now;
       }
@@ -135,7 +214,7 @@ namespace season
     frc::Preferences::InitDouble("AutoDrive/EmptyRollerNoiseAmps", runtime::SeasonPolicy().behavior.emptyRollerNoiseAmps);
     auto configuredCapacity = []
     {
-      double capacity = frc::Preferences::GetDouble("AutoDrive/EstimatedCapacity", 0);
+      double capacity = base::replay::PreferenceNumber("Season/Preference/AutoDrive/EstimatedCapacity", "AutoDrive/EstimatedCapacity", 0);
       if (capacity == 0)
         capacity = runtime::SeasonPolicy().behavior.defaultCapacity;
       return capacity;
@@ -143,8 +222,8 @@ namespace season
     auto feedDuration = []
     {
       const double duration = ConfiguredFeedDurationSeconds();
-      frc::SmartDashboard::PutBoolean("AutoDrive/FeedConfigurationValid", duration > 0);
-      frc::SmartDashboard::PutNumber("AutoDrive/FeedDurationSeconds", duration);
+      base::telemetry::PostDashboardBoolean("AutoDrive/FeedConfigurationValid", duration > 0);
+      base::telemetry::PostDashboardNumber("AutoDrive/FeedDurationSeconds", duration);
       return duration;
     };
     auto preparing = std::make_shared<bool>(false);
@@ -153,15 +232,15 @@ namespace season
       const auto &match = perception.MatchState();
       if (!match.ownActive.has_value())
         return false;
-      if (!*match.ownActive || match.phase == "endgame" || frc::DriverStation::IsAutonomousEnabled())
+      if (!*match.ownActive || match.phase == "endgame" || runtime::AutonomousEnabled())
       {
         *preparing = false;
-        frc::SmartDashboard::PutBoolean("AutoDrive/ReturnDeferredForShift", false);
+        base::telemetry::PostDashboardBoolean("AutoDrive/ReturnDeferredForShift", false);
         return false;
       }
       if (*preparing)
         return true;
-      const auto alliance = frc::DriverStation::GetAlliance();
+      const auto alliance = runtime::CurrentMatchContext().alliance;
       const double duration = feedDuration();
       if (!alliance || !match.ownNextChange || !std::isfinite(*match.ownNextChange) || *match.ownNextChange < 0 ||
           !std::isfinite(duration) || duration <= 0)
@@ -178,7 +257,7 @@ namespace season
                                             : home.Distance(neutral).value();
       const double speed = OffensiveMotionLimits(drive.Config()).maxSpeed;
       const double travel = speed > 0 ? (toShot + afterShot) / speed : 0.;
-      frc::SmartDashboard::PutNumber("AutoDrive/NextActionTravelSeconds", travel);
+      base::telemetry::PostDashboardNumber("AutoDrive/NextActionTravelSeconds", travel);
       *preparing = speed > 0 && *match.ownNextChange < duration + travel;
       return *preparing;
     };
@@ -189,14 +268,14 @@ namespace season
       const auto &match = perception.MatchState();
       if (!match.ownActive.has_value())
         return false;
-      if (*match.ownActive || frc::DriverStation::IsAutonomousEnabled())
+      if (*match.ownActive || runtime::AutonomousEnabled())
       {
         *preparingActive = false;
         return false;
       }
       if (*preparingActive)
         return true;
-      const auto alliance = frc::DriverStation::GetAlliance();
+      const auto alliance = runtime::CurrentMatchContext().alliance;
       if (!alliance || !match.ownNextChange || !std::isfinite(*match.ownNextChange) || *match.ownNextChange < 0)
         return false;
       const auto pose = drive.Pose();
@@ -220,7 +299,7 @@ namespace season
                      ferryTransportLatency, transportLatency, hubSetupLatency]
     {
       const auto &match = perception.MatchState();
-      const auto alliance = frc::DriverStation::GetAlliance();
+      const auto alliance = runtime::CurrentMatchContext().alliance;
       const double duration = feedDuration();
       const double reversal = *ferryTransportLatency > 0 ? *ferryTransportLatency : *transportLatency;
       const double speed = OffensiveMotionLimits(drive.Config()).maxSpeed;
@@ -228,7 +307,7 @@ namespace season
           !std::isfinite(*match.ownNextChange) || *match.ownNextChange <= 0 ||
           duration <= 0 || *refillSeconds <= 0 || reversal <= 0 || speed <= 0)
       {
-        frc::SmartDashboard::PutBoolean("AutoDrive/FerryCycleFeasible", false);
+        base::telemetry::PostDashboardBoolean("AutoDrive/FerryCycleFeasible", false);
         return false;
       }
       const auto pose = drive.Pose();
@@ -239,9 +318,9 @@ namespace season
       const frc::Translation2d home{units::meter_t{hub - direction * offenseconfig::kHubCrossingOffset}, units::meter_t{y}};
       const double route = pose.Translation().Distance(neutral).value() + neutral.Distance(home).value();
       const double needed = duration + reversal + *refillSeconds + route / speed + *hubSetupLatency;
-      frc::SmartDashboard::PutNumber("AutoDrive/FerryCycleSeconds", needed);
+      base::telemetry::PostDashboardNumber("AutoDrive/FerryCycleSeconds", needed);
       const bool feasible = *match.ownNextChange > needed;
-      frc::SmartDashboard::PutBoolean("AutoDrive/FerryCycleFeasible", feasible);
+      base::telemetry::PostDashboardBoolean("AutoDrive/FerryCycleFeasible", feasible);
       return feasible;
     };
 
@@ -249,18 +328,18 @@ namespace season
     auto decision = [&perception, &drive, field, estimate, configuredCapacity, feedDuration, prepareForInactive, prepareForActive, canFerry, transportLatency, hubSetupLatency, avoidLateExit](bool expired,
                                                                                                                                                                                                std::optional<frc::Translation2d> retained = std::nullopt)
     {
-      const auto alliance = frc::DriverStation::GetAlliance();
+      const auto alliance = runtime::CurrentMatchContext().alliance;
       const auto &match = perception.MatchState();
       if (alliance && prepareForInactive())
         return OffensiveDecision::Collect;
       if (alliance && prepareForActive())
         return estimate->Count() > 0 ? OffensiveDecision::Stage : OffensiveDecision::Collect;
-      const bool windowClosing = alliance && !frc::DriverStation::IsAutonomousEnabled() &&
+      const bool windowClosing = alliance && !runtime::AutonomousEnabled() &&
                                  match.ownActive.value_or(false) &&
                                  OffensiveScoringWindowClosing(drive.Pose(), *alliance, field, match.ownNextChange);
       // Reserve time in an inactive shift for aim, reversing the transport, and
       // feeding before the next active shift interrupts the ferry attempt.
-      const bool ferryWindowClosing = !frc::DriverStation::IsAutonomousEnabled() &&
+      const bool ferryWindowClosing = !runtime::AutonomousEnabled() &&
                                       match.ownActive.has_value() && !*match.ownActive &&
                                       OffensiveFerryWindowClosing(match.ownNextChange);
       // Do not spend most of a scoring window returning for a tiny, uncertain
@@ -291,7 +370,7 @@ namespace season
         worthwhileWindowFerry = std::clamp(estimate->Count() / capacity, 0., 1.) >=
                                 duration / *match.ownNextChange;
       bool endMatchReturn = false;
-      if (alliance && match.ownActive.value_or(false) && !frc::DriverStation::IsAutonomousEnabled() &&
+      if (alliance && match.ownActive.value_or(false) && !runtime::AutonomousEnabled() &&
           match.periodTime && std::isfinite(*match.periodTime) && *match.periodTime >= 0 &&
           estimate->Count() > 0 && std::isfinite(duration) && duration > 0 && speed > 0)
       {
@@ -304,10 +383,10 @@ namespace season
         const double route = InAllianceZone(*alliance, pose.Translation(), field) && RobotClearOfBumps(pose) ? 0. : pose.Translation().Distance(neutral).value() + neutral.Distance(home).value();
         endMatchReturn = *match.periodTime <= duration + *transportLatency + *hubSetupLatency + route / speed;
       }
-      const auto choice = DecideOffense(perception.MatchState().ownActive, frc::DriverStation::GetAlliance(), drive.Pose(), field,
+      const auto choice = DecideOffense(perception.MatchState().ownActive, runtime::CurrentMatchContext().alliance, drive.Pose(), field,
                                         perception.VisibleFuel(), estimate->Count(),
                                         capacity, false, false,
-                                        frc::DriverStation::IsAutonomousEnabled(), perception.MatchState().periodTime,
+                                        runtime::AutonomousEnabled(), perception.MatchState().periodTime,
                                         expired || endMatchReturn || *avoidLateExit || (estimate->Count() > 0 && ((windowClosing && worthwhileWindowReturn) || (ferryWindowClosing && worthwhileWindowFerry))), true, retained);
       if (choice == OffensiveDecision::Ferry && !canFerry())
         return std::isfinite(capacity) && capacity > 0 && estimate->Count() >= capacity
@@ -332,7 +411,7 @@ namespace season
       auto crossing = std::make_shared<Crossing>();
       auto goal = [&perception, &drive, field, selector, collectionGrid, lastActive, homeSearch, estimate, crossing, prepareForInactive, prepareForActive, feedDuration, configuredCapacity, transportLatency, hubSetupLatency, avoidLateExit]() -> std::optional<frc::Pose2d>
       {
-        const auto alliance = frc::DriverStation::GetAlliance();
+        const auto alliance = runtime::CurrentMatchContext().alliance;
         auto active = perception.MatchState().ownActive;
         if (!alliance || !active)
           return std::nullopt;
@@ -353,8 +432,9 @@ namespace season
           const double hubX = HubPosition(*alliance).X().value();
           const double side = pose.X().value() >= hubX ? 1. : -1.;
           const frc::Translation2d clear{units::meter_t{hubX + side * offenseconfig::kHubCrossingOffset}, pose.Y()};
-          frc::SmartDashboard::PutNumber("AutoDrive/CollectionGoalX", clear.X().value());
-          frc::SmartDashboard::PutNumber("AutoDrive/CollectionGoalY", clear.Y().value());
+          base::telemetry::PostDashboardNumber("AutoDrive/CollectionGoalX", clear.X().value());
+          base::telemetry::PostDashboardNumber("AutoDrive/CollectionGoalY", clear.Y().value());
+          RecordPoint("Season/AutoDrive/CollectionGoal", clear);
           return frc::Pose2d{clear, pose.Rotation()};
         }
         if (!prepareForActive())
@@ -394,7 +474,7 @@ namespace season
         }
         const double direction = *alliance == frc::DriverStation::Alliance::kBlue ? 1. : -1.;
         const auto &match = perception.MatchState();
-        if (*active && match.phase != "endgame" && !frc::DriverStation::IsAutonomousEnabled() && estimate->Count() > 0 &&
+        if (*active && match.phase != "endgame" && !runtime::AutonomousEnabled() && estimate->Count() > 0 &&
             InAllianceZone(*alliance, pose.Translation(), field) && RobotClearOfBumps(pose) &&
             !InAllianceZone(*alliance, selected->Translation(), field) && match.ownNextChange &&
             std::isfinite(*match.ownNextChange) && *match.ownNextChange > 0)
@@ -444,8 +524,9 @@ namespace season
             crossing->inbound = 0;
           else
           {
-            frc::SmartDashboard::PutNumber("AutoDrive/CollectionGoalX", waypoint().X().value());
-            frc::SmartDashboard::PutNumber("AutoDrive/CollectionGoalY", waypoint().Y().value());
+            base::telemetry::PostDashboardNumber("AutoDrive/CollectionGoalX", waypoint().X().value());
+            base::telemetry::PostDashboardNumber("AutoDrive/CollectionGoalY", waypoint().Y().value());
+            RecordPoint("Season/AutoDrive/CollectionGoal", waypoint());
             return frc::Pose2d{waypoint(), pose.Rotation()};
           }
         }
@@ -469,8 +550,9 @@ namespace season
             selected = frc::Pose2d{next, pose.Rotation()};
           }
         }
-        frc::SmartDashboard::PutNumber("AutoDrive/CollectionGoalX", selected->X().value());
-        frc::SmartDashboard::PutNumber("AutoDrive/CollectionGoalY", selected->Y().value());
+        base::telemetry::PostDashboardNumber("AutoDrive/CollectionGoalX", selected->X().value());
+        base::telemetry::PostDashboardNumber("AutoDrive/CollectionGoalY", selected->Y().value());
+        RecordPoint("Season/AutoDrive/CollectionGoal", selected->Translation());
         return selected;
       };
       base::AutoDriveTrackingConfig tracking;
@@ -482,7 +564,7 @@ namespace season
                                 [&perception, &drive, field, estimate, configuredCapacity, prepareForInactive, prepareForActive,
                                  canFerry, goal, tracking]() -> frc2::CommandPtr
                                 {
-                                  const auto alliance = frc::DriverStation::GetAlliance();
+                                  const auto alliance = runtime::CurrentMatchContext().alliance;
                                   const auto active = perception.MatchState().ownActive;
                                   const auto grid = LoadScoringGrid();
                                   const double capacity = configuredCapacity();
@@ -495,8 +577,8 @@ namespace season
                                                                  *active, !*active && canFerry(), remaining, limits);
                                     if (path)
                                     {
-                                      frc::SmartDashboard::PutString("AutoDrive/CollectionPlan", "spline");
-                                      frc::SmartDashboard::PutNumber("AutoDrive/CollectionChainWaypoints", path->getWaypoints().size() - 1);
+                                      base::telemetry::PostDashboardString("AutoDrive/CollectionPlan", "spline");
+                                      base::telemetry::PostDashboardNumber("AutoDrive/CollectionChainWaypoints", path->getWaypoints().size() - 1);
                                       const auto config = drive.Config();
                                       const double maxTranslation = OffensiveMotionLimits(config).maxSpeed;
                                       auto controller = std::make_shared<pathplanner::PPHolonomicDriveController>(
@@ -520,13 +602,13 @@ namespace season
                                                 std::clamp(bounded.omega.value(), -config.maxAngularRate, config.maxAngularRate)};
                                             drive.RunVelocity(bounded);
                                           },
-                                          std::move(controller), pathplanner::RobotConfig::fromGUISettings(),
+                                          std::move(controller), PathPlannerRobotConfig(),
                                           []
                                           { return false; }, frc2::Requirements{&drive})};
                                     }
                                   }
-                                  frc::SmartDashboard::PutString("AutoDrive/CollectionPlan", "pathfinder");
-                                  frc::SmartDashboard::PutNumber("AutoDrive/CollectionChainWaypoints", 0);
+                                  base::telemetry::PostDashboardString("AutoDrive/CollectionPlan", "pathfinder");
+                                  base::telemetry::PostDashboardNumber("AutoDrive/CollectionChainWaypoints", 0);
                                   return base::AutoDriveTrackTarget(drive, goal, OffensiveMotionLimits(drive.Config()), tracking);
                                 },
                                 {&drive})
@@ -540,8 +622,9 @@ namespace season
             const double pickups = std::min(capacity, static_cast<double>(estimate->Count() - *collectionStartCount));
             if (elapsed >= offenseconfig::kCollectionSpeedSampleSeconds && std::isfinite(capacity) && capacity > 0 && pickups > 0)
               *refillSeconds = capacity * elapsed / pickups;
-            frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", estimate->Count());
-            frc::SmartDashboard::PutNumber("AutoDrive/EstimatedRefillSeconds", *refillSeconds);
+            base::telemetry::PostDashboardNumber("AutoDrive/EstimatedFuel", estimate->Count());
+            base::replay::RecordOutput("Season/AutoDrive/EstimatedFuel", estimate->Count());
+            base::telemetry::PostDashboardNumber("AutoDrive/EstimatedRefillSeconds", *refillSeconds);
           });
       // The timer bounds this attempt. Driving, intake, and observation run
       // together until the timer expires or the next decision ends collection.
@@ -581,7 +664,7 @@ namespace season
       auto invalid = [&perception, prepareForInactive, staging]
       {
         const auto active = perception.MatchState().ownActive;
-        return !active || !frc::DriverStation::GetAlliance().has_value() ||
+        return !active || !runtime::CurrentMatchContext().alliance.has_value() ||
                (staging ? *active : !*active || prepareForInactive());
       };
       // The navgrid can mark the depot occupied even when the robot has driven
@@ -589,7 +672,7 @@ namespace season
       // turning in place here can pin the bumper against a depot rail.
       auto clearDepot = frc2::cmd::RunEnd([&drive]
                                           {
-      const auto alliance = frc::DriverStation::GetAlliance();
+      const auto alliance = runtime::CurrentMatchContext().alliance;
       if (!alliance) { drive.Stop(); return; }
       const double direction = *alliance == frc::DriverStation::Alliance::kBlue ? 1. : -1.;
       drive.RunVelocity(frc::ChassisSpeeds::FromFieldRelativeSpeeds(
@@ -597,7 +680,7 @@ namespace season
                                           { drive.Stop(); }, {&drive})
                             .Until([&drive, field]
                                    {
-          const auto alliance = frc::DriverStation::GetAlliance();
+          const auto alliance = runtime::CurrentMatchContext().alliance;
           if (!alliance) return true;
           auto pose = drive.Pose();
           // Continue a little beyond the rotation envelope to account for
@@ -608,7 +691,7 @@ namespace season
                             .WithTimeout(offenseconfig::kRetreatTimeout)
                             .OnlyIf([&drive, field]
                                     {
-          const auto alliance = frc::DriverStation::GetAlliance();
+          const auto alliance = runtime::CurrentMatchContext().alliance;
           return alliance && !RobotClearOfDepot(drive.Pose(), *alliance, field); });
       // The static grid may mark a pose close to a bump as blocked. Retreat in
       // the field's X direction before planning so a conservative clearance
@@ -637,7 +720,7 @@ namespace season
       auto navigate = frc2::cmd::Defer([&drive, field, scoringGoal, invalid, staging]() -> frc2::CommandPtr
                                        {
       scoringGoal->reset();
-      const auto alliance = frc::DriverStation::GetAlliance();
+      const auto alliance = runtime::CurrentMatchContext().alliance;
       const auto grid = LoadScoringGrid();
       if (!alliance || !grid || invalid()) return frc2::cmd::None();
       const bool blue = *alliance == frc::DriverStation::Alliance::kBlue;
@@ -661,8 +744,9 @@ namespace season
         auto finish = frc2::cmd::Defer([&drive, field, scoringGoal, alliance, grid]() -> frc2::CommandPtr {
           *scoringGoal = CheapestHubScoringNode(*grid, drive.Pose(), *alliance, field, runtime::SeasonPolicy().shot);
           if (!*scoringGoal) return frc2::cmd::None();
-          frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalX", (*scoringGoal)->X().value());
-          frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalY", (*scoringGoal)->Y().value());
+          base::telemetry::PostDashboardNumber("AutoDrive/ScoringGoalX", (*scoringGoal)->X().value());
+          base::telemetry::PostDashboardNumber("AutoDrive/ScoringGoalY", (*scoringGoal)->Y().value());
+          RecordPoint("Season/AutoDrive/ScoringGoal", (**scoringGoal).Translation());
           return base::AutoDriveToPose(drive, [scoringGoal] { return *scoringGoal; }, OffensiveMotionLimits(drive.Config())).WithTimeout(offenseconfig::kScoringApproachTimeout);
         }, {&drive});
         // If collection left us on the neutral-facing ramp, back down it
@@ -678,8 +762,9 @@ namespace season
       }
       *scoringGoal = CheapestHubScoringNode(*grid, pose, *alliance, field, runtime::SeasonPolicy().shot);
       if (!*scoringGoal) return frc2::cmd::None();
-      frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalX", (*scoringGoal)->X().value());
-      frc::SmartDashboard::PutNumber("AutoDrive/ScoringGoalY", (*scoringGoal)->Y().value());
+      base::telemetry::PostDashboardNumber("AutoDrive/ScoringGoalX", (*scoringGoal)->X().value());
+      base::telemetry::PostDashboardNumber("AutoDrive/ScoringGoalY", (*scoringGoal)->Y().value());
+      RecordPoint("Season/AutoDrive/ScoringGoal", (**scoringGoal).Translation());
       if (pose.Translation().Distance((*scoringGoal)->Translation()).value() < offenseconfig::kGoalPositionEqualityMetres &&
           (!staging || std::abs(std::remainder((pose.Rotation() - (*scoringGoal)->Rotation()).Radians().value(),
                                                2 * std::numbers::pi)) < offenseconfig::kGoalHeadingEqualityRadians))
@@ -702,13 +787,13 @@ namespace season
         {
           *stageLatency = elapsed;
           if (speed > 0) *stageTravelSpeed = speed;
-          frc::SmartDashboard::PutNumber("AutoDrive/ObservedStageSeconds", elapsed);
+          base::telemetry::PostDashboardNumber("AutoDrive/ObservedStageSeconds", elapsed);
         }
         else
         {
           *returnLatency = elapsed;
           if (speed > 0) *returnTravelSpeed = speed;
-          frc::SmartDashboard::PutNumber("AutoDrive/ObservedReturnSeconds", elapsed);
+          base::telemetry::PostDashboardNumber("AutoDrive/ObservedReturnSeconds", elapsed);
         }
       } });
     };
@@ -728,7 +813,7 @@ namespace season
       options.totalTimeoutSeconds = runtime::SeasonPolicy().behavior.shotTimeoutSeconds;
       options.poseReady = [&perception, &drive, field]
       {
-        const auto alliance = frc::DriverStation::GetAlliance();
+        const auto alliance = runtime::CurrentMatchContext().alliance;
         return perception.MatchState().ownActive.value_or(false) && alliance &&
                HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::SeasonPolicy().shot);
       };
@@ -739,7 +824,7 @@ namespace season
         {
           *transportLatency = std::max(0., frc::Timer::GetFPGATimestamp().value() - *fed->firstRequest);
           fed->latencyRecorded = true;
-          frc::SmartDashboard::PutNumber("AutoDrive/ObservedTransportLatencySeconds", *transportLatency);
+          base::telemetry::PostDashboardNumber("AutoDrive/ObservedTransportLatencySeconds", *transportLatency);
         }
         fed->Update(active, m);
       };
@@ -749,7 +834,7 @@ namespace season
         {
           fed->firstRequest = frc::Timer::GetFPGATimestamp().value();
           *hubSetupLatency = std::max(0., *fed->firstRequest - fed->start);
-          frc::SmartDashboard::PutNumber("AutoDrive/ObservedHubSetupSeconds", *hubSetupLatency);
+          base::telemetry::PostDashboardNumber("AutoDrive/ObservedHubSetupSeconds", *hubSetupLatency);
         }
         fed->requested |= ready;
       };
@@ -757,13 +842,13 @@ namespace season
       { return fed->empty; };
       auto target = []
       {
-        auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);
+        auto alliance = runtime::CurrentMatchContext().alliance.value_or(frc::DriverStation::Alliance::kBlue);
         return ShotTarget{ShotMode::Hub, HubPosition(alliance)};
       };
       return CoordinatedShot(m, drive, field, target, options)
           .Until([&perception, &drive, field, fed, prepareForInactive]
                  {
-          const auto alliance = frc::DriverStation::GetAlliance();
+          const auto alliance = runtime::CurrentMatchContext().alliance;
           return !perception.MatchState().ownActive.value_or(false) || !alliance ||
                  !HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::SeasonPolicy().shot) ||
                  (prepareForInactive() && !fed->requested); })
@@ -781,7 +866,8 @@ namespace season
                   estimate->CompleteFeed(true);
                 else
                   estimate->AccountPartialFeed(fed->elapsed, *requestedFeed, configuredCapacity());
-                frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", estimate->Count());
+                base::telemetry::PostDashboardNumber("AutoDrive/EstimatedFuel", estimate->Count());
+                base::replay::RecordOutput("Season/AutoDrive/EstimatedFuel", estimate->Count());
                 *commitment = ReconcileOffensiveCommitment(*commitment, std::nullopt, complete);
               });
     };
@@ -796,7 +882,7 @@ namespace season
       // also shortens the return to the alliance zone for the next active shift.
       options.ferryTranslation = [&drive, field]
       {
-        const auto alliance = frc::DriverStation::GetAlliance();
+        const auto alliance = runtime::CurrentMatchContext().alliance;
         if (!alliance)
           return frc::Translation2d{};
         const double direction = *alliance == frc::DriverStation::Alliance::kBlue ? 1. : -1.;
@@ -822,7 +908,7 @@ namespace season
         {
           *ferryTransportLatency = fed->requestedBeforeTransport;
           fed->latencyRecorded = true;
-          frc::SmartDashboard::PutNumber("AutoDrive/ObservedFerryTransportLatencySeconds", *ferryTransportLatency);
+          base::telemetry::PostDashboardNumber("AutoDrive/ObservedFerryTransportLatencySeconds", *ferryTransportLatency);
         }
         fed->Update(active, m);
       };
@@ -841,14 +927,14 @@ namespace season
       { return RobotClearOfBumps(drive.Pose()); };
       auto target = [&drive, field]
       {
-        auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kBlue);
+        auto alliance = runtime::CurrentMatchContext().alliance.value_or(frc::DriverStation::Alliance::kBlue);
         return FerryTarget(alliance, drive.Pose(), field);
       };
       // If the current position cannot safely ferry, use a known neutral-side
       // lane and the normal obstacle-aware pathfinder before trying to shoot.
       auto positionForFerry = [&drive, field]() -> std::optional<frc::Pose2d>
       {
-        const auto alliance = frc::DriverStation::GetAlliance();
+        const auto alliance = runtime::CurrentMatchContext().alliance;
         if (!alliance)
           return std::nullopt;
         const auto calibration = runtime::SeasonPolicy().shot;
@@ -887,7 +973,7 @@ namespace season
       if (!*ferryGoal) return frc2::cmd::None();
       if (drive.Pose().Translation().Distance((*ferryGoal)->Translation()).value() < offenseconfig::kFerryGoalEqualityMetres)
         return frc2::cmd::None();
-      const auto alliance = frc::DriverStation::GetAlliance();
+      const auto alliance = runtime::CurrentMatchContext().alliance;
       if (!alliance) return frc2::cmd::None();
       const double direction = *alliance == frc::DriverStation::Alliance::kBlue ? 1. : -1.;
       const double hubX = HubPosition(*alliance).X().value();
@@ -929,14 +1015,15 @@ namespace season
               if (!fed->latencyRecorded && fed->requestedBeforeTransport > *ferryTransportLatency)
               {
                 *ferryTransportLatency = fed->requestedBeforeTransport;
-                frc::SmartDashboard::PutNumber("AutoDrive/ObservedFerryTransportLatencySeconds", *ferryTransportLatency);
+                base::telemetry::PostDashboardNumber("AutoDrive/ObservedFerryTransportLatencySeconds", *ferryTransportLatency);
               }
               const bool complete = !interrupted && *requestedFeed > 0 && (fed->elapsed >= *requestedFeed || fed->empty);
               if (complete)
                 estimate->CompleteFeed(true);
               else
                 estimate->AccountPartialFeed(fed->elapsed, *requestedFeed, configuredCapacity());
-              frc::SmartDashboard::PutNumber("AutoDrive/EstimatedFuel", estimate->Count());
+              base::telemetry::PostDashboardNumber("AutoDrive/EstimatedFuel", estimate->Count());
+              base::replay::RecordOutput("Season/AutoDrive/EstimatedFuel", estimate->Count());
               *commitment = ReconcileOffensiveCommitment(*commitment, std::nullopt, complete);
               if (fed->elapsed <= 0 && !fed->active && !canFerry()) *commitment = OffensiveCommitment::None; });
     };
@@ -945,14 +1032,14 @@ namespace season
       return frc2::cmd::WaitUntil(
                  [&perception]
                  {
-                   return frc::DriverStation::GetAlliance().has_value() && perception.MatchState().ownActive.has_value();
+                   return runtime::CurrentMatchContext().alliance.has_value() && perception.MatchState().ownActive.has_value();
                  })
           .BeforeStarting([]
                           { Phase("wait-for-match"); });
     };
     auto mayShoot = [&perception, &drive, field, scoringGoal, prepareForInactive]
     {
-      const auto alliance = frc::DriverStation::GetAlliance();
+      const auto alliance = runtime::CurrentMatchContext().alliance;
       return alliance && !prepareForInactive() && perception.MatchState().ownActive.value_or(false) && *scoringGoal &&
              HubScoringPositionValid(drive.Pose(), *alliance, field, runtime::SeasonPolicy().shot) &&
              drive.Pose().Translation().Distance((*scoringGoal)->Translation()).value() < offenseconfig::kGoalArrivalMetres;
@@ -980,10 +1067,10 @@ namespace season
       if (*commitment == OffensiveCommitment::Ferry)
         return OffensiveDecision::Ferry;
       const auto choice = decision(frc::Timer::GetFPGATimestamp().value() - *collectionStarted >= offenseconfig::kCollectionDecisionSeconds);
-      const auto alliance = frc::DriverStation::GetAlliance();
+      const auto alliance = runtime::CurrentMatchContext().alliance;
       const auto &match = perception.MatchState();
       if (choice == OffensiveDecision::Score && alliance && match.phase != "endgame" &&
-          !frc::DriverStation::IsAutonomousEnabled() && match.ownNextChange && std::isfinite(*match.ownNextChange) && *match.ownNextChange >= 0 &&
+          !runtime::AutonomousEnabled() && match.ownNextChange && std::isfinite(*match.ownNextChange) && *match.ownNextChange >= 0 &&
           !InAllianceZone(*alliance, drive.Pose().Translation(), field) && *returnLatency > 0)
       {
         const double direction = *alliance == frc::DriverStation::Alliance::kBlue ? 1. : -1.;
@@ -996,7 +1083,7 @@ namespace season
         if (speed > 0 && duration > 0 && *match.ownNextChange <= *returnLatency + duration + *hubSetupLatency + *transportLatency + home.Distance(neutral).value() / speed)
         {
           *preparing = true;
-          frc::SmartDashboard::PutBoolean("AutoDrive/ReturnDeferredForShift", true);
+          base::telemetry::PostDashboardBoolean("AutoDrive/ReturnDeferredForShift", true);
           return OffensiveDecision::Collect;
         }
       }
@@ -1009,6 +1096,7 @@ namespace season
         [next, commitment]
         {
           auto choice = next();
+          base::replay::RecordOutput("Season/AutoDrive/Decision", DecisionName(choice));
           if (choice == OffensiveDecision::Score)
             *commitment = OffensiveCommitment::Score;
           if (choice == OffensiveDecision::Ferry)
@@ -1019,7 +1107,7 @@ namespace season
       return frc2::cmd::RunEnd(
           [&drive, m]
           {
-            const auto alliance = frc::DriverStation::GetAlliance();
+            const auto alliance = runtime::CurrentMatchContext().alliance;
             if (!alliance)
             {
               m.shooter.Stop();

@@ -1,10 +1,7 @@
 #include "season/drive/DriveBehaviorConfig.h"
 #include "RobotContainer.h"
 #include "season/runtime/SeasonPolicy.h"
-#include "season/runtime/RobotRuntime.h"
-#include <frc/DriverStation.h>
 #include <base/DriverInput.h>
-#include <base/SimulationLatency.h>
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -17,16 +14,17 @@ void RobotContainer::DriveTeleop(bool aim)
   const auto deadband = [](double value)
   { return std::abs(value) < season::driveconfig::kDriverDeadband ? 0. : std::copysign((std::abs(value) - season::driveconfig::kDriverDeadband) / (1 - season::driveconfig::kDriverDeadband), value); };
   const auto input = base::ReadDriverInput(controller_.GetHID(), ntGamepad_.get(),
-                                           season::drive::ntgamepadconfig::kFallbackToDriverStation);
+                                           season::drive::ntgamepadconfig::kFallbackToDriverStation,
+                                           &driveRequestObserver_);
   activeDriverInput_ = input.source;
-  double x = deadband(input.WhileAuthorized(base::simulation::ObserveJoystick(-input.axes.leftY))) * drive_.Config().maxSpeed;
+  double x = deadband(-input.axes.leftY) * drive_.Config().maxSpeed;
   double y = deadband(-input.axes.leftX) * drive_.Config().maxSpeed;
   double omega = deadband(-input.axes.rightX) * drive_.Config().maxAngularRate;
   // Aim controls rotation and shooter targets while translation stays manual.
   if (aim && input.authorized)
   {
     const auto p = drive_.Pose();
-    const auto alliance = frc::DriverStation::GetAlliance().value_or(frc::DriverStation::Alliance::kRed);
+    const auto alliance = matchContext_.alliance.value_or(frc::DriverStation::Alliance::kRed);
     const auto shot = season::CalculateDriverAim(alliance, p, field_, season::runtime::SeasonPolicy().shot);
     hood_.SetPosition(shot.hoodRotations);
     shooter_.SetVelocity(shot.flywheelRps);
@@ -35,6 +33,5 @@ void RobotContainer::DriveTeleop(bool aim)
   }
   drive_.FieldDrive(x * driverHeadingOffset_.Cos() - y * driverHeadingOffset_.Sin(),
                     x * driverHeadingOffset_.Sin() + y * driverHeadingOffset_.Cos(), omega);
-  runtime_->PublishDriverInput(input.nt, input.driverStationAxes.leftY, input.driverStationAxes.leftX,
-                               input.driverStationAxes.rightX, x, y, omega);
+  input.ObserveDriveRequest(x, y, omega, driverHeadingOffset_);
 }

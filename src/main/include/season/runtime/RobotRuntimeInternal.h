@@ -11,8 +11,14 @@ struct RobotRuntime::Simulation : base::RuntimeScene {
   virtual VisionProviders LocalizationProviders() { return {}; }
   virtual std::shared_ptr<season::AutoDriveEnvironment> AutoDriveInputs() { return {}; }
   virtual bool UseNtInput(bool selected) const { return selected; }
-  virtual void PublishDriverInput(const base::NtGamepad::State &, double, double, double, double, double, double) {}
+  virtual base::DriveConfig ConfigureDrive(base::DriveConfig config) { return config; }
+  virtual std::optional<frc2::CommandPtr> PracticeMatchCommand() { return std::nullopt; }
+  virtual const std::function<void(const base::DriverInputState &, double, double, double, frc::Rotation2d)> *DriveRequestObserver() const { return nullptr; }
   virtual const std::vector<int> *TagIds() const { return nullptr; }
+  virtual void BeforeScheduler() {}
+  virtual void AfterScheduler() {}
+  virtual void BeforeScene() {}
+  virtual void AfterScene() {}
 };
 struct RobotRuntime::State {
   std::shared_ptr<season::FuelMotorLoads> fuelMotorLoads_ = std::make_shared<season::FuelMotorLoads>();

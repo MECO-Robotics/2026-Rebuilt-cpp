@@ -8,12 +8,14 @@
 #include "season/drive/AutoDrive.h"
 #include "season/drive/OffensiveAutoDrive.h"
 #include "base/NtGamepad.h"
-#include <base/season2026/MatchContext.h>
+#include "base/DriverInput.h"
+#include "season/runtime/MatchContext.h"
 #include <frc2/command/button/CommandXboxController.h>
 #include <frc/apriltag/AprilTagFieldLayout.h>
 #include <networktables/NetworkTable.h>
 #include <vector>
 #include <string_view>
+#include <functional>
 namespace season::runtime { class RobotRuntime; }
 namespace season::autonomous { class RobotAutos; }
 // Owns season subsystems and command bindings.
@@ -28,13 +30,18 @@ public:
   void ScheduleAutonomous(frc2::Command *command);
   void CancelChecks();
   // Share one Driver Station-derived snapshot across season logic.
-  void SetMatchContext(base::season2026::MatchContext context)
+  void SetMatchContext(season::runtime::MatchContext context)
   {
     matchContext_ = std::move(context);
     if (autoDrive_)
       autoDrive_->PublishMatchContext();
   }
+  const season::runtime::MatchContext &MatchContext() const { return matchContext_; }
   void SimulationPeriodic();
+  void BeforeScheduler();
+  void AfterScheduler();
+  void BeforeScene();
+  void AfterScene();
   void PrepareAutonomous();
   // Autonomous waits until platform feedback is ready.
   bool AutonomousReady() const;
@@ -43,7 +50,7 @@ private:
   friend class season::runtime::RobotRuntime;
   friend class season::autonomous::RobotAutos;
   std::unique_ptr<season::runtime::RobotRuntime> runtime_;
-  base::season2026::MatchContext matchContext_;
+  season::runtime::MatchContext matchContext_;
   base::Drive drive_;
   base::PositionJoint rack_, hood_;
   base::Flywheel intake_, conveyor_, bottom_, top_, shooter_;
@@ -58,6 +65,7 @@ private:
   std::shared_ptr<season::OffensiveFuelEstimate> fuelEstimate_ = std::make_shared<season::OffensiveFuelEstimate>();
 
   std::unique_ptr<base::NtGamepad> ntGamepad_;
+  std::function<void(const base::DriverInputState &, double, double, double, frc::Rotation2d)> driveRequestObserver_;
   std::string_view activeDriverInput_ = "none";
   frc2::CommandXboxController controller_{season::hardware::kPilotControllerPort}, copilot_{season::hardware::kCopilotControllerPort};
   std::unique_ptr<season::autonomous::RobotAutos> autonomous_;

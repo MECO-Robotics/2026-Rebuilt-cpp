@@ -2,19 +2,22 @@
 #ifndef __FRC_ROBORIO__
 #include "RobotContainer.h"
 #include "season/drive/DriveBehaviorConfig.h"
+#include "season/drive/DriveConfig.h"
 #include "season/hardware/RobotPlatform.h"
 #include "season/vision/VisionConfig.h"
 #include "season/simulation/SimulationConfig.h"
+#include "season/simulation/DriveSimulationConfig.h"
 #include "season/drive/AutoDrive.h"
 #include <meco/sim/SimulatedPieceCameraBank.h>
 #include <base/FootprintAutoDrive.h>
 #include <meco/sim/ColliderNavigation.h>
 #include <meco/sim/FootprintNavigation.h>
-#include <networktables/NetworkTableInstance.h>
 #include <utility>
 #include "season/simulation/Simulation.h"
-#include "meco/sim/DriveScene.h"
-#include "meco/sim/DriverInputTelemetry.h"
+#include "meco/sim/RobotSimulationRuntime.h"
+#include <meco/sim/SimulatedTagCamera.h>
+#include <base/TelemetryPublishers.h>
+#include <meco/sim/PracticeMatchController.h>
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
 #include <frc/smartdashboard/SmartDashboard.h>
@@ -102,13 +105,11 @@ std::optional<frc2::CommandPtr> AutoDriveSimulation::NavigationCommand(
       }
       // Desktop HAL/NT tests can inject one perceived obstacle. It is
       // not a simulated rigid body or a hardware detection source.
-      meco::sim::AppendInjectedFootprintObstacle(boxes, nt::NetworkTableInstance::GetDefault()
-          .GetEntry("/Simulation/FootprintObstacle"));
+      meco::sim::AppendInjectedFootprintObstacle(boxes, "/Simulation/FootprintObstacle");
       return boxes;
     };
     return meco::sim::FootprintCommandWithOutcome(drive, std::move(target), std::move(obstacles),
-        config, nt::NetworkTableInstance::GetDefault().GetEntry("/AutoDrive/FootprintOutcome"),
-        base::FootprintOutcomeName);
+        config, "/AutoDrive/FootprintOutcome", base::FootprintOutcomeName);
   }
   return std::nullopt;
 }
@@ -125,13 +126,13 @@ void AutoDriveSimulation::Update(const frc::Pose3d &truth, const FuelModel &fuel
         [] { return frc::Timer::GetFPGATimestamp(); });
     for (size_t i = 0; i < samples.size(); ++i)
     {
-      frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontDetections" : "AutoDrive/SimRearDetections",
+      base::telemetry::PostDashboardNumber(i == 0 ? "AutoDrive/SimFrontDetections" : "AutoDrive/SimRearDetections",
                                      samples[i].detections);
-      frc::SmartDashboard::PutNumber(i == 0 ? "AutoDrive/SimFrontFrameAge" : "AutoDrive/SimRearFrameAge",
+      base::telemetry::PostDashboardNumber(i == 0 ? "AutoDrive/SimFrontFrameAge" : "AutoDrive/SimRearFrameAge",
                                      (frc::Timer::GetFPGATimestamp() - samples[i].captureTime).value());
     }
-    frc::SmartDashboard::PutBoolean("AutoDrive/DetectionFresh", !clusters.empty());
-    frc::SmartDashboard::PutNumber("AutoDrive/ClusterCount", clusters.size());
+    base::telemetry::PostDashboardBoolean("AutoDrive/DetectionFresh", !clusters.empty());
+    base::telemetry::PostDashboardNumber("AutoDrive/ClusterCount", clusters.size());
     double nearest = -1;
     const auto robotPosition = drive.Pose().Translation();
     for (const auto &cluster : clusters)
@@ -140,18 +141,113 @@ void AutoDriveSimulation::Update(const frc::Pose3d &truth, const FuelModel &fuel
       if (nearest < 0 || distance < nearest)
         nearest = distance;
     }
-    frc::SmartDashboard::PutNumber("AutoDrive/SimNearestFuelDistance", nearest);
+    base::telemetry::PostDashboardNumber("AutoDrive/SimNearestFuelDistance", nearest);
 }
 void AutoDriveSimulation::Reset() { cameras_.Reset(); }
 }
 
+namespace season::simulation {
+// This robot uses a Limelight and Quest pair; their alignment relationship is
+// season policy. Each camera's tag visibility and observation path is reusable.
+class SimulatedLocalization {
+ public:
+  SimulatedLocalization(meco::sim::SimulatedTagCameraConfig limelightConfig,
+                        meco::sim::SimulatedTagCameraConfig questConfig,
+                        std::size_t questAlignmentMinTags)
+      : limelight(std::move(limelightConfig)), quest(std::move(questConfig)),
+        questAlignmentMinTags_(questAlignmentMinTags) {}
+
+  void Reset() {
+    limelight.Reset();
+    quest.Reset();
+    questAligned_ = false;
+  }
+  const std::vector<int>& TagIds() const { return limelight.TagIds(); }
+  void Update(const frc::Pose3d& truth, units::second_t timestamp,
+              const frc::AprilTagFieldLayout& layout,
+              const frc::Transform3d& limelightMount,
+              const frc::Transform3d& questMount) {
+    limelight.Update(truth, timestamp, layout, limelightMount, true, false, false);
+    const auto& config = quest.Config();
+    const auto questTags = meco::sim::VisibleTags(
+        truth, questMount, layout, config.horizontalFov, config.verticalFov,
+        config.maxRange);
+    questAligned_ = questAligned_ || questTags.size() >= questAlignmentMinTags_ ||
+                    !limelight.TagIds().empty();
+    quest.Update(truth, timestamp, layout, questMount, true, true, questAligned_);
+  }
+
+  meco::sim::SimulatedTagCamera limelight, quest;
+
+ private:
+  std::size_t questAlignmentMinTags_;
+  bool questAligned_{};
+};
+}  // namespace season::simulation
+
 namespace season::runtime {
 struct RobotRuntime::DesktopSimulation final : RobotRuntime::Simulation {
-  explicit DesktopSimulation(RobotRuntime &runtime) : runtime_(runtime), owner_(runtime.owner_) {}
+  explicit DesktopSimulation(RobotRuntime &runtime)
+      : runtime_(runtime), owner_(runtime.owner_),
+        simulationRuntime_(meco::sim::SimulationLifecycleConfig{
+            season::simulation::runtimeconfig::kBatteryCapacityAh,
+            season::simulation::runtimeconfig::kBatteryEmptyVoltage,
+            season::simulation::runtimeconfig::kBatteryVoltageRange,
+            season::simulation::runtimeconfig::kBatteryInternalResistanceOhms,
+            season::simulation::runtimeconfig::kPracticeAutonomousSeconds,
+            season::simulation::runtimeconfig::kPracticeAssessmentSeconds,
+            season::simulation::runtimeconfig::kPracticeTeleopSeconds},
+            drive::ntgamepadconfig::kEnabled) {}
+
+  void Initialize() override {
+    simulationRuntime_.Initialize(owner_.drive_, [this] {
+      return meco::sim::DriveScene::Configuration{
+          .fieldCollidersEnabled = true,
+          .feedbackLoops = season::simulation::runtimeconfig::kResetFeedbackLoops,
+          .colliders = season::simulation::FieldColliders(),
+          .contact = season::simulation::RobotContacts(),
+          .clearStartingPose = [](const frc::Pose2d &pose) { return season::simulation::IsClearStartingPose(pose); },
+          .resetSensors = [this] { if (simulatedLocalization_) simulatedLocalization_->Reset(); owner_.lastAcceptedVision_ = -1e9; }};
+    });
+    if (simulationRuntime_.HasDriveScene()) {
+      base::telemetry::PostDashboardNumber("SimulationTuning/SteerKP", owner_.drive_.Config().steerKP);
+      base::telemetry::PostDashboardNumber("SimulationTuning/SteerKD", owner_.drive_.Config().steerKD);
+      base::telemetry::PostDashboardNumber("SimulationTuning/AutoTranslationKP", owner_.drive_.Config().autoTranslationKP);
+      base::telemetry::PostDashboardNumber("SimulationTuning/AutoRotationKP", owner_.drive_.Config().autoRotationKP);
+      simulationGroundedBodyHeight_ = units::meter_t{owner_.drive_.Config().simulation.rideHeight};
+      simulationFieldCollidersEnabled_ = simulationRuntime_.FieldCollidersEnabled();
+      if (autoDriveSimulation_) autoDriveSimulation_->SetFieldCollidersEnabled(simulationFieldCollidersEnabled_);
+    }
+  }
+  void InitializeFeedback() override {
+    if (simulationRuntime_.HasDriveScene()) fuelSimulation_ = std::make_unique<season::FuelSimulation>(owner_.Mechanisms(), owner_.drive_, runtime_.state_->fuelMotorLoads_);
+  }
+  void BeforeScheduler() override { simulationRuntime_.BeforeScheduler(); }
+  void AfterScheduler() override { simulationRuntime_.AfterScheduler(); }
+  void BeforeScene() override { simulationRuntime_.BeforeScene(); }
+  void AfterScene() override { simulationRuntime_.AfterScene(); }
 
   VisionProviders LocalizationProviders() override {
     auto localization = [this] {
-      if (!simulatedLocalization_) simulatedLocalization_ = std::make_shared<season::simulation::SimulatedLocalization>();
+      if (!simulatedLocalization_) {
+        meco::sim::SimulatedTagCameraConfig limelight;
+        limelight.horizontalFov = units::degree_t{simulation::runtimeconfig::kLimelightHorizontalFovDegrees};
+        limelight.verticalFov = units::degree_t{simulation::runtimeconfig::kLimelightVerticalFovDegrees};
+        limelight.maxRange = units::meter_t{simulation::runtimeconfig::kVisionRangeMetres};
+        limelight.maxAbsTruthHeight = units::meter_t{simulation::runtimeconfig::kVisionMaxAbsTruthHeightMetres};
+        limelight.stdDevs = {simulation::runtimeconfig::kLimelightStdX, simulation::runtimeconfig::kLimelightStdY,
+                             simulation::runtimeconfig::kLimelightStdHeading};
+        meco::sim::SimulatedTagCameraConfig quest;
+        quest.horizontalFov = units::degree_t{simulation::runtimeconfig::kQuestHorizontalFovDegrees};
+        quest.verticalFov = units::degree_t{simulation::runtimeconfig::kQuestVerticalFovDegrees};
+        quest.maxRange = units::meter_t{simulation::runtimeconfig::kVisionRangeMetres};
+        quest.maxAbsTruthHeight = units::meter_t{simulation::runtimeconfig::kVisionMaxAbsTruthHeightMetres};
+        quest.stdDevs = {simulation::runtimeconfig::kQuestStdX, simulation::runtimeconfig::kQuestStdY,
+                         simulation::runtimeconfig::kQuestStdHeading};
+        simulatedLocalization_ = std::make_shared<season::simulation::SimulatedLocalization>(
+            std::move(limelight), std::move(quest),
+            simulation::runtimeconfig::kQuestAlignmentMinTags);
+      }
       return simulatedLocalization_;
     };
     return {[localization] { return localization()->limelight.MakeIO(); },
@@ -162,59 +258,39 @@ struct RobotRuntime::DesktopSimulation final : RobotRuntime::Simulation {
     autoDriveSimulation_->SetFieldCollidersEnabled(simulationFieldCollidersEnabled_);
     return autoDriveSimulation_;
   }
-  void Initialize() override {
-    driveScene_ = meco::sim::MakeRuntimeDriveScene(owner_.drive_, [this] {
-      return meco::sim::DriveScene::Configuration{
-          .fieldCollidersEnabled = true,
-          .feedbackLoops = season::simulation::runtimeconfig::kResetFeedbackLoops,
-          .colliders = season::simulation::FieldColliders(),
-          .contact = season::simulation::RobotContacts(),
-          .clearStartingPose = [](const frc::Pose2d &pose) { return season::simulation::IsClearStartingPose(pose); },
-          .resetSensors = [this] { if (simulatedLocalization_) simulatedLocalization_->Reset(); owner_.lastAcceptedVision_ = -1e9; }};
-    });
-    if (driveScene_) {
-      driverInputTelemetry_ = std::make_unique<meco::sim::DriverInputTelemetry>(drive::ntgamepadconfig::kEnabled);
-      frc::SmartDashboard::PutNumber("SimulationTuning/SteerKP", owner_.drive_.Config().steerKP);
-      frc::SmartDashboard::PutNumber("SimulationTuning/SteerKD", owner_.drive_.Config().steerKD);
-      frc::SmartDashboard::PutNumber("SimulationTuning/AutoTranslationKP", owner_.drive_.Config().autoTranslationKP);
-      frc::SmartDashboard::PutNumber("SimulationTuning/AutoRotationKP", owner_.drive_.Config().autoRotationKP);
-      simulationGroundedBodyHeight_ = units::meter_t{owner_.drive_.Config().simulation.rideHeight};
-      simulationFieldCollidersEnabled_ = driveScene_->FieldCollidersEnabled();
-      if (autoDriveSimulation_) autoDriveSimulation_->SetFieldCollidersEnabled(simulationFieldCollidersEnabled_);
-    }
+  void FinishSetup() override { if (simulationRuntime_.HasDriveScene()) runtime_.Reset(); }
+  bool UseNtInput(bool selected) const override { return simulationRuntime_.UseNtInput(selected); }
+  base::DriveConfig ConfigureDrive(base::DriveConfig config) override {
+    config.odometryHz = season::hardware::kSwerveOdometryFdHz;
+    return season::simulation::ConfigureDrive(std::move(config), season::hardware::kSimulationTuning);
   }
-  void InitializeFeedback() override {
-    if (driveScene_) fuelSimulation_ = std::make_unique<season::FuelSimulation>(owner_.Mechanisms(), owner_.drive_, runtime_.state_->fuelMotorLoads_);
+  std::optional<frc2::CommandPtr> PracticeMatchCommand() override {
+    return meco::sim::TryStartPracticeMatch();
   }
-  void FinishSetup() override { if (driveScene_) runtime_.Reset(); }
-  bool UseNtInput(bool selected) const override { return driverInputTelemetry_ ? driverInputTelemetry_->Selected(selected) : selected; }
+  const std::function<void(const base::DriverInputState &, double, double, double, frc::Rotation2d)> *DriveRequestObserver() const override {
+    return simulationRuntime_.DriveRequestObserverCallback();
+  }
   void BindReset() override {
-    if (driveScene_) owner_.controller_.Back().OnTrue(frc2::cmd::RunOnce([this] { runtime_.Reset(); }));
+    if (simulationRuntime_.HasDriveScene()) owner_.controller_.Back().OnTrue(frc2::cmd::RunOnce([this] { runtime_.Reset(); }));
   }
-  void PublishDriverInput(const base::NtGamepad::State &nt, double a, double b, double c, double x, double y, double omega) override {
-    if (driverInputTelemetry_)
-      driverInputTelemetry_->Publish(nt, a, b, c, x, y, omega, owner_.driverHeadingOffset_, static_cast<bool>(owner_.ntGamepad_));
-  }
-  const std::vector<int> *TagIds() const override { return simulatedLocalization_ ? &simulatedLocalization_->tagIds : nullptr; }
-  bool Ready() const override { return !driveScene_ || driveScene_->Ready(); }
+  const std::vector<int> *TagIds() const override { return simulatedLocalization_ ? &simulatedLocalization_->TagIds() : nullptr; }
+  bool Ready() const override { return simulationRuntime_.Ready(); }
   void Schedule(frc2::Command &command) override {
-    if (driveScene_) driveScene_->BeginAutonomousSchedule();
-    command.Schedule();
-    if (driveScene_ && driveScene_->EndAutonomousSchedule()) command.Cancel();
+    simulationRuntime_.ScheduleAutonomous(command);
   }
   void Periodic() override {
     std::optional<season::FuelRobotState> fuelRobotState;
-    if (auto snapshot = driveScene_ ? driveScene_->Update() : std::nullopt) {
+    if (auto snapshot = simulationRuntime_.UpdateScene()) {
       const auto &body = snapshot->body;
       const auto &visualPose = snapshot->visualPose;
-      if (driveScene_->Ready() && simulatedLocalization_)
+      if (simulationRuntime_.Ready() && simulatedLocalization_)
         simulatedLocalization_->Update(visualPose, frc::Timer::GetFPGATimestamp(), owner_.layout_,
             season::hardware::VisionConfig(owner_.layout_).robotToCamera, season::hardware::QuestConfig(owner_.layout_).robotToQuest);
-      frc::SmartDashboard::PutBoolean("Localization/LimelightConnected", owner_.vision_->Inputs().connected);
-      frc::SmartDashboard::PutBoolean("Localization/QuestTracking", owner_.vision_->Inputs(1).tracking);
-      frc::SmartDashboard::PutBoolean("Localization/QuestAligned", owner_.vision_->Inputs(1).aligned);
-      frc::SmartDashboard::PutNumber("Localization/LimelightTagCount", simulatedLocalization_ ? simulatedLocalization_->tagIds.size() : 0);
-      frc::SmartDashboard::PutNumber("Localization/TruthErrorMetres", owner_.drive_.Pose().Translation().Distance(visualPose.ToPose2d().Translation()).value());
+      base::telemetry::PostDashboardBoolean("Localization/LimelightConnected", owner_.vision_->Inputs().connected);
+      base::telemetry::PostDashboardBoolean("Localization/QuestTracking", owner_.vision_->Inputs(1).tracking);
+      base::telemetry::PostDashboardBoolean("Localization/QuestAligned", owner_.vision_->Inputs(1).aligned);
+      base::telemetry::PostDashboardNumber("Localization/LimelightTagCount", simulatedLocalization_ ? simulatedLocalization_->TagIds().size() : 0);
+      base::telemetry::PostDashboardNumber("Localization/TruthErrorMetres", owner_.drive_.Pose().Translation().Distance(visualPose.ToPose2d().Translation()).value());
       const auto &config = owner_.drive_.Config().simulation;
       fuelRobotState = season::FuelRobotState{visualPose,
           {body.linearVelocity.x, body.linearVelocity.y, body.linearVelocity.z},
@@ -222,13 +298,14 @@ struct RobotRuntime::DesktopSimulation final : RobotRuntime::Simulation {
           {config.centerOfMassX, config.centerOfMassY, config.centerOfMassZ + simulationGroundedBodyHeight_.value()}};
     }
     if (fuelSimulation_)
-      fuelSimulation_->Periodic(season::simulation::runtimeconfig::kSimulationPeriodSeconds, fuelRobotState, owner_.matchContext_.ownActive);
-    if (autoDriveSimulation_ && owner_.autoDrive_ && fuelSimulation_ && fuelRobotState && driveScene_->Ready())
+      fuelSimulation_->Periodic(season::simulation::runtimeconfig::kSimulationPeriodSeconds, fuelRobotState,
+                                owner_.matchContext_.ownActive, owner_.matchContext_.alliance);
+    if (autoDriveSimulation_ && owner_.autoDrive_ && fuelSimulation_ && fuelRobotState && simulationRuntime_.Ready())
       autoDriveSimulation_->Update(fuelRobotState->pose, fuelSimulation_->Model(), simulationFieldCollidersEnabled_, owner_.autoDrive_->VisibleFuel(), owner_.drive_);
   }
   void Reset() override {
-    if (!driveScene_) return;
-    const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
+    if (!simulationRuntime_.HasDriveScene()) return;
+    const bool red = owner_.matchContext_.alliance == frc::DriverStation::Alliance::kRed;
     const frc::Pose2d origin = simulationFieldCollidersEnabled_ ? season::simulation::DefaultSpawn(red) : frc::Pose2d{};
     if (simulationFieldCollidersEnabled_ && !season::simulation::IsClearStartingPose(origin))
       throw std::logic_error("Simulation spawn intersects field geometry");
@@ -236,17 +313,16 @@ struct RobotRuntime::DesktopSimulation final : RobotRuntime::Simulation {
     if (owner_.autoDrive_) owner_.autoDrive_->ClearPerception();
     if (simulatedLocalization_) simulatedLocalization_->Reset();
     owner_.lastAcceptedVision_ = -1e9;
-    driveScene_->Reset(origin);
+    simulationRuntime_.BeginReset(origin);
     if (fuelSimulation_) fuelSimulation_->Reset();
   }
 private:
   RobotRuntime &runtime_;
   RobotContainer &owner_;
+  meco::sim::RobotSimulationRuntime simulationRuntime_;
   std::shared_ptr<season::simulation::AutoDriveSimulation> autoDriveSimulation_;
   std::shared_ptr<season::simulation::SimulatedLocalization> simulatedLocalization_;
   std::unique_ptr<season::FuelSimulation> fuelSimulation_;
-  std::unique_ptr<meco::sim::DriverInputTelemetry> driverInputTelemetry_;
-  std::unique_ptr<meco::sim::DriveScene> driveScene_;
   units::meter_t simulationGroundedBodyHeight_{};
   bool simulationFieldCollidersEnabled_{true};
 };

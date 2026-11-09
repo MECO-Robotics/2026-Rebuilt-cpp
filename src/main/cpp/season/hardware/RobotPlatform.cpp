@@ -1,25 +1,15 @@
 #include "season/hardware/RobotPlatform.h"
 #include "season/drive/DriveConfig.h"
-#ifndef __FRC_ROBORIO__
-#include "season/simulation/DriveSimulationConfig.h"
-#endif
 #include "season/mechanisms/Mechanisms.h"
 #include <base/CanBusMode.h>
-#include <base/RuntimeMode.h>
 #include <utility>
+#include <base/RuntimeTuning.h>
 namespace season::hardware {
   base::DriveConfig DriveConfig()
   {
     auto config = HardwareDriveConfig(kSwerveOdometryFdHz);
     config.odometryHz = base::SelectCanBusRate(config.bus, kSwerveOdometryFdHz, kSwerveOdometryClassicHz);
-#ifndef __FRC_ROBORIO__
-    return base::ConfigureRuntimeDrive(std::move(config), [](base::DriveConfig c) {
-      c.odometryHz = kSwerveOdometryFdHz;
-      return simulation::ConfigureDrive(std::move(c), kSimulationTuning);
-    });
-#else
-    return base::ConfigureRuntimeDrive(std::move(config));
-#endif
+    return config;
   }
 
   base::MotorConfig MotorRates(base::MotorConfig config, base::Vendor vendor)
