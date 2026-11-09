@@ -15,10 +15,12 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
 #include <pathplanner/lib/auto/AutoBuilder.h>
+#include <pathplanner/lib/commands/PathPlannerAuto.h>
 #include <pathplanner/lib/auto/NamedCommands.h>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/StringTopic.h>
 #include <algorithm>
+#include <memory>
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
@@ -163,7 +165,8 @@ void season::autonomous::RobotAutos::Configure()
           {&owner_.drive_, &owner_.hood_, &owner_.shooter_}));
   // Combine deployed PathPlanner autos with season-specific options.
   for (const auto &name : pathplanner::AutoBuilder::getAllAutoNames())
-    AddChooserOption(name, "PathPlanner/" + name, pathplanner::AutoBuilder::buildAuto(name));
+    AddChooserOption(name, "PathPlanner/" + name,
+                     frc2::CommandPtr{std::make_unique<pathplanner::PathPlannerAuto>(name)});
   AddChooserOption("None", "PathPlanner/None", frc2::cmd::None(), true);
 
   const auto defaults = season::runtime::SeasonPolicy().autonomous;

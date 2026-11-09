@@ -188,6 +188,7 @@ namespace season::simulation
     c.compressionStressPa = {0, 10000, 35000, 100000, 250000};
     // Overdamped foam dissipates more impact energy and reduces rebound.
     c.dampingRatio = 1.2;
+    c.friction = .65;
     return c;
   }
 }

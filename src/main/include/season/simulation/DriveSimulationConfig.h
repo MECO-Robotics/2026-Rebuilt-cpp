@@ -16,6 +16,9 @@ namespace season::simulation
     // Ready-to-drive robot, bumpers, and battery. The real robot keeps its own values.
     c.massKg = 67.6;
     c.cof = 2.1;
+    c.simulation.bumperHalfLength = geometry::kLengthMetres / 2;
+    c.simulation.bumperHalfWidth = geometry::kWidthMetres / 2;
+    c.simulation.bumperWallThickness = fuelconfig::kBumperDepthMetres;
     c.simulation.wheelInertia = .01;
     c.simulation.steerInertia = .01;
 
