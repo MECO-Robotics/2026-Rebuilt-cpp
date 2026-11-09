@@ -270,7 +270,7 @@ void RobotContainer::ConfigureBindings()
       .OnTrue(season::ShooterIdle(m));
 }
 frc2::Command *RobotContainer::GetAutonomousCommand() { return autonomous_->Selected(); }
-void RobotContainer::ScheduleAutonomous(frc2::Command *command) { command->Schedule(); }
+void RobotContainer::ScheduleAutonomous(frc2::Command *command) { runtime_->Schedule(*command); }
 void RobotContainer::CancelChecks() { checks_.Cancel("Robot mode changed"); }
 
 void RobotContainer::SimulationPeriodic() { runtime_->Periodic(); }

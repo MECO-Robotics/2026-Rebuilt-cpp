@@ -7,6 +7,17 @@
 
 namespace season::simulationconfig
 {
+  // Estimated geometry and motor-model parameters for the simulated robot.
+  inline constexpr double kBumperCornerRadiusMetres = .0381;
+  inline constexpr double kBumperSurfaceFriction = .65;
+  inline constexpr double kWheelWidthMetres = .0508;
+  inline constexpr double kTireContactPatchLengthMetres = .020;
+  inline constexpr double kTireShearDeflectionMetres = .001;
+  inline constexpr double kMotorFrictionVoltage = .1;
+  inline constexpr double kRollInertiaKgMetresSquared = 4.0;
+  inline constexpr double kPitchInertiaKgMetresSquared = 4.0;
+  inline constexpr double kTireLongitudinalStiffness = 1800;
+  inline constexpr double kTireLateralStiffness = 1800;
   // Minimum voltage magnitude used by simulation to consider a transport motor commanded.
   inline constexpr double kSimTransportVoltageThreshold = 1;
   // Default simulated current thresholds for the empty-load detector.

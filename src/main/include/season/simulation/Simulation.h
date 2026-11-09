@@ -5,6 +5,7 @@
 #include "season/simulation/SimulationConfig.h"
 #include "season/simulation/MotorSimulation.h"
 #include <array>
+#include <memory>
 #include <random>
 #include <optional>
 #include <frc/geometry/struct/Pose3dStruct.h>
@@ -88,9 +89,9 @@ namespace season
     std::shared_ptr<FuelMotorLoads> loads_;
     double shooterLoadRemaining_{};
     std::mt19937 loadRandom_{simulation::runtimeconfig::kFuelRandomSeed};
-    nt::StructPublisher<frc::Pose3d> robotPosePublisher_;
-    nt::StructArrayPublisher<frc::Pose3d> componentsPublisher_;
-    nt::StructArrayPublisher<frc::Pose3d> fuelPublisher_, hopperPublisher_, projectilesPublisher_;
+    std::shared_ptr<nt::StructPublisher<frc::Pose3d>> robotPosePublisher_;
+    std::shared_ptr<nt::StructArrayPublisher<frc::Pose3d>> componentsPublisher_;
+    std::shared_ptr<nt::StructArrayPublisher<frc::Pose3d>> fuelPublisher_, hopperPublisher_, projectilesPublisher_;
   };
 }
 

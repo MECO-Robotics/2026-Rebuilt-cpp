@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include <frc2/command/Command.h>
 #include <frc2/command/CommandPtr.h>
 class RobotContainer;
 namespace season { class AutoDriveEnvironment; }
@@ -35,6 +36,7 @@ public:
   void Periodic();
   void Reset();
   bool ResetReady() const;
+  void Schedule(frc2::Command &command);
 private:
   RobotContainer &owner_;
   struct Simulation;

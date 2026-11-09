@@ -44,11 +44,16 @@ namespace season
         FuelSimulation::FuelSimulation(Mechanisms mechanisms, base::Drive &drive, std::shared_ptr<FuelMotorLoads> loads) : mechanisms_(mechanisms), drive_(drive), loads_(std::move(loads))
         {
                 auto nt = nt::NetworkTableInstance::GetDefault();
-                robotPosePublisher_ = nt.GetStructTopic<frc::Pose3d>("/Visualization/RobotRemy/RobotPose").Publish();
-                componentsPublisher_ = nt.GetStructArrayTopic<frc::Pose3d>("/Visualization/RobotRemy/ComponentPoses").Publish();
-                fuelPublisher_ = nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/FuelPositions").Publish();
-                hopperPublisher_ = nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/HopperFuelPositions").Publish();
-                projectilesPublisher_ = nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/FuelProjectilePositions").Publish();
+                robotPosePublisher_ = std::make_shared<nt::StructPublisher<frc::Pose3d>>(
+                    nt.GetStructTopic<frc::Pose3d>("/Visualization/RobotRemy/RobotPose").Publish());
+                componentsPublisher_ = std::make_shared<nt::StructArrayPublisher<frc::Pose3d>>(
+                    nt.GetStructArrayTopic<frc::Pose3d>("/Visualization/RobotRemy/ComponentPoses").Publish());
+                fuelPublisher_ = std::make_shared<nt::StructArrayPublisher<frc::Pose3d>>(
+                    nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/FuelPositions").Publish());
+                hopperPublisher_ = std::make_shared<nt::StructArrayPublisher<frc::Pose3d>>(
+                    nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/HopperFuelPositions").Publish());
+                projectilesPublisher_ = std::make_shared<nt::StructArrayPublisher<frc::Pose3d>>(
+                    nt.GetStructArrayTopic<frc::Pose3d>("/FieldSimulation/FuelProjectilePositions").Publish());
                 Reset();
         }
         void FuelSimulation::Reset()
@@ -108,8 +113,13 @@ namespace season
                         loads_->torque = {fuelconfig::kConveyorLoadTorque * load * noise(), fuelconfig::kIndexerLoadTorque * load * noise(), fuelconfig::kIndexerLoadTorque * load * noise(), shooterLoadRemaining_ > 0 ? fuelconfig::kShooterLoadTorque * noise() : 0.};
                 }
                 const auto robotPose = input.physics ? input.physics->pose : frc::Pose3d{input.robot};
-                robotPosePublisher_.Set(robotPose);
-                componentsPublisher_.Set(RemyComponentPoses(input.rackMetres, input.hoodRotations, mechanisms_.shooter.Position()));
+                auto robotPublisher = robotPosePublisher_;
+                base::telemetry::Post("Simulation/RobotPose", [robotPublisher, robotPose]
+                                      { robotPublisher->Set(robotPose); });
+                auto componentsPublisher = componentsPublisher_;
+                auto components = RemyComponentPoses(input.rackMetres, input.hoodRotations, mechanisms_.shooter.Position());
+                base::telemetry::Post("Simulation/RobotComponents", [componentsPublisher, components = std::move(components)]
+                                      { componentsPublisher->Set(components); });
                 auto hopper = FuelModel::HopperCenters3d(model_.StoredFuel(), input.rackMetres, robotPose);
                 std::vector<frc::Pose3d> fuel, hopperPoses, projectiles;
                 fuel.reserve(model_.FloorFuel().size() + hopper.size());
@@ -124,9 +134,15 @@ namespace season
                 fuel.insert(fuel.end(), hopperPoses.begin(), hopperPoses.end());
                 for (const auto &p : model_.Projectiles())
                         projectiles.push_back(ballPose(p.position));
-                fuelPublisher_.Set(fuel);
-                hopperPublisher_.Set(hopperPoses);
-                projectilesPublisher_.Set(projectiles);
+                auto fuelPublisher = fuelPublisher_;
+                base::telemetry::Post("Simulation/FuelPositions", [fuelPublisher, fuel = std::move(fuel)]
+                                      { fuelPublisher->Set(fuel); });
+                auto hopperPublisher = hopperPublisher_;
+                base::telemetry::Post("Simulation/HopperFuelPositions", [hopperPublisher, hopperPoses = std::move(hopperPoses)]
+                                      { hopperPublisher->Set(hopperPoses); });
+                auto projectilesPublisher = projectilesPublisher_;
+                base::telemetry::Post("Simulation/FuelProjectilePositions", [projectilesPublisher, projectiles = std::move(projectiles)]
+                                      { projectilesPublisher->Set(projectiles); });
                 base::telemetry::PostDashboardNumber("FieldSimulation/StoredFuelCount", model_.StoredFuel());
                 base::telemetry::PostDashboardNumber("FieldSimulation/HopperFuelCount", hopper.size());
                 base::telemetry::PostDashboardNumber("FieldSimulation/HopperFillRatio", hopper.empty() ? 0 : static_cast<double>(hopper.size()) / FuelModel::HopperCenters(fuelconfig::kSimulationCapacity, input.rackMetres).size());

@@ -17,6 +17,7 @@ namespace season::hardware
     c.driveRatio = 5.8909090909090915;
     c.steerRatio = 12.1;
     c.couplingRatio = 4.909090909090909;
+    c.wheelRadius = .0508;
     c.maxSpeed = 5.24;
     c.maxAngularRate = 7;
     c.driveKP = .15;
@@ -29,6 +30,7 @@ namespace season::hardware
     c.driveCurrent = 55;
     c.slipCurrent = 50;
     c.steerCurrent = 30;
+    c.backend = base::DriveBackend::Phoenix;
     // Replace the yaw MOI estimate when a measured or CAD value is available.
     c.massKg = 53;
     c.moi = 6.883;

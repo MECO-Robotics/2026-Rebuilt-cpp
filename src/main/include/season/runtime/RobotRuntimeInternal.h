@@ -15,10 +15,6 @@ struct RobotRuntime::Simulation : base::RuntimeScene {
   virtual std::optional<frc2::CommandPtr> PracticeMatchCommand() { return std::nullopt; }
   virtual const std::function<void(const base::DriverInputState &, double, double, double, frc::Rotation2d)> *DriveRequestObserver() const { return nullptr; }
   virtual const std::vector<int> *TagIds() const { return nullptr; }
-  virtual void BeforeScheduler() {}
-  virtual void AfterScheduler() {}
-  virtual void BeforeScene() {}
-  virtual void AfterScene() {}
 };
 struct RobotRuntime::State {
   std::shared_ptr<season::FuelMotorLoads> fuelMotorLoads_ = std::make_shared<season::FuelMotorLoads>();

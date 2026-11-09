@@ -19,8 +19,19 @@ namespace season::simulation
     c.simulation.bumperHalfLength = geometry::kLengthMetres / 2;
     c.simulation.bumperHalfWidth = geometry::kWidthMetres / 2;
     c.simulation.bumperWallThickness = fuelconfig::kBumperDepthMetres;
+    c.simulation.bumperCornerRadius = simulationconfig::kBumperCornerRadiusMetres;
+    c.simulation.bumperFriction = simulationconfig::kBumperSurfaceFriction;
+    c.simulation.rollInertia = simulationconfig::kRollInertiaKgMetresSquared;
+    c.simulation.pitchInertia = simulationconfig::kPitchInertiaKgMetresSquared;
+    c.simulation.centerOfMassX = 0;
+    c.simulation.centerOfMassY = 0;
     c.simulation.wheelInertia = .01;
     c.simulation.steerInertia = .01;
+    c.simulation.longitudinalStiffness = simulationconfig::kTireLongitudinalStiffness;
+    c.simulation.lateralStiffness = simulationconfig::kTireLateralStiffness;
+    c.simulation.wheelWidth = simulationconfig::kWheelWidthMetres;
+    c.simulation.contactPatchLength = simulationconfig::kTireContactPatchLengthMetres;
+    c.simulation.contactShearDeflection = simulationconfig::kTireShearDeflectionMetres;
 
     // Bumper envelope uses the season contact geometry; preserve the assumed
     // world center of mass at 0.30 m above the floor.
@@ -39,6 +50,17 @@ namespace season::simulation
 
     // Use the Phoenix FOC motor model and stator torque limit of the simulator.
     const auto motor = frc::DCMotor::KrakenX60FOC(1);
+    const auto motorProfile = [&](double currentLimit)
+    {
+      return base::DriveMotorSimulationConfig{
+          .resistanceOhms = motor.R.value(),
+          .torqueConstantNmPerAmp = motor.Kt.value(),
+          .velocityConstantRadPerSecPerVolt = motor.Kv.value(),
+          .currentLimitAmps = currentLimit,
+          .frictionVoltage = simulationconfig::kMotorFrictionVoltage};
+    };
+    c.simulation.driveMotor = motorProfile(c.slipCurrent);
+    c.simulation.steerMotor = motorProfile(c.steerCurrent);
     return meco::sim::ConfigureDriveTuning(std::move(c), tuning, motor.Kt.value(), .08, .50);
   }
 }
