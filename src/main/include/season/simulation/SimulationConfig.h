@@ -28,10 +28,6 @@ namespace season::simulationconfig
 
 namespace season::fuelconfig
 {
-    // Diameter used by the fuel model. This differs from the shooting trajectory clearance diameter.
-    inline constexpr double kFuelDiameterMetres = 5.5 * .0254;
-    // Inset from the field boundary where returned fuel is placed.
-    inline constexpr double kFieldReturnInsetMetres = .30;
     // Bumper collision volume dimensions relative to the robot and field floor.
     inline constexpr double kBumperHalfWidthMetres = geometry::kWidthMetres / 2, kBumperDepthMetres = .0889,
                             kBumperBottomMetres = .0127, kBumperHalfHeightMetres = .06985;
@@ -46,14 +42,10 @@ namespace season::fuelconfig
     inline constexpr double kMinLaunchPitchDegrees = 45, kMaxLaunchPitchDegrees = 75;
     // Standard deviation applied to simulated launch pitch.
     inline constexpr double kLaunchPitchNoiseDegrees = 1;
-    // Maximum random angular deviation applied when scored fuel returns to the field.
-    inline constexpr double kReturnAngleNoiseDegrees = 45;
     // Fractional standard deviation applied to simulated launch speed.
     inline constexpr double kLaunchSpeedNoiseFraction = .01;
     // Number of simulation update periods a burst reset takes.
     inline constexpr double kBurstResetPeriods = 2;
-    // Upper bound on the elapsed time one fuel-model update may integrate.
-    inline constexpr double kMaxStepSeconds = .25;
     // Time after a scoring event during which the score remains eligible for simulation handling.
     inline constexpr double kScoringGraceSeconds = 3.;
     // Collection contact geometry relative to the robot center.
@@ -67,22 +59,6 @@ namespace season::fuelconfig
     inline constexpr double kLaunchGapSeconds = .05;
     // Random variation applied to the nominal launch spacing.
     inline constexpr double kLaunchGapNoiseSeconds = .015;
-    // Integration interval for advancing individual fuel particles.
-    inline constexpr double kParticleStepSeconds = .005;
-    // Scoring region half-width used by the fuel model; separate from the shooting trajectory hub width.
-    inline constexpr double kHubHalfWidthMetres = .6096;
-    // Distance from the hub at which scored fuel is reintroduced.
-    inline constexpr double kScoredReturnOffsetMetres = .65;
-    // Initial speed assigned to fuel returned after scoring.
-    inline constexpr double kScoredReturnSpeedMps = 3;
-    // Multiplier applied to vertical velocity when fuel bounces from the floor.
-    inline constexpr double kGroundBounceScale = .15;
-    // Rate at which horizontal particle velocity is damped on the floor.
-    inline constexpr double kFloorDampingPerSecond = 2;
-    // Coefficient of restitution for fuel collisions with field surfaces.
-    inline constexpr double kFieldRestitution = .25;
-    // Friction coefficient for fuel particles contacting the robot.
-    inline constexpr double kRobotParticleFriction = .30;
     // Initial fuel placement region bounds and spacing, in metres.
     inline constexpr double kStartingFuelMinX = 7.0, kStartingFuelMaxX = 9.5,
                             kStartingFuelSpacing = .25, kStartingFuelMinY = .75,

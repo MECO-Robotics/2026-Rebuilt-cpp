@@ -16,7 +16,7 @@ This is MECO Robotics' 2026 robot code. It runs on the roboRIO and in a desktop 
    If Gradle can't find Java, set `JAVA_HOME` to the WPILib 2026 JDK first.
 4. Connect a controller in SimGUI. See [practice matches](docs/practice-mode.md) to run a match or [AutoDrive](docs/autodrive-simulation.md) to try autonomous driving.
 
-The pinned dependencies include [MecoBase 2026.2.17-beta.5](vendordeps/MecoBase.json) and [MecoSimulation 2026.0.23-beta.4](vendordeps/MecoSimulation.json). Building and simulating do **not** prove that a physical robot is safe or calibrated. Deploying with `./gradlew deploy` writes to team 8324's roboRIO.
+The pinned dependencies include [MecoBase 2026.2.17-beta.5](vendordeps/MecoBase.json) and [MecoSimulation 2026.0.23-beta.5](vendordeps/MecoSimulation.json). Building and simulating do **not** prove that a physical robot is safe or calibrated. Deploying with `./gradlew deploy` writes to team 8324's roboRIO.
 
 ## Pilot controls
 
@@ -60,7 +60,7 @@ New to the code? Start with the [student editing guide](docs/student-editing-gui
 | Understand the simulated field and fuel | [simulation field](docs/simulation-field.md) |
 | Find a guide | [documentation index](docs/README.md) |
 
-Season code is grouped by purpose under `src/main/cpp/season` and `src/main/include/season`: `drive` contains AutoDrive, offensive planning, and scoring-position selection; `shooting` contains shot calculations; `mechanisms` contains mechanism settings and commands; `RobotGeometry.h` contains robot-wide dimensions and pose helpers; `simulation` contains the season fuel model, robot-specific simulation settings, and field behavior helpers; `runtime` contains season policy and the robot-specific runtime adapter; `hardware` contains platform configuration; and `diagnostics` contains system-check setup. Shared 2026 field dimensions and collision bodies come from MecoSimulation. All headers live under `src/main/include`; the nested `runtime/detail` directory contains implementation-only declarations, while interfaces and configuration are grouped by subsystem. Non-template implementations live in the matching `.cpp` files where practical.
+Season code is grouped by purpose under `src/main/cpp/season` and `src/main/include/season`: `drive` contains AutoDrive, offensive planning, and scoring-position selection; `shooting` contains shot calculations; `mechanisms` contains mechanism settings and commands; `RobotGeometry.h` contains robot-wide dimensions and pose helpers; `simulation` contains the robot-specific FUEL model configuration and adapter, robot-specific simulation settings, and field behavior helpers; `runtime` contains season policy and the robot-specific runtime adapter; `hardware` contains platform configuration; and `diagnostics` contains system-check setup. Shared 2026 field dimensions, collision bodies, and FUEL particle simulation come from MecoSimulation. All headers live under `src/main/include`; the nested `runtime/detail` directory contains implementation-only declarations, while interfaces and configuration are grouped by subsystem. Non-template implementations live in the matching `.cpp` files where practical.
 
 Robot and simulation settings are grouped by subsystem. Mechanism hardware is in `MechanismConfig.h`, behavior settings are in `MechanismBehaviorConfig.h`, and command interfaces are in `Mechanisms.h`; robot dimensions and pose helpers are in `RobotGeometry.h`; drivetrain hardware is in `DriveConfig.h` and driver aiming settings are in `DriveBehaviorConfig.h`; QuestNav and AprilTag camera mounts are in `VisionConfig.h`; object-perception camera settings are in `PerceptionConfig.h`; and loop timing is in `RobotControlConfig.h`. AutoDrive and offensive planning settings live at the top of their API headers, and desktop model assumptions are in `SimulationConfig.h`, `MotorSimulation.h`, and `DriveSimulationConfig.h`.
 
@@ -71,5 +71,5 @@ Robot and simulation settings are grouped by subsystem. Mechanism hardware is in
 [Diagram source](docs/visuals/mermaid/robot-overview.mmd)
 
 - **MecoBase** provides shared robot code such as drive, motor IO, and commands. Its Driver Station match snapshot contains generic inputs (enabled mode, alliance, match time, and the opaque game-specific message); REBUILT shift and HUB rules remain in this repository.
-- **MecoSimulation** provides reusable desktop physics, simulated sensors, and motor IO integration. Season code supplies REBUILT-specific game-piece load torque.
+- **MecoSimulation** provides reusable desktop physics, simulated sensors, motor IO integration, the 2026 field model, and configurable FUEL particle simulation. Season code supplies this robot's mechanism geometry and loads, scoring policy, and simulation presentation.
 - **This project** supplies the 2026 robot's hardware settings, controls, and game behavior. See the [vendordep guides](docs/README.md#vendordep-documentation).
