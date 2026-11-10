@@ -8,7 +8,7 @@
 
 The reusable physics model is documented in [MecoSimulation](https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/docs/jolt-simulation.md).
 
-The desktop simulator builds a simplified REBUILT field around the robot. REBUILT dimensions and collision bodies are season-owned in [FieldGeometry2026.h](../src/main/include/season/simulation/FieldGeometry2026.h); MecoSimulation supplies generic physics and collision helpers. The drive adapter owns the physics world; the season code chooses the starting pose and updates fuel.
+The desktop simulator builds a simplified REBUILT field around the robot. Shared 2026 field dimensions and collision bodies come from [MecoSimulation's `Field2026.h`](https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/adapters/wpilib-2026/include/meco/sim/Field2026.h); this repository supplies robot contact dimensions, the starting pose, and the season fuel model. The drive adapter owns the physics world.
 
 ![Simulation physics, sensors, and fuel data flow](visuals/simulation-data-flow.png)
 
@@ -39,7 +39,7 @@ The fuel model and shooting trajectory checks use different dimensions: the simu
 ## Read the code
 
 - [Scene setup and pose resets](../src/main/cpp/season/simulation/RobotSimulationRuntime.cpp)
-- [REBUILT field geometry](../src/main/include/season/simulation/FieldGeometry2026.h) and [field behavior helpers](../src/main/cpp/season/simulation/SimulationField.cpp)
+- [Shared REBUILT field geometry](https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/adapters/wpilib-2026/include/meco/sim/Field2026.h) and [season field behavior helpers](../src/main/cpp/season/simulation/SimulationField.cpp)
 - [Fuel simulation adapter](../src/main/cpp/season/simulation/FuelSimulation.cpp), [fuel model](../src/main/cpp/season/simulation/FuelModel.cpp), and [model interface](../src/main/include/season/simulation/Simulation.h)
 
 ## Troubleshooting
