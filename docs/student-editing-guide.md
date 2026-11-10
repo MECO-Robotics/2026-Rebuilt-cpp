@@ -88,16 +88,16 @@ Watch `SystemCheck/State`, `Reason`, `Stage`, and `Live/` measurements. Set `Sys
 
 Robot behavior uses sensor observations to make decisions. The desktop simulator supplies simulated observations from its model of the robot and field; it also updates and resets that model. Start with the behavior or settings in the table above when changing what the robot does, and start with the simulation files below when changing a model assumption.
 
-- [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h): fuel behavior, motor model, contact estimates, simulation timing, sensors, battery, and practice settings.
+- [SimulationConfig.h](../src/main/include/season/simulation/SimulationConfig.h): robot-specific FUEL model geometry and feed settings, motor model, contact estimates, simulation timing, sensors, battery, and practice settings. Shared particle behavior is in MecoSimulation's [`FuelModel.h`](https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/adapters/wpilib-2026/include/meco/sim/FuelModel.h).
 - [RobotSimulationRuntime.cpp](../src/main/cpp/season/simulation/RobotSimulationRuntime.cpp): desktop simulation setup, periodic updates, and reset. This is an advanced entry point for connecting simulated devices and the field model.
 - [MotorSimulation.cpp](../src/main/cpp/season/simulation/MotorSimulation.cpp): maps this robot's motor IDs to simulated inertia and FUEL loads. The vendordeps select and construct the correct motor IO; mechanism code requests IO through the shared selector.
 - [Robot.h](../src/main/include/Robot.h) supplies this robot's practice and battery settings to the vendordep lifecycle; [Robot.cpp](../src/main/cpp/Robot.cpp) calls its hooks around the scheduler and simulation updates.
 - [MotorSimulation.h](../src/main/include/season/simulation/MotorSimulation.h): how hard simulated motors and joints are to accelerate.
 - [DriveSimulationConfig.h](../src/main/include/season/simulation/DriveSimulationConfig.h): simulated drivetrain mass, contacts, and controller tuning.
 - [RobotSimulationRuntime.cpp](../src/main/cpp/season/simulation/RobotSimulationRuntime.cpp): simulated object cameras and optional desktop footprint planner.
-- [FuelSimulation.cpp](../src/main/cpp/season/simulation/FuelSimulation.cpp): robot-state inputs, transport motor loads, and simulation telemetry.
-- [FuelModel.cpp](../src/main/cpp/season/simulation/FuelModel.cpp): fuel particle motion, collection, scoring, and model state transitions.
-- [Simulation.h](../src/main/include/season/simulation/Simulation.h): public desktop simulation interfaces, including the fuel and loaded-motor model contracts.
+- [FuelSimulation.cpp](../src/main/cpp/season/simulation/FuelSimulation.cpp): robot-state inputs, FUEL model configuration, transport motor loads, scoring eligibility, and simulation telemetry.
+- [MecoSimulation's FuelModel API](https://github.com/MECO-Robotics/MecoSimulation-cpp/blob/wpilib-2026/adapters/wpilib-2026/include/meco/sim/FuelModel.h): shared fuel motion, collection, launch, and hub-crossing behavior.
+- [Simulation.h](../src/main/include/season/simulation/Simulation.h): season desktop simulation adapter interfaces, including the fuel model and loaded-motor integration.
 
 Simulation controller gains use the single `kSimulationTuning` setting in [RobotPlatform.h](../src/main/include/season/hardware/RobotPlatform.h). `Automatic` derives drive gains and accounts for the current gravity-free simulated joint plants; `Configured` uses the robot's configured gains in simulation. Simulation physics properties remain active with either choice.
 

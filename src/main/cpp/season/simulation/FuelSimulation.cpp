@@ -4,7 +4,7 @@
 #include "season/runtime/SeasonPolicy.h"
 #include "season/RobotGeometry.h"
 #include "season/mechanisms/Mechanisms.h"
-#include "meco/sim/ParticleFieldContacts.h"
+#include "season/shooting/Shooting.h"
 #include <base/TelemetryPublishers.h>
 #include <networktables/NetworkTableInstance.h>
 #include <frc/DriverStation.h>
@@ -40,8 +40,59 @@ namespace season
                         }
                         return values;
                 }
+
+                meco::sim::FuelModelConfig SeasonFuelModelConfig()
+                {
+                        meco::sim::FuelModelConfig config;
+                        auto &robot = config.robot;
+                        constexpr double radiansPerDegree = kPi / 180;
+                        constexpr double half = fuelconfig::kBumperHalfWidthMetres;
+                        constexpr double depth = fuelconfig::kBumperDepthMetres;
+                        constexpr double bottom = fuelconfig::kBumperBottomMetres;
+                        constexpr double top = bottom + 2 * fuelconfig::kBumperHalfHeightMetres;
+                        for (int side = 0; side < 4; ++side)
+                        {
+                                const bool alongX = side < 2;
+                                const double sign = side % 2 ? 1 : -1;
+                                robot.bumperBoxes.push_back(
+                                    {{alongX ? sign * (half - depth / 2) : 0,
+                                      alongX ? 0 : sign * (half - depth / 2), (bottom + top) / 2},
+                                     {alongX ? depth / 2 : half, alongX ? half : depth / 2,
+                                      (top - bottom) / 2}});
+                        }
+                        robot.capacity = fuelconfig::kSimulationCapacity;
+                        robot.burstSize = fuelconfig::kSimulationBurstSize;
+                        robot.hopperFloorMetres = fuelconfig::kHopperFloorMetres;
+                        robot.hopperCeilingMetres = fuelconfig::kHopperCeilingMetres;
+                        robot.hopperBackMetres = fuelconfig::kHopperBackMetres;
+                        robot.hopperHalfWidthMetres = fuelconfig::kHopperHalfWidthMetres;
+                        robot.hopperExtensionScale = kRackAngleCos;
+                        robot.burstLateralCenter = fuelconfig::kBurstLateralCenter;
+                        robot.burstLateralSpacingMetres = fuelconfig::kBurstLateralSpacingMetres;
+                        robot.minHoodDeflectionRadians = fuelconfig::kMinHoodDeflectionDegrees * radiansPerDegree;
+                        robot.maxHoodDeflectionRadians = fuelconfig::kMaxHoodDeflectionDegrees * radiansPerDegree;
+                        robot.shooterRestDeflectionRadians = kShooterRestDeflectionDegrees * radiansPerDegree;
+                        robot.minLaunchPitchRadians = fuelconfig::kMinLaunchPitchDegrees * radiansPerDegree;
+                        robot.maxLaunchPitchRadians = fuelconfig::kMaxLaunchPitchDegrees * radiansPerDegree;
+                        robot.launchPitchNoiseRadians = fuelconfig::kLaunchPitchNoiseDegrees * radiansPerDegree;
+                        robot.launchSpeedNoiseFraction = fuelconfig::kLaunchSpeedNoiseFraction;
+                        robot.shooterExitXMetres = kShooterExitXMetres;
+                        robot.releaseHeightMetres = kReleaseHeight;
+                        robot.projectileSpeedPerFlywheelRps = kProjectileSpeedPerRps;
+                        robot.collectionMinExtensionMetres = fuelconfig::kCollectionMinRackMetres;
+                        robot.collectionMouthXMetres = fuelconfig::kCollectionMouthXMetres;
+                        robot.collectionMouthDepthMetres = fuelconfig::kCollectionMouthDepthMetres;
+                        robot.collectionHalfWidthMetres = fuelconfig::kCollectionHalfWidthMetres;
+                        robot.minFeedFlywheelRps = fuelconfig::kMinFeedFlywheelRps;
+                        robot.burstResetPeriods = fuelconfig::kBurstResetPeriods;
+                        robot.minLaunchGapSeconds = fuelconfig::kMinLaunchGapSeconds;
+                        robot.launchGapSeconds = fuelconfig::kLaunchGapSeconds;
+                        robot.launchGapNoiseSeconds = fuelconfig::kLaunchGapNoiseSeconds;
+                        robot.burstPeriodSeconds = fuelconfig::kSimulationBurstPeriodSeconds;
+                        return config;
+                }
         }
-        FuelSimulation::FuelSimulation(Mechanisms mechanisms, base::Drive &drive, std::shared_ptr<FuelMotorLoads> loads) : mechanisms_(mechanisms), drive_(drive), loads_(std::move(loads))
+        FuelSimulation::FuelSimulation(Mechanisms mechanisms, base::Drive &drive, std::shared_ptr<FuelMotorLoads> loads) : mechanisms_(mechanisms), drive_(drive), model_(simulation::runtimeconfig::kFuelRandomSeed, SeasonFuelModelConfig()), loads_(std::move(loads))
         {
                 auto nt = nt::NetworkTableInstance::GetDefault();
                 robotPosePublisher_ = std::make_shared<nt::StructPublisher<frc::Pose3d>>(
@@ -59,6 +110,9 @@ namespace season
         void FuelSimulation::Reset()
         {
                 model_.Reset();
+                modelTime_ = 0;
+                lastHubActive_.reset();
+                scoringGraceUntil_.reset();
                 shooterLoadRemaining_ = 0;
                 loadRandom_.seed(simulation::runtimeconfig::kFuelRandomSeed);
                 if (loads_)
@@ -66,7 +120,7 @@ namespace season
                 // Deterministic neutral-zone grid, rather than claiming official Maple arena placement.
                 for (double x = fuelconfig::kStartingFuelMinX; x <= fuelconfig::kStartingFuelMaxX; x += fuelconfig::kStartingFuelSpacing)
                         for (double y = fuelconfig::kStartingFuelMinY; y <= fuelconfig::kStartingFuelMaxY; y += fuelconfig::kStartingFuelSpacing)
-                                model_.AddFloorFuel({units::meter_t{x}, units::meter_t{y}});
+                                model_.AddFloorFuel({x, y, 0});
         }
         void FuelSimulation::Periodic(double dt, std::optional<FuelRobotState> physics, std::optional<bool> hubActive,
                                       std::optional<frc::DriverStation::Alliance> alliance)
@@ -74,18 +128,38 @@ namespace season
                 auto pose = drive_.Pose();
                 auto speed = drive_.Speeds();
                 double heading = pose.Rotation().Radians().value(), c = std::cos(heading), s = std::sin(heading);
-                FuelInputs input;
-                input.robot = pose;
-                input.vx = speed.vx.value() * c - speed.vy.value() * s;
-                input.vy = speed.vx.value() * s + speed.vy.value() * c;
-                input.omega = speed.omega.value();
-                input.rackMetres = mechanisms_.rack.Position();
+                meco::sim::FuelModelInput input;
+                input.robot = physics.value_or(FuelRobotState{
+                    frc::Pose3d{pose},
+                    {speed.vx.value() * c - speed.vy.value() * s,
+                     speed.vx.value() * s + speed.vy.value() * c, 0},
+                    {0, 0, speed.omega.value()}, {}});
+                input.intakeExtensionMetres = mechanisms_.rack.Position();
                 input.hoodRotations = mechanisms_.hood.Position();
                 input.flywheelRps = mechanisms_.shooter.Velocity();
                 input.collecting = mechanisms_.intake.Inputs().voltage < -simulationconfig::kSimTransportVoltageThreshold && mechanisms_.conveyor.Inputs().voltage > simulationconfig::kSimTransportVoltageThreshold && mechanisms_.intake.Velocity() < 0 && mechanisms_.conveyor.Velocity() > 0;
                 input.feeding = simulation::TransportFeeding(mechanisms_);
-                input.physics = physics;
-                input.hubActive = hubActive;
+                input.redAlliance = alliance.value_or(frc::DriverStation::Alliance::kBlue) ==
+                                    frc::DriverStation::Alliance::kRed;
+                if (std::isfinite(dt) && dt > 0 && dt <= model_.Config().game.maxStepSeconds)
+                {
+                        modelTime_ += dt;
+                        if (!hubActive)
+                        {
+                                lastHubActive_.reset();
+                                scoringGraceUntil_.reset();
+                        }
+                        else
+                        {
+                                if (!*hubActive && lastHubActive_.value_or(false))
+                                        scoringGraceUntil_ = modelTime_ + fuelconfig::kScoringGraceSeconds;
+                                if (*hubActive)
+                                        scoringGraceUntil_.reset();
+                                lastHubActive_ = hubActive;
+                        }
+                        input.scoringEligible = hubActive &&
+                                                (*hubActive || (scoringGraceUntil_ && modelTime_ <= *scoringGraceUntil_));
+                }
                 base::telemetry::PostDashboardBoolean("FieldSimulation/Feeding", input.feeding);
                 base::telemetry::PostDashboardNumber("FieldSimulation/BottomIndexerVolts", mechanisms_.bottomIndexer.Inputs().voltage);
                 base::telemetry::PostDashboardNumber("FieldSimulation/TopIndexerVolts", mechanisms_.topIndexer.Inputs().voltage);
@@ -94,7 +168,6 @@ namespace season
                 base::telemetry::PostDashboardNumber("FieldSimulation/ConveyorCurrentAmps", mechanisms_.conveyor.Inputs().current);
                 base::telemetry::PostDashboardNumber("FieldSimulation/BottomIndexerCurrentAmps", mechanisms_.bottomIndexer.Inputs().current);
                 base::telemetry::PostDashboardNumber("FieldSimulation/TopIndexerCurrentAmps", mechanisms_.topIndexer.Inputs().current);
-                input.alliance = alliance.value_or(frc::DriverStation::Alliance::kBlue);
                 const double fill = static_cast<double>(model_.StoredFuel()) / fuelconfig::kSimulationCapacity;
                 const bool fuelInTransport = (input.feeding || input.collecting) && fill > 0;
                 const int priorLaunches = model_.LaunchedFuel();
@@ -112,15 +185,15 @@ namespace season
                         const double load = fuelInTransport ? fuelconfig::kTransportBaseLoad + fuelconfig::kTransportFillLoad * fill : 0.;
                         loads_->torque = {fuelconfig::kConveyorLoadTorque * load * noise(), fuelconfig::kIndexerLoadTorque * load * noise(), fuelconfig::kIndexerLoadTorque * load * noise(), shooterLoadRemaining_ > 0 ? fuelconfig::kShooterLoadTorque * noise() : 0.};
                 }
-                const auto robotPose = input.physics ? input.physics->pose : frc::Pose3d{input.robot};
+                const auto robotPose = input.robot.pose;
                 auto robotPublisher = robotPosePublisher_;
                 base::telemetry::Post("Simulation/RobotPose", [robotPublisher, robotPose]
                                       { robotPublisher->Set(robotPose); });
                 auto componentsPublisher = componentsPublisher_;
-                auto components = RemyComponentPoses(input.rackMetres, input.hoodRotations, mechanisms_.shooter.Position());
+                auto components = RemyComponentPoses(input.intakeExtensionMetres, input.hoodRotations, mechanisms_.shooter.Position());
                 base::telemetry::Post("Simulation/RobotComponents", [componentsPublisher, components = std::move(components)]
                                       { componentsPublisher->Set(components); });
-                auto hopper = FuelModel::HopperCenters3d(model_.StoredFuel(), input.rackMetres, robotPose);
+                auto hopper = model_.HopperCenters(model_.StoredFuel(), input.intakeExtensionMetres, robotPose);
                 std::vector<frc::Pose3d> fuel, hopperPoses, projectiles;
                 fuel.reserve(model_.FloorFuel().size() + hopper.size());
                 hopperPoses.reserve(hopper.size());
@@ -145,7 +218,7 @@ namespace season
                                       { projectilesPublisher->Set(projectiles); });
                 base::telemetry::PostDashboardNumber("FieldSimulation/StoredFuelCount", model_.StoredFuel());
                 base::telemetry::PostDashboardNumber("FieldSimulation/HopperFuelCount", hopper.size());
-                base::telemetry::PostDashboardNumber("FieldSimulation/HopperFillRatio", hopper.empty() ? 0 : static_cast<double>(hopper.size()) / FuelModel::HopperCenters(fuelconfig::kSimulationCapacity, input.rackMetres).size());
+                base::telemetry::PostDashboardNumber("FieldSimulation/HopperFillRatio", hopper.empty() ? 0 : static_cast<double>(hopper.size()) / model_.HopperCenters(fuelconfig::kSimulationCapacity, input.intakeExtensionMetres, robotPose).size());
                 auto fuelPositions = Positions(model_.FloorFuel());
                 const auto hopperPositions = Positions(hopper);
                 fuelPositions.insert(fuelPositions.end(), hopperPositions.begin(), hopperPositions.end());

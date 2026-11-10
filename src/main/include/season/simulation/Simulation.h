@@ -1,6 +1,6 @@
 #pragma once
 #ifndef __FRC_ROBORIO__
-#include "meco/sim/ParticleContacts.h"
+#include "meco/sim/FuelModel.h"
 #include "season/mechanisms/Mechanisms.h"
 #include "season/simulation/SimulationConfig.h"
 #include "season/simulation/MotorSimulation.h"
@@ -25,51 +25,7 @@ namespace season
   using FuelPoint = meco::sim::ParticlePoint;
   using FuelParticle = meco::sim::Particle;
   using FuelRobotState = meco::sim::ContactBody;
-  struct FuelInputs
-  {
-    frc::Pose2d robot;
-    // Field relative chassis velocity, including launch inheritance.
-    double vx{}, vy{}, omega{}, rackMetres{}, hoodRotations{}, flywheelRps{};
-    bool collecting = false, feeding = false;
-    // Scoring depends on hub state at the moment fuel crosses the opening.
-    // A missing state cannot establish that a crossing earned points.
-    std::optional<bool> hubActive{true};
-    frc::DriverStation::Alliance alliance = frc::DriverStation::Alliance::kBlue;
-    std::optional<FuelRobotState> physics;
-  };
-  // Gravity-driven balls with estimated bumper and equal-mass fuel contacts.
-  // Robot motion is prescribed (no fuel reaction force on the drivetrain).
-  // Field contacts are approximate; drag and spin forces are omitted.
-  // Seeded launch randomness is repeatable.
-  class FuelModel
-  {
-  public:
-    explicit FuelModel(unsigned seed = simulation::runtimeconfig::kFuelRandomSeed);
-    void Reset();
-    void Step(double dt, const FuelInputs &input);
-    void AddFloorFuel(frc::Translation2d point);
-    void SetStoredFuel(int count);
-    int StoredFuel() const { return stored_; }
-    int SuccessfulScores() const { return scored_; }
-    int LaunchedFuel() const { return launched_; }
-    int PendingBurstShots() const { return pending_; }
-    const std::vector<FuelParticle> &FloorFuel() const { return floor_; }
-    const std::vector<FuelParticle> &Projectiles() const { return airborne_; }
-    static std::vector<FuelPoint> HopperCenters(int count, double extension, frc::Pose2d robot = {});
-    static std::vector<FuelPoint> HopperCenters3d(int count, double extension, const frc::Pose3d &robot);
-    static double LaunchPitch(double hoodRotations);
-
-  private:
-    void Launch(const FuelInputs &input, int index);
-    double Random(double amplitude);
-    unsigned seed_;
-    std::mt19937 random_;
-    std::vector<FuelParticle> floor_, airborne_;
-    int stored_ = 0, scored_ = 0, launched_ = 0, pending_ = 0, burstIndex_ = 0;
-    double time_ = 0, lastBurst_ = -1e9, nextShot_ = -1e9;
-    std::optional<bool> lastHubActive_;
-    std::optional<double> scoringGraceUntil_;
-  };
+  using FuelModel = meco::sim::FuelModel;
   // Call only from Robot::SimulationPeriodic. Actuator voltages select collection
   // and feeding, so command cancellation immediately stops simulated launching.
   class FuelSimulation
@@ -88,6 +44,9 @@ namespace season
     FuelModel model_;
     std::shared_ptr<FuelMotorLoads> loads_;
     double shooterLoadRemaining_{};
+    double modelTime_{};
+    std::optional<bool> lastHubActive_;
+    std::optional<double> scoringGraceUntil_;
     std::mt19937 loadRandom_{simulation::runtimeconfig::kFuelRandomSeed};
     std::shared_ptr<nt::StructPublisher<frc::Pose3d>> robotPosePublisher_;
     std::shared_ptr<nt::StructArrayPublisher<frc::Pose3d>> componentsPublisher_;

@@ -24,7 +24,6 @@
 #include <frc2/command/Commands.h>
 #include <stdexcept>
 
-namespace season { class FuelModel; }
 namespace season::simulation {
 // Owns desktop-only camera models and optional simulation navigation policy.
 class AutoDriveSimulation final : public AutoDriveEnvironment {
