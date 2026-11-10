@@ -19,18 +19,19 @@ namespace season
     // Ramp dimensions from the field geometry, in inches.
     inline constexpr double kRampLengthInches = 44.4, kRampWidthInches = 73.;
     // Convert depot depth to metres for field-coordinate comparisons.
-    inline constexpr double kDepotDepthMetres = kDepotDepthInches * .0254;
+    inline constexpr double kDepotDepthMetres = kDepotDepthInches * kMetresPerInch;
     // Half the depot width converted to metres for side-boundary checks.
-    inline constexpr double kDepotHalfWidthMetres = kDepotWidthInches * .0254 / 2;
+    inline constexpr double kDepotHalfWidthMetres = kDepotWidthInches * kMetresPerInch / 2;
     // Distance from the robot centre to a footprint corner, in metres.
     inline const double kRobotCornerRadiusMetres = std::hypot(geometry::kLengthMetres / 2, geometry::kWidthMetres / 2);
     // Expanded footprint radius used to keep the robot clear of ramp edges, in metres.
     inline const double kRampRobotRadiusMetres = kRobotCornerRadiusMetres + kRampRobotMarginMetres;
     // Half ramp dimensions converted to metres for centre-based geometry checks.
-    inline constexpr double kRampHalfLengthMetres = kRampLengthInches * .0254 / 2,
-                           kRampHalfWidthMetres = kRampWidthInches * .0254 / 2;
+    inline constexpr double kRampHalfLengthMetres = kRampLengthInches * kMetresPerInch / 2,
+                           kRampHalfWidthMetres = kRampWidthInches * kMetresPerInch / 2;
     // Centre offset from the hub to the bump/ramp centreline, in metres.
-    inline constexpr double kBumpCentreOffsetMetres = (season::kHubWidthInches + kRampWidthInches) * .0254 / 2;
+    inline constexpr double kBumpCentreOffsetMetres =
+        (season::kHubWidthInches + kRampWidthInches) * kMetresPerInch / 2;
     // Extra inset from field scoring boundaries required for a valid position, in metres.
     inline constexpr double kScoringBoundaryMarginMetres = .15;
   }

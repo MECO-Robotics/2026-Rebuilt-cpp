@@ -1,4 +1,5 @@
 #pragma once
+#include "season/RobotControlConfig.h"
 #include "season/RobotGeometry.h"
 #ifndef __FRC_ROBORIO__
 #include "base/sim/RobotContactConfig.h"
@@ -8,9 +9,9 @@
 namespace season::simulationconfig
 {
   // Estimated geometry and motor-model parameters for the simulated robot.
-  inline constexpr double kBumperCornerRadiusMetres = .0381;
+  inline constexpr double kBumperCornerRadiusMetres = 1.5 * season::kMetresPerInch;
   inline constexpr double kBumperSurfaceFriction = .65;
-  inline constexpr double kWheelWidthMetres = .0508;
+  inline constexpr double kWheelWidthMetres = 2.0 * season::kMetresPerInch;
   inline constexpr double kTireContactPatchLengthMetres = .020;
   inline constexpr double kTireShearDeflectionMetres = .001;
   inline constexpr double kMotorFrictionVoltage = .1;
@@ -29,8 +30,10 @@ namespace season::simulationconfig
 namespace season::fuelconfig
 {
     // Bumper collision volume dimensions relative to the robot and field floor.
-    inline constexpr double kBumperHalfWidthMetres = geometry::kWidthMetres / 2, kBumperDepthMetres = .0889,
-                            kBumperBottomMetres = .0127, kBumperHalfHeightMetres = .06985;
+    inline constexpr double kBumperHalfWidthMetres = geometry::kWidthMetres / 2,
+                            kBumperDepthMetres = 3.5 * season::kMetresPerInch,
+                            kBumperBottomMetres = .5 * season::kMetresPerInch,
+                            kBumperHalfHeightMetres = 2.75 * season::kMetresPerInch;
     // Bounds on hood deflection accepted by the simulated shooter.
     inline constexpr double kMinHoodDeflectionDegrees = 15, kMaxHoodDeflectionDegrees = 45;
     // Hopper interior boundaries relative to the robot reference frame.
@@ -117,7 +120,7 @@ namespace season::simulation::runtimeconfig
   // Seed for repeatable randomized fuel simulation behavior.
   inline constexpr unsigned kFuelRandomSeed = 3737;
   // Period used by the desktop robot simulation scheduler.
-  inline constexpr double kSimulationPeriodSeconds = .02;
+  inline constexpr double kSimulationPeriodSeconds = 1.0 / hardware::kRobotControlFrequencyHz;
   // Horizontal and vertical field of view modeled for the simulated Limelight.
   inline constexpr double kLimelightHorizontalFovDegrees = 62.5, kLimelightVerticalFovDegrees = 48.9;
   // Horizontal and vertical field of view modeled for simulated QuestNav tag detection.
@@ -158,18 +161,16 @@ namespace season::simulation
 {
   inline base::sim::RobotContactConfig RobotContacts()
   {
-    // Conversion factor used to express the robot-contact estimates in metres.
-    constexpr double inchesToMetres = .0254;
     base::sim::RobotContactConfig c;
     // Unmeasured construction/material estimates: replace with loaded measurements.
-    c.chassisClearance = 2.0 * inchesToMetres;
-    c.panThickness = .125 * inchesToMetres;
-    c.panHalfLength = geometry::kLengthMetres / 2 - 3.5 * inchesToMetres;
-    c.panHalfWidth = geometry::kWidthMetres / 2 - 3.5 * inchesToMetres;
-    c.bumperFloorGap = .5 * inchesToMetres; // User-confirmed flush foam/plywood floor gap.
-    c.noodleDiameter = 2.75 * inchesToMetres;
-    c.backingThickness = .75 * inchesToMetres;
-    c.backingHeight = 5.0 * inchesToMetres;
+    c.chassisClearance = 2.0 * kMetresPerInch;
+    c.panThickness = .125 * kMetresPerInch;
+    c.panHalfLength = geometry::kLengthMetres / 2 - 3.5 * kMetresPerInch;
+    c.panHalfWidth = geometry::kWidthMetres / 2 - 3.5 * kMetresPerInch;
+    c.bumperFloorGap = .5 * kMetresPerInch; // User-confirmed flush foam/plywood floor gap.
+    c.noodleDiameter = 2.75 * kMetresPerInch;
+    c.backingThickness = .75 * kMetresPerInch;
+    c.backingHeight = 5.0 * kMetresPerInch;
     c.backingFloorGap = c.bumperFloorGap; // Selected flush plywood bottom is rigid.
     c.compressionStrain = {0, .25, .5, .7, .8};
     c.compressionStressPa = {0, 10000, 35000, 100000, 250000};

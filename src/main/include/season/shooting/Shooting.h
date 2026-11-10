@@ -6,6 +6,7 @@
 #include <frc/geometry/Translation2d.h>
 #include <frc/geometry/Pose2d.h>
 #include <frc/kinematics/ChassisSpeeds.h>
+#include "season/RobotGeometry.h"
 
 namespace season
 {
@@ -59,17 +60,17 @@ namespace season
   // Hub opening height used by desktop ballistic aiming and the simulated fuel-scoring plane.
   inline constexpr double kHubOpeningHeightInches = 72;
   // Half the hub width converted to meters for clearance calculations.
-  inline constexpr double kHubHalfWidthMetres = kHubWidthInches * .0254 / 2;
+  inline constexpr double kHubHalfWidthMetres = kHubWidthInches * kMetresPerInch / 2;
   // Fuel radius converted to meters for trajectory clearance calculations.
-  inline constexpr double kFuelRadiusMetres = kFuelDiameterInches * .0254 / 2;
+  inline constexpr double kFuelRadiusMetres = kFuelDiameterInches * kMetresPerInch / 2;
   // Radius around the hub that a candidate shot trajectory must clear.
   inline const double kHubAvoidanceRadiusMetres = std::hypot(kHubHalfWidthMetres, kHubHalfWidthMetres) +
       kFuelRadiusMetres + kHubClearanceMetres + kShotSafetyMarginMetres;
   // Minimum projectile-center height needed to clear the trench and margin.
-  inline constexpr double kTrenchClearanceHeightMetres = kTrenchHeightInches * .0254 +
+  inline constexpr double kTrenchClearanceHeightMetres = kTrenchHeightInches * kMetresPerInch +
       kFuelRadiusMetres + kShotSafetyMarginMetres;
   // Hub opening height converted to meters for trajectory checks.
-  inline constexpr double kHubOpeningHeightMetres = kHubOpeningHeightInches * .0254;
+  inline constexpr double kHubOpeningHeightMetres = kHubOpeningHeightInches * kMetresPerInch;
   // Candidate hood positions evaluated when calculating a ferry shot.
   inline constexpr int kFerryHoodSearchSteps = 50;
   // Pitch margin and launch-speed scale used for conservative trajectory clearance checks.
@@ -79,7 +80,7 @@ namespace season
   // Projectile release height above the floor in meters.
   inline constexpr double kReleaseHeight = .45;
   // Main-wheel surface speed in meters per second per wheel rotation/second.
-  inline constexpr double kMainWheelSpeedPerRps = 4 * kPi * .0254;
+  inline constexpr double kMainWheelSpeedPerRps = 4 * kPi * kMetresPerInch;
   // Counter-wheel surface speed / main-wheel surface speed (gearing and diameters).
   inline constexpr double kCounterWheelSurfaceSpeedRatio = (48.0 / 54) * (1.5 / 4);
   // Unequal contact speeds create backspin and reduce translational exit speed.
@@ -95,8 +96,8 @@ namespace season
   // Calibration distances paired by index with hood and flywheel tables.
   inline constexpr std::array<double, 8> kDistanceInches{46.003, 123.24, 144.60, 153.64, 191.86, 202.78, 210.47, 236};
   // Shot validity uses the first and last calibrated distances, converted to metres.
-  inline constexpr double kMinDistance = kDistanceInches.front() * .0254;
-  inline constexpr double kMaxDistance = kDistanceInches.back() * .0254;
+  inline constexpr double kMinDistance = kDistanceInches.front() * kMetresPerInch;
+  inline constexpr double kMaxDistance = kDistanceInches.back() * kMetresPerInch;
   // Hood output-rotation targets paired with calibration distances.
   inline constexpr std::array<double, 8> kHoodTable{0, .019, .020, .020, .020, .020, .020, .049};
   // Table entries are wheel-RPS targets, not ball speeds; do not scale them again.

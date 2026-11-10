@@ -1,5 +1,6 @@
 #pragma once
 #include "season/mechanisms/MechanismConfig.h"
+#include "season/RobotGeometry.h"
 #include <array>
 #include <memory>
 
@@ -10,8 +11,11 @@ struct FuelMotorLoads { std::array<double, 4> torque{}; };
 namespace season::simulation {
   // Inertia-only plants use output inertias in kg m².
   inline constexpr double kTransportRollerInertia = .0002;
-  inline constexpr double kShooterInertia = 24 * .45359237 * .0254 * .0254;
-  inline constexpr double kRackInertia = 15 * .45359237 * .0127 * .0127;
+  // Point-mass estimates: 24 lb at 1 in for the shooter and 15 lb at 0.5 in for the rack.
+  inline constexpr double kShooterInertia = 24 * season::kKilogramsPerPound *
+                                             season::kMetresPerInch * season::kMetresPerInch;
+  inline constexpr double kRackInertia = 15 * season::kKilogramsPerPound *
+                                          .5 * season::kMetresPerInch * .5 * season::kMetresPerInch;
   inline constexpr double kHoodInertia = .01;
 
   inline double MotorInertia(hardware::MotorRole role)

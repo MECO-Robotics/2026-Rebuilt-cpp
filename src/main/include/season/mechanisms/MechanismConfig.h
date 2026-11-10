@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/Mechanism.h"
+#include "season/RobotGeometry.h"
 #include "season/shooting/Shooting.h"
 #include <units/voltage.h>
 
@@ -116,7 +117,7 @@ namespace season::hardware
   // Hood motor rotations per hood output rotation.
   inline constexpr double kHoodGearRatio = 105;
   // Rack motor rotations per metre of linear extension.
-  inline constexpr double kRackGearRatio = 9 / (season::kPi * .0254);
+  inline constexpr double kRackGearRatio = 9 / (season::kPi * season::kMetresPerInch);
   // Radius in metres of the rack drum that converts rotation to extension.
-  inline constexpr double kRackDrumRadius = .5 * .0254;
+  inline constexpr double kRackDrumRadius = .5 * season::kMetresPerInch;
 }

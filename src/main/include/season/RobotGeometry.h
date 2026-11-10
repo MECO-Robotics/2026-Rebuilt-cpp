@@ -7,6 +7,10 @@
 
 namespace season
 {
+  // Exact SI conversion for dimensions specified in inches.
+  inline constexpr double kMetresPerInch = .0254;
+  // Exact SI conversion for masses specified in pounds.
+  inline constexpr double kKilogramsPerPound = .45359237;
   // Fixed intake-rack slope relative to horizontal, used to resolve its extension vector.
   inline constexpr double kRackAngleRadians = 7.5 * std::numbers::pi / 180;
   // Cosine of the rack slope, giving the horizontal displacement per metre of extension.

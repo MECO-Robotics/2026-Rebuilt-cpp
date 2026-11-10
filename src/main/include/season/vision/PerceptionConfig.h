@@ -1,9 +1,12 @@
 #pragma once
+#include "season/RobotGeometry.h"
 
 namespace season::vision::config
 {
+  inline constexpr double kCameraForwardOffsetInches = 17.0;
+  inline constexpr double kCameraHeightInches = 21.25;
   // Object-detection camera subscription cadence.
-  inline constexpr double kObjectDetectionPeriodSeconds = .005;
+  inline constexpr double kObjectDetectionPeriodSeconds = 1.0 / 200.0;
 
   // Camera positions are metres and angles are degrees: robot +X is forward,
   // +Y left, and +Z up. The front mount is relative to the moving hopper;
@@ -15,10 +18,12 @@ namespace season::vision::config
     double rollDegrees, pitchDegrees, yawDegrees;
   };
   inline constexpr CameraMount kFrontCamera{
-      .xMetres = .43, .yMetres = 0, .zMetres = .54,
+      .xMetres = kCameraForwardOffsetInches * season::kMetresPerInch, .yMetres = 0,
+      .zMetres = kCameraHeightInches * season::kMetresPerInch,
       .rollDegrees = 0, .pitchDegrees = 15, .yawDegrees = 0};
   inline constexpr CameraMount kRearCamera{
-      .xMetres = -.43, .yMetres = 0, .zMetres = .54,
+      .xMetres = -kCameraForwardOffsetInches * season::kMetresPerInch, .yMetres = 0,
+      .zMetres = kCameraHeightInches * season::kMetresPerInch,
       .rollDegrees = 0, .pitchDegrees = 15, .yawDegrees = 180};
 
   // Distance within which observations are combined into an object cluster.

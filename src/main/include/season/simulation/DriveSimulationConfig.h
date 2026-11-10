@@ -10,12 +10,25 @@
 
 namespace season::simulation
 {
+  namespace driveconfig
+  {
+    // Desktop plant estimates and assumed center-of-mass height.
+    inline constexpr double kRobotMassKg = 67.6;
+    inline constexpr double kWheelCoefficientOfFriction = 2.1;
+    inline constexpr double kWheelInertiaKgMetresSquared = .01;
+    inline constexpr double kSteerInertiaKgMetresSquared = .01;
+    inline constexpr double kCenterOfMassHeightMetres = .30;
+    // Error scales used by automatic drive controller tuning.
+    inline constexpr double kTranslationErrorScaleMetres = .08;
+    inline constexpr double kHeadingErrorScaleRadians = .50;
+  }
+
   // Apply the desktop plant and controller assumptions before constructing Drive.
   inline base::DriveConfig ConfigureDrive(base::DriveConfig c, base::SimulationTuning tuning)
   {
     // Ready-to-drive robot, bumpers, and battery. The real robot keeps its own values.
-    c.massKg = 67.6;
-    c.cof = 2.1;
+    c.massKg = driveconfig::kRobotMassKg;
+    c.cof = driveconfig::kWheelCoefficientOfFriction;
     c.simulation.bumperHalfLength = geometry::kLengthMetres / 2;
     c.simulation.bumperHalfWidth = geometry::kWidthMetres / 2;
     c.simulation.bumperWallThickness = fuelconfig::kBumperDepthMetres;
@@ -25,8 +38,8 @@ namespace season::simulation
     c.simulation.pitchInertia = simulationconfig::kPitchInertiaKgMetresSquared;
     c.simulation.centerOfMassX = 0;
     c.simulation.centerOfMassY = 0;
-    c.simulation.wheelInertia = .01;
-    c.simulation.steerInertia = .01;
+    c.simulation.wheelInertia = driveconfig::kWheelInertiaKgMetresSquared;
+    c.simulation.steerInertia = driveconfig::kSteerInertiaKgMetresSquared;
     c.simulation.longitudinalStiffness = simulationconfig::kTireLongitudinalStiffness;
     c.simulation.lateralStiffness = simulationconfig::kTireLateralStiffness;
     c.simulation.wheelWidth = simulationconfig::kWheelWidthMetres;
@@ -38,7 +51,7 @@ namespace season::simulation
     const auto contact = RobotContacts();
     c.simulation.bumperHalfHeight = contact.noodleDiameter;
     c.simulation.rideHeight = contact.bumperFloorGap + c.simulation.bumperHalfHeight;
-    c.simulation.centerOfMassZ = .30 - c.simulation.rideHeight;
+    c.simulation.centerOfMassZ = driveconfig::kCenterOfMassHeightMetres - c.simulation.rideHeight;
 
     // Rotor and encoder mounting axes are independent of electrical inversion.
     using Orientation = base::SimulationDeviceOrientation;
@@ -61,7 +74,9 @@ namespace season::simulation
     };
     c.simulation.driveMotor = motorProfile(c.slipCurrent);
     c.simulation.steerMotor = motorProfile(c.steerCurrent);
-    return meco::sim::ConfigureDriveTuning(std::move(c), tuning, motor.Kt.value(), .08, .50);
+    return meco::sim::ConfigureDriveTuning(std::move(c), tuning, motor.Kt.value(),
+                                            driveconfig::kTranslationErrorScaleMetres,
+                                            driveconfig::kHeadingErrorScaleRadians);
   }
 }
 #endif
