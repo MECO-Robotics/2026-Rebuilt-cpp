@@ -67,7 +67,7 @@ std::optional<frc2::CommandPtr> AutoDriveSimulation::NavigationCommand(
     base::FootprintAutoDriveConfig config;
     const bool avoidBumps = frc::SmartDashboard::GetBoolean("AutoDrive/AvoidBumpsSim", false);
     config.footprint = {autodriveconfig::kFootprintLengthMetres, autodriveconfig::kFootprintWidthMetres};
-    config.field = {0, 0, simulation::kFieldLength, simulation::kFieldWidth};
+    config.field = {0, 0, meco::sim::field2026::kFieldLength, meco::sim::field2026::kFieldWidth};
     if (frc::SmartDashboard::GetBoolean("AutoDrive/FollowFuel", false) ||
         frc::SmartDashboard::GetBoolean("AutoDrive/TrackTargetSim", false))
       config.targetTranslationReplanThreshold = season::autodriveconfig::kTargetReplanDistanceMetres;
@@ -95,7 +95,7 @@ std::optional<frc2::CommandPtr> AutoDriveSimulation::NavigationCommand(
       std::vector<base::FieldRectangle> boxes;
       if (fieldColliders)
         for (const auto &rectangle : meco::sim::ColliderRectangles(
-                 simulation::FieldColliders(), autodriveconfig::kCollisionBottomThresholdMetres,
+                 meco::sim::field2026::FieldColliders(), autodriveconfig::kCollisionBottomThresholdMetres,
                  autodriveconfig::kCollisionTopThresholdMetres))
           boxes.push_back({rectangle.minX, rectangle.minY, rectangle.maxX, rectangle.maxY});
       if (fieldColliders && avoidBumps)
@@ -119,7 +119,7 @@ void AutoDriveSimulation::Update(const frc::Pose3d &truth, const FuelModel &fuel
     points.reserve(fuel.FloorFuel().size());
     for (const auto &p : fuel.FloorFuel())
       points.emplace_back(units::meter_t{p.position.x}, units::meter_t{p.position.y}, units::meter_t{p.position.z});
-    static const auto fieldObstacles = simulation::FieldColliders();
+    static const auto fieldObstacles = meco::sim::field2026::FieldColliders();
     static const std::vector<base::sim::BodySpec> noObstacles;
     const auto &obstacles = fieldColliders ? fieldObstacles : noObstacles;
     const auto samples = cameras_.Update(truth, points, obstacles,
@@ -204,7 +204,7 @@ struct RobotRuntime::DesktopSimulation final : RobotRuntime::Simulation {
       return meco::sim::DriveScene::Configuration{
           .fieldCollidersEnabled = true,
           .feedbackLoops = season::simulation::runtimeconfig::kResetFeedbackLoops,
-          .colliders = season::simulation::FieldColliders(),
+          .colliders = meco::sim::field2026::FieldColliders(),
           .contact = season::simulation::RobotContacts(),
           .clearStartingPose = [](const frc::Pose2d &pose) { return season::simulation::IsClearStartingPose(pose); },
           .resetSensors = [this] { if (simulatedLocalization_) simulatedLocalization_->Reset(); owner_.lastAcceptedVision_ = -1e9; }};

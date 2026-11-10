@@ -15,7 +15,7 @@
 #include "base/Vision.h"
 #include <frc/geometry/Pose3d.h>
 #include "base/sim/Arena.h"
-#include "season/simulation/FieldGeometry2026.h"
+#include "meco/sim/Field2026.h"
 #include "base/FootprintSpeedProfile.h"
 #include <frc/geometry/Pose2d.h>
 #include <frc/DriverStation.h>

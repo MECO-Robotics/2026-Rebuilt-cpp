@@ -12,17 +12,17 @@ namespace season
         namespace
         {
                 constexpr double diameter = fuelconfig::kFuelDiameterMetres, radius = diameter / 2;
-                const meco::sim::ParticleFieldContacts kFieldContacts{season::simulation::ParticleFieldColliders()};
+                const meco::sim::ParticleFieldContacts kFieldContacts{meco::sim::field2026::ParticleFieldColliders()};
                 bool Outside(const FuelParticle &p)
                 {
-                        return p.position.x < 0 || p.position.x > season::simulation::kFieldLength ||
-                               p.position.y < 0 || p.position.y > season::simulation::kFieldWidth;
+                        return p.position.x < 0 || p.position.x > meco::sim::field2026::kFieldLength ||
+                               p.position.y < 0 || p.position.y > meco::sim::field2026::kFieldWidth;
                 }
                 void ReturnToField(FuelParticle &p)
                 {
                         constexpr double inset = fuelconfig::kFieldReturnInsetMetres;
-                        p.position = {std::clamp(p.position.x, inset, season::simulation::kFieldLength - inset),
-                                      std::clamp(p.position.y, inset, season::simulation::kFieldWidth - inset), radius};
+                        p.position = {std::clamp(p.position.x, inset, meco::sim::field2026::kFieldLength - inset),
+                                      std::clamp(p.position.y, inset, meco::sim::field2026::kFieldWidth - inset), radius};
                         p.velocity = {};
                 }
                 frc::Translation3d Translation(FuelPoint p) { return {units::meter_t{p.x}, units::meter_t{p.y}, units::meter_t{p.z}}; }

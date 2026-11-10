@@ -13,7 +13,7 @@ namespace season::simulation
   {
     const std::vector<base::sim::PitchedPlateTerrain> &Ramps()
     {
-      static const auto ramps = base::sim::PitchedPlateTerrains(FieldColliders());
+      static const auto ramps = base::sim::PitchedPlateTerrains(meco::sim::field2026::FieldColliders());
       return ramps;
     }
   } // namespace
@@ -36,20 +36,20 @@ namespace season::simulation
   frc::Pose2d DefaultSpawn(bool red)
   {
     constexpr double laneY = units::meter_t{units::inch_t{runtimeconfig::kSpawnLaneWidthInches}}.value() / 2;
-    return {units::meter_t{red ? kFieldLength - runtimeconfig::kSpawnXMetres : runtimeconfig::kSpawnXMetres}, units::meter_t{red ? kFieldWidth - laneY : laneY},
+    return {units::meter_t{red ? meco::sim::field2026::kFieldLength - runtimeconfig::kSpawnXMetres : runtimeconfig::kSpawnXMetres}, units::meter_t{red ? meco::sim::field2026::kFieldWidth - laneY : laneY},
             frc::Rotation2d{units::radian_t{red ? std::numbers::pi : 0}}};
   }
   // Reject starts that intersect modeled field geometry.
   bool IsClearStartingPose(const frc::Pose2d &pose)
   {
-    const auto colliders = FieldColliders();
+    const auto colliders = meco::sim::field2026::FieldColliders();
     return base::sim::IsFootprintClear(pose.X().value(), pose.Y().value(), pose.Rotation().Radians().value(), runtimeconfig::kFootprintHalfLengthMetres, runtimeconfig::kFootprintHalfWidthMetres,
-                                       runtimeconfig::kFootprintHeightMetres, kFieldLength, kFieldWidth, runtimeconfig::kSpawnClearanceMetres, colliders);
+                                       runtimeconfig::kFootprintHeightMetres, meco::sim::field2026::kFieldLength, meco::sim::field2026::kFieldWidth, runtimeconfig::kSpawnClearanceMetres, colliders);
   }
   // Install the season collision bodies into the simulation arena.
   void InstallField(base::sim::Arena &arena)
   {
-    for (const auto &collider : FieldColliders())
+    for (const auto &collider : meco::sim::field2026::FieldColliders())
       arena.AddCollider(collider);
   }
 } // namespace season::simulation
